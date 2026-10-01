@@ -1,0 +1,12 @@
+/* Static paper grain over the hero stage. Tile set from JS. */
+.has-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: var(--grain-image, none);
+  background-size: 128px 128px;
+  /* the grain dries away with the hero sea, so the stage leaves as bare page paper */
+  opacity: calc(0.035 * (1 - var(--hero-dry, 0)));
+  pointer-events: none;
+}

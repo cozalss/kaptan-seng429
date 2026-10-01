@@ -1,0 +1,137 @@
+/* The two content modals, "Proje hakkında" and "Yasal uyarı": square paper sheets with an ink
+   border and a hard shadow (overlay-base.css), set like a book's front matter — Bodoni titles
+   over an ink rule, Inter text, no mono labels. */
+
+#about-modal .overlay__panel {
+  max-width: 600px;
+}
+
+.about-modal__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.about-modal__header,
+.legal-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+/* #kaptan-logo's viewBox is 212×64; 133×40 keeps that 3.31:1 ratio. */
+.about-modal__logo {
+  width: 133px;
+  height: 40px;
+  color: var(--color-brand);
+}
+
+.about-modal__title,
+.legal-modal__title {
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-sumi);
+  font-family: var(--font-display);
+  font-size: clamp(34px, 4vw, 48px);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--color-sumi);
+}
+
+.about-modal__paragraph {
+  max-width: 58ch;
+  font-size: var(--text-body-md);
+  line-height: 1.5;
+  color: var(--color-sumi);
+}
+
+.about-modal__paragraph:first-of-type {
+  font-size: var(--text-body-lg);
+  line-height: 1.4;
+}
+
+/* Course facts: label | value on ruled rows, like the imprint page of a book. */
+.about-modal__facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  margin: 0;
+  font-size: var(--text-body-sm);
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--color-rule-soft);
+}
+
+.about-modal__facts dt,
+.about-modal__facts dd {
+  margin: 0;
+  padding: var(--space-xs) 0;
+  border-top: 1px solid var(--color-rule-soft);
+}
+
+.about-modal__facts dt {
+  padding-right: var(--space-lg);
+  color: var(--color-muted);
+}
+
+/* Styled by the shared .pill (base.css); this only places it. */
+.about-modal__explore {
+  align-self: flex-start;
+  margin-top: var(--space-xs);
+}
+
+/* ---------- Yasal uyarı ---------- */
+
+#legal-modal .overlay__panel {
+  max-width: 660px;
+  text-align: left;
+}
+
+.legal-modal__content {
+  display: flex;
+  flex-direction: column;
+}
+
+.legal-modal__header {
+  margin-bottom: var(--space-xs);
+}
+
+.legal-modal__title {
+  flex: 1;
+}
+
+/* Numbered like articles: the counter is set in the margin in Bodoni. */
+.legal-modal__content {
+  counter-reset: legal;
+}
+
+.legal-modal__section {
+  counter-increment: legal;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  column-gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.legal-modal__section::before {
+  content: counter(legal) '.';
+  grid-row: span 2;
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--color-sumi);
+}
+
+.legal-modal__heading {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.1;
+  margin-bottom: var(--space-xxs);
+}
+
+.legal-modal__section p {
+  font-size: var(--text-body-sm);
+  line-height: 1.5;
+  color: var(--color-muted);
+}

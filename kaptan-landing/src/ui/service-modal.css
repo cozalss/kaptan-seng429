@@ -1,0 +1,486 @@
+/* The agent detail as a full plate page of the book: a running head over an ink rule, the
+   portrait as a large inked plate (ink border, hard shadow), the name in Bodoni caps, the
+   input/output line, the description, "Ne yapmaz" as a caption panel and the ink button on to the
+   route. The overlay primitive's `detail` variant carries no shell styling of its own; every
+   entrance/exit is driven by service-modal-motion.js (GSAP), so the scrim's CSS transition is off. */
+
+/* The strip sinks under an indigo ink wash while the page turns (no blur: the art stays crisp). */
+#service-modal .overlay__scrim {
+  background: var(--color-wash);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transition: none;
+}
+
+/* The turning page's edge (service-modal-motion.js): an ink line with the paper's inner shading,
+   riding the clip of the page as it turns in from the right (or rises, on phones). */
+.service-modal__edge {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-left: 2px solid var(--color-sumi);
+  box-shadow: inset 5px 0 0 rgb(18 19 24 / 0.14);
+}
+
+/* While the exit animation plays the root is still shown: let clicks reach the page. */
+#service-modal[data-state='closed'] {
+  pointer-events: none;
+}
+
+#service-modal .overlay__panel {
+  width: 100%;
+  height: 100%;
+  background: var(--color-paper);
+  box-shadow: none;
+}
+
+/* Sticky in the panel's top-right corner, overlapping the content (the negative bottom margin
+   gives its height back), so it never scrolls away and moves with the panel. A square paper
+   tab with an ink border keeps it legible over the plate. */
+#service-modal .overlay__close {
+  position: sticky;
+  top: var(--space-sm);
+  z-index: 2;
+  align-self: flex-end;
+  margin: var(--space-sm) var(--space-sm) calc(-44px - var(--space-sm)) 0;
+  background: var(--color-paper-panel);
+  border: 1px solid var(--color-sumi);
+}
+
+.service-modal__content {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+  gap: var(--space-lg);
+  padding: var(--space-lg) var(--gutter) calc(var(--space-xl) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Running head: leaves room for the close tab on its right. */
+.service-modal__label {
+  align-items: center;
+  margin-right: 52px;
+}
+
+/* The page turner in the running head: "← 03 Önemlilik · 05 Şüpheci →" (service-modal-pager.js).
+   Each way is a 44px target that gives its height back to the head's line. */
+.service-modal__pager {
+  display: flex;
+  gap: var(--space-xs);
+  margin-block: -14px;
+}
+
+.service-modal__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 10px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-sumi);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.service-modal__step-no {
+  color: var(--color-muted);
+}
+
+.service-modal__folio .folio-page {
+  white-space: nowrap;
+}
+
+.service-modal__step-arrow {
+  display: inline-block;
+  font-size: 15px;
+  transition: transform var(--duration-fast) var(--ease-out-expo);
+}
+
+.service-modal__step + .service-modal__step {
+  border-left: 1px solid var(--color-hairline);
+}
+
+.service-modal__step:disabled {
+  color: var(--color-muted);
+  opacity: 0.35;
+  cursor: default;
+}
+
+@media (hover: hover) {
+  .service-modal__step:not(:disabled):hover .service-modal__step-name {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .service-modal__step--prev:not(:disabled):hover .service-modal__step-arrow {
+    transform: translateX(-3px);
+  }
+
+  .service-modal__step--next:not(:disabled):hover .service-modal__step-arrow {
+    transform: translateX(3px);
+  }
+}
+
+/* The plate: the portrait framed in ink with a hard shadow, like a full-page illustration. */
+.service-modal__media {
+  display: block;
+  flex: none;
+  align-self: center;
+  width: min(100%, 42svh);
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: var(--color-paper-panel);
+  border: var(--ink-border);
+  box-shadow: var(--shadow-panel-lg);
+}
+
+.service-modal__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 30%;
+  display: block;
+  /* printed on the plate's paper, like the card */
+  mix-blend-mode: multiply;
+}
+
+.service-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* A mask for the rising line; the padding keeps the dot of "İ" and the descenders inside it. */
+.service-modal__name {
+  overflow: hidden;
+  padding: 0.16em 0 0.1em;
+  margin: -0.16em 0 -0.1em;
+  font-family: var(--font-display);
+  font-size: min(clamp(40px, 12vw, 60px), calc((100vw - 2 * var(--gutter)) / (var(--name-chars, 8) * 0.58)));
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.012em;
+  text-transform: uppercase;
+  color: var(--color-sumi);
+}
+
+.service-modal__name-line {
+  display: block;
+}
+
+.service-modal__meta {
+  padding: var(--space-sm) 0;
+  border-top: 1px solid var(--color-sumi);
+  border-bottom: 1px solid var(--color-rule-soft);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-md);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-sumi);
+}
+
+.service-modal__description {
+  font-size: var(--text-body-md);
+  line-height: 1.55;
+  color: var(--color-sumi);
+}
+
+/* "Ne yapmaz": the agent's hard limit, spoken as a caption panel (book.css), set a little askew. */
+.service-modal__not {
+  --tilt: -1deg;
+  align-self: flex-start;
+  max-width: 30ch;
+  margin: var(--space-xs) 0 var(--space-sm) 4px;
+}
+
+.service-modal__cta {
+  align-self: flex-start;
+}
+
+/* The agent's live plate (agent-scenes/): a figure of the book co-equal with the portrait — the
+   diorama on the panel paper inside an ink rule with the portrait's hard shadow, always 3:2, and
+   under it the figure's caption in Inter, the plate's letters keyed a · b · c. The letters are also
+   set in HTML over the drawing (.agent-scene__pin), where the scene points them. */
+.agent-scene {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.agent-scene[hidden] {
+  display: none;
+}
+
+.agent-scene__stage {
+  position: relative;
+  flex: none;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: var(--color-paper-panel);
+  border: var(--ink-border);
+  box-shadow: var(--shadow-panel-lg);
+}
+
+/* a letter keyed to the drawing: Bodoni, centred on the point the scene gives, with a paper
+   outline (as the chart's soundings) so the drawing behind it never muddies it */
+.agent-scene__pin {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 24px;
+  margin: -13px 0 0 -12px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 24px;
+  text-align: center;
+  color: var(--color-sumi);
+  -webkit-text-stroke: 5px var(--color-paper-panel);
+  paint-order: stroke fill;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.agent-scene__pin:empty {
+  display: none;
+}
+
+.agent-scene__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.agent-scene__caption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px var(--space-md);
+  margin-top: 6px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-muted);
+}
+
+.agent-scene__title {
+  color: var(--color-sumi);
+}
+
+.agent-scene__legend {
+  color: var(--color-sumi);
+}
+
+.agent-scene__key {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--color-sumi);
+}
+
+/* The flying pieces (service-modal-ghosts.js): fixed above every overlay, below the loader. Each
+   is laid out at its place on the detail page and moved by transform only; the ink frame is a
+   layer of its own, repainted to the same weight at every scale. */
+.service-modal-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: calc(var(--z-overlay) + 1);
+  margin: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.service-modal-ghost--plate {
+  /* above the name, which slides out from under the plate as they part */
+  z-index: calc(var(--z-overlay) + 2);
+  overflow: hidden;
+  background: var(--color-paper-panel);
+}
+
+.service-modal-ghost--plate img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  mix-blend-mode: multiply;
+}
+
+.service-modal-ghost__ink {
+  position: absolute;
+  inset: 0;
+  border: 0 solid var(--color-sumi);
+}
+
+.service-modal-ghost--name {
+  display: block;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: var(--color-sumi);
+}
+
+
+/* Desktop: running head across the page; the plate large on the left, the text column on the right. */
+@media (min-width: 768px) {
+  #service-modal .overlay__close {
+    top: var(--space-md);
+    margin: var(--space-md) calc(var(--gutter) - 10px) calc(-44px - var(--space-md)) 0;
+  }
+
+  .service-modal__content {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: clamp(40px, 5vw, 96px);
+    row-gap: var(--space-xl);
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: calc(var(--space-md) + 12px) var(--gutter) var(--space-xxl);
+  }
+
+  .service-modal__label {
+    grid-column: 1 / -1;
+    margin-right: 60px;
+  }
+
+  /* the whole 3:4 plate, as tall as the page allows, set against the text column's left edge */
+  .service-modal__media {
+    align-self: start;
+    justify-self: end;
+    width: auto;
+    height: calc(100vh - 150px);
+    height: calc(100dvh - 150px);
+    min-height: 420px;
+    max-width: 100%;
+  }
+
+  .service-modal__body {
+    container-type: inline-size;
+    align-self: center;
+    gap: var(--space-lg);
+    padding-bottom: var(--space-xl);
+  }
+
+  /* Bodoni caps run ≈ 0.55em a letter: the longest word never outgrows the column. */
+  .service-modal__name {
+    font-size: min(clamp(56px, 6vw, 108px), calc(100cqi / (var(--name-chars, 8) * 0.58)));
+  }
+
+  .service-modal__meta {
+    font-size: var(--text-body-lg);
+  }
+
+  .service-modal__description {
+    max-width: 40ch;
+  }
+
+  /* The caption panel overlaps the plate's edge, as captions cross panel borders in the comic. */
+  .service-modal__not {
+    margin-left: calc(-1 * clamp(64px, 7vw, 132px));
+  }
+
+  /* With a live plate the page is a spread of two co-equal figures: the portrait on the left,
+     and on the right the type over the 3:2 live plate, which takes what the type leaves of the
+     page's height (a size container: its width follows that height, never past the column). */
+  .service-modal__content--scene {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    grid-template-rows: auto auto minmax(300px, 1fr);
+    row-gap: var(--space-md);
+    column-gap: clamp(32px, 4vw, 72px);
+    padding-bottom: var(--space-lg);
+  }
+
+  .service-modal__content--scene .service-modal__media {
+    grid-row: 2 / span 2;
+    height: calc(100vh - 140px);
+    height: calc(100dvh - 140px);
+  }
+
+  .service-modal__content--scene .service-modal__body {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px var(--space-lg);
+    padding-bottom: 0;
+  }
+
+  .service-modal__content--scene .service-modal__body > :not(.service-modal__not, .service-modal__cta) {
+    grid-column: 1 / -1;
+  }
+
+  .service-modal__content--scene .service-modal__name {
+    font-size: min(clamp(44px, 4vw, 80px), calc(100cqi / (var(--name-chars, 8) * 0.58)));
+  }
+
+  .service-modal__content--scene .service-modal__meta {
+    padding: 8px 0;
+    font-size: var(--text-body-md);
+  }
+
+  .service-modal__content--scene .service-modal__description {
+    max-width: 62ch;
+  }
+
+  .service-modal__content--scene .service-modal__not {
+    margin: 0 0 0 calc(-1 * clamp(56px, 5vw, 110px));
+  }
+
+  .service-modal__content--scene .service-modal__cta {
+    justify-self: start;
+  }
+
+  .service-modal__scene {
+    grid-column: 2;
+    grid-row: 3;
+    container-type: size;
+    min-height: 300px;
+    padding-bottom: 6px; /* room for the stage's hard shadow */
+  }
+
+  .service-modal__scene .agent-scene__stage,
+  .service-modal__scene .agent-scene__caption {
+    width: min(100%, (100cqh - 32px) * 1.5);
+  }
+}
+
+/* Phones: the page rises from the foot, so its edge is the top one. The running head keeps the
+   folio ("Tayfa 4 / 8") and the page turner by number; the name is the page's own title. */
+@media (max-width: 767px) {
+  .service-modal__label {
+    gap: var(--space-sm);
+  }
+
+  .service-modal__folio .folio-ticks,
+  .service-modal__head-title,
+  .service-modal__step-name {
+    display: none;
+  }
+
+  .service-modal__pager {
+    margin-left: auto;
+  }
+
+  .service-modal__edge {
+    border-left: 0;
+    border-top: 2px solid var(--color-sumi);
+    box-shadow: inset 0 5px 0 rgb(18 19 24 / 0.14);
+  }
+}
+
+@media print {
+  .service-modal-ghost,
+  .service-modal__edge {
+    display: none;
+  }
+}

@@ -1,0 +1,117 @@
+/* Mirrors the YAML tokens in DESIGN.md — change both together.
+   The page is a printed book on rice paper: sumi ink, an indigo wash, navy only for the mark and
+   focus, north red only for the needle, the boat's flag and the one approval stamp. */
+:root {
+  /* Colors */
+  --color-brand: #0e3a66; /* kaptan laciverti: the wordmark, focus ring, selection (10.4:1 on paper) */
+  --color-on-brand: #ffffff;
+  /* north red: compass needle tips, the boat's flag, the approval stamp — never UI chrome */
+  --color-north: #b3261e;
+  --color-ink: #121318;
+  --color-ink-pure: #000000;
+  /* greys on paper (#f3f1ec): muted 4.9:1, subtle / unrevealed 4.8:1, placeholder 4.9:1 on panel */
+  --color-muted: #666663;
+  --color-subtle: #686865;
+  --color-unrevealed: #686865;
+  --color-placeholder: #6a6a67;
+  /* rice paper everywhere; panels are a brighter sheet laid on it */
+  --color-canvas: #f3f1ec;
+  --color-canvas-hero: #f3f1ec;
+  --color-paper: #f3f1ec;
+  --color-paper-panel: #fbfaf6;
+  --color-sumi: #121318;
+  /* the ink sea's indigo wash (sea-renderer.js SEA_COLORS.indigo): tints, hover fills */
+  --color-wash: #2b4261;
+  --color-wash-soft: rgb(43 66 97 / 0.08);
+  --color-surface-product: #fbfaf6;
+  --color-surface-input: #fbfaf6;
+  --color-surface-soft: #f7f5f0;
+  --color-chip: #121318;
+  --color-on-chip: #fbfaf6;
+  --color-rule-strong: #121318;
+  --color-rule-soft: rgb(18 19 24 / 0.28);
+  --color-hairline: rgb(18 19 24 / 0.14);
+  --color-scrim: rgb(243 241 236 / 0.72);
+
+  /* Ink marks: panels with an ink border and a hard offset shadow, like comic panels */
+  --ink-line: 1.5px;
+  --ink-border: var(--ink-line) solid var(--color-sumi);
+  --shadow-panel: 4px 4px 0 var(--color-sumi);
+  --shadow-panel-lg: 6px 6px 0 var(--color-sumi);
+  --gutter-panel: 14px;
+
+  /* Font families */
+  /* Bodoni at display size carries the page (Instrument Serif reads as a template default in 2026). */
+  --font-display: 'Bodoni Moda Display', 'Didot', 'Bodoni 72', Georgia, serif;
+  --font-wordmark: 'Bodoni Moda', 'Didot', Georgia, serif;
+  --font-sans: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  /* rule codes only (E1–E4, R01–R16): never tracked uppercase micro-labels */
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  /* Type scale */
+  --text-display-hero: clamp(44px, 5vw, 96px);
+  --text-display-stat: clamp(40px, 4.45vw, 80px);
+  --text-chapter: min(12vw, 20vh);
+  --text-heading-section: clamp(28px, 2.5vw, 44px);
+  --text-heading-overlay: 32px;
+  --text-caption-panel: clamp(20px, 1.7vw, 27px);
+  --text-running-head: 13px;
+  /* Display leading (0.9) and the extra room a two-line title gets when Turkish marks would touch
+     (Ş/Ç cedilla on line 1, İ/Ö/Ü/Ğ on line 2): set by lib/title-marks.js, used in book.css. */
+  --title-leading: 0.9;
+  --title-mark-room: 0.12em;
+  --text-body-lg: clamp(17px, 1.39vw, 22px);
+  --text-body-md: 16px;
+  --text-body-sm: 14px;
+  --text-caption: 12px;
+  --text-nav: 14px;
+  --text-button: 14px;
+  --text-mono: 12px;
+
+  /* Viewport width without the classic scrollbar (--scrollbar-width is set from JS) */
+  --page-width: calc(100vw - var(--scrollbar-width, 0px));
+
+  /* Spacing */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+  --space-section: 96px;
+  --gutter: 48px;
+  --header-height: 80px;
+
+  /* Radius: print has square corners; the pill value survives only for the round cursor */
+  --radius-none: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-pill: 9999px;
+
+  /* Elevation: ink, not blur */
+  --shadow-pill: var(--shadow-panel);
+  --shadow-overlay: var(--shadow-panel-lg);
+
+  /* Motion */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-overlay: 450ms;
+  --duration-slow: 600ms;
+  --duration-loader-fade: 400ms;
+
+  /* Layers */
+  --z-content: 1;
+  --z-header: 30;
+  --z-overlay: 50;
+  --z-loader: 60;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --gutter: 20px;
+    --header-height: 64px;
+  }
+}

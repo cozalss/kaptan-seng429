@@ -1,0 +1,528 @@
+/* ---------- Bölüm 3 · Seyir Kuralları (#olaylar) · Sancak Tezgâhı ----------
+   One stage. Left: the title, the four rules as a short list that is also the switch, the filter
+   line. Right: the tall inked mast over a sea of engraved strokes, and at its foot the ONE shared
+   instrument plate. Wide screens with full motion pin the stage and let the scroll walk the rules
+   (rules-bench/show.js, [data-show='pin']); everywhere else it is a calm page.
+   Without JavaScript (no .js-boot) there is no mast and no slot: the four rules are printed in
+   full, one under another. If the bench chunk fails, [data-bench='off'] restores that page.
+   Instruments: rules-bench/instruments.css (B). Mast: rules-bench/flag.css (C). */
+.rules {
+  --rules-gap: clamp(32px, 4.4vw, 88px);
+  --slot-w: min(520px, 100%);
+  --slot-h: 256px;
+  position: relative;
+  z-index: var(--z-content);
+  padding: calc(var(--header-height) + 18px) var(--gutter) 0;
+  background: var(--color-canvas);
+  color: var(--color-sumi);
+}
+
+/* ---------- Head ---------- */
+.rules__head {
+  margin-top: clamp(16px, 3vh, 36px);
+}
+
+.rules__title {
+  font-size: min(5.4vw, 9.6vh);
+}
+
+/* SplitText's word masks (show.js): room above the caps for Ö and İ, below for the baseline. */
+.rules__word-mask {
+  margin: -0.24em 0 -0.08em;
+  padding: 0.24em 0 0.08em;
+}
+
+.rules__lead {
+  max-width: 46ch;
+  margin-top: clamp(12px, 2vh, 22px);
+  font-size: var(--text-body-lg);
+  line-height: 1.45;
+}
+
+.rules__mark {
+  margin-left: 2px;
+  font-family: var(--font-display);
+  text-decoration: none;
+  color: inherit;
+}
+
+.rules__mark:hover {
+  color: var(--color-wash);
+}
+
+/* ---------- The four rules (static: printed in full) ---------- */
+.articles {
+  list-style: none;
+  padding: 0;
+}
+
+.article {
+  position: relative;
+  padding: 10px 0 12px;
+}
+
+.article__name {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 1.9vw, 30px);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.008em;
+}
+
+.article__name .rule-code {
+  margin-right: 10px;
+  font-size: 13px;
+  color: var(--color-muted);
+  vertical-align: 0.3em;
+}
+
+.article__line {
+  max-width: 62ch;
+  margin-top: 4px;
+  font-size: var(--text-body-sm);
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.article__days {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--color-sumi);
+}
+
+.rules[data-bench='on'] .article__trigger {
+  display: none;
+}
+
+/* With JavaScript the titles are the switch: the chosen rule reads in ink, the others in grey. */
+.article__toggle {
+  display: inline;
+  padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  color: var(--color-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transition: color var(--duration-normal) var(--ease-out-expo);
+}
+
+/* The whole row is the target (≥ 44px), the title is the label. */
+.article__toggle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.article__toggle:focus-visible {
+  outline: none;
+}
+
+.article:has(.article__toggle:focus-visible) {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.article__toggle[aria-pressed='true'] {
+  color: var(--color-sumi);
+  cursor: default;
+}
+
+.article.is-active .article__line {
+  color: var(--color-sumi);
+}
+
+@media (hover: hover) {
+  .article__toggle:hover {
+    color: var(--color-sumi);
+  }
+}
+
+/* ---------- The sky: sea strokes and the mast ---------- */
+.rules__sky {
+  position: relative;
+}
+
+.rules__sea {
+  position: absolute;
+  left: 0;
+  right: calc(-1 * var(--gutter));
+  bottom: calc(var(--slot-h) - 44px);
+  width: auto;
+  height: clamp(72px, 13vh, 132px);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.rules__sea path {
+  fill: none;
+  stroke: var(--color-wash);
+  stroke-width: 1;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.55;
+}
+
+.rules__sea .rules__horizon {
+  stroke: var(--color-sumi);
+  opacity: 1;
+}
+
+.rules__sky .rules__mast {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  /* read by the hero mast's layout as plain px: keep it = --slot-h + 28px */
+  --mast-clear: 284px;
+}
+
+/* ---------- The one shared slot ---------- */
+.rules__slot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: var(--color-canvas);
+}
+
+.rules__sample {
+  grid-area: 1 / 1;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-sumi);
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--color-muted);
+}
+
+/* Every instrument sits in the same cell; the slot is as tall as the tallest, so nothing moves. */
+.rules__instrument {
+  grid-area: 2 / 1;
+  min-width: 0;
+  margin-top: 8px;
+  visibility: hidden;
+}
+
+.rules__instrument.is-active {
+  visibility: visible;
+  animation: slot-in var(--duration-overlay) var(--ease-out-expo);
+}
+
+@keyframes slot-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    clip-path: inset(-12px);
+  }
+}
+
+/* Inside the slot an instrument is a drawing on the page, not a panel: no sheet, border or shadow,
+   and the one "Temsili · ÖRNEK ENERJİ A.Ş." line above the slot replaces each plate's own tag. */
+.rules__slot .inst {
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+
+.rules__slot .inst__temsili,
+.rules__slot .inst__issuer {
+  display: none;
+}
+
+.reduced-motion .rules__instrument.is-active {
+  animation: none;
+}
+
+/* ---------- Filters: one line in the stage, the risk line and footnote after it ---------- */
+.rules__filters {
+  margin-top: clamp(20px, 3.4vh, 36px);
+  max-width: 64ch;
+  font-size: var(--text-body-sm);
+  line-height: 1.55;
+}
+
+.rules__filter-fact {
+  color: var(--color-muted);
+}
+
+/* A text button: underlined Inter, a 44px target without looking like a control panel. */
+.rules__try {
+  display: inline-block;
+  margin: -12px 0;
+  padding: 12px 0;
+  font: inherit;
+  font-weight: 500;
+  color: var(--color-sumi);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.rules__try[aria-pressed='true'] {
+  text-decoration-thickness: 2px;
+}
+
+.rules__try:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+}
+
+.rules__after {
+  margin-top: clamp(20px, 3vh, 32px);
+}
+
+.rules__filter--quiet {
+  max-width: 110ch;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-muted);
+}
+
+.rules__filter--quiet .rule-code {
+  font-size: 12px;
+}
+
+.rules__footnote {
+  max-width: 110ch;
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.rules .folio {
+  padding-top: 18px;
+}
+
+/* Without JavaScript (or without the bench) nothing is hands-on. */
+html:not(.js-boot) .rules__sky,
+html:not(.js-boot) .rules__slot,
+.rules[data-bench='off'] .rules__sky,
+.rules[data-bench='off'] .rules__slot {
+  display: none;
+}
+
+/* ---------- Tablets and desktops: the two-column stage ---------- */
+@media (min-width: 768px) {
+  html.js-boot .rules:not([data-bench='off']) .rules__stage {
+    display: grid;
+    grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
+    grid-template-rows: auto auto auto auto 1fr auto;
+    column-gap: var(--rules-gap);
+  }
+
+  html.js-boot .rules:not([data-bench='off']) .running-head {
+    grid-column: 1 / -1;
+  }
+
+  html.js-boot .rules:not([data-bench='off']) .rules__head {
+    grid-area: 2 / 1;
+  }
+
+  html.js-boot .rules:not([data-bench='off']) .rules__bench {
+    display: contents;
+  }
+
+  html.js-boot .rules:not([data-bench='off']) .articles {
+    grid-area: 3 / 1;
+    margin-top: clamp(18px, 3.2vh, 36px);
+  }
+
+  html.js-boot .rules:not([data-bench='off']) .rules__filters {
+    grid-area: 6 / 1;
+    align-self: end;
+  }
+
+  html.js-boot .rules:not([data-bench='off']) .rules__sky {
+    grid-column: 2;
+    grid-row: 2 / 7;
+    min-height: min(76svh, 760px);
+    margin-top: clamp(16px, 3vh, 36px);
+  }
+
+  html.js-boot .rules:not([data-bench='off']) .rules__slot {
+    grid-column: 2;
+    grid-row: 2 / 7;
+    align-self: end;
+    justify-self: end;
+    width: var(--slot-w);
+    max-width: calc(100% - 112px);
+    height: var(--slot-h);
+  }
+}
+
+/* ---------- The pinned stage (rules-bench/show.js) ---------- */
+.rules[data-show='pin'] {
+  padding-top: 0;
+  /* the stage carries the header's room itself: a jump here lands where the pin starts (as #ajanlar) */
+  scroll-margin-top: calc(var(--header-height) * -1);
+}
+
+.rules[data-show='pin'] .rules__stage {
+  box-sizing: border-box;
+  height: 100svh;
+  padding: calc(var(--header-height) + 14px) 0 clamp(16px, 3vh, 32px);
+  background: var(--color-canvas);
+}
+
+.rules[data-show='pin'] .rules__head {
+  margin-top: clamp(10px, 2.2vh, 28px);
+}
+
+/* The list is titles only; the active rule's line is printed once, below the list (.rules__caption). */
+.rules[data-show='pin'] .article__line {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.rules[data-show='pin'] .article {
+  width: fit-content;
+  padding: 7px 0 9px;
+  opacity: 0.4;
+  transition: opacity var(--duration-slow) var(--ease-out-expo);
+}
+
+.rules[data-show='pin'] .article.is-active,
+.rules[data-show='pin'] .article:has(.article__toggle:focus-visible) {
+  opacity: 1;
+}
+
+.rules[data-show='pin'] .article__toggle {
+  color: var(--color-sumi);
+}
+
+.rules__underline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  height: 1.5px;
+  background: var(--color-sumi);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  opacity: 0;
+  transition: opacity var(--duration-normal) linear;
+  pointer-events: none;
+}
+
+.article.is-active .rules__underline {
+  opacity: 1;
+}
+
+.rules__caption {
+  display: grid;
+  grid-area: 4 / 1;
+  margin-top: 14px;
+  max-width: 54ch;
+  font-size: var(--text-body-md);
+  line-height: 1.5;
+}
+
+.rules__cap {
+  grid-area: 1 / 1;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path var(--duration-slow) var(--ease-out-expo);
+}
+
+.rules__cap.is-active {
+  clip-path: inset(-4px -4px -4px 0);
+}
+
+.rules__cap .article__days {
+  border-bottom: 1px solid currentColor;
+}
+
+/* Short wide screens (1280 × 720): the pinned stage tightens so it fits one viewport. */
+@media (min-width: 1024px) and (max-height: 820px) {
+  .rules {
+    --slot-h: 228px;
+  }
+
+  .rules__sky .rules__mast {
+    --mast-clear: 256px;
+  }
+
+  .rules__title {
+    font-size: min(5vw, 8.6vh);
+  }
+
+  .rules__lead {
+    font-size: 16px;
+  }
+
+  .rules[data-show='pin'] .article {
+    padding: 5px 0 6px;
+  }
+
+  .rules[data-show='pin'] .article__name {
+    font-size: 22px;
+  }
+
+  .rules__caption {
+    margin-top: 8px;
+    font-size: 15px;
+  }
+
+  .rules[data-show='pin'] .rules__filters {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+/* Phones: one column; the mast becomes a short strip above the list, the slot sits under it. */
+@media (max-width: 767px) {
+  .rules {
+    --slot-h: auto;
+    padding-bottom: 16px;
+  }
+
+  .rules__title {
+    font-size: min(11.4vw, 52px);
+  }
+
+  .rules__lead {
+    font-size: 16px;
+  }
+
+  .rules__sky {
+    height: 180px;
+    margin-top: 16px;
+  }
+
+  .rules__sea {
+    display: none;
+  }
+
+  .rules__sky .rules__mast {
+    display: block;
+  }
+
+  .rules__slot {
+    margin-top: 18px;
+  }
+
+  .article {
+    padding: 8px 0 10px;
+  }
+
+  .article__name {
+    font-size: 22px;
+  }
+
+  .rules__filters {
+    margin-top: 22px;
+  }
+}

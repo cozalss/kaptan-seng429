@@ -1,0 +1,33 @@
+/* Split typography (set by src/lib/split-text.js for [data-stomp] headings). */
+.split-line {
+  display: block;
+  overflow: hidden;
+  /* room for descenders inside the mask */
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+.split-line__inner {
+  display: block;
+}
+
+.split-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.split-char {
+  display: inline-block;
+}
+
+.split-em,
+[data-stomp] em,
+.hero__title em {
+  font-style: italic;
+  /* italic overhang must not be clipped by the line mask */
+  padding-right: 0.04em;
+}
+
+.is-split-revealed .split-line {
+  overflow: visible;
+}

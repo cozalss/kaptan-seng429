@@ -1,0 +1,207 @@
+/* ---------- Kolofon (footer) — the book's closing page ----------
+   A centred colophon as printed at the back of a book: what the book is, where it was made, how it
+   was set, the crew list, the links, the disclaimer, then "— Son —" and the compass mark in sumi. */
+
+.site-footer {
+  position: relative;
+  padding: var(--space-xl) var(--gutter) 72px;
+  background: var(--color-paper);
+  color: var(--color-sumi);
+  border-top: 1px solid var(--color-hairline);
+}
+
+.colophon__page {
+  display: grid;
+  justify-items: center;
+  max-width: 620px;
+  margin: clamp(72px, 12vh, 136px) auto 0;
+  text-align: center;
+}
+
+.colophon__title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 4.4vw, 68px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* A short ink rule under the title, as a book's colophon sets it. */
+.colophon__title::after {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 1.5px;
+  margin: 26px auto 0;
+  background: var(--color-sumi);
+}
+
+.colophon__lead {
+  margin-top: 28px;
+  font-family: var(--font-display);
+  font-size: clamp(19px, 1.5vw, 23px);
+  line-height: 1.38;
+}
+
+.colophon__facts {
+  margin-top: 22px;
+  font-size: var(--text-body-md);
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.colophon__type {
+  margin-top: 14px;
+  font-size: var(--text-body-sm);
+  color: var(--color-muted);
+}
+
+/* "Tayfa" between two hairlines */
+.colophon__subhead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  margin-top: 52px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.colophon__subhead::before,
+.colophon__subhead::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-sumi);
+}
+
+/* Crew list: name, dotted leader, role — like a ship's muster roll. */
+.colophon__crew {
+  width: 100%;
+  margin: 18px 0 0;
+  text-align: left;
+}
+
+.colophon__member {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  padding: 7px 0;
+}
+
+.colophon__member dt {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  gap: var(--space-xs);
+  font-family: var(--font-display);
+  font-size: 21px;
+  line-height: 1.2;
+}
+
+.colophon__member dt::after {
+  content: '';
+  flex: 1;
+  min-width: 24px;
+  border-bottom: 1.5px dotted var(--color-rule-soft);
+  transform: translateY(-4px);
+}
+
+.colophon__member dd {
+  margin: 0;
+  font-size: var(--text-body-sm);
+  text-align: right;
+}
+
+/* ---------- Links ---------- */
+.colophon__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 18px;
+  margin-top: 44px;
+  padding: 10px 0;
+  border-top: 1px solid var(--color-sumi);
+  border-bottom: 1px solid var(--color-sumi);
+  font-size: var(--text-body-sm);
+}
+
+.site-footer__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: transparent;
+  text-underline-offset: 5px;
+  cursor: pointer;
+  transition: text-decoration-color var(--duration-fast) ease;
+}
+
+@media (hover: hover) {
+  .site-footer__link:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+.site-footer__link.is-pending {
+  color: var(--color-muted);
+  cursor: default;
+}
+
+.colophon__legal {
+  max-width: 50ch;
+  margin-top: 22px;
+  font-size: var(--text-caption);
+  line-height: 1.55;
+  color: var(--color-muted);
+}
+
+/* ---------- The end ---------- */
+.colophon__end {
+  margin-top: clamp(56px, 9vh, 96px);
+  font-family: var(--font-display);
+  font-size: clamp(22px, 1.8vw, 28px);
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+
+/* Only the compass of #kaptan-logo (its first 60 of 212 units), cropped by the wrapper. */
+.colophon__mark {
+  --mark-h: 58px;
+  display: block;
+  width: calc(var(--mark-h) * 60 / 64);
+  height: var(--mark-h);
+  margin-top: 28px;
+  overflow: hidden;
+  color: var(--color-sumi);
+}
+
+.colophon__mark svg {
+  display: block;
+  width: calc(var(--mark-h) * 212 / 64);
+  max-width: none;
+  height: var(--mark-h);
+}
+
+@media (max-width: 767px) {
+  .colophon__page {
+    margin-top: 56px;
+  }
+
+  .colophon__member {
+    flex-wrap: wrap;
+  }
+
+  .colophon__links {
+    gap: 0 var(--space-md);
+  }
+}

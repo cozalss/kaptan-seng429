@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KAPtan | KAP bildirimleri için çok ajanlı yapay zekâ · SENG 429</title>
+    <meta
+      name="description"
+      content="KAPtan, BIST şirketlerinin KAP bildirimlerini okuyan çok ajanlı bir yapay zekâ ders projesidir: yapay zekâ kanıt toplar, kurallar karar verir, insan onaylar. Yatırım tavsiyesi değildir."
+    />
+    <meta name="theme-color" content="#f3f1ec" />
+    <!-- Light only: stops Samsung Internet / Chrome auto-dark from inverting the paper and the ink -->
+    <meta name="color-scheme" content="light only" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:site_name" content="KAPtan" />
+    <meta property="og:title" content="KAPtan — Kanıt önce, karar sonra" />
+    <meta
+      property="og:description"
+      content="Altı yapay zekâ ajanı KAP bildirimlerini okur ve kanıt toplar; deterministik kurallar karar verir, insan onaylar. SENG 429 · Çankaya Üniversitesi ders projesi."
+    />
+    <meta property="og:image" content="/images/generated/og-1280.jpg" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="853" />
+    <meta property="og:image:alt" content="KAPtan logosu ve Bodoni harflerle “Kanıt önce.” başlığı; mürekkep çizimi dalgalı bir denizde küçük kırmızı bayraklı bir yelkenli, bir pusula gülü ve “Yapay zekâ okur, kurallar karar verir, insan onaylar.” yazan bir çizgi roman kutusu" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="/images/generated/og-1280.jpg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Self-hosted fonts (src/styles/fonts.css). Preload only the hero headline's face (Bodoni display roman). -->
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/bodoni-moda-display-latin-tr.woff2" crossorigin />
+    <link rel="stylesheet" href="/src/styles/index.css" />
+    <!-- Without script nothing lifts the loader (its CSS failsafe waits 10 s for a stalled boot) and
+         the hero is a still page, not a 260vh scroll story: print the static layout at once.
+         :root raises specificity, because the build moves the stylesheet link after this block. -->
+    <noscript>
+      <style>
+        :root .loader { display: none; }
+        :root .hero { height: 100vh; height: 100svh; }
+      </style>
+    </noscript>
+    <!-- HERO-HEAD:START -->
+    <!-- The hero sea is drawn in WebGL (src/components/hero/sea): the LCP is the headline, whose face is
+         preloaded above. -->
+    <!-- HERO-HEAD:END -->
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+      <!-- The compass dial (the ring of the old "O") with east/west ticks and a slender needle on
+           north, then a Didone "KAPtan". x=67 keeps a clear gap after the ring’s outer stroke
+           (59.25); at 38px the word’s ink ends at ~209.6, hence the 212-wide viewBox. -->
+      <symbol id="kaptan-logo" viewBox="0 0 212 64">
+        <ellipse cx="30" cy="32" rx="26.5" ry="27.5" fill="none" stroke="currentColor" stroke-width="5.5" />
+        <path d="M6.6 32H10.2M49.8 32H53.4" fill="none" stroke="currentColor" stroke-width="1.4" />
+        <g>
+          <path d="M30 10.6 32.7 32H27.3Z" fill="currentColor" />
+          <path d="M27.3 32 30 53.4 32.7 32" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+          <circle cx="30" cy="32" r="1.7" fill="currentColor" />
+        </g>
+        <text
+          x="67"
+          y="46"
+          fill="currentColor"
+          font-family="'Bodoni Moda', 'Didot', Georgia, serif"
+          font-size="38"
+          font-weight="700"
+          letter-spacing="-0.5"
+        >KAPtan</text>
+      </symbol>
+    </svg>
+
+    <div class="loader" data-loader>
+      <!-- Inline copy of #kaptan-logo so the ring can draw itself and the needle can swing
+           (DrawSVG and GSAP cannot reach into <use>) -->
+      <svg class="loader__logo" viewBox="0 0 212 64" aria-hidden="true" focusable="false" data-loader-logo>
+        <ellipse
+          class="loader__ring"
+          data-loader-ring
+          cx="30"
+          cy="32"
+          rx="26.5"
+          ry="27.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="5.5"
+        />
+        <path data-loader-chrome d="M6.6 32H10.2M49.8 32H53.4" fill="none" stroke="currentColor" stroke-width="1.4" />
+        <g data-loader-chrome>
+          <g data-loader-needle>
+            <path class="loader__needle-north" d="M30 10.6 32.7 32H27.3Z" fill="currentColor" />
+            <path d="M27.3 32 30 53.4 32.7 32" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+          </g>
+          <circle cx="30" cy="32" r="1.7" fill="currentColor" />
+        </g>
+        <text
+          data-loader-chrome
+          x="67"
+          y="46"
+          fill="currentColor"
+          font-family="'Bodoni Moda', 'Didot', Georgia, serif"
+          font-size="38"
+          font-weight="700"
+          letter-spacing="-0.5"
+        >KAPtan</text>
+      </svg>
+      <div class="loader__track" data-loader-chrome><div class="loader__bar" data-loader-bar></div></div>
+      <p class="loader__label" data-loader-chrome aria-hidden="true">Bildirimler taranıyor · <span data-loader-count>0/0</span></p>
+    </div>
+
+    <p class="visually-hidden" role="status" data-loader-status></p>
+
+    <a class="skip-link" href="#main">İçeriğe geç</a>
+
+    <header class="site-header">
+      <a class="site-header__logo" href="#hero" data-scroll-to="#hero" aria-label="KAPtan ana sayfa">
+        <svg aria-hidden="true"><use href="#kaptan-logo" /></svg>
+      </a>
+      <nav class="site-header__nav" aria-label="Ana menü">
+        <button type="button" class="nav-link nav-link--about" data-action="open-about" aria-haspopup="dialog">Proje</button>
+        <button type="button" class="nav-link nav-link--toc" data-action="open-menu" aria-haspopup="dialog">İçindekiler</button>
+        <button type="button" class="nav-link nav-link--demo" data-action="open-demo" aria-haspopup="dialog">Demo akışı</button>
+      </nav>
+    </header>
+
+    <main id="main">
+      <!-- HERO:START -->
+      <section class="hero" id="hero" aria-labelledby="hero-title" aria-describedby="hero-lead">
+        <div class="hero__stage">
+          <div class="hero__media" data-hero-media>
+            <!-- The ink sea (src/components/hero/sea): WebGL sumi-e waves on paper, after SBS "The Boat".
+                 The printed waves below are the fallback (no WebGL, or the slot lent to another scene). -->
+            <div class="hero__zoom" data-hero-zoom>
+              <div class="hero-sea" data-sea aria-hidden="true">
+                <svg class="hero-sea__print" viewBox="0 0 1600 900" preserveAspectRatio="none" focusable="false">
+                  <path d="M0 470 C 180 452 330 486 520 470 S 880 448 1060 468 S 1400 490 1600 466 V 900 H 0 Z" fill="#dcdfe3" />
+                  <path d="M0 540 C 200 512 360 560 560 536 S 920 506 1120 534 S 1440 560 1600 530 V 900 H 0 Z" fill="#b9c1cb" />
+                  <path d="M0 636 C 160 598 380 664 600 628 S 980 590 1200 632 S 1480 660 1600 620 V 900 H 0 Z" fill="#7d8896" />
+                  <path d="M0 760 C 220 712 420 790 680 748 S 1060 700 1300 752 S 1520 780 1600 740 V 900 H 0 Z" fill="#2b3340" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- The inked boat riding the third wave band (sea-stage.js positions it on the swell); after the
+               storm it sails to centre stage, then out to the right as the ink dries into paper. -->
+          <svg class="hero-boat" data-sea-boat viewBox="0 0 160 120" aria-hidden="true" focusable="false">
+            <path data-sea-fill d="M76 26 C 64 48 52 70 40 88 L 76 88 Z" />
+            <path data-sea-fill d="M81 22 C 100 40 116 66 124 86 L 82 88 Z" />
+            <path data-sea-fill d="M14 92 C 30 97 110 99 148 88 C 140 101 124 108 96 110 L 52 110 C 34 108 22 102 14 92 Z" />
+            <path data-sea-ink d="M14 92 C 30 97 110 99 148 88 C 140 101 124 108 96 110 L 52 110 C 34 108 22 102 14 92 Z" />
+            <path data-sea-ink d="M20 97 C 60 102 110 102 142 94" />
+            <path data-sea-ink d="M78 95 L 80 17" />
+            <path data-sea-ink d="M81 22 C 100 40 116 66 124 86 L 82 88" />
+            <path data-sea-ink d="M76 26 C 64 48 52 70 40 88 L 76 88" />
+            <path data-sea-ink d="M83 42 L 107 45 M83 60 L 116 63 M83 76 L 121 78" />
+            <path data-sea-ink d="M58 94 L 57 83 M53 88 L 62 86" />
+            <circle data-sea-ink cx="57" cy="79" r="3.2" />
+            <path class="hero-boat__flag" d="M80 17 L 94 21 L 80 25 Z" />
+            <path data-sea-ink d="M6 99 C 10 93 16 93 20 97 M140 97 C 146 92 152 92 156 97" />
+          </svg>
+
+          <div class="hero__masthead" data-hero-fade>
+            <p>Bölüm 1 · <span class="hero__masthead-title">Fırtına</span></p>
+          </div>
+
+          <div class="hero__content" data-sea-sway>
+            <h1 class="hero__title" id="hero-title" data-hero-title>
+              <span class="hero__line">Kanıt</span>
+              <span class="hero__line hero__line--indent">önce.</span>
+            </h1>
+          </div>
+
+          <!-- Graphic-novel caption panels, told one after another as the storm passes (sea-swell.js storyAt). -->
+          <ol class="hero__captions">
+            <li class="hero-caption hero-caption--1" data-sea-caption data-active>
+              <span class="hero-caption__time">14:05:12</span>
+              Günün 212. bildirimi. KAP’a günde yaklaşık 350 bildirim düşer; önemliyi elle bulmak zor.
+            </li>
+            <li class="hero-caption hero-caption--2" data-sea-caption>
+              Altı yapay zekâ ajanı okur: türünü, tutarını, karşı tarafı, geçmişteki benzerlerini. Hiçbiri “al” demez.
+            </li>
+            <li class="hero-caption hero-caption--3" data-sea-caption>
+              Kararı yazılı kurallar verir, onayı bir insan. Otomatik emir yok.
+            </li>
+          </ol>
+
+          <!-- The compass: its needle follows the cursor on a damped spring, then holds north (evidence). -->
+          <figure class="hero-compass" data-sea-compass>
+            <svg viewBox="-24 -24 248 248" aria-hidden="true" focusable="false">
+              <ellipse data-sea-ink class="hero-compass__ring" cx="100" cy="100" rx="86" ry="89" />
+              <circle class="hero-compass__ticks" cx="100" cy="100" r="78" />
+              <g class="hero-compass__rose">
+                <path class="hero-compass__dark" d="M131.1,68.9 L95.1,95.1 L100,100 Z" /><path class="hero-compass__light" d="M131.1,68.9 L104.9,104.9 L100,100 Z" />
+                <path class="hero-compass__dark" d="M131.1,131.1 L104.9,95.1 L100,100 Z" /><path class="hero-compass__light" d="M131.1,131.1 L95.1,104.9 L100,100 Z" />
+                <path class="hero-compass__dark" d="M68.9,131.1 L104.9,104.9 L100,100 Z" /><path class="hero-compass__light" d="M68.9,131.1 L95.1,95.1 L100,100 Z" />
+                <path class="hero-compass__dark" d="M68.9,68.9 L95.1,104.9 L100,100 Z" /><path class="hero-compass__light" d="M68.9,68.9 L104.9,95.1 L100,100 Z" />
+                <path class="hero-compass__dark" d="M100,30 L90,100 L100,100 Z" /><path class="hero-compass__light" d="M100,30 L110,100 L100,100 Z" />
+                <path class="hero-compass__dark" d="M170,100 L100,90 L100,100 Z" /><path class="hero-compass__light" d="M170,100 L100,110 L100,100 Z" />
+                <path class="hero-compass__dark" d="M100,170 L110,100 L100,100 Z" /><path class="hero-compass__light" d="M100,170 L90,100 L100,100 Z" />
+                <path class="hero-compass__dark" d="M30,100 L100,110 L100,100 Z" /><path class="hero-compass__light" d="M30,100 L100,90 L100,100 Z" />
+              </g>
+              <text class="hero-compass__letter hero-compass__letter--north" x="100" y="-6">K</text>
+              <text class="hero-compass__letter" x="208" y="101">D</text>
+              <text class="hero-compass__letter" x="100" y="210">G</text>
+              <text class="hero-compass__letter" x="-8" y="101">B</text>
+              <g class="hero-compass__needle" data-sea-needle>
+                <path class="hero-compass__north" d="M100 34 L 105.5 100 L 94.5 100 Z" />
+                <path class="hero-compass__south" d="M94.5 100 L 100 166 L 105.5 100 Z" />
+                <circle class="hero-compass__pivot" cx="100" cy="100" r="5" />
+              </g>
+            </svg>
+            <figcaption>İğne imleci izler; hikâyenin sonunda kuzeyi, yani kanıtı gösterir.</figcaption>
+          </figure>
+
+          <div class="hero__rail" data-hero-fade>
+            <p class="hero__lead" id="hero-lead">
+              KAPtan, Borsa İstanbul şirketlerinin KAP’a düşen bildirimlerini yapay zekâ ajanlarıyla okuyan,
+              yazılı kurallarla süzen ve yalnızca kanıtı olan öneriyi insan onayına sunan bir ders projesi.
+            </p>
+            <a class="pill hero__cta" href="#ajanlar" data-scroll-to="#ajanlar" data-hero-cta>
+              <span class="pill__label">Nasıl çalışır?</span>
+              <span class="pill__chip" aria-hidden="true"></span>
+            </a>
+          </div>
+        </div>
+      </section>
+      <!-- HERO:END -->
+
+      <section class="services" id="ajanlar" aria-labelledby="services-title">
+        <div class="services__pin" data-services-pin>
+          <div class="services__head">
+            <div class="running-head"><span class="running-head__folio" data-folio></span><span><strong>Bölüm 2</strong> · Tayfa</span></div>
+          </div>
+          <!-- The crew as a comic strip: the chapter opener, then one panel per agent (rendered by services-render.js) -->
+          <div class="services__strip" data-services-strip>
+            <header class="services__opener">
+              <h2 class="chapter-title services__title" id="services-title">
+                Sekiz kişilik<span class="chapter-title__indent">tayfa.</span>
+              </h2>
+              <p class="caption-panel services__lead" data-ink-in>Altı yapay zekâ ajanı okur, iki kural katmanı karar verir. Hiçbiri “al” demez.</p>
+            </header>
+            <ul class="services__track" role="list" data-services-track></ul>
+            <!-- WIPE:START — the chapter closes on a double-page chart spread (services-motion.js, page-turn.js,
+                 chart-spread.js). Its left leaf lies closed over the right page, plate side up; as the strip
+                 ends it turns over the gutter, and the course is inked across the chart (chart-course.js). -->
+            <figure class="spread" data-spread>
+              <div class="spread__book" data-spread-book>
+                <div class="spread__page spread__page--right" aria-hidden="true">
+                  <picture>
+                    <source type="image/avif" srcset="/images/generated/harita-1280.avif 1280w, /images/generated/harita-1920.avif 1920w" sizes="(max-width: 767px) 100vw, min(94vw, 122vh)" />
+                    <source type="image/webp" srcset="/images/generated/harita-1280.webp 1280w, /images/generated/harita-1920.webp 1920w" sizes="(max-width: 767px) 100vw, min(94vw, 122vh)" />
+                    <img
+                      class="spread__image spread__image--right"
+                      src="/images/generated/harita-1280.jpg"
+                      srcset="/images/generated/harita-1280.jpg 1280w, /images/generated/harita-1920.jpg 1920w"
+                      sizes="(max-width: 767px) 100vw, min(94vw, 122vh)"
+                      alt=""
+                      width="2400"
+                      height="1600"
+                      loading="eager"
+                      fetchpriority="low"
+                      decoding="async"
+                    />
+                  </picture>
+                </div>
+                <div class="spread__leaf" data-spread-leaf aria-hidden="true">
+                  <div class="spread__face spread__face--front">
+                    <picture>
+                      <source type="image/avif" srcset="/images/generated/harita-1280.avif 1280w, /images/generated/harita-1920.avif 1920w" sizes="(max-width: 767px) 100vw, min(94vw, 122vh)" />
+                      <source type="image/webp" srcset="/images/generated/harita-1280.webp 1280w, /images/generated/harita-1920.webp 1920w" sizes="(max-width: 767px) 100vw, min(94vw, 122vh)" />
+                      <img
+                        class="spread__image spread__image--left"
+                        src="/images/generated/harita-1280.jpg"
+                        srcset="/images/generated/harita-1280.jpg 1280w, /images/generated/harita-1920.jpg 1920w"
+                        sizes="(max-width: 767px) 100vw, min(94vw, 122vh)"
+                        alt=""
+                        width="2400"
+                        height="1600"
+                        loading="eager"
+                        fetchpriority="low"
+                        decoding="async"
+                      />
+                    </picture>
+                    <div class="spread__legend">
+                      <p class="spread__legend-kind">Seyir haritası</p>
+                      <p class="spread__legend-title">Kurgusal kıyı</p>
+                      <p class="spread__legend-meta">Derinlikler metre · Ölçek 1&nbsp;:&nbsp;50&nbsp;000 · Temsili</p>
+                      <p class="spread__legend-scale"><span>0</span><span>5 deniz mili</span></p>
+                    </div>
+                  </div>
+                  <div class="spread__face spread__face--back">
+                    <p class="chapter-title spread__plate-title">Seyir<span class="chapter-title__indent">haritası.</span></p>
+                    <p class="caption-panel caption-panel--flat spread__plate-caption">Okuma bitti. Kararı şimdi kurallar verir.</p>
+                  </div>
+                </div>
+                <svg class="spread__ink" data-spread-ink viewBox="0 0 2400 1600" aria-hidden="true" focusable="false">
+                  <path class="spread__course" data-spread-course d="M200 1440 C270 1416.67 483.33 1345 620 1300 C756.67 1255 908.33 1240 1020 1170 C1131.67 1100 1183.33 976.67 1290 880 C1396.67 783.33 1508.33 658.33 1660 590 C1811.67 521.67 2110 490 2200 470" />
+                  <g class="spread__mark spread__mark--start" data-spread-mark data-at="0"><path d="M182 1440 H218 M200 1422 V1458" /></g>
+                  <g class="spread__mark" data-spread-mark data-at="0.19"><circle cx="620" cy="1300" r="16" /><circle class="spread__dot" cx="620" cy="1300" r="4.5" /><text x="592" y="1278" text-anchor="end">072°</text></g>
+                  <g class="spread__mark" data-spread-mark data-at="0.38"><circle cx="1020" cy="1170" r="16" /><circle class="spread__dot" cx="1020" cy="1170" r="4.5" /><text x="992" y="1148" text-anchor="end">043°</text></g>
+                  <g class="spread__mark" data-spread-mark data-at="0.55"><circle cx="1290" cy="880" r="16" /><circle class="spread__dot" cx="1290" cy="880" r="4.5" /><text x="1262" y="858" text-anchor="end">052°</text></g>
+                  <g class="spread__mark" data-spread-mark data-at="0.76"><circle cx="1660" cy="590" r="16" /><circle class="spread__dot" cx="1660" cy="590" r="4.5" /><text x="1632" y="568" text-anchor="end">077°</text></g>
+                  <g class="spread__mark spread__mark--landfall" data-spread-mark data-at="1"><circle class="spread__ring" data-spread-ring cx="2200" cy="470" r="30" /><circle class="spread__dot" cx="2200" cy="470" r="9" /></g>
+                  <g class="spread__boat" data-spread-boat transform="translate(2200 470)"><g transform="scale(1.1) translate(-80 -104)"><path class="spread__boat-fill" d="M76 26 C 64 48 52 70 40 88 L 76 88 Z" /><path class="spread__boat-fill" d="M81 22 C 100 40 116 66 124 86 L 82 88 Z" /><path class="spread__boat-fill" d="M14 92 C 30 97 110 99 148 88 C 140 101 124 108 96 110 L 52 110 C 34 108 22 102 14 92 Z" /><path class="spread__boat-ink" d="M14 92 C 30 97 110 99 148 88 C 140 101 124 108 96 110 L 52 110 C 34 108 22 102 14 92 Z" /><path class="spread__boat-ink" d="M78 95 L 80 17" /><path class="spread__boat-ink" d="M81 22 C 100 40 116 66 124 86 L 82 88" /><path class="spread__boat-ink" d="M76 26 C 64 48 52 70 40 88 L 76 88" /><path class="spread__boat-ink" d="M83 42 L 107 45 M83 60 L 116 63 M83 76 L 121 78" /><path class="spread__boat-flag" d="M80 17 L 94 21 L 80 25 Z" /></g></g>
+                </svg>
+              </div>
+              <figcaption class="visually-hidden">Kurgusal bir kıyının seyir haritası; üzerine kalkıştan varışa dört dönüm noktalı bir rota çizilir. Temsilidir.</figcaption>
+            </figure>
+            <!-- WIPE:END -->
+          </div>
+        </div>
+      </section>
+
+      <!-- OLAYLAR:START — "Bölüm 3 · Seyir Kuralları" · Sancak Tezgâhı: every rule is static text (mirrors src/data/events.js); src/components/rules-bench adds the mast, the rule switch, the one shared instrument slot and (wide screens, full motion) the pinned scroll sequence -->
+      <section class="rules" id="olaylar" aria-labelledby="rules-title" data-rules-bench data-sticky-quiet>
+        <div class="rules__stage">
+          <div class="running-head"><span class="running-head__folio" data-folio></span><span><strong>Bölüm 3</strong> · Seyir Kuralları</span></div>
+
+          <header class="rules__head">
+            <h2 class="chapter-title rules__title" id="rules-title">
+              Dört olay.<span class="chapter-title__indent">Yalnızca alım.</span>
+            </h2>
+            <p class="rules__lead">KAPtan yalnızca bu dört olay türünde alım önerisi üretir; hiçbiri tutmazsa öneri yok. Tutan kuralın flaması direğe çekilir.<a class="rules__mark" href="#rules-note" aria-label="Dipnot">†</a></p>
+          </header>
+
+          <div class="rules__sky">
+            <svg aria-hidden="true" class="rules__sea" viewBox="0 0 640 120" preserveAspectRatio="none" focusable="false">
+              <path class="rules__horizon" d="M0 14H640"/>
+              <path d="M0 40q12 -4 24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0t24 0"/>
+              <path d="M48 64q14 -3.5 28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0t28 0"/>
+              <path d="M120 88q16 -3 32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0t32 0"/>
+              <path d="M220 110q18 -2.5 36 0t36 0t36 0t36 0t36 0t36 0t36 0t36 0t36 0t36 0t36 0"/>
+            </svg>
+            <div class="rules__mast" data-mast aria-hidden="true"></div>
+          </div>
+
+          <div class="rules__bench">
+            <ol class="articles" aria-label="Olay türleri E1–E4">
+              <li class="article is-active" id="madde-e1" data-rule="E1">
+                <h3 class="article__name"><span class="rule-code">E1</span> <span class="article__title">Pay geri alım</span></h3>
+                <p class="article__line"><span class="article__condition">Şirket, 10 seans içinde sermayesinin en az %0,25’i kadar kendi payını geri alırsa.</span> <span class="article__hold"><span class="article__days">20–40 gün</span> tutulur.</span></p>
+              </li>
+              <li class="article" id="madde-e2" data-rule="E2">
+                <h3 class="article__name"><span class="rule-code">E2</span> <span class="article__title">Yönetici ya da ana ortak alımı</span></h3>
+                <p class="article__line"><span class="article__condition">Bir yönetici ya da ana ortak, şirketin payını aldığını bildirirse.</span> <span class="article__trigger">Sayısal eşik yok: tetikleyici bildirimin kendisi. Büyüklüğünü sonraki adımlar tartar.</span> <span class="article__hold"><span class="article__days">20–60 gün</span> tutulur.</span></p>
+              </li>
+              <li class="article" id="madde-e3" data-rule="E3">
+                <h3 class="article__name"><span class="rule-code">E3</span> <span class="article__title">Yeni iş ilişkisi ya da ihale</span></h3>
+                <p class="article__line"><span class="article__condition">Yıllıklandırılmış tutar, şirketin yıllık gelirinin en az %10’una ulaşırsa.</span> <span class="article__hold"><span class="article__days">5 gün</span> tutulur.</span></p>
+              </li>
+              <li class="article" id="madde-e4" data-rule="E4">
+                <h3 class="article__name"><span class="rule-code">E4</span> <span class="article__title">Finansal sonuç</span></h3>
+                <p class="article__line"><span class="article__condition">Şirket finansal sonuçlarını bildirdiğinde.</span> <span class="article__trigger">Sayısal eşik yok: tetikleyici bildirimin kendisi. Büyüklüğünü sonraki adımlar tartar.</span> <span class="article__hold"><span class="article__days">5–10 gün</span> tutulur.</span></p>
+              </li>
+            </ol>
+
+            <div class="rules__slot" id="rules-slot">
+              <p class="rules__sample">Temsili · ÖRNEK ENERJİ A.Ş.</p>
+              <div class="rules__instrument" data-instrument="E1"></div>
+              <div class="rules__instrument" data-instrument="E2"></div>
+              <div class="rules__instrument" data-instrument="E3"></div>
+              <div class="rules__instrument" data-instrument="E4"></div>
+              <div class="rules__instrument" data-instrument="leak"></div>
+            </div>
+          </div>
+
+          <div class="rules__filters" id="filtreler">
+            <h3 class="visually-hidden">Ek — Filtreler</h3>
+            <p class="rules__filter" id="filtre-sizinti">Filtreler bir flamayı yalnızca indirir. <span class="rules__filter-fact">Ön eleme, yapay zekâdan önce işlem görebilirlik, tedbir ve evreni denetler; uymayan bildirim elenir. Sızıntı filtresi: son 5 seansta %8’den fazla yükseliş varsa öneri atlanır ya da yarıya indirilir.</span> <button type="button" class="rules__try" data-show="leak" aria-controls="rules-slot" hidden>Sızıntıyı dene</button></p>
+          </div>
+        </div>
+
+        <div class="rules__after">
+          <p class="rules__filter rules__filter--quiet" id="filtre-risk">Risk kapısı (<span class="rule-code">R01–R16</span>) bir öneriyi yalnızca küçültür ya da reddeder · işlem başına %0,5 risk, pozisyon ≤ %10 · gün içinde −%1’de yeni emir durur · zirveden −%5’te kill switch açık emirleri iptal eder; pozisyon satılmaz.</p>
+          <p class="rules__footnote" id="rules-note"><span aria-hidden="true">†</span> Yalnızca alım; kaldıraç yok. Otomatik emir yok; her öneriyi bir insan onaylar. Beklenti: BIST-100’e göre yılda 0 ile +%5; sıfır da olabilir. Sanal para. Yatırım tavsiyesi değildir.</p>
+        </div>
+        <p class="folio">3</p>
+      </section>
+      <!-- OLAYLAR:END -->
+
+      <!-- PUSULA:START -->
+      <!-- "350'den 1'e": scroll-driven ink scene (src/components/compass, Canvas 2D, full-bleed behind the copy). Without it (reduced motion, no script) the final still and the four acts as text stand in. -->
+      <section class="pusula" id="pusula" aria-labelledby="pusula-title" data-pusula="static">
+        <div class="pusula__stage">
+          <a class="pusula__skip" href="#yolculuk" data-scroll-to="#yolculuk">Sahneyi atla · Rota</a>
+          <div class="running-head pusula__head"><span class="running-head__folio" data-folio></span><span><strong>Ara</strong> · 350’den 1’e</span></div>
+          <div class="pusula__copy">
+            <h2 class="chapter-title pusula__title" id="pusula-title" data-pusula-title>350 bildirim.<span class="chapter-title__indent">Tek yön.</span></h2>
+            <p class="pusula__counter" aria-hidden="true" data-pusula-tag>
+              <span class="pusula__count" data-pusula-count>1</span>
+              <span class="pusula__unit" data-pusula-unit>yön · kanıtın gösterdiği</span>
+            </p>
+            <p class="pusula__text">
+              Günde yaklaşık 350 bildirim geliyor; çoğu gürültü. KAPtan bunları eler; kurala uyan ve kanıtı olan
+              öneriyi gerekçesiyle bir insanın onayına sunar.
+            </p>
+            <dl class="pusula__specs">
+              <div class="pusula__spec caption-panel" data-ink-in><dt class="caption-panel__meta">Girdi</dt><dd>Günde ~350 bildirim</dd></div>
+              <div class="pusula__spec caption-panel" data-ink-in><dt class="caption-panel__meta">Çıktı</dt><dd>Gerekçeli öneri</dd></div>
+              <div class="pusula__spec caption-panel" data-ink-in><dt class="caption-panel__meta">Son söz</dt><dd>İnsan</dd></div>
+            </dl>
+            <div class="pusula__dock" data-pusula-dock>
+              <ol class="pusula__acts" aria-label="Sahnenin dört perdesi">
+                <li class="pusula__act caption-panel" data-pusula-act>
+                  <span class="caption-panel__meta">I. Gürültü</span>Günde yaklaşık 350 bildirim geliyor; çoğu gürültü. KAPtan hepsini süzer.
+                </li>
+                <li class="pusula__act caption-panel" data-pusula-act>
+                  <span class="caption-panel__meta">II. Kanıt</span>Üç süzgeç: tür, kanıt, kural. Kanıtı olmayanın üstü çizilir.
+                </li>
+                <li class="pusula__act caption-panel" data-pusula-act>
+                  <span class="caption-panel__meta">III. Onay</span>Geriye tek öneri kalır. Kurallar süzer; mührü bir insan basar.
+                </li>
+                <li class="pusula__act caption-panel" data-pusula-act>
+                  <span class="caption-panel__meta">IV. Yön</span>İğne, kanıtı olan yönde durur. Otomatik emir yok; son söz insanın.
+                </li>
+              </ol>
+              <a class="pill pusula__cta" href="#yolculuk" data-scroll-to="#yolculuk">
+                <span class="pill__label">Rotayı izleyin</span>
+                <span class="pill__chip" aria-hidden="true"></span>
+              </a>
+            </div>
+          </div>
+          <figure class="pusula__visual" data-pusula-visual>
+            <picture class="pusula__still">
+              <source type="image/avif" srcset="/images/generated/pusula-01-900.avif 900w, /images/generated/pusula-01-1400.avif 1400w" sizes="(max-width: 767px) 100vw, 60vw" />
+              <source type="image/webp" srcset="/images/generated/pusula-01-900.webp 900w, /images/generated/pusula-01-1400.webp 1400w" sizes="(max-width: 767px) 100vw, 60vw" />
+              <img
+                src="/images/generated/pusula-01-1400.webp"
+                width="1400"
+                height="1073"
+                alt="Mürekkeple çizilmiş kurgusal bir öneri fişi, üzerinde kırmızı ONAYLANDI mührü; yanında mürekkep çizimi bir pusula, kırmızı iğnesi kuzeyi gösteriyor"
+                loading="lazy"
+                decoding="async"
+              />
+            </picture>
+            <ul class="pusula__labels" aria-hidden="true">
+              <li class="pusula__label" data-pusula-label><strong>Sınıflandır</strong><span>tür: <span class="rule-code">E1–E4</span>, filtre, diğer</span></li>
+              <li class="pusula__label" data-pusula-label><strong>Kanıtla</strong><span>benzer geçmiş olaylar</span></li>
+              <li class="pusula__label" data-pusula-label><strong>Kural</strong><span>risk kapısı <span class="rule-code">R01–R16</span></span></li>
+            </ul>
+            <figcaption class="pusula__caption">Temsili görsel ve sayım</figcaption>
+          </figure>
+          <div class="pusula__rail" aria-hidden="true" data-pusula-rail>
+            <ol class="pusula__steps">
+              <li data-pusula-step><span class="pusula__act-num">I.</span> Gürültü</li>
+              <li data-pusula-step><span class="pusula__act-num">II.</span> Kanıt</li>
+              <li data-pusula-step><span class="pusula__act-num">III.</span> Onay</li>
+              <li data-pusula-step><span class="pusula__act-num">IV.</span> Yön</li>
+            </ol>
+            <div class="pusula__scale"><span class="pusula__scale-ink"></span><span class="pusula__playhead"></span></div>
+          </div>
+        </div>
+      </section>
+      <!-- PUSULA:END -->
+
+      <section class="rota" id="yolculuk" aria-labelledby="rota-title">
+        <!-- Where the course begins: the top of the chapter, under the Pusula compass's pivot (the W4 hand-off).
+             rota-course.js draws the course from this point; move it with --rota-start-x. -->
+        <span class="rota__start" data-rota-start aria-hidden="true"></span>
+        <div class="running-head"><span class="running-head__folio" data-folio></span><span><strong>Bölüm 4</strong> · Rota</span></div>
+        <header class="rota__head">
+          <h2 class="chapter-title rota__title" id="rota-title">Bir bildirimin <span class="chapter-title__indent">rotası.</span></h2>
+          <p class="rota__lead">
+            Tek bir bildirimin KAPtan içindeki yolu: KAP’ta görüldüğü dakikadan ertesi seansın açılışına kadar dört
+            durak. Yapay zekâ kanıt toplar, kurallar karar verir, bir insan onaylar.
+          </p>
+        </header>
+
+        <!-- The course: rota-course.js draws the dotted line through the waypoint marks and sails the boat on it. -->
+        <div class="rota__chart" data-rota-chart>
+          <!-- The inked sea the course crosses, one landmark per waypoint (rota-sea-render.js): the hero's water after the storm. -->
+          <svg class="rota__sea" data-rota-sea aria-hidden="true" focusable="false"></svg>
+          <svg class="rota__course" data-rota-svg aria-hidden="true" focusable="false">
+            <defs>
+              <mask id="rota-reveal" maskUnits="userSpaceOnUse" x="0" y="0" width="0" height="0">
+                <path class="rota__reveal" data-rota-path data-rota-reveal />
+              </mask>
+            </defs>
+            <path class="rota__plan" data-rota-path />
+            <path class="rota__line" data-rota-path mask="url(#rota-reveal)" />
+          </svg>
+
+          <ol class="rota__legs" role="list">
+            <li class="rota-leg rota-leg--left" data-rota-leg>
+              <span class="rota-leg__mark" data-rota-mark aria-hidden="true"><span class="rota-leg__numeral">I</span></span>
+              <div class="caption-panel rota-leg__panel" data-ink-in>
+                <div class="rota-leg__plate" data-ritual-media="yolculuk-1"></div>
+                <div class="rota-leg__body">
+                  <p class="caption-panel__meta"><span class="visually-hidden">Durak I · </span><time datetime="14:05">14:05</time></p>
+                  <h3 class="rota-leg__name">Yakala</h3>
+                  <p class="rota-leg__text">Bildirim düşer; ilk görüldüğü an kaydedilir. Yapay zekâya gitmeden önce ön eleme işlem görebilirliğe, SPK tedbirlerine ve evrene bakar.</p>
+                </div>
+              </div>
+            </li>
+            <li class="rota-leg rota-leg--right" data-rota-leg>
+              <span class="rota-leg__mark" data-rota-mark aria-hidden="true"><span class="rota-leg__numeral">II</span></span>
+              <div class="caption-panel rota-leg__panel" data-ink-in>
+                <div class="rota-leg__plate" data-ritual-media="yolculuk-2"></div>
+                <div class="rota-leg__body">
+                  <p class="caption-panel__meta"><span class="visually-hidden">Durak II · </span><time datetime="14:06">14:06</time></p>
+                  <h3 class="rota-leg__name">Anla</h3>
+                  <p class="rota-leg__text">Sınıflandırıcı türünü bulur: <span class="rule-code">E1–E4</span>, filtre ya da diğer. Okuyucu tutarı, karşı tarafı ve süreyi çıkarır; Önemlilik şirketin finansallarını getirir.</p>
+                </div>
+              </div>
+            </li>
+            <li class="rota-leg rota-leg--left" data-rota-leg>
+              <span class="rota-leg__mark" data-rota-mark aria-hidden="true"><span class="rota-leg__numeral">III</span></span>
+              <div class="caption-panel rota-leg__panel" data-ink-in>
+                <div class="rota-leg__plate" data-ritual-media="yolculuk-3"></div>
+                <div class="rota-leg__body">
+                  <p class="caption-panel__meta"><span class="visually-hidden">Durak III · </span><time datetime="14:09">14:09</time></p>
+                  <h3 class="rota-leg__name">Kanıtla</h3>
+                  <p class="rota-leg__text">Kanıt ajanı benzer geçmiş olayları getirilerini görmeden seçer; istatistiği kod hesaplar. Şüpheci açık arar, Uyum tedbirleri ve prompt-injection’ı denetler.</p>
+                </div>
+              </div>
+            </li>
+            <li class="rota-leg rota-leg--right rota-leg--sign" data-rota-leg>
+              <span class="rota-leg__mark" data-rota-mark aria-hidden="true"><span class="rota-leg__numeral">IV</span></span>
+              <div class="caption-panel rota-leg__panel" data-ink-in>
+                <div class="rota-leg__plate" data-ritual-media="yolculuk-4"></div>
+                <div class="rota-leg__body">
+                  <p class="caption-panel__meta rota-leg__signed">
+                    <span><span class="visually-hidden">Durak IV · </span>Ertesi seans, <time datetime="09:50">09:50</time></span>
+                    <!-- The human's signature inks across the panel as the boat reaches IV. -->
+                    <svg class="rota-leg__signature" viewBox="0 0 200 44" aria-hidden="true" focusable="false">
+                      <path pathLength="1" d="M4 31 C 12 9 22 5 20 27 C 19 37 30 35 36 22 C 42 10 49 13 46 26 C 44 35 56 33 62 20 C 67 11 73 14 70 25 C 68 33 80 31 88 22 C 96 13 104 17 108 25 C 115 35 132 24 150 20 C 166 17 180 21 196 14 M 26 39 C 76 35 138 37 190 31" />
+                    </svg>
+                  </p>
+                  <h3 class="rota-leg__name">Onayla</h3>
+                  <p class="rota-leg__text">Kural motoru ve <span class="rule-code">R01–R16</span> risk kapısı karar verir; gerekçeli öneri insan onayına gider. Onaysız öneri 09:50’de düşer.</p>
+                </div>
+              </div>
+            </li>
+          </ol>
+
+          <!-- Landfall: the harbour ring inks closed round the port, the boat moors, the folio stands on the quay. -->
+          <div class="rota__harbour">
+            <span class="rota__port" data-rota-port aria-hidden="true">
+              <svg class="rota__ring" viewBox="-100 -36 200 72" focusable="false">
+                <ellipse rx="94" ry="28" pathLength="1" data-rota-ring />
+              </svg>
+              <svg class="rota__mooring" viewBox="0 0 180 22" focusable="false">
+                <path d="M8 8 C 40 6.4 80 6 118 7.2 C 136 7.8 150 8.6 168 8.2 C 150 10.2 120 10 80 9.8 C 50 9.8 26 10 8 8 Z" />
+                <path opacity="0.45" d="M36 17 C 60 15.8 96 15.6 130 16.6 C 108 18.4 70 18.4 36 17 Z" />
+              </svg>
+            </span>
+            <svg class="rota__quay" viewBox="0 0 1000 24" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+              <path d="M0 9 C 200 7.6 420 8.8 640 7.8 C 800 7.2 920 8.4 1000 8 L 1000 13 C 900 13.6 760 12.8 600 13.6 C 400 14.4 180 13 0 14 Z" />
+              <path opacity="0.4" d="M0 19 C 260 18 520 19.4 1000 18.4 L 1000 21 C 600 21.6 300 20.6 0 21.4 Z" />
+            </svg>
+            <p class="folio rota__folio" aria-hidden="true">4</p>
+            <p class="rota__note">
+              Saatler temsilidir. Değişmeyen tek saat 09:50: onaylanmayan öneri ertesi seansın 09:50’sinde düşer. Her
+              durak hash zincirli denetim kaydına yazılır.
+            </p>
+          </div>
+
+          <!-- The hero's inked boat, returning: it sails the course and moors in the harbour. -->
+          <svg class="rota__boat" data-rota-boat viewBox="0 0 160 120" aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id="rota-wake-fade" gradientUnits="userSpaceOnUse" x1="-96" y1="0" x2="18" y2="0">
+                <stop offset="0" stop-color="#121318" stop-opacity="0" />
+                <stop offset="1" stop-color="#121318" stop-opacity="0.85" />
+              </linearGradient>
+            </defs>
+            <g class="rota__boat-wake" data-rota-wake>
+              <path d="M16 101 C -8 99 -40 104 -92 100" />
+              <path d="M22 108 C 0 110 -26 114 -64 112" />
+              <path d="M12 95 C -4 91 -22 92 -46 90" />
+            </g>
+            <g class="rota__boat-hull">
+              <path class="rota__boat-fill" d="M76 26 C 64 48 52 70 40 88 L 76 88 Z" />
+              <path class="rota__boat-fill" d="M81 22 C 100 40 116 66 124 86 L 82 88 Z" />
+              <path class="rota__boat-fill" d="M14 92 C 30 97 110 99 148 88 C 140 101 124 108 96 110 L 52 110 C 34 108 22 102 14 92 Z" />
+              <path class="rota__boat-ink" d="M14 92 C 30 97 110 99 148 88 C 140 101 124 108 96 110 L 52 110 C 34 108 22 102 14 92 Z" />
+              <path class="rota__boat-ink" d="M20 97 C 60 102 110 102 142 94" />
+              <path class="rota__boat-ink" d="M78 95 L 80 17" />
+              <path class="rota__boat-ink" d="M81 22 C 100 40 116 66 124 86 L 82 88" />
+              <path class="rota__boat-ink" d="M76 26 C 64 48 52 70 40 88 L 76 88" />
+              <path class="rota__boat-ink" d="M83 42 L 107 45 M83 60 L 116 63 M83 76 L 121 78" />
+              <path class="rota__boat-ink" d="M58 94 L 57 83 M53 88 L 62 86" />
+              <circle class="rota__boat-ink" cx="57" cy="79" r="3.2" />
+              <path class="rota__boat-flag" d="M80 17 L 94 21 L 80 25 Z" />
+              <path class="rota__boat-ink" d="M6 99 C 10 93 16 93 20 97 M140 97 C 146 92 152 92 156 97" />
+            </g>
+          </svg>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer colophon" id="kolofon" aria-labelledby="colophon-title">
+      <div class="running-head"><span class="running-head__folio" data-folio></span><span>Kolofon</span></div>
+      <div class="colophon__page">
+        <h2 class="colophon__title" id="colophon-title">Kolofon</h2>
+        <p class="colophon__lead">
+          KAPtan, Borsa İstanbul şirketlerinin KAP bildirimleri için çok ajanlı bir yapay zekâ ders projesidir. Yapay
+          zekâ okur, kurallar karar verir, insan onaylar. Otomatik emir yok; testler sanal parayla.
+        </p>
+        <p class="colophon__facts">
+          SENG 429 · Enterprise Application Development Lab<br />
+          Çankaya Üniversitesi · Dr. Bilgin Avenoğlu<br />
+          Güz 2026 · Pzt 13:20 · MB06
+        </p>
+        <p class="colophon__type">Dizgi: Bodoni Moda, Inter.</p>
+
+        <h3 class="colophon__subhead">Tayfa</h3>
+        <!-- Placeholder names; the four roles are fixed (src/config/site.js → SITE.team). -->
+        <dl class="colophon__crew">
+          <div class="colophon__member"><dt>Üye 1</dt><dd>Veri &amp; RAG</dd></div>
+          <div class="colophon__member"><dt>Üye 2</dt><dd>Ajanlar</dd></div>
+          <div class="colophon__member"><dt>Üye 3</dt><dd>Strateji-Risk-Yürütme</dd></div>
+          <div class="colophon__member"><dt>Üye 4</dt><dd>Frontend &amp; Değerlendirme</dd></div>
+        </dl>
+
+        <!-- Project links come from SITE.links (src/config/site.js); a missing URL stays a muted "· yakında" line, never a dead "#". -->
+        <ul class="colophon__links" role="list">
+          <li><span class="site-footer__link" data-site-link="proposalUrl">Proposal</span></li>
+          <li><span class="site-footer__link" data-site-link="docsUrl">Dokümanlar</span></li>
+          <li><span class="site-footer__link" data-site-link="githubUrl">GitHub</span></li>
+          <li><button type="button" class="site-footer__link" data-action="open-about" aria-haspopup="dialog">Proje hakkında</button></li>
+          <li><button type="button" class="site-footer__link" data-action="open-legal" aria-haspopup="dialog">Yasal uyarı</button></li>
+        </ul>
+
+        <p class="colophon__legal">
+          Ders projesidir. Yatırım tavsiyesi değildir. KAP, Borsa İstanbul ve SPK ile bağlantılı değildir. Görsellerdeki
+          bildirimler ve şirketler kurgusaldır. © 2026 KAPtan ekibi.
+        </p>
+
+        <p class="colophon__end">— Son —</p>
+        <span class="colophon__mark" aria-hidden="true"><svg focusable="false"><use href="#kaptan-logo" /></svg></span>
+      </div>
+    </footer>
+
+    <aside class="sticky-cta" data-sticky-cta data-visible="false" aria-label="Hızlı erişim" inert>
+      <button type="button" class="sticky-cta__action sticky-cta__action--toc" data-action="open-menu" aria-haspopup="dialog">İçindekiler</button>
+      <button type="button" class="sticky-cta__action sticky-cta__action--demo" data-action="open-demo" aria-haspopup="dialog">Demo akışı</button>
+    </aside>
+
+    <div id="overlays"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

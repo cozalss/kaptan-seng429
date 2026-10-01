@@ -1,0 +1,147 @@
+/* Overlay primitive: a paper scrim + a sliding drawer / an inking modal panel. Every panel is a
+   sheet laid on the book: square, an ink border and a hard ink shadow, never a blur shadow.
+   Component-specific rules live in their own files (see src/ui/index.js for the import order);
+   this file only holds what every overlay shares. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.overlay[hidden] {
+  display: none;
+}
+
+/* The page stays visible under a veil of paper, softened like print seen through a sheet. */
+.overlay__scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--color-scrim);
+  opacity: 0;
+  transition: opacity var(--duration-overlay) var(--ease-out-expo);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+.overlay[data-state='open'] .overlay__scrim {
+  opacity: 1;
+}
+
+.overlay__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--color-paper);
+  color: var(--color-sumi);
+}
+
+.overlay__panel:focus {
+  outline: none;
+}
+
+.overlay--drawer .overlay__panel {
+  width: 100%;
+  border-left: var(--ink-border);
+  transform: translateX(100%);
+  transition: transform var(--duration-overlay) var(--ease-out-expo);
+}
+
+.overlay--drawer[data-state='open'] .overlay__panel {
+  transform: translateX(0);
+}
+
+.overlay--modal {
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modals ink in: the sheet is revealed from the left edge, like the caption panels. */
+.overlay--modal .overlay__panel {
+  height: auto;
+  max-height: calc(100vh - 2 * var(--gutter));
+  max-height: calc(100svh - 2 * var(--gutter));
+  width: calc(100% - (2 * var(--gutter)));
+  border: var(--ink-border);
+  border-radius: 0;
+  box-shadow: var(--shadow-panel-lg);
+  padding: var(--space-xl) var(--space-xxl) var(--space-xxl);
+  background: var(--color-paper-panel);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path var(--duration-overlay) var(--ease-out-expo);
+}
+
+.overlay--modal[data-state='open'] .overlay__panel {
+  /* the outset keeps the hard shadow inside the clip */
+  clip-path: inset(0 -12px -12px 0);
+}
+
+/* Square 44×44 hit area around the ✕; the negative margin keeps the glyph where a 24px box
+   would put it, so headers don't grow. */
+.overlay__close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -10px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  color: var(--color-sumi);
+  font-size: var(--text-body-md);
+  line-height: 1;
+  transition:
+    background-color var(--duration-normal) var(--ease-out-expo),
+    border-color var(--duration-normal) var(--ease-out-expo);
+}
+
+.overlay__close:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) {
+  .overlay__close:hover {
+    border-color: var(--color-sumi);
+    background: var(--color-paper-panel);
+  }
+}
+
+/* ---------- Mobile: drawers go full width, modals take the gutter ---------- */
+
+@media (max-width: 480px) {
+  #demo-drawer .overlay__panel,
+  #menu-drawer .overlay__panel {
+    max-width: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .overlay--modal .overlay__panel {
+    width: calc(100% - 2 * var(--gutter-panel));
+    max-height: calc(100svh - 2 * var(--gutter-panel) - 8px);
+    padding: var(--space-lg) var(--space-lg) var(--space-xl);
+  }
+}
+
+/* ---------- Reduced motion: opacity-only fades ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay__panel,
+  .overlay--modal .overlay__panel {
+    opacity: 0;
+    clip-path: none;
+    transform: none !important;
+    transition: opacity var(--duration-fast) linear;
+  }
+
+  .overlay[data-state='open'] .overlay__panel {
+    opacity: 1;
+  }
+}

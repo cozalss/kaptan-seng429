@@ -1,0 +1,173 @@
+.site-header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: var(--z-header);
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--gutter);
+  color: var(--color-brand);
+  pointer-events: none;
+  background-color: transparent;
+  transition:
+    background-color var(--duration-slow) var(--ease-out-expo),
+    backdrop-filter var(--duration-slow) var(--ease-out-expo);
+}
+
+/* Over the hero sea: a soft paper scrim keeps the navy text ≥ 4.5:1 (state: header.js). */
+.site-header::before,
+.site-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-slow) var(--ease-out-expo);
+}
+
+.site-header::before {
+  top: 0;
+  z-index: -1;
+  /* tight band: covers the text line only, then fades out fast so the hair below stays clear */
+  height: calc(var(--header-height) + 12px);
+  /* ≥ 72% paper behind the text line keeps even the stormy sky wash ≥ 4.5:1 against the navy */
+  background: linear-gradient(
+    to bottom,
+    rgb(243 241 236 / 0.84) 0%,
+    rgb(243 241 236 / 0.76) 62%,
+    rgb(243 241 236 / 0.25) 85%,
+    rgb(243 241 236 / 0) 100%
+  );
+}
+
+/* Scrolled: the paper itself (never white), a light blur and an ink hairline, like a page's head rule. */
+.site-header::after {
+  bottom: 0;
+  height: 1px;
+  background: var(--color-sumi);
+  opacity: 0;
+}
+
+.site-header[data-scrolled='true'] {
+  background-color: color-mix(in srgb, var(--color-paper) 90%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.site-header[data-scrolled='true']::before {
+  opacity: 0;
+}
+
+.site-header[data-scrolled='true']::after {
+  opacity: 1;
+}
+
+.site-header > * {
+  pointer-events: auto;
+}
+
+.site-header__logo {
+  display: block;
+  /* #kaptan-logo viewBox is 212 × 64 (3.31:1) */
+  width: 186px;
+  height: 56px;
+  transition: transform var(--duration-normal) var(--ease-out-expo);
+}
+
+.site-header__logo svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+@media (hover: hover) {
+  .site-header__logo:hover {
+    transform: scale(1.04);
+  }
+}
+
+/* "Proje · İçindekiler · Demo": sentence case Inter, separated by middle dots like a running head. */
+.site-header__nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 450;
+  line-height: 1;
+  color: var(--color-sumi);
+  white-space: nowrap;
+}
+
+.nav-link + .nav-link::before {
+  content: '·';
+  position: absolute;
+  left: -3px;
+  color: var(--color-muted);
+  pointer-events: none;
+}
+
+/* An ink underline draws in from the left on hover. */
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 12px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--duration-normal) var(--ease-out-expo);
+}
+
+@media (hover: hover) {
+  .nav-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}
+
+.nav-link:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -4px;
+}
+
+.nav-link--demo {
+  margin-right: -10px;
+}
+
+@media (max-width: 767px) {
+  .site-header {
+    padding: 0 var(--gutter);
+  }
+
+  /* 146 × 44 keeps the mark's 3.31:1 ratio and is itself a 44px touch target */
+  .site-header__logo {
+    width: 146px;
+    height: 44px;
+  }
+
+  .nav-link--about {
+    display: none;
+  }
+
+  .nav-link--about + .nav-link::before {
+    content: none;
+  }
+
+  .nav-link {
+    padding: 0 8px;
+  }
+}

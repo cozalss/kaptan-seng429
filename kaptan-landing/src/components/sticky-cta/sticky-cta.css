@@ -1,0 +1,73 @@
+/* ---------- Mobile sticky bar: one small ink tab, "İçindekiler · Demo akışı" ---------- */
+:root {
+  /* 44px touch target + the 1.5px ink border top and bottom = 47px, under the 48px cap */
+  --sticky-cta-height: 44px;
+}
+
+.sticky-cta {
+  display: none;
+}
+
+/* A small ink tab resting on the page's lower right corner: paper sheet, ink border, hard shadow.
+   It is only as wide as its two labels, so it covers as little of the page as possible. */
+@media (max-width: 767px) {
+  .sticky-cta {
+    position: fixed;
+    right: var(--gutter-panel);
+    bottom: calc(var(--gutter-panel) + env(safe-area-inset-bottom, 0px));
+    z-index: calc(var(--z-overlay) - 1);
+    display: flex;
+    background: var(--color-paper-panel);
+    border: var(--ink-border);
+    box-shadow: var(--shadow-panel);
+    transform: translateY(calc(100% + 2 * var(--gutter-panel) + env(safe-area-inset-bottom, 0px)));
+    transition: transform var(--duration-overlay) var(--ease-out-expo);
+  }
+
+  .sticky-cta[data-visible='true'] {
+    transform: translateY(0);
+  }
+
+  /* Keep the footer's last line clear of the tab */
+  body:has(.sticky-cta) .site-footer {
+    padding-bottom: calc(72px + var(--sticky-cta-height) + var(--gutter-panel) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.sticky-cta__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--sticky-cta-height);
+  padding: 0 14px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--color-sumi);
+  transition:
+    background-color var(--duration-normal) var(--ease-out-expo),
+    color var(--duration-normal) var(--ease-out-expo);
+}
+
+.sticky-cta__action:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -5px;
+}
+
+.sticky-cta__action + .sticky-cta__action {
+  border-left: var(--ink-border);
+}
+
+/* Pressed: the indigo wash of the ink button. */
+.sticky-cta__action:active {
+  background: var(--color-wash);
+  color: var(--color-paper-panel);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticky-cta {
+    transition: opacity var(--duration-fast) linear;
+  }
+}

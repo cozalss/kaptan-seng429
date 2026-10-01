@@ -1,0 +1,271 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* keep the gutter when scroll is locked so nothing shifts */
+  scrollbar-gutter: stable;
+  /* anchor jumps (native and Lenis) land below the fixed header */
+  scroll-padding-top: var(--header-height);
+  /* hairline page scrollbar (Firefox + Chromium 121+; WebKit fallback below) */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-rule-soft) transparent;
+}
+
+/* Safari / older Chromium: the same hairline thumb on a clear track. */
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+html::-webkit-scrollbar-thumb {
+  background-color: var(--color-rule-soft);
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  background-clip: content-box;
+}
+html::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-muted);
+}
+
+/* The attribute always wins over component display rules (overlays, success panel, tab panels). */
+[hidden] {
+  display: none !important;
+}
+
+/* ...and above the mobile sticky bar */
+@media (max-width: 767px) {
+  html {
+    scroll-padding-bottom: calc(var(--sticky-cta-height, 64px) + env(safe-area-inset-bottom, 0px) + 16px);
+  }
+}
+
+/* Full-bleed stages start at the very top: the header floats over them by design. */
+#hero,
+#ajanlar {
+  scroll-margin-top: calc(var(--header-height) * -1);
+}
+
+/* Lenis recommended base styles (hidden, not clip, so the gutter stays reserved) */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: hidden;
+}
+.lenis [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-md);
+  line-height: 1.375;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  text-shadow: none;
+}
+
+/* Photos and decorative SVG never flash a navy block when the page is select-all'ed. */
+img::selection,
+svg::selection {
+  background: transparent;
+}
+
+img,
+video,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+p,
+ul {
+  margin: 0;
+}
+
+/* Longhand text-wrap-style only: the shorthand would also reset text-wrap-mode and undo
+   white-space: nowrap inherited from a parent (marquee, chips, labels). Wrapping only —
+   split-text breaks lines at <br>, so balanced headings still split into the same lines. */
+p,
+li,
+dd {
+  text-wrap-style: pretty;
+}
+
+h1,
+h2,
+h3,
+.service-card__name {
+  text-wrap-style: balance;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--color-brand);
+}
+
+ul[role='list'] {
+  list-style: none;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+}
+
+/* A chapter that only receives the focus as a jump lands on it (main.js bindScrollLinks): no ring
+   round a whole page. */
+main > section[tabindex='-1']:focus,
+footer[tabindex='-1']:focus {
+  outline: none;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  top: var(--space-sm);
+  left: var(--space-sm);
+  z-index: calc(var(--z-loader) + 1);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--color-ink-pure);
+  color: var(--color-on-chip);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-button);
+  transform: translateY(-200%);
+  transition: transform var(--duration-normal) var(--ease-out-expo);
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* ---------- Ink button (class names kept from the old pill): a square paper panel with an ink
+   border and a hard offset shadow; hover washes it indigo, pressing prints it flat onto the page. ---------- */
+.pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: 44px;
+  padding: 10px 14px 10px 18px;
+  background: var(--color-paper-panel);
+  color: var(--color-sumi);
+  border: var(--ink-border);
+  border-radius: 0;
+  box-shadow: var(--shadow-panel);
+  font-family: var(--font-sans);
+  font-size: var(--text-button);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-normal) var(--ease-out-expo),
+    color var(--duration-normal) var(--ease-out-expo),
+    box-shadow var(--duration-fast) var(--ease-out-expo),
+    transform var(--duration-fast) var(--ease-out-expo);
+}
+
+/* The mark: a short inked arrow instead of the old "+" chip. */
+.pill__chip {
+  position: relative;
+  flex: none;
+  width: 22px;
+  height: 12px;
+  transition: transform var(--duration-slow) var(--ease-out-expo);
+}
+
+.pill__chip::before,
+.pill__chip::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+}
+
+.pill__chip::before {
+  left: 0;
+  height: var(--ink-line);
+  background: currentColor;
+  transform: translateY(-50%);
+}
+
+.pill__chip::after {
+  width: 8px;
+  height: 8px;
+  border-top: var(--ink-line) solid currentColor;
+  border-right: var(--ink-line) solid currentColor;
+  transform: translate(-1px, -50%) rotate(45deg);
+}
+
+@media (hover: hover) {
+  .pill:hover {
+    background: var(--color-wash);
+    color: var(--color-paper-panel);
+  }
+  .pill:hover .pill__chip {
+    transform: translateX(4px);
+  }
+}
+
+.pill:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 var(--color-sumi);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

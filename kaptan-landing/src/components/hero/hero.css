@@ -1,0 +1,507 @@
+/* ---------- Hero — "Fırtınada kanıt" ----------
+   A graphic-novel opening after SBS "The Boat": an ink sea on rice paper (WebGL, sea/), a boat
+   inked by hand, the Bodoni headline swaying with the swell, caption panels told as the storm
+   passes, and a compass whose needle ends on north. */
+.hero {
+  position: relative;
+  /* 160vh of scroll: the storm passes, the camera moves in, the captions are told, then hand-off */
+  height: 260vh;
+  background: var(--color-paper);
+  color: var(--color-sumi);
+}
+
+.hero__stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh; /* small viewport: no jump when mobile browser chrome shows/hides */
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  padding: calc(var(--header-height) + 10px) var(--gutter) clamp(20px, 3.2vh, 36px);
+  background: var(--color-paper);
+}
+
+/* During the ring aperture the stage is clipped to a circle; keep the page around it white. */
+.is-aperture .hero {
+  background: var(--color-canvas);
+}
+
+.hero__media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.hero__zoom {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 60%;
+}
+
+.hero-sea,
+.hero-sea__print,
+.hero-sea__canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* The printed waves stay until the ink sea has drawn its first frame (and, without WebGL, fade as
+   the exit dries the page: --hero-dry). */
+.hero-sea__print {
+  opacity: calc(1 - var(--hero-dry, 0));
+  transition: opacity 0.6s ease;
+}
+
+.hero-sea.is-live .hero-sea__print {
+  opacity: 0;
+}
+
+/* Everything over the sea; only links take the pointer, so the needle and parallax see it all. */
+.hero__masthead,
+.hero__content,
+.hero__captions,
+.hero-compass,
+.hero__rail,
+.hero-boat {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero__rail a {
+  pointer-events: auto;
+}
+
+/* scroll fade (--hero-cta-scroll, set on the stage by hero-motion.js) */
+[data-hero-fade] {
+  opacity: var(--hero-cta-scroll, 1);
+}
+
+/* ---------- Running head, as in a printed book ---------- */
+.hero__masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-lg);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-sumi);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero__masthead-title {
+  font-weight: 500;
+}
+
+/* ---------- Headline: Bodoni caps, the second line set in from the left ---------- */
+.hero__content {
+  margin-top: clamp(12px, 2.4vh, 28px);
+  transform-origin: 18% 80%;
+}
+
+.hero__title {
+  font-family: var(--font-display);
+  font-size: min(15vw, 25vh);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: -0.012em;
+  text-transform: uppercase;
+  color: var(--color-sumi);
+  /* printed onto the paper: the sky wash shows through the ink */
+  mix-blend-mode: multiply;
+}
+
+.hero__line {
+  display: block;
+}
+
+.hero__line--indent,
+.hero__title .split-line:nth-child(2) {
+  padding-left: 1.05em;
+}
+
+/* The mask must clear Ö's dots at this tight leading. The printed lines carry the same box as the
+   split ones (split-text.css adds 0.08em below), so splitting the headline at boot moves nothing
+   (no layout shift behind the loader). */
+.hero__title .split-line,
+.hero__title .hero__line {
+  padding-top: 0.16em;
+  margin-top: -0.16em;
+}
+
+.hero__title .hero__line {
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+/* "ÖNCE." carries dots: set it down like a marked chapter title (book.css) so they clear "KANIT". */
+.hero__line--indent {
+  margin-top: var(--title-mark-room);
+}
+
+.hero__title .hero__line--indent {
+  margin-top: calc(var(--title-mark-room) - 0.16em);
+}
+
+.hero__title .split-line:nth-child(2) {
+  margin-top: calc(var(--title-mark-room) - 0.16em);
+}
+
+.hero__title .split-char {
+  display: inline-block;
+}
+
+/* ---------- The boat (positioned on the swell by sea-stage.js) ---------- */
+.hero-boat {
+  --boat-w: clamp(124px, 11.6vw, 210px);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--boat-w);
+  height: calc(var(--boat-w) * 0.75);
+  /* keel (y 108 of 120) on the water line */
+  margin: calc(var(--boat-w) * -0.675) 0 0 calc(var(--boat-w) * -0.5);
+  transform-origin: 50% 90%;
+  overflow: visible;
+  fill: none;
+  stroke: var(--color-sumi);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Not placed yet (no JS, or before the first frame): keep it out of sight. */
+.hero-boat:not([style]) {
+  visibility: hidden;
+}
+
+.hero-boat [data-sea-fill] {
+  fill: var(--color-paper-panel);
+  stroke: none;
+}
+
+.hero-boat__flag {
+  fill: var(--color-north);
+  stroke: none;
+}
+
+/* ---------- Caption panels (told one at a time) ---------- */
+.hero__captions {
+  position: absolute;
+  left: 42%;
+  top: 62%;
+  display: grid;
+  width: min(22rem, 34vw);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hero-caption {
+  --tilt: -1.2deg;
+  grid-area: 1 / 1;
+  align-self: start;
+  padding: 12px 16px 14px;
+  background: var(--color-paper-panel);
+  border: 1.5px solid var(--color-sumi);
+  box-shadow: 4px 4px 0 var(--color-sumi);
+  font-family: var(--font-display);
+  font-size: clamp(20px, 1.7vw, 27px);
+  line-height: 1.18;
+  color: var(--color-sumi);
+  transform: rotate(calc(var(--tilt) + var(--sway, 0deg)));
+  opacity: 0;
+  clip-path: inset(0 100% 0 0);
+  transition:
+    clip-path 0.9s var(--ease-out-expo),
+    opacity 0.3s ease;
+}
+
+.hero-caption--2 {
+  --tilt: 1deg;
+  margin: -2.5rem 0 0 4rem;
+}
+
+.hero-caption--3 {
+  --tilt: -0.6deg;
+  margin: 1.5rem 0 0 -2rem;
+}
+
+.hero-caption[data-active] {
+  opacity: 1;
+  clip-path: inset(-12px -12px -12px -12px);
+}
+
+.hero-caption__time {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--color-muted);
+}
+
+/* ---------- Compass ---------- */
+.hero-compass {
+  position: absolute;
+  top: calc(var(--header-height) + 64px);
+  right: var(--gutter);
+  width: clamp(124px, 12.5vw, 196px);
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  /* bows out as the boat takes centre stage (the needle has found north by then) */
+  opacity: calc(1 - var(--outro, 0));
+}
+
+.hero-compass svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.hero-compass figcaption {
+  max-width: 17ch;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+.hero-compass__ring {
+  fill: var(--color-paper-panel);
+  stroke: var(--color-sumi);
+  stroke-width: 7;
+}
+
+/* one tick every 5° (2π·78 / 72 ≈ 6.81) */
+.hero-compass__ticks {
+  fill: none;
+  stroke: var(--color-sumi);
+  stroke-width: 5;
+  stroke-dasharray: 0.9 5.91;
+}
+
+/* the rose: every point split into an inked and a bare half */
+.hero-compass__dark {
+  fill: var(--color-sumi);
+}
+
+.hero-compass__light {
+  fill: var(--color-paper-panel);
+  stroke: var(--color-sumi);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.hero-compass__letter {
+  font-family: var(--font-display);
+  font-size: 26px;
+  fill: var(--color-sumi);
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.hero-compass__letter--north {
+  fill: var(--color-north);
+}
+
+.hero-compass__needle {
+  transform-box: view-box;
+  transform-origin: 100px 100px;
+}
+
+.hero-compass__north {
+  fill: var(--color-north);
+}
+
+.hero-compass__north,
+.hero-compass__south {
+  filter: drop-shadow(0 1.5px 0 rgb(18 19 24 / 0.35));
+}
+
+.hero-compass__south {
+  fill: var(--color-sumi);
+}
+
+.hero-compass__pivot {
+  fill: var(--color-paper-panel);
+  stroke: var(--color-sumi);
+  stroke-width: 2.5;
+}
+
+/* ---------- Rail: what this is, and the way in ---------- */
+.hero__rail {
+  grid-row: 4;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: var(--space-lg);
+}
+
+.hero__lead {
+  max-width: 44ch;
+  padding: 14px 18px;
+  background: var(--color-paper-panel);
+  border: 1.5px solid var(--color-sumi);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-md);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  color: var(--color-sumi);
+}
+
+.hero__cta {
+  /* intro fade × scroll fade, both driven from JS */
+  opacity: calc(var(--cta-intro, 1) * var(--cta-scroll, 1));
+}
+
+.hero__cta[data-hidden='true'] {
+  pointer-events: none;
+}
+
+/* ---------- Tablet ---------- */
+@media (max-width: 1023px) {
+  .hero__captions {
+    left: auto;
+    right: var(--gutter);
+    top: 50%;
+    width: min(20rem, 46vw);
+  }
+
+  .hero-compass {
+    width: 116px;
+  }
+}
+
+/* ---------- Phone ---------- */
+@media (max-width: 767px) {
+  .hero {
+    height: 220vh;
+    height: 220svh;
+  }
+
+  .hero__stage {
+    padding-top: calc(var(--header-height) + 6px);
+  }
+
+  .hero__masthead {
+    font-size: 12px;
+  }
+
+  .hero__title {
+    font-size: min(22vw, 17vh);
+  }
+
+  .hero__line--indent,
+  .hero__title .split-line:nth-child(2) {
+    padding-left: 0.6em;
+  }
+
+  .hero-compass {
+    display: none;
+  }
+
+  .hero__captions {
+    left: var(--gutter);
+    right: var(--gutter);
+    top: 42%;
+    width: auto;
+  }
+
+  .hero-caption {
+    font-size: 18px;
+  }
+
+  .hero-caption--2,
+  .hero-caption--3 {
+    margin: 0;
+  }
+
+  .hero__rail {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero__lead {
+    font-size: 14px;
+  }
+
+  .hero__cta {
+    align-self: start;
+  }
+}
+
+/* Short landscape (a 1440×900 window at 150–200 % zoom, phones held sideways, short windows): the
+   header and running head are fixed px, so the caption at 42 % / 62 % covered "ÖNCE." (and, stacked,
+   the lead covered the caption; the compass collided with it). The caption moves up beside a
+   smaller headline, the lead beside the button, and the compass bows out as on phones. */
+@media (max-height: 620px) and (orientation: landscape) {
+  .hero__title {
+    font-size: min(14vw, 14vh);
+  }
+
+  .hero-compass {
+    display: none;
+  }
+
+  .hero__captions {
+    left: auto;
+    right: var(--gutter);
+    top: calc(var(--header-height) + 48px);
+    width: min(20rem, 46vw);
+  }
+
+  .hero__rail {
+    flex-direction: row;
+    align-items: end;
+  }
+
+  .hero__cta {
+    align-self: end;
+  }
+}
+
+/* Static fallback: no pinning, no scrubbing, no sway */
+.reduced-motion .hero {
+  height: 100vh;
+  height: 100svh;
+}
+
+.reduced-motion .hero-caption {
+  transition: none;
+}
+
+/* ---------- Scroll gutter ----------
+   The classic scrollbar's gutter (scrollbar-gutter: stable) shows the page background, a strip of
+   paper beside the sea. While the sea fills the stage (sea-stage.js sets data-hero-sea to storm or
+   calm until the ink starts drying) that background is washed in the sea's tones, sampled from the
+   canvas's right edge, so the sea reads to the last pixel. */
+html[data-hero-sea='storm'] {
+  background: linear-gradient(to bottom, #e3e2df 0 48%, #8a8f97 51%, #60656d 60%, #3d4047 70%, #50545b 84%, #26292e 100%) fixed;
+}
+
+html[data-hero-sea='calm'] {
+  background: linear-gradient(to bottom, #e5e4e1 0 49%, #dadbdc 51%, #d3d5d8 75%, #c3c6ca 92%, #9da1a7 100%) fixed;
+}
+
+/* ---------- Hand-off to Bölüm 2 (W1) ----------
+   While the sea moves (sea-stage.js sets data-sea-exit), Tayfa is pulled up under the stage's exit
+   and printed above it on transparent paper: sea-stage.js masks it to the part of the stage where
+   the ink has fully dried, so the chapter opener inks in right behind the drying front instead of
+   arriving after a blank page. Reduced motion and no-script keep the plain stacked pages. */
+.hero[data-sea-exit] + .services {
+  z-index: 2;
+  margin-top: -50vh;
+  margin-top: -50svh;
+  background: transparent;
+}

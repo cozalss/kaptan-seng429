@@ -1,0 +1,704 @@
+/* ---------- Sancak Tezgâhı · rule instruments (src/components/rules-bench/instruments) ----------
+   Each instrument is a printed plate: paper-panel sheet, ink border, hard shadow, square corners.
+   Drawings are sumi strokes with an indigo wash; controls are real inputs/buttons drawn as ink.
+   North red is not used here; navy only for the focus ring. */
+
+.inst {
+  position: relative;
+  max-width: none;
+  margin: 0;
+  padding: 10px 14px 9px;
+  background: var(--color-paper-panel);
+  border: var(--ink-border);
+  box-shadow: var(--shadow-panel);
+  color: var(--color-sumi);
+  font-family: var(--font-sans);
+}
+
+/* "Temsili · E1 · ÖRNEK ENERJİ A.Ş." tag, printed in the drawing's top-left corner */
+.inst .inst__tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--color-muted);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.inst__temsili {
+  padding: 2px 5px 2px;
+  border: 1px solid var(--color-sumi);
+  color: var(--color-sumi);
+  transform: rotate(-2deg);
+}
+
+.inst__tag .rule-code {
+  color: var(--color-sumi);
+}
+
+/* ---------- The drawing ---------- */
+.inst__art {
+  position: relative;
+}
+
+/* E2/E4: the slip and the honest note side by side (the note starts below the tag) */
+.inst__art.is-split {
+  display: grid;
+  grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
+  align-items: end;
+  column-gap: 14px;
+}
+
+.inst__art.is-split .inst__switch {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 22px 0 2px; /* clear of the corner tag */
+  padding: 8px 10px 10px 12px;
+}
+
+.inst__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.inst__svg.is-drawable {
+  cursor: crosshair;
+}
+
+.inst__svg text {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  fill: var(--color-sumi);
+}
+
+.inst__axis {
+  font-variant-numeric: tabular-nums;
+}
+
+.inst__axis.is-mid {
+  text-anchor: middle;
+}
+
+.inst__axis.is-end {
+  text-anchor: end;
+}
+
+.inst__axis.is-muted,
+.inst__ghost-text {
+  fill: var(--color-muted);
+}
+
+.inst__axis.is-strong {
+  font-weight: 600;
+}
+
+.inst__ink,
+.inst__margin,
+.inst__string,
+.inst__dim,
+.inst__tickmark,
+.inst__thr,
+.inst__thr-ink,
+.inst__arm,
+.inst__strike,
+.inst__slip-line,
+.inst__dial path {
+  fill: none;
+  stroke: var(--color-sumi);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.inst__ink {
+  stroke-width: 1.3;
+}
+
+.inst__ink.is-strong {
+  stroke-width: 2;
+}
+
+.inst__ink.is-beam {
+  stroke-width: 4;
+}
+
+.inst__margin {
+  stroke-width: 0.8;
+  stroke: var(--color-rule-soft);
+}
+
+.inst__ruling path {
+  fill: none;
+  stroke: var(--color-hairline);
+  stroke-width: 1;
+}
+
+.inst__wash {
+  fill: var(--color-wash);
+  fill-opacity: 0.16;
+  stroke: none;
+}
+
+.inst__over {
+  opacity: 0;
+  transition: opacity var(--duration-normal) ease;
+}
+
+.inst__hatch {
+  stroke: var(--color-sumi);
+  stroke-width: 1.1;
+}
+
+.inst__dot {
+  fill: var(--color-sumi);
+}
+
+.inst__string {
+  stroke-width: 0.9;
+}
+
+.inst__dim {
+  stroke-width: 1.2;
+}
+
+.inst__tickmark {
+  stroke-width: 1;
+}
+
+.inst__post {
+  fill: var(--color-sumi);
+}
+
+.inst__column {
+  fill: var(--color-wash);
+  fill-opacity: 0.22;
+  stroke: var(--color-sumi);
+  stroke-width: 1.5;
+}
+
+.inst__load {
+  fill: var(--color-wash);
+  fill-opacity: 0.32;
+  stroke: var(--color-sumi);
+  stroke-width: 1.5;
+}
+
+.inst__weight {
+  stroke: var(--color-sumi);
+  stroke-width: 1.5;
+}
+
+.inst__dial path {
+  stroke-width: 1.2;
+}
+
+.inst__dial .is-zero {
+  stroke-width: 2.2;
+}
+
+.inst__handle {
+  fill: var(--color-paper-panel);
+  stroke: var(--color-sumi);
+  stroke-width: 1.5;
+}
+
+.inst__handle.is-end {
+  fill: var(--color-sumi);
+}
+
+/* Threshold: a dashed pencil rule; when the rule fires an ink line draws over it. */
+.inst__thr {
+  stroke-width: 1.2;
+  stroke-dasharray: 3 4;
+  stroke: var(--color-muted);
+}
+
+.inst__thr-ink {
+  stroke-width: 2.4;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.75s var(--ease-out-expo);
+}
+
+.inst__axis.is-thr {
+  font-weight: 600;
+}
+
+/* The stamp: pressed in (a short overshoot) when the rule fires, lifted when it stops. */
+.inst__stamp-ink {
+  opacity: 0;
+  transform: scale(1.35) rotate(-9deg);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 0.12s ease,
+    transform 0.34s cubic-bezier(0.2, 1.7, 0.45, 1);
+}
+
+.inst__stamp-frame {
+  fill: var(--color-paper-panel);
+  fill-opacity: 0.88;
+  stroke: var(--color-sumi);
+  stroke-width: 2;
+}
+
+.inst__stamp-frame.is-thin {
+  fill: none;
+  stroke-width: 0.8;
+}
+
+.inst__svg .inst__stamp-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+
+.inst[data-fired='true'] .inst__stamp-ink {
+  opacity: 1;
+  transform: scale(1) rotate(-4deg);
+}
+
+.inst[data-fired='true'] .inst__thr-ink {
+  stroke-dashoffset: 0;
+}
+
+.inst[data-fired='true'] .inst__over {
+  opacity: 1;
+}
+
+/* E2/E4 notice slip: set down on the page when the notice arrives. */
+.inst__ghost {
+  fill: none;
+  stroke: var(--color-rule-soft);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 4;
+}
+
+.inst[data-fired='true'] .inst__ghost,
+.inst[data-fired='true'] .inst__ghost-text {
+  opacity: 0;
+}
+
+.inst__slip {
+  opacity: 0;
+  transform: translate(10px, -26px) rotate(-5deg);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 0.2s ease,
+    transform 0.55s var(--ease-out-expo);
+}
+
+.inst[data-fired='true'] .inst__slip {
+  opacity: 1;
+  transform: rotate(-1.2deg);
+}
+
+.inst__slip-shadow {
+  fill: var(--color-sumi);
+}
+
+.inst__slip-sheet {
+  fill: var(--color-paper-panel);
+  stroke: var(--color-sumi);
+  stroke-width: 1.5;
+}
+
+.inst__svg .inst__slip-issuer {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.inst__svg .inst__slip-code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-anchor: end;
+}
+
+.inst__slip-line {
+  stroke: var(--color-rule-soft);
+  stroke-width: 2;
+}
+
+/* Screen: gate arms swing open along the bank; the slip sails the canal. */
+.inst__arm {
+  stroke-width: 4;
+  stroke-linecap: square;
+  transition: transform 0.5s var(--ease-out-expo);
+}
+
+.inst__arm.is-open {
+  transform: rotate(-90deg);
+}
+
+.inst__canal-slip {
+  transition: transform 0.9s var(--ease-out-expo);
+}
+
+.inst__strike {
+  stroke-width: 2.2;
+  opacity: 0;
+  transition: opacity 0.2s ease 0.5s;
+}
+
+.inst__canal-slip.is-out .inst__strike {
+  opacity: 1;
+}
+
+.inst__canal-slip.is-out .inst__slip-sheet {
+  fill: var(--color-paper);
+}
+
+/* ---------- Controls ---------- */
+.inst__controls {
+  margin-top: 2px;
+}
+
+/* One row: the ink rule (a real range, 44px tall) and the value. */
+.inst__slider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.inst__value {
+  flex: none;
+  min-width: 3.6em;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The track is an ink rule; the part left of the thumb is inked in. The thumb is a small square
+   plate with a hard shadow. The input itself is 44px tall, so the whole strip is the target. */
+.inst__track {
+  --thumb: 24px;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.inst__range {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+
+.inst__range::-webkit-slider-runnable-track {
+  height: 44px;
+  background:
+    linear-gradient(var(--color-sumi), var(--color-sumi)) 0 50% / calc(var(--p, 0) * 100%) 4px no-repeat,
+    linear-gradient(var(--color-sumi), var(--color-sumi)) 0 50% / 100% 1.5px no-repeat;
+}
+
+.inst__range::-moz-range-track {
+  height: 44px;
+  background:
+    linear-gradient(var(--color-sumi), var(--color-sumi)) 0 50% / calc(var(--p, 0) * 100%) 4px no-repeat,
+    linear-gradient(var(--color-sumi), var(--color-sumi)) 0 50% / 100% 1.5px no-repeat;
+}
+
+.inst__range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--thumb);
+  height: var(--thumb);
+  margin-top: calc((44px - var(--thumb)) / 2);
+  background: var(--color-paper-panel);
+  border: 2px solid var(--color-sumi);
+  border-radius: 0;
+  box-shadow: 3px 3px 0 var(--color-sumi);
+  transition: transform var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+
+.inst__range::-moz-range-thumb {
+  width: var(--thumb);
+  height: var(--thumb);
+  box-sizing: border-box;
+  background: var(--color-paper-panel);
+  border: 2px solid var(--color-sumi);
+  border-radius: 0;
+  box-shadow: 3px 3px 0 var(--color-sumi);
+}
+
+.inst__range:active::-webkit-slider-thumb {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--color-sumi);
+}
+
+.inst__range:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* the threshold tick on the track */
+.inst__tick {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--at));
+  width: 2px;
+  margin-left: -1px;
+  background: var(--color-sumi);
+  pointer-events: none;
+}
+
+/* E2/E4: the switch is a real toggle button drawn as an ink two-way switch. */
+.inst__switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  width: 100%;
+  min-height: 48px;
+  padding: 5px 8px 5px 12px;
+  border: var(--ink-border);
+  background: var(--color-paper);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.inst__switch-face {
+  display: inline-flex;
+  border: 1.5px solid var(--color-sumi);
+  box-shadow: 3px 3px 0 var(--color-sumi);
+}
+
+.inst__switch-face > span {
+  min-width: 58px;
+  padding: 7px 10px;
+  text-align: center;
+  font-size: 14px;
+  transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+}
+
+.inst__switch[aria-pressed='false'] .is-no,
+.inst__switch[aria-pressed='true'] .is-yes {
+  background: var(--color-sumi);
+  color: var(--color-paper-panel);
+}
+
+.inst__switch:active .inst__switch-face {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--color-sumi);
+}
+
+@media (hover: hover) {
+  .inst__switch:hover .inst__switch-face > span:not(.is-no, .is-yes),
+  .inst__switch[aria-pressed='false']:hover .is-yes,
+  .inst__switch[aria-pressed='true']:hover .is-no {
+    background: rgb(43 66 97 / 0.14);
+  }
+}
+
+/* Screen gates: three toggle buttons with an inked check / cross. */
+.inst__gates {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.inst__gate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 8px;
+  border: var(--ink-border);
+  background: var(--color-paper);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.15;
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow var(--duration-fast) ease, transform var(--duration-fast) ease;
+}
+
+.inst__gate[aria-pressed='true'] {
+  box-shadow: 3px 3px 0 var(--color-sumi);
+}
+
+.inst__gate[aria-pressed='false'] {
+  transform: translate(2px, 2px);
+  background: rgb(43 66 97 / 0.1);
+}
+
+.inst__box {
+  position: relative;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--color-sumi);
+  background: var(--color-paper-panel);
+}
+
+.inst__box::before,
+.inst__box::after {
+  content: '';
+  position: absolute;
+  background: var(--color-sumi);
+}
+
+/* check: two strokes; cross: two diagonals */
+.inst__gate[aria-pressed='true'] .inst__box::before {
+  left: 3px;
+  top: 9px;
+  width: 6px;
+  height: 2.2px;
+  transform: rotate(45deg);
+}
+
+.inst__gate[aria-pressed='true'] .inst__box::after {
+  left: 6px;
+  top: 7px;
+  width: 11px;
+  height: 2.2px;
+  transform: rotate(-52deg);
+}
+
+.inst__gate[aria-pressed='false'] .inst__box::before,
+.inst__gate[aria-pressed='false'] .inst__box::after {
+  left: 2px;
+  top: 7.5px;
+  width: 13px;
+  height: 2px;
+  transform: rotate(45deg);
+}
+
+.inst__gate[aria-pressed='false'] .inst__box::after {
+  transform: rotate(-45deg);
+}
+
+@media (hover: hover) {
+  .inst__gate:hover {
+    background: rgb(43 66 97 / 0.14);
+  }
+}
+
+/* ---------- Sentences ---------- */
+/* Both verdicts share one grid cell, so the plate never changes height when a rule fires. */
+.inst .inst__state {
+  display: grid;
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+/* page styles for paragraphs (measure, size) must not reach inside the plate */
+.inst .inst__tag,
+.inst .inst__state,
+.inst .inst__note,
+.inst .inst__result {
+  max-width: none;
+}
+
+.inst__state > span {
+  grid-area: 1 / 1;
+}
+
+.inst[data-fired='true'] .inst__state > .is-no,
+.inst[data-fired='false'] .inst__state > .is-yes {
+  visibility: hidden;
+}
+
+.inst .inst__note {
+  margin: 0 0 6px;
+  font-size: var(--text-caption);
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+
+.inst .inst__result {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid var(--color-hairline);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 767px) {
+  .inst {
+    padding: 8px 10px 7px;
+    box-shadow: 3px 3px 0 var(--color-sumi);
+  }
+
+  .inst .inst__tag {
+    font-size: 10.5px;
+  }
+
+  .inst__svg text {
+    font-size: 13px;
+  }
+
+  .inst__switch-q {
+    font-size: 13px;
+  }
+
+  .inst__switch-face > span {
+    min-width: 0;
+    padding: 7px 9px;
+    font-size: 13px;
+  }
+
+  .inst__art.is-split {
+    grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
+    column-gap: 10px;
+  }
+
+  .inst .inst__result {
+    font-size: 12px; /* the book's floor for visible UI text */
+  }
+}
+
+/* ---------- Narrow tablets: beside the mast the slot is only ~230px wide (768px), so the E2/E4
+   switch takes the phones' compact face and a little more of the plate; "Evet" stays on it. */
+@media (min-width: 768px) and (max-width: 899px) {
+  .inst__switch-face > span {
+    min-width: 0;
+    padding: 7px 9px;
+  }
+
+  .inst__art.is-split {
+    grid-template-columns: minmax(0, 38%) minmax(0, 1fr);
+    column-gap: 10px;
+  }
+}
+
+/* ---------- Reduced motion: every state printed at once ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .inst *,
+  .inst__svg * {
+    transition: none !important;
+  }
+}
+
+.reduced-motion .inst * {
+  transition: none !important;
+}

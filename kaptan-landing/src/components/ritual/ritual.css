@@ -1,0 +1,697 @@
+/* ---------- Bölüm 4 · Rota (#yolculuk) — "Bir bildirimin rotası." ----------
+   A route chart over the hero's sea after the storm. The course comes down from the top of the
+   chapter (where the Pusula compass hands it over), crosses a horizon and runs toward the reader
+   through four waypoints (⊙ I–IV), each with an inked landmark in the open water and a caption
+   panel on the other side holding its plate. The hero's boat sails it (rota-course.js): at each
+   mark the panel is set down and its plate comes forward; at IV the human signs; the course ends in
+   a harbour ring and the boat moors by the quay where the folio stands.
+   Without the script a plain dotted rule stands in for the course and the boat stays hidden. */
+
+.rota {
+  --rota-mark: 30px;
+  --rota-rail: 50%;
+  --rota-lane: clamp(170px, 15vw, 240px); /* the open water the course runs down */
+  --rota-plate: clamp(200px, 18.4vw, 290px);
+  --rota-step: clamp(250px, 32vh, 320px); /* from one waypoint to the next */
+  --rota-reach: clamp(76px, 11vh, 120px); /* horizon → waypoint I */
+  /* waypoint IV's panel → the foot of the chapter: room for the moored boat to be the chapter's last
+     frame before the colophon's running head comes up (W5, with EYE.end in rota-geometry.js) */
+  --rota-harbour: clamp(300px, 36vh, 370px);
+  --rota-shift: 8px; /* each waypoint steps a hair toward its panel */
+  --rota-start-x: 70%; /* the course's first point, at the top of the chapter (W4) */
+  --rota-port-x: 50%;
+  position: relative;
+  z-index: var(--z-content);
+  overflow-x: clip; /* the full-bleed sea may reach under the scrollbar */
+  padding: var(--space-xl) var(--gutter) 0;
+  background: var(--color-paper);
+  color: var(--color-sumi);
+}
+
+/* The course's first point: the top of the chapter, under the compass that hands it over. */
+.rota__start {
+  position: absolute;
+  top: 0;
+  left: var(--rota-start-x);
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+/* ---------- Title spread ---------- */
+.rota__head {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 30ch);
+  align-items: end;
+  gap: var(--space-xl) clamp(32px, 5vw, 96px);
+  margin-top: clamp(36px, 5.5vh, 72px);
+}
+
+.rota__title {
+  font-size: clamp(44px, 7.6vw, 15vh);
+}
+
+.rota__lead {
+  max-width: 34ch;
+  padding-bottom: 0.4em;
+  font-size: var(--text-body-lg);
+  line-height: 1.45;
+}
+
+/* ---------- The chart ---------- */
+.rota__chart {
+  position: relative;
+  margin-top: clamp(16px, 2.5vh, 36px);
+  padding-top: var(--rota-reach);
+  padding-bottom: var(--rota-harbour);
+}
+
+/* No-script stand-in for the course: a dotted rule down the centre line. */
+.rota__chart::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 40px;
+  left: var(--rota-rail);
+  border-left: 2px dotted var(--color-rule-soft);
+}
+
+.rota__chart.has-course::before {
+  content: none;
+}
+
+/* The sea: full bleed across the page gutters; painted once per size, a layer of its own so the
+   static roughening filters are rasterised once, never per frame. */
+.rota__sea {
+  position: absolute;
+  top: 0;
+  left: calc(50% - 50vw);
+  width: 100vw;
+  max-width: none;
+  height: calc(100% - var(--rota-harbour) * 0.56 + 52px); /* the sea ends at the quay */
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateZ(0);
+}
+
+/* Chart soundings on the shoal (III): small upright figures, as a chart prints them. */
+.rota__sounding {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  fill: var(--color-sumi);
+  fill-opacity: 0.78;
+}
+
+.rota__course {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.rota__course path {
+  fill: none;
+}
+
+/* The pencilled plan under the inked course. */
+.rota__plan {
+  stroke: var(--color-sumi);
+  stroke-opacity: 0.3;
+  stroke-width: 1.2;
+  stroke-dasharray: 1 7;
+  stroke-linecap: round;
+}
+
+/* The inked course: hand-ruled dashes, revealed by the mask path below (DrawSVG). */
+.rota__line {
+  stroke: var(--color-sumi);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-dasharray: 8 7;
+}
+
+.rota__reveal {
+  stroke: #fff;
+  stroke-width: 28;
+  stroke-linecap: round;
+}
+
+/* ---------- Legs: panels alternate sides, the lane between them is open water ---------- */
+.rota__legs {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  margin: 0;
+  padding: 0;
+}
+
+.rota-leg {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--rota-lane) minmax(0, 1fr);
+  align-items: start;
+  height: var(--rota-step); /* the panel hangs below into the next step, on its own side */
+}
+
+.rota-leg:last-child {
+  height: auto;
+}
+
+.rota-leg__mark {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  z-index: 2;
+  justify-self: center;
+  width: var(--rota-mark);
+  height: var(--rota-mark);
+  margin-top: 22px;
+  border: var(--ink-border);
+  border-radius: 50%;
+  background: var(--color-paper);
+}
+
+.rota-leg--left .rota-leg__mark {
+  transform: translateX(calc(var(--rota-shift) * -1));
+}
+
+.rota-leg--right .rota-leg__mark {
+  transform: translateX(var(--rota-shift));
+}
+
+/* ⊙: the centre dot, then a second ring once the boat has passed ("fix taken"). */
+.rota-leg__mark::before,
+.rota-leg__mark::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+}
+
+.rota-leg__mark::after {
+  inset: 50%;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  background: var(--color-sumi);
+}
+
+.rota-leg__mark::before {
+  inset: -8px;
+  border: 1.5px solid var(--color-sumi);
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity var(--duration-normal) ease,
+    transform var(--duration-slow) var(--ease-out-expo);
+}
+
+.rota-leg.is-reached .rota-leg__mark::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* The roman numeral stands on the open side of the waypoint, away from its panel. */
+.rota-leg__numeral {
+  position: absolute;
+  top: 50%;
+  padding: 0 4px;
+  background: var(--color-paper);
+  font-family: var(--font-display);
+  font-size: clamp(34px, 3.2vw, 52px);
+  line-height: 1;
+  white-space: nowrap;
+  transform: translateY(-54%);
+}
+
+.rota-leg--left .rota-leg__numeral {
+  left: calc(100% + 14px);
+}
+
+.rota-leg--right .rota-leg__numeral {
+  right: calc(100% + 14px);
+}
+
+/* ---------- Caption panels: the plate sits on the inner side, toward the boat ---------- */
+.rota-leg__panel {
+  grid-row: 1;
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: var(--rota-plate) minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+  width: min(100%, 640px);
+  padding: 14px 20px 16px 14px;
+}
+
+.rota-leg--left .rota-leg__panel {
+  --tilt: -0.7deg;
+  grid-column: 1;
+  justify-self: end;
+  grid-template-columns: minmax(0, 1fr) var(--rota-plate);
+  padding: 14px 14px 16px 20px;
+}
+
+.rota-leg--left .rota-leg__plate {
+  order: 2;
+}
+
+.rota-leg--right .rota-leg__panel {
+  --tilt: 0.6deg;
+  grid-column: 3;
+  justify-self: start;
+}
+
+/* The plate: an inked frame, the picture cropped inside it. */
+.rota-leg__plate {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: var(--ink-border);
+  background: var(--color-paper);
+  transform-origin: 100% 0;
+}
+
+.rota-leg--right .rota-leg__plate {
+  transform-origin: 0 0;
+}
+
+.rota-leg__plate picture {
+  display: block;
+  height: 100%;
+}
+
+.rota-leg__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity var(--duration-slow) ease;
+}
+
+.rota-leg__image.is-loading {
+  opacity: 0;
+}
+
+.rota-leg__body {
+  min-width: 0;
+}
+
+.rota-leg__name {
+  margin: 2px 0 10px;
+  font-family: var(--font-display);
+  font-size: clamp(32px, 2.9vw, 46px);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+}
+
+.rota-leg__text {
+  font-size: clamp(16px, 1.2vw, 19px);
+  line-height: 1.34;
+}
+
+/* IV: "Ertesi seans, 09:50" and the human's signature beside it. */
+.rota-leg__signed {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.rota-leg__signed > span {
+  flex: none;
+}
+
+.rota-leg__signature {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 150px;
+  height: 34px;
+  margin: -14px 0 -6px;
+  overflow: visible;
+}
+
+.rota-leg__signature path {
+  fill: none;
+  stroke: var(--color-sumi);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- The beats (the course is live: .has-course) ----------
+   Before the boat arrives, a panel lies printed but quiet, its plate held back. When the boat
+   reaches the mark the panel is set down (its hard shadow lifts, then settles), the plate comes
+   forward, and at IV the signature inks across. */
+.has-course .rota-leg__plate {
+  transform: scale(0.92);
+  transition: transform 0.7s var(--ease-out-expo);
+}
+
+.has-course .rota-leg.is-reached .rota-leg__plate {
+  transform: scale(1);
+}
+
+.has-course .rota-leg.is-reached .rota-leg__panel {
+  animation: rota-set-down 0.75s var(--ease-out-expo) both;
+}
+
+@keyframes rota-set-down {
+  0% {
+    box-shadow: var(--shadow-panel);
+    transform: rotate(var(--tilt));
+  }
+
+  35% {
+    box-shadow: 10px 10px 0 var(--color-sumi);
+    transform: rotate(var(--tilt)) translate(-5px, -5px);
+  }
+
+  100% {
+    box-shadow: 5px 5px 0 var(--color-sumi);
+    transform: rotate(var(--tilt));
+  }
+}
+
+.has-course .rota-leg__signature path {
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1.4s cubic-bezier(0.55, 0.1, 0.3, 1) 0.3s;
+}
+
+.has-course .rota-leg.is-reached .rota-leg__signature path {
+  stroke-dashoffset: 0;
+}
+
+/* ---------- Harbour (landfall) ---------- */
+.rota__harbour {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  height: var(--rota-harbour);
+  pointer-events: none;
+}
+
+.rota__port {
+  position: absolute;
+  top: 44%;
+  left: var(--rota-port-x);
+  width: 1px;
+  height: 1px;
+}
+
+/* The harbour ring: inks closed as the boat comes in (rota-course.js scrubs its dash). */
+.rota__ring {
+  position: absolute;
+  top: -46px;
+  left: -100px;
+  width: 200px;
+  height: 72px;
+  max-width: none;
+  overflow: visible;
+}
+
+.rota__ring ellipse {
+  fill: none;
+  stroke: var(--color-sumi);
+  stroke-width: 2;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 0;
+  stroke-linecap: round;
+}
+
+/* Calm water in port: two flat brush strokes the boat comes to rest on. */
+.rota__mooring {
+  position: absolute;
+  top: -6px;
+  left: -90px;
+  width: 180px;
+  height: 22px;
+  max-width: none;
+  overflow: visible;
+}
+
+.rota__mooring path,
+.rota__quay path {
+  fill: var(--color-sumi);
+}
+
+/* The quay the folio stands on. */
+.rota__quay {
+  position: absolute;
+  top: calc(44% + 46px);
+  left: calc(50% - 50vw);
+  width: 100vw;
+  height: 16px;
+  max-width: none;
+}
+
+.rota .rota__folio {
+  position: absolute;
+  top: calc(44% + 46px);
+  left: calc(var(--rota-port-x) + 140px);
+  margin: 0;
+  padding: 0 0 6px;
+  font-size: 30px;
+  line-height: 1;
+  transform: translateY(-100%);
+}
+
+.rota__note {
+  position: absolute;
+  right: 0;
+  bottom: 18px;
+  left: 0;
+  max-width: 62ch;
+  margin: 0 auto;
+  font-size: var(--text-body-sm);
+  line-height: 1.5;
+  text-align: center;
+  color: var(--color-muted);
+}
+
+/* ---------- Boat ---------- */
+.rota__boat {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4; /* above the panels whenever the course must cross near one */
+  width: 114px;
+  height: 86px;
+  overflow: visible;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.has-course .rota__boat {
+  visibility: visible;
+}
+
+.rota__boat-hull {
+  transform-box: view-box;
+  transform-origin: 50% 90%;
+}
+
+/* Idle life: the moored or resting boat breathes on the swell while the chapter is on screen. */
+.rota__chart.is-live .rota__boat-hull {
+  animation: rota-bob 3.8s ease-in-out infinite;
+}
+
+.rota__chart.is-moored .rota__boat-hull {
+  animation:
+    rota-settle 1.6s var(--ease-out-expo) both,
+    rota-bob 4.6s ease-in-out 1.6s infinite;
+}
+
+@keyframes rota-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-2.5px) rotate(-1.6deg);
+  }
+}
+
+@keyframes rota-settle {
+  0% {
+    transform: translateY(-3px) rotate(5deg);
+  }
+
+  30% {
+    transform: translateY(1px) rotate(-3deg);
+  }
+
+  60% {
+    transform: translateY(-1px) rotate(1.4deg);
+  }
+
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+.rota__boat-fill {
+  fill: var(--color-paper-panel);
+  stroke: none;
+}
+
+.rota__boat-ink {
+  fill: none;
+  stroke: var(--color-sumi);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rota__boat-wake {
+  opacity: 0;
+}
+
+.rota__boat-wake path {
+  fill: none;
+  stroke: url(#rota-wake-fade);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+
+.rota__boat-flag {
+  fill: var(--color-north);
+  stroke: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rota__chart .rota__boat-hull,
+  .has-course .rota-leg.is-reached .rota-leg__panel {
+    animation: none;
+  }
+
+  .has-course .rota-leg__plate,
+  .has-course .rota-leg__signature path {
+    transition: none;
+  }
+}
+
+/* ---------- Mid widths: the plate stands above the text inside each panel ---------- */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .rota-leg__panel,
+  .rota-leg--left .rota-leg__panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .rota-leg--left .rota-leg__plate {
+    order: 0;
+  }
+
+  .rota-leg__plate {
+    aspect-ratio: 16 / 10;
+  }
+}
+
+/* ---------- Narrow: one column, the course runs down a rail on the left ---------- */
+@media (max-width: 767px) {
+  .rota {
+    --rota-rail: 16px;
+    --rota-start-x: var(--rota-rail);
+    --rota-port-x: 38%;
+    --rota-harbour: 300px;
+  }
+
+  .rota__head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-lg);
+  }
+
+  .rota__title {
+    font-size: clamp(40px, 11.4vw, 64px);
+  }
+
+  .rota__chart {
+    margin-top: 32px;
+    padding-top: 84px;
+  }
+
+  .rota__chart::before {
+    left: var(--rota-rail);
+  }
+
+  .rota-leg {
+    display: block;
+    height: auto;
+    padding-left: 48px;
+  }
+
+  .rota-leg + .rota-leg {
+    margin-top: 64px;
+  }
+
+  .rota-leg__mark,
+  .rota-leg--left .rota-leg__mark,
+  .rota-leg--right .rota-leg__mark {
+    position: absolute;
+    top: 0;
+    left: calc(var(--rota-rail) - var(--rota-mark) / 2);
+    margin-top: 20px;
+    transform: none;
+  }
+
+  .rota-leg--left .rota-leg__numeral,
+  .rota-leg--right .rota-leg__numeral {
+    top: calc(100% + 10px);
+    right: auto;
+    left: 50%;
+    padding: 2px 0;
+    font-size: 20px;
+    transform: translateX(-50%);
+  }
+
+  .rota-leg__panel,
+  .rota-leg--left .rota-leg__panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    width: 100%;
+    padding: 12px 14px 16px;
+  }
+
+  .rota-leg--left .rota-leg__plate {
+    order: 0;
+  }
+
+  .rota-leg__plate {
+    aspect-ratio: 4 / 3;
+  }
+
+  .rota .rota__folio {
+    left: calc(var(--rota-port-x) + 104px);
+  }
+
+  .rota__ring {
+    transform: scale(0.72);
+  }
+
+  .rota__boat {
+    width: 76px;
+    height: 57px;
+  }
+}
+
+/* Launch (W4): while the course's first leg is still being inked down from the Pusula compass,
+   the boat is not yet on the water; it is set down as the pen reaches it, then sails. */
+.has-course .rota__boat {
+  transition: opacity 0.45s var(--ease-out-expo);
+}
+
+.has-course:not(.is-launched) .rota__boat {
+  opacity: 0;
+}

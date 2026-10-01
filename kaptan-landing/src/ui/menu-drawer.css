@@ -1,0 +1,125 @@
+/* "İçindekiler": the contents page of the book. Chapter titles in Bodoni, a dotted leader running
+   to the chapter label, an ink button on to the demo flow and the course meta line in Inter. */
+
+#menu-drawer .overlay__panel {
+  max-width: 460px;
+}
+
+.menu-drawer__content {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: var(--space-lg) var(--space-xl) var(--space-xl);
+}
+
+.menu-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* #kaptan-logo's viewBox is 212×64; 133×40 keeps that 3.31:1 ratio. */
+.menu-drawer__logo {
+  width: 133px;
+  height: 40px;
+  color: var(--color-brand);
+}
+
+.menu-drawer__title {
+  margin-top: var(--space-xl);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-sumi);
+  font-family: var(--font-display);
+  font-size: clamp(40px, 5vw, 56px);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.menu-drawer__links {
+  display: flex;
+  flex-direction: column;
+  margin: var(--space-md) 0 var(--space-xl);
+  padding: 0;
+  list-style: none;
+}
+
+/* One contents line: title · leader · label, on the text's baseline. */
+.menu-drawer__link {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 0 6px;
+  text-align: left;
+  color: var(--color-sumi);
+}
+
+.menu-drawer__entry-title {
+  flex: none;
+  max-width: 75%;
+  font-family: var(--font-display);
+  font-size: clamp(24px, 2.2vw, 30px);
+  line-height: 1.05;
+  transition: transform var(--duration-normal) var(--ease-out-expo);
+}
+
+.menu-drawer__leader {
+  flex: 1;
+  min-width: 24px;
+  height: 1px;
+  /* dots, as the leaders of a printed contents page */
+  background-image: radial-gradient(circle, var(--color-sumi) 0.9px, transparent 1.2px);
+  background-size: 7px 3px;
+  background-repeat: repeat-x;
+  background-position: 0 50%;
+  transform: translateY(-3px);
+  height: 3px;
+  opacity: 0.7;
+}
+
+.menu-drawer__entry-label {
+  flex: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-muted);
+}
+
+/* The "Ara" interlude is set in from the chapters, as in the book's own contents. */
+.menu-drawer__links li[data-kind='interlude'] .menu-drawer__entry-title {
+  padding-left: 1.05em;
+  font-size: clamp(20px, 1.8vw, 24px);
+}
+
+@media (hover: hover) {
+  .menu-drawer__link:hover .menu-drawer__entry-title {
+    transform: translateX(6px);
+  }
+
+  .menu-drawer__link:hover .menu-drawer__entry-label {
+    color: var(--color-sumi);
+  }
+}
+
+.menu-drawer__link:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+.menu-drawer__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-lg);
+  margin-top: auto;
+}
+
+.menu-drawer__meta {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-muted);
+}

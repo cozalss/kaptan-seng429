@@ -1,0 +1,87 @@
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-loader);
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-md);
+  overflow: hidden;
+  background: var(--color-paper);
+  color: var(--color-sumi);
+  transition:
+    opacity var(--duration-loader-fade) var(--ease-out-expo),
+    visibility 0s linear var(--duration-loader-fade);
+  /* Failsafe for when main.js never runs (network/parse failure): the loader removes itself.
+     main.js adds .js-boot first thing and then owns the loader (with its own safety net). */
+  animation: loader-failsafe var(--duration-loader-fade) ease 10s forwards;
+}
+
+.js-boot .loader {
+  animation: none;
+}
+
+@keyframes loader-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.loader.is-done {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Ring aperture: the paper sheet drops away, the hero shows through the growing compass ring. */
+.loader.is-aperture {
+  background: transparent;
+  pointer-events: none;
+}
+
+.loader.is-instant {
+  transition: none;
+}
+
+.loader__logo {
+  /* #kaptan-logo viewBox is 212 × 64 */
+  width: 199px;
+  height: 60px;
+  overflow: visible;
+}
+
+
+/* The needle's north tip is the one red on the sheet (north red: needle, flag, stamp only). */
+.loader__needle-north {
+  fill: var(--color-north);
+}
+
+/* Hidden until DrawSVG takes over, so the ring never flashes fully drawn before JS runs. */
+.loader__ring {
+  stroke-dasharray: 0 200;
+}
+
+/* Progress: a 1px ink rule that fills from the left over a faint one, as ruled in a logbook. */
+.loader__track {
+  width: 184px;
+  height: 1px;
+  margin-top: var(--space-xs);
+  background: var(--color-rule-soft);
+}
+
+.loader__bar {
+  width: 100%;
+  height: 100%;
+  background: var(--color-sumi);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--duration-fast) linear;
+}
+
+.loader__label {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-muted);
+}

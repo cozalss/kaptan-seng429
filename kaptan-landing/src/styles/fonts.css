@@ -1,0 +1,63 @@
+/* Self-hosted web fonts (SIL OFL 1.1 — see THIRD_PARTY_NOTICES.md), replacing Google Fonts.
+   Family names match tokens.css exactly, so no other stylesheet changes.
+   Files are subset to Latin + Turkish (plus General Punctuation, € ₺ and −) with fontTools:
+   - Inter: variable, opsz pinned at 14 (as Google serves it), wght limited to 400–500 — one file, both weights.
+   - Instrument Serif: static regular + italic (the hero headline; both preloaded in index.html).
+   - Bodoni Moda (wordmark): static 700 at opsz 11, only the glyphs of "KAPtan" / "KAPTAN" (the SVG logo is
+     its only use; regenerated from BodoniModa[opsz,wght].ttf with fontTools' instancer + subsetter).
+   - Bodoni Moda Display: static 400 roman + italic at display optical size, Latin + Turkish (agent names in
+     the agent detail; the Pusula section may declare the same faces — duplicates are harmless). */
+
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/instrument-serif-latin-tr.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+011E-011F, U+0130-0131, U+015E-015F, U+2000-206F, U+20AC, U+20BA, U+2212;
+}
+
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/instrument-serif-italic-latin-tr.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+011E-011F, U+0130-0131, U+015E-015F, U+2000-206F, U+20AC, U+20BA, U+2212;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/inter-latin-tr.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+011E-011F, U+0130-0131, U+015E-015F, U+2000-206F, U+20AC, U+20BA, U+2212;
+}
+
+@font-face {
+  font-family: 'Bodoni Moda';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/bodoni-moda-wordmark.woff2') format('woff2');
+  unicode-range: U+0041, U+004B, U+004E, U+0050, U+0054, U+0061, U+006E, U+0074;
+}
+
+@font-face {
+  font-family: 'Bodoni Moda Display';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/bodoni-moda-display-latin-tr.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+011E-011F, U+0130-0131, U+015E-015F, U+2000-206F, U+20AC, U+20BA, U+2212;
+}
+
+@font-face {
+  font-family: 'Bodoni Moda Display';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/bodoni-moda-display-italic-latin-tr.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+011E-011F, U+0130-0131, U+015E-015F, U+2000-206F, U+20AC, U+20BA, U+2212;
+}

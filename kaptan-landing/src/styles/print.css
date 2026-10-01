@@ -1,0 +1,122 @@
+/* ---------- Print: a readable A4 price/visit sheet, no motion chrome ---------- */
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 14mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11pt;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .skip-link,
+  .loader,
+  .site-header,
+  .sticky-cta,
+  canvas,
+  video,
+  [aria-modal='true'],
+  [role='dialog'] {
+    display: none !important;
+  }
+
+  .has-grain::after,
+  .has-grain::before {
+    display: none !important;
+  }
+
+  /* GSAP pins: flatten spacers and pinned stages back into normal flow */
+  .pin-spacer {
+    height: auto !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+  }
+
+  [style*='position: fixed'],
+  .pin-spacer > * {
+    position: static !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: 100% !important;
+    height: auto !important;
+    inset: auto !important;
+  }
+
+  /* reveal anything a scroll animation left hidden */
+  * {
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  [style*='opacity: 0'],
+  [style*='visibility: hidden'] {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  [style*='translate'],
+  [style*='matrix'] {
+    transform: none !important;
+  }
+
+  #hero,
+  #hero * {
+    min-height: 0 !important;
+  }
+
+  #hero,
+  .hero__stage {
+    position: relative !important;
+    height: auto !important;
+    padding-top: 0 !important;
+  }
+
+  /* the night stage prints as plain type on paper; the live feed is screen-only */
+  .hero__media {
+    display: none !important;
+  }
+
+  #hero,
+  .hero__stage,
+  #hero * {
+    background: none !important;
+    color: #000 !important;
+    text-shadow: none !important;
+  }
+
+  section {
+    min-height: 0 !important;
+    height: auto !important;
+    break-inside: auto;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  li,
+  tr {
+    break-inside: avoid;
+  }
+
+  img {
+    max-height: 70mm;
+    object-fit: cover;
+    width: auto;
+  }
+
+  a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 9pt;
+    word-break: break-all;
+  }
+}

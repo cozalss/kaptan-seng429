@@ -1,0 +1,1070 @@
+/* ---------- Bölüm 2 · Tayfa: the crew as a comic strip ----------
+   A running head over a pinned strip: the chapter opener, then eight panels separated by paper
+   gutters. The six LLM agents are ink panels (hard shadow); the two deterministic stages are
+   ruled plates (double rule, ledger lines). The chart spread falls open after the last panel. */
+.services {
+  --panel-pad: 16px;
+  /* Static layouts (reduced motion, no JS, before the pin is built, a phone held sideways): a comic
+     page of panels. The floor keeps panels readable on short screens (844 × 390 would give 164px). */
+  --art-h: min(max(56vh, 360px), 520px);
+  --art-w: calc(var(--art-h) * 0.75);
+  --panel-w: calc(var(--art-w) + 2 * var(--panel-pad) + 4px);
+  position: relative;
+  background: var(--color-paper);
+}
+
+.services__pin {
+  position: relative;
+}
+
+.services__head {
+  padding: calc(var(--header-height) + 14px) var(--gutter) 0;
+}
+
+.services__strip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxl);
+  padding: var(--space-xxl) var(--gutter) var(--space-section);
+}
+
+.services__track img {
+  -webkit-user-drag: none;
+}
+
+/* ---------- Pinned strip (≥768px, full motion; services-motion.js sets .is-pinned) ---------- */
+.services__pin.is-pinned {
+  /* Portrait height: as tall as the pin allows beside the panel's type (≤ 62vh, 3:4). */
+  --panel-chrome: 250px;
+  --art-h: min(68vh, calc(100vh - var(--header-height) - var(--panel-chrome)));
+  /* re-derived here: custom properties resolve where they are declared, so the base width would
+     keep the unpinned height and crop the 3:4 plate into a narrow strip */
+  --art-w: calc(var(--art-h) * 0.75);
+  --panel-w: calc(var(--art-w) + 2 * var(--panel-pad) + 4px);
+  --strip-top: calc(var(--header-height) + 58px);
+  height: 100vh;
+  /* clip (not a scroll container): focusing an off-screen card cannot scroll the pin sideways */
+  overflow: hidden;
+  overflow: clip;
+}
+
+.is-pinned .services__head {
+  position: absolute;
+  top: calc(var(--header-height) + 14px);
+  left: var(--gutter);
+  right: var(--gutter);
+  z-index: 1;
+  padding: 0;
+}
+
+.is-pinned .services__strip {
+  position: absolute;
+  top: var(--strip-top);
+  bottom: 30px;
+  left: 0;
+  flex-direction: row;
+  gap: var(--gutter-panel);
+  width: max-content;
+  padding: 0 var(--gutter);
+}
+
+.is-pinned .services__opener {
+  justify-content: center;
+  padding-right: 6vw;
+}
+
+.is-pinned .services__title {
+  font-size: min(8.6vw, 17vh);
+}
+
+.is-pinned .services__track {
+  flex-wrap: nowrap;
+  height: 100%;
+}
+
+.is-pinned .services__item,
+.is-pinned .service-card {
+  height: 100%;
+}
+
+/* The strip slides: promote it only while it moves (a huge layer is not kept at rest). */
+.services__pin.is-scrolling .services__strip,
+.services__pin.is-dragging .services__strip {
+  will-change: transform;
+}
+
+/* the leaf is promoted only while the spread is in play */
+.services__pin.is-spread .spread__leaf {
+  will-change: transform;
+}
+
+/* Once the spread owns the pin the panels take no input. While the strip merely slides, only hover
+   is off (the :not(.is-scrolling) hover rules below): the scrub keeps easing for a while after the
+   wheel stops, and switching clicks off then swallowed the first click on a card. */
+.services__pin.is-spread .services__track {
+  pointer-events: none;
+}
+
+.services__pin.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.services__pin.is-dragging .service-card {
+  cursor: grabbing;
+}
+
+/* Under the hero's exit (W1, hero.css): only the part below the line where the sea's ink has
+   fully dried is printed (sea-stage.js writes --hero-dry-edge, px from the section top), so the
+   opener inks in behind the drying front. */
+.services[data-hero-drying] .services__pin {
+  -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--hero-dry-edge) - 48px), #000 var(--hero-dry-edge));
+  mask-image: linear-gradient(to bottom, transparent calc(var(--hero-dry-edge) - 48px), #000 var(--hero-dry-edge));
+}
+
+/* ---------- Chapter opener (the splash before the panels) ---------- */
+.services__opener {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.services__title {
+  padding-top: 0.12em; /* room for the dots of İ under the running head */
+  font-size: min(8.6vw, 150px);
+  white-space: nowrap;
+}
+
+.services__lead {
+  align-self: flex-start;
+  max-width: 21em;
+  margin-left: 1.6em;
+}
+
+/* ---------- The panels ---------- */
+.services__track {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xl) var(--gutter-panel);
+}
+
+.services__item {
+  flex: none;
+  width: var(--panel-w);
+  container-type: inline-size;
+}
+
+/* Three panel formats (services-render.js PANELS): the splash that opens the crew, the standard
+   panel, and the tall narrow ruled plate of the two deterministic stages. */
+.services__item--splash {
+  width: calc(var(--panel-w) * 1.5);
+}
+
+.services__item--plate {
+  width: calc(var(--panel-w) * 0.8);
+}
+
+/* ---------- The gutter beat: "Altısı okur. / İkisi hükmeder." ----------
+   Between the readers and the deciders the strip changes register: an ink panel (paper type on
+   sumi) and, behind the two ruled plates that follow, a ledger page (ruled lines) instead of paper. */
+.services__beat {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.15em;
+  width: calc(var(--panel-w) * 0.62);
+  padding: 22px 18px;
+  background: var(--color-sumi);
+  color: var(--color-paper);
+  font-family: var(--font-display);
+  font-size: clamp(22px, calc(var(--panel-w) * 0.07), 44px);
+  line-height: 0.95;
+  letter-spacing: -0.012em;
+  text-transform: uppercase;
+}
+
+.services__beat-line--indent {
+  padding-left: 0.6em;
+}
+
+/* the ledger the ruled plates are set on: it runs from the beat under the next two panels (on the
+   pinned strip, where they follow it in one row) */
+.is-pinned .services__beat::after {
+  content: '';
+  position: absolute;
+  top: -18px;
+  bottom: -18px;
+  left: 100%;
+  width: calc(var(--panel-w) * 1.6 + 2 * var(--gutter-panel) + 14px);
+  z-index: -1;
+  border-top: 1px solid var(--color-sumi);
+  border-bottom: 1px solid var(--color-sumi);
+  background: repeating-linear-gradient(to bottom, transparent 0 23px, var(--color-rule-soft) 23px 24px);
+  pointer-events: none;
+}
+
+.services__track {
+  isolation: isolate;
+}
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: var(--panel-pad);
+  background: var(--color-paper-panel);
+  border: 2px solid var(--color-sumi);
+  box-shadow: var(--shadow-panel);
+  text-align: left;
+  color: var(--color-sumi);
+  transition:
+    transform var(--duration-fast) var(--ease-out-expo),
+    box-shadow var(--duration-fast) var(--ease-out-expo);
+}
+
+.service-card:focus-visible {
+  outline-offset: 5px;
+}
+
+/* Pressed: the panel is pushed into the page (its shadow shortens). */
+.service-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--color-sumi);
+}
+
+.service-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.service-card__category {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-muted);
+}
+
+.service-card__code {
+  font-size: 12px;
+  color: var(--color-sumi);
+}
+
+.service-card__frame {
+  position: relative;
+  display: block;
+  flex: none;
+  height: var(--art-h);
+}
+
+.service-card__media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-paper-panel);
+  border: var(--ink-border);
+}
+
+.service-card__media picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* The plate is printed on the panel's paper: multiply lets the sheet show through the art. */
+.service-card__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--art-x, 50%) 30%;
+  mix-blend-mode: multiply;
+  transition: transform var(--duration-slow) var(--ease-out-expo);
+}
+
+/* ---------- Idle life over the portrait (services-render.js createLife) ----------
+   A layer laid exactly over the 3:4 art as object-fit: cover crops it (so positions are in % of
+   the portrait, whatever the panel format), carrying rain and one small loop per agent. CSS
+   animations on transform/opacity only; they run only while the chapter is on screen
+   (.services.is-live, services-life.js) and never under reduced motion. */
+.service-card__media {
+  position: relative;
+  container-type: size;
+}
+
+.service-card__life {
+  position: absolute;
+  left: calc((100cqw - max(100cqw, 75cqh)) * var(--art-fx, 0.5));
+  top: calc((100cqh - max(100cqh, 133.333cqw)) * 0.3);
+  width: max(100cqw, 75cqh);
+  height: max(100cqh, 133.333cqw);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.life__rain,
+.life__glint,
+.life__rule,
+.life__flicker {
+  position: absolute;
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .life__rain,
+  .life__glint,
+  .life__rule,
+  .life__flicker {
+    display: block;
+  }
+
+  /* fine ink rain, falling across the art (the portraits' own rain, set moving) */
+  .life__rain {
+    left: 0;
+    right: 0;
+    top: -140px;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='140'%3E%3Cg stroke='%23121318' stroke-opacity='.22' stroke-width='1' stroke-linecap='round'%3E%3Cpath d='M18 8l-3 15M61 52l-3 13M86 94l-3 15M37 112l-2 11'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 96px 140px;
+    animation: life-rain 1.4s linear infinite;
+  }
+
+  /* a glint on glass or brass: a four-pointed paper star that flares and goes */
+  .life__glint {
+    left: var(--x);
+    top: var(--y);
+    width: 22px;
+    height: 22px;
+    margin: -11px 0 0 -11px;
+    background: var(--color-paper-panel);
+    clip-path: polygon(50% 0, 58% 42%, 100% 50%, 58% 58%, 50% 100%, 42% 58%, 0 50%, 42% 42%);
+    opacity: 0;
+    transform: scale(0.2) rotate(0deg);
+    animation: life-glint 5.2s var(--ease-out-expo) infinite;
+  }
+
+  /* the reading rule: an ink hairline walking down the lines of the page in hand */
+  .life__rule {
+    left: var(--x);
+    top: var(--y);
+    width: var(--w);
+    height: 13%;
+  }
+
+  .life__rule::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-top: 2px solid rgb(18 19 24 / 0.6);
+    animation: life-rule 4.8s steps(1, end) infinite;
+  }
+
+  /* a lantern's light: the flame's glass, paper-bright, wavering */
+  .life__flicker {
+    left: var(--x);
+    top: var(--y);
+    width: 3.4%;
+    height: 3.2%;
+    border-radius: 50% 50% 45% 45%;
+    background: var(--color-paper-panel);
+    mix-blend-mode: screen;
+    opacity: 0.2;
+    animation: life-flicker 2.3s linear infinite;
+  }
+}
+
+/* every loop rests until the chapter is on screen (services-life.js); after the shorthands above */
+.service-card__life > *,
+.service-card__life > *::before {
+  animation-play-state: paused;
+}
+
+.services.is-live .service-card__life > *,
+.services.is-live .service-card__life > *::before {
+  animation-play-state: running;
+}
+
+@keyframes life-rain {
+  to {
+    transform: translateY(140px);
+  }
+}
+
+@keyframes life-glint {
+  0%,
+  70% {
+    opacity: 0;
+    transform: scale(0.2) rotate(0deg);
+  }
+
+  76% {
+    opacity: 1;
+    transform: scale(1) rotate(20deg);
+  }
+
+  86%,
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(40deg);
+  }
+}
+
+@keyframes life-rule {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  20% {
+    transform: translateY(25%);
+  }
+
+  40% {
+    transform: translateY(50%);
+  }
+
+  60% {
+    transform: translateY(75%);
+  }
+
+  80% {
+    transform: translateY(100%);
+    opacity: 1;
+  }
+
+  90%,
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes life-flicker {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+
+  12% {
+    opacity: 0.55;
+  }
+
+  19% {
+    opacity: 0.2;
+  }
+
+  37% {
+    opacity: 0.5;
+  }
+
+  52% {
+    opacity: 0.3;
+  }
+
+  70% {
+    opacity: 0.6;
+  }
+
+  83% {
+    opacity: 0.22;
+  }
+}
+
+/* In-frame parallax on the pinned strip: the art drifts against its frame as the panel crosses
+   the page (services-motion.js writes the strip's offset --sx; each panel's centre is --cx). */
+.is-pinned .service-card__media picture,
+.is-pinned .service-card__life {
+  translate: clamp(-20px, calc((var(--cx, 50vw) + var(--sx, 0px) - 50vw) * -0.022), 20px) 0;
+}
+
+.is-pinned .service-card__media picture {
+  scale: 1.07;
+}
+
+.is-pinned .service-card__life {
+  scale: 1.07;
+  transform-origin: 50% 50%;
+}
+
+/* The character's voice: a caption box laid over the lower corner of the art. */
+.service-card__voice {
+  --tilt: -1deg;
+  position: absolute;
+  left: -10px;
+  bottom: 14px;
+  max-width: min(84%, 19em);
+  padding: 8px 12px 10px;
+  font-size: clamp(15px, 2.1vh, 19px);
+  line-height: 1.22;
+}
+
+.services__item:nth-child(even) .service-card__voice {
+  --tilt: 0.8deg;
+  left: auto;
+  right: -10px;
+}
+
+.service-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  margin-top: auto;
+}
+
+.service-card__name {
+  position: relative;
+  align-self: flex-start;
+  max-width: 100%;
+  font-family: var(--font-display);
+  font-size: clamp(24px, 8.6cqi, 58px);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The ink underline drawn under the name on hover / keyboard focus. */
+.service-card__name::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 2px;
+  background: var(--color-sumi);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 450ms var(--ease-out-expo);
+}
+
+/* Girdi / Çıktı: a small ruled row. */
+.service-card__meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--color-sumi);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.service-card__io {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 10px 0 0;
+}
+
+.service-card__io + .service-card__io {
+  padding-left: 10px;
+  border-left: 1px solid var(--color-hairline);
+}
+
+.service-card__io-key {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.service-card__io-value {
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Ruled plates: the deterministic stages ---------- */
+.services__item--rule .service-card {
+  border: 5px double var(--color-sumi);
+  box-shadow: none;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 23px, var(--color-hairline) 23px 24px) 0 0 / 100% 100% no-repeat,
+    var(--color-paper-panel);
+}
+
+.services__item--rule .service-card:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+.services__item--rule .service-card__media {
+  outline: 1px solid var(--color-sumi);
+  outline-offset: 3px;
+}
+
+.services__item--rule .service-card__voice {
+  --tilt: 0deg;
+  box-shadow: none;
+  border-style: double;
+  border-width: 4px;
+}
+
+.services__item--rule .service-card__name::after {
+  height: 1px;
+  bottom: -4px;
+  box-shadow: 0 3px 0 var(--color-sumi);
+}
+
+/* ---------- Hover: crisp, inside the frame, never while the strip moves ---------- */
+@media (hover: hover) {
+  .services__pin:not(.is-scrolling, .is-dragging) .service-card:hover .service-card__media img {
+    transform: scale(1.03);
+  }
+
+  .services__pin:not(.is-scrolling, .is-dragging) .service-card:hover .service-card__name::after {
+    transform: scaleX(1);
+  }
+}
+
+.service-card:focus-visible .service-card__name::after {
+  transform: scaleX(1);
+}
+
+/* ---------- The chart spread: the chapter closes on a double page ----------
+   A book lying open on the paper: the left leaf (chart + printed legend on its front, the chapter
+   plate on its back) and the right page, split at the gutter. Pinned, the leaf starts closed over
+   the right page and turns (page-turn.js); everywhere else it simply lies open. The course, the
+   waypoints and the boat are live ink on top (chart-spread.js). Sizes are one variable: --spread-w. */
+.spread {
+  /* the floor keeps the printed legend inside the chart on short screens (a phone held sideways) */
+  --spread-w: min(100%, max(calc((100vh - var(--header-height) - 140px) * 1.5), 560px));
+  position: relative;
+  flex: none;
+  width: var(--spread-w);
+  margin: var(--space-xl) auto 0;
+}
+
+.spread__book {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  container-type: inline-size;
+  perspective: 3600px;
+}
+
+.spread__page,
+.spread__face {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--color-paper);
+  border: 2px solid var(--color-sumi);
+}
+
+/* the right-hand page: a hard shadow like every panel of the book */
+.spread__page--right {
+  left: 50%;
+  right: 0;
+  z-index: 1;
+  overflow: hidden;
+  border-left: 0;
+  /* the second shadow runs the foot on to the gutter, where the left page's own foot shadow ends */
+  box-shadow:
+    var(--shadow-panel-lg),
+    0 6px 0 var(--color-sumi);
+}
+
+.spread__leaf {
+  position: absolute;
+  inset: 0 50% 0 0;
+  z-index: 2;
+  transform-origin: 100% 50%;
+  transform-style: preserve-3d;
+}
+
+.spread__face {
+  inset: 0;
+  backface-visibility: hidden;
+}
+
+/* the left-hand page (the leaf's front): its hard shadow runs along the foot only */
+.spread__face--front {
+  border-right: 0;
+  box-shadow: var(--shadow-panel-lg);
+  clip-path: inset(0 0 -8px 0);
+}
+
+/* the leaf's back: the chapter plate, seen while the book is closed */
+.spread__face--back {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5cqi;
+  padding: 0 5cqi;
+  background: var(--color-paper-panel);
+  transform: rotateY(180deg);
+}
+
+.spread__plate-title {
+  font-size: 6.2cqi;
+}
+
+/* a plate is framed by a fine inner rule, as in a printed book */
+.spread__face--back::before {
+  content: '';
+  position: absolute;
+  inset: 1.4cqi;
+  border: 1px solid var(--color-sumi);
+  pointer-events: none;
+}
+
+.spread__plate-caption {
+  align-self: flex-start;
+  margin-left: 1.2em;
+  font-size: max(15px, 1.9cqi);
+}
+
+/* The chart: one raster, each page shows its half (the picture spans the whole spread). */
+.spread picture {
+  display: contents;
+}
+
+.spread__image {
+  position: absolute;
+  top: 0;
+  width: 200%;
+  max-width: none;
+  height: 100%;
+  object-fit: fill;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.spread__image--left {
+  left: 0;
+}
+
+.spread__image--right {
+  left: -100%;
+}
+
+/* The gutter: each page darkens a little as it curves into the spine, with a hairline at the fold. */
+.spread__page--right::before,
+.spread__face--front::after,
+.spread__face--back::after,
+.spread__page--right::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.spread__page--right::before {
+  background: linear-gradient(90deg, rgb(18 19 24 / 0.22) 0, rgb(18 19 24 / 0.07) 1.6%, transparent 7%);
+  border-left: 1px solid rgb(18 19 24 / 0.5);
+}
+
+.spread__face--front::after {
+  background:
+    linear-gradient(270deg, rgb(18 19 24 / 0.2) 0, rgb(18 19 24 / 0.06) 1.6%, transparent 7%),
+    linear-gradient(270deg, rgb(18 19 24 / var(--shade-front, 0)), rgb(18 19 24 / calc(var(--shade-front, 0) * 0.35)));
+}
+
+/* while the leaf stands up, the face towards the reader turns from the light */
+.spread__face--back::after {
+  background: linear-gradient(90deg, rgb(18 19 24 / var(--shade-back, 0)), rgb(18 19 24 / calc(var(--shade-back, 0) * 0.35)));
+}
+
+/* and throws a shadow on the page under it, from the spine out */
+.spread__page--right::after {
+  background: linear-gradient(90deg, rgb(18 19 24 / var(--shade-cast, 0)), transparent 60%);
+}
+
+/* The printed legend (cartouche), on the land in the chart's top-left corner (chart-course.js LEGEND). */
+.spread__legend {
+  position: absolute;
+  top: 8.1%;
+  left: 10.8%;
+  width: 51.7%;
+  display: grid;
+  gap: 0.55cqi;
+  padding: 1.5cqi 1.9cqi 1.6cqi;
+  background: var(--color-paper-panel);
+  border: 1.5px solid var(--color-sumi);
+  outline: 1px solid var(--color-sumi);
+  outline-offset: -0.55cqi;
+  color: var(--color-sumi);
+}
+
+.spread__legend p {
+  margin: 0;
+}
+
+.spread__legend-kind,
+.spread__legend-meta,
+.spread__legend-scale {
+  font-family: var(--font-sans);
+  font-size: max(12px, 0.95cqi);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.spread__legend-kind {
+  font-weight: 500;
+}
+
+.spread__legend-title {
+  font-family: var(--font-display);
+  font-size: max(22px, 3.1cqi);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.spread__legend-meta {
+  color: var(--color-muted);
+}
+
+/* the scale bar: five alternating ink/paper segments, 0 … 5 deniz mili under it */
+.spread__legend-scale {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.4cqi;
+  padding-top: 13px;
+  color: var(--color-muted);
+}
+
+.spread__legend-scale::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 7px;
+  border: 1px solid var(--color-sumi);
+  background: repeating-linear-gradient(90deg, var(--color-sumi) 0 20%, var(--color-paper-panel) 20% 40%);
+}
+
+/* ---------- The live ink: course, waypoints, landfall, the boat (chart units, 2400 × 1600) ---------- */
+.spread__ink {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.spread__course {
+  fill: none;
+  stroke: var(--color-sumi);
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.spread__mark circle {
+  fill: var(--color-paper-panel);
+  stroke: var(--color-sumi);
+  stroke-width: 3.5;
+}
+
+.spread__mark .spread__dot {
+  fill: var(--color-sumi);
+  stroke: none;
+}
+
+.spread__mark--start path {
+  fill: none;
+  stroke: var(--color-sumi);
+  stroke-width: 4.5;
+  stroke-linecap: round;
+}
+
+.spread__mark--landfall .spread__ring {
+  fill: none;
+  stroke-width: 4;
+}
+
+.spread__mark text {
+  font-family: var(--font-sans);
+  font-size: 34px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  fill: var(--color-sumi);
+  paint-order: stroke;
+  stroke: var(--color-paper);
+  stroke-width: 10px;
+  stroke-linejoin: round;
+}
+
+.spread__boat-fill {
+  fill: var(--color-paper-panel);
+}
+
+.spread__boat-ink {
+  fill: none;
+  stroke: var(--color-sumi);
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.spread__boat-flag {
+  fill: var(--color-north);
+}
+
+/* Idle life (W7): once the spread owns the pin, the boat rides the swell at its mark (in chart
+   units; the pivot is the hull's anchor, chart-course.js BOAT_ANCHOR). Paused off screen. */
+.spread__boat path {
+  transform-origin: 80px 104px;
+  animation: spread-bob 3.8s ease-in-out infinite;
+  animation-play-state: paused;
+}
+
+.services.is-live .is-spread .spread__boat path {
+  animation-play-state: running;
+}
+
+@keyframes spread-bob {
+  0%,
+  100% {
+    transform: none;
+  }
+
+  30% {
+    transform: translateY(-5px) rotate(1.8deg);
+  }
+
+  70% {
+    transform: translateY(-1px) rotate(-1.6deg);
+  }
+}
+
+/* ---------- Pinned (≥768px, full motion): the closed spread is the strip's last panel ----------
+   Its left half hangs back over the last panels (negative margin), so the closed book (right
+   page + leaf lying on it) follows them like one more panel, and the strip ends with the spread
+   centred in the pin: the leaf then turns over the panels. */
+.is-pinned .spread {
+  --spread-h: calc(100vh - var(--strip-top) - 30px);
+  --pin-w: calc(100vw - var(--scrollbar-width, 0px));
+  --spread-w: min(calc(var(--spread-h) * 1.5), calc(var(--pin-w) - 2 * var(--gutter)));
+  align-self: center;
+  margin: 0 calc((var(--pin-w) - var(--spread-w)) / 2 - var(--gutter)) 0 calc(var(--gutter-panel) * 2 - var(--spread-w) / 2);
+  /* the closed book's empty left half lies over the last panels: it must not swallow their clicks
+     (the spread holds nothing to press) */
+  pointer-events: none;
+}
+
+/* closed until page-turn.js takes over (no flash of an open book mid-strip) */
+.is-pinned .spread__leaf {
+  transform: rotateY(180deg);
+}
+
+/* a closed book shows no shadow for the empty half */
+.spread__book.is-closed .spread__face--front {
+  box-shadow: none;
+}
+
+/* ---------- Phones (<768px): never pinned — one panel per row, full width ---------- */
+@media (max-width: 767px) {
+  .services {
+    --art-h: min(62svh, 118vw);
+  }
+
+  .services__head {
+    padding-top: calc(var(--header-height) + 12px);
+  }
+
+  .services__strip {
+    gap: var(--space-xl);
+    padding: var(--space-xl) var(--gutter) var(--space-xxl);
+  }
+
+  .services__title {
+    font-size: min(14vw, 64px);
+  }
+
+  .services__lead {
+    margin-left: 0.6em;
+  }
+
+  .services__item,
+  .services__item--splash,
+  .services__item--plate {
+    width: 100%;
+  }
+
+  /* the beat sits between the panels as a short ink band; the ledger lies under the two plates */
+  .services__beat {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0 0.5em;
+    padding: 18px 16px;
+  }
+
+  .services__beat-line--indent {
+    padding-left: 0;
+  }
+
+  .services__beat::after {
+    display: none;
+  }
+
+  /* full-width panels: the frame takes the plate's own 3:4, so card and detail show the same crop */
+  .service-card__frame {
+    height: auto;
+    aspect-ratio: 3 / 4;
+  }
+
+  .service-card__name {
+    font-size: clamp(28px, 11cqi, 48px);
+  }
+
+  /* the spread lies open across the column; its legend moves under it, as a caption */
+  .spread {
+    --spread-w: 100%;
+    padding-bottom: 118px;
+  }
+
+  .spread__face--front {
+    overflow: visible;
+    clip-path: none;
+    box-shadow: none;
+  }
+
+  .spread__image--left {
+    clip-path: inset(0 50% 0 0);
+  }
+
+  .spread__legend {
+    top: calc(100% + 18px);
+    left: -2px;
+    width: calc(200% + 4px);
+    gap: 4px;
+    padding: 12px 14px 14px;
+    outline-offset: -5px;
+  }
+
+  .spread__mark text {
+    display: none;
+  }
+}
+
+/* Static layouts on wide screens: the rows of panels are justified like a comic page. */
+@media (min-width: 768px) {
+  .services__pin:not(.is-pinned) .services__item {
+    flex-grow: 1;
+    max-width: calc(var(--panel-w) * 1.7);
+  }
+
+  /* the ruled plates keep their narrow format on the static page too */
+  .services__pin:not(.is-pinned) .services__item--plate {
+    flex-grow: 0;
+  }
+
+  /* the beat stays slim so it and both plates close the page on one row */
+  .services__pin:not(.is-pinned) .services__beat {
+    width: calc(var(--panel-w) * 0.42);
+    min-width: max-content; /* "HÜKMEDER." is never cut off */
+    font-size: clamp(20px, calc(var(--panel-w) * 0.052), 32px);
+  }
+}

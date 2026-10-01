@@ -1,0 +1,875 @@
+/* ---------- "350'den 1'e": the interlude's ink scene (src/components/compass) ----------
+   A sticky stage holds the copy, the canvas and the act rail while the tall section scrolls past
+   (the pin is plain CSS, so no ScrollTrigger pin-spacing has to be kept in order). data-pusula:
+   static  — short section: the final still, the four acts as text (no JS, reduced motion)
+   loading — choreography on, canvas on its way
+   live    — canvas live
+   still   — choreography on, no canvas (2D context failed): the still stands in
+   data-pusula-act (gurultu · kanit · onay · yon) names the act on screen.
+   With the choreography on, the scene is full-bleed: the canvas covers the whole sticky stage
+   behind the copy and feathers out under the header and into the act rail; the counter is a
+   paper tag hung in the scene and the act caption docks beside what the act is about (both
+   placed by view.js). The copy wrapper uses display: contents, so in the static composition the
+   title, captions and the CTA sit straight on the stage grid. */
+
+/* Bodoni Moda at display optical size (OFL 1.1, see THIRD_PARTY_NOTICES.md), subset to
+   Latin + Turkish. Its own family name: the wordmark's "Bodoni Moda" face holds three glyphs.
+   (The agent modal's name line uses this face too.) */
+@font-face {
+  font-family: 'Bodoni Moda Display';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/bodoni-moda-display-latin-tr.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+011E-011F, U+0130-0131, U+015E-015F, U+2000-206F, U+20AC, U+20BA, U+2212;
+}
+
+@font-face {
+  font-family: 'Bodoni Moda Display';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/bodoni-moda-display-italic-latin-tr.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+011E-011F, U+0130-0131, U+015E-015F, U+2000-206F, U+20AC, U+20BA, U+2212;
+}
+
+.pusula {
+  /* 100svh + 300vh = 3 600 px at 1440 × 900 (timeline.js: each act holds ≥ 0.4 viewport) */
+  /* capped in px: on tall screens a wheel notch is a smaller share of a viewport, and an uncapped
+     pin would hold each act's key frame for more notches than the eye needs (W6) */
+  --pusula-pin: min(300vh, 2700px);
+  --pusula-progress: 1;
+  --pusula-exit: 0; /* 0 → 1 while the section leaves the screen (view.js) */
+  position: relative;
+  z-index: var(--z-content);
+  background: var(--color-canvas);
+}
+
+.pusula:not([data-pusula='static']) {
+  height: calc(100vh + var(--pusula-pin));
+  height: calc(100svh + var(--pusula-pin));
+}
+
+/* ---------- Stage grid ---------- */
+.pusula__stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+  grid-template-areas:
+    'head head'
+    'title visual'
+    'counter visual'
+    'acts visual'
+    'cta visual'
+    'rail rail';
+  column-gap: var(--space-xl);
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: calc(var(--header-height) + var(--space-sm)) var(--gutter) 0;
+}
+
+.pusula:not([data-pusula='static']) .pusula__stage {
+  position: sticky;
+  top: 0;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'head head'
+    'title title'
+    '. .'
+    'rail rail';
+  height: 100vh;
+  height: 100svh;
+  overflow: clip;
+}
+
+.pusula__copy {
+  display: contents;
+}
+
+.pusula__head {
+  grid-area: head;
+}
+
+/* The book's chapter title (.chapter-title: Bodoni caps from sentence-case source, the second
+   line set in), at interlude size. */
+.pusula .pusula__title {
+  grid-area: title;
+  justify-self: start;
+  margin-top: clamp(20px, 4vh, 44px);
+  font-size: clamp(40px, min(5.3vw, 9.4vh), 92px);
+  line-height: 0.92;
+}
+
+/* Keyboard way past the scene: shown when focused (the scene is a long scroll). */
+.pusula__skip {
+  position: absolute;
+  top: calc(var(--header-height) + var(--space-xl) + 8px);
+  right: var(--gutter);
+  z-index: 3;
+  padding: 10px 14px;
+  background: var(--color-paper-panel);
+  color: var(--color-sumi);
+  border: var(--ink-border);
+  box-shadow: var(--shadow-panel);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition:
+    opacity var(--duration-normal) var(--ease-out-expo),
+    transform var(--duration-normal) var(--ease-out-expo);
+}
+
+.pusula__skip:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+.pusula[data-pusula='static'] .pusula__skip {
+  display: none;
+}
+
+/* ---------- The counter: one number, its unit read on as a sentence ---------- */
+.pusula__counter {
+  grid-area: counter;
+  align-self: center;
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: var(--space-lg) 0;
+}
+
+.pusula__count {
+  font-family: var(--font-display);
+  font-size: clamp(88px, min(11.5vw, 20vh), 196px);
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: 0.78;
+  letter-spacing: -0.03em;
+  color: var(--color-sumi);
+}
+
+.pusula__unit {
+  font-family: var(--font-sans);
+  font-size: var(--text-body-lg);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+}
+
+/* In the scene the counter is a paper tag on a string, hung from the funnel's plumb line, then
+   from the lifted slip, then under the compass (positioned by view.js). */
+.pusula:not([data-pusula='static']) .pusula__counter {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  justify-items: center;
+  gap: 6px;
+  min-width: 9.5em;
+  padding: 16px 18px 12px;
+  background: var(--color-paper-panel);
+  border: var(--ink-border);
+  box-shadow: var(--shadow-panel);
+  text-align: center;
+  will-change: transform;
+}
+
+/* the string, up to its hook */
+.pusula:not([data-pusula='static']) .pusula__counter::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - 7px);
+  width: 1px;
+  height: calc(var(--string, 26px) + 7px);
+  background: var(--color-sumi);
+}
+
+/* the punched eyelet the string runs through */
+.pusula:not([data-pusula='static']) .pusula__counter::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: calc(50% - 4px);
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--color-sumi);
+  border-radius: 50%;
+  background: var(--color-canvas);
+}
+
+.pusula:not([data-pusula='static']) .pusula__count {
+  font-size: clamp(54px, min(6vw, 10vh), 112px);
+  line-height: 0.82;
+}
+
+.pusula:not([data-pusula='static']) .pusula__unit {
+  font-size: clamp(14px, 1.05vw, 17px);
+  white-space: nowrap;
+}
+
+.pusula__text {
+  grid-area: acts;
+  display: none;
+  max-width: 38ch;
+  font-size: var(--text-body-lg);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+}
+
+/* ---------- Act captions: one caption panel per act, the current one inked in ---------- */
+.pusula__dock {
+  grid-area: acts;
+  display: grid;
+  justify-items: start;
+}
+
+.pusula[data-pusula='static'] .pusula__dock {
+  display: contents;
+}
+
+.pusula:not([data-pusula='static']) .pusula__dock > * {
+  grid-area: auto;
+}
+
+/* Docked in the scene beside what the act is about (positioned by view.js). */
+@media (min-width: 768px) {
+  .pusula:not([data-pusula='static']) .pusula__dock {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    width: min(23rem, 30vw);
+    will-change: transform;
+  }
+}
+
+.pusula__acts {
+  grid-area: acts;
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pusula__act {
+  grid-area: 1 / 1;
+  align-self: end;
+  max-width: 30ch;
+  font-size: clamp(19px, 1.55vw, 25px);
+}
+
+.pusula:not([data-pusula='static']) .pusula__act {
+  visibility: hidden;
+  clip-path: inset(0 100% 0 0);
+  transition:
+    clip-path 0.7s var(--ease-out-expo),
+    visibility 0s linear 0.7s;
+}
+
+.pusula:not([data-pusula='static']) .pusula__act[data-active='true'] {
+  visibility: visible;
+  clip-path: inset(-12px -12px -12px -12px);
+  transition:
+    clip-path 0.9s var(--ease-out-expo) 0.08s,
+    visibility 0s;
+}
+
+.pusula__act:nth-child(2) {
+  --tilt: 0.5deg;
+}
+
+.pusula__act:nth-child(3) {
+  --tilt: -0.5deg;
+}
+
+.pusula__act:nth-child(4) {
+  --tilt: 0.4deg;
+}
+
+.pusula__specs {
+  display: none;
+}
+
+.pusula__cta {
+  grid-area: cta;
+  justify-self: start;
+  margin: var(--space-lg) 0 var(--space-xs);
+}
+
+/* In the scene the way on is always in the tab order; it is shown once the slip is approved (and
+   whenever it has focus). */
+.pusula:not([data-pusula='static']) .pusula__cta {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity var(--duration-slow) var(--ease-out-expo),
+    transform var(--duration-slow) var(--ease-out-expo);
+}
+
+.pusula[data-pusula-act='onay'] .pusula__cta,
+.pusula[data-pusula-act='yon'] .pusula__cta,
+.pusula:not([data-pusula='static']) .pusula__cta:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+/* ---------- Scene ---------- */
+.pusula__visual {
+  grid-area: visual;
+  position: relative;
+  min-height: 0;
+  /* the scene runs to the page edge (the stage clips it) */
+  margin: var(--space-sm) calc(-1 * var(--gutter)) 0 0;
+}
+
+/* Full-bleed: the scene is the whole stage, behind the copy. While the section leaves, the scene
+   is a printed page: it scrolls away with the stage (it does not fade), and the course's first leg
+   runs from the compass down to Rota's course (the bridge below), so no blank paper opens up. */
+.pusula:not([data-pusula='static']) .pusula__visual {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* The course's first leg (view.js, layout.js bridgeTip): once the needle has locked north, the
+   pen leaves the compass rim and inks a dashed line down to the stage's foot, where Rota's course
+   begins (the same stroke as .rota__line). Over the scene, under the hanging tag and the copy. */
+.pusula__bridge {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.pusula__bridge path {
+  fill: none;
+  stroke: var(--color-sumi);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-dasharray: 8 7;
+}
+
+.pusula:not([data-pusula='static']) .pusula__head,
+.pusula:not([data-pusula='static']) .pusula__title,
+.pusula:not([data-pusula='static']) .pusula__rail {
+  position: relative;
+  z-index: 1;
+}
+
+/* type printed over the storm keeps a little paper around it (as ink would not soak through) */
+.pusula:not([data-pusula='static']) .pusula__title,
+.pusula:not([data-pusula='static']) .pusula__label {
+  text-shadow:
+    0 0 3px var(--color-canvas),
+    0 0 10px var(--color-canvas),
+    0 0 22px var(--color-canvas);
+}
+
+.pusula__canvas,
+.pusula__still,
+.pusula__still img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The canvas is transparent: slips and ink print straight onto the section's paper. Its edges
+   feather out (under the header and running head, into the act rail), so no slip is ever cut by a
+   straight edge; at the sides the slips run off the page. */
+.pusula__canvas {
+  display: block;
+  opacity: 0;
+  animation: pusula-in var(--duration-slow) var(--ease-out-expo) forwards;
+  --feather-top: calc(var(--header-height) + 52px); /* clear of the running head */
+  --feather-bottom: 132px;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--feather-top) - 16px),
+    #000 calc(var(--feather-top) + 96px),
+    #000 calc(100% - var(--feather-bottom)),
+    transparent calc(100% - 28px)
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--feather-top) - 16px),
+    #000 calc(var(--feather-top) + 96px),
+    #000 calc(100% - var(--feather-bottom)),
+    transparent calc(100% - 28px)
+  );
+}
+
+.pusula__still img {
+  object-fit: contain;
+  object-position: 50% 50%;
+}
+
+.pusula[data-pusula='still'] .pusula__still {
+  inset: calc(var(--header-height) + 160px) var(--gutter) 110px;
+  width: auto;
+  height: auto;
+}
+
+.pusula[data-pusula='loading'] .pusula__still,
+.pusula[data-pusula='live'] .pusula__still {
+  visibility: hidden;
+}
+
+@keyframes pusula-in {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Ring labels: hung off each drawn ring's right-hand edge by a short ink leader (placed by JS). */
+.pusula__labels {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.pusula__label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  gap: 2px;
+  margin-top: -0.9em;
+  padding-left: 58px;
+  visibility: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.pusula__label::before {
+  content: '';
+  position: absolute;
+  top: 0.9em;
+  /* --label-pull (view.js): the label moved left to stay on the page; the leader still starts at the ring */
+  left: calc(10px + var(--label-pull, 0px));
+  width: calc(40px - var(--label-pull, 0px));
+  height: 1px;
+  background: var(--color-sumi);
+}
+
+.pusula__label strong {
+  font-family: var(--font-display);
+  font-size: clamp(19px, 1.5vw, 24px);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--color-sumi);
+}
+
+.pusula__label span {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--color-muted);
+}
+
+.pusula__label .rule-code {
+  color: var(--color-ink);
+}
+
+.pusula[data-pusula='static'] .pusula__labels,
+.pusula[data-pusula='still'] .pusula__labels {
+  display: none;
+}
+
+.pusula__caption {
+  position: absolute;
+  right: var(--gutter);
+  bottom: var(--space-sm);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+/* in the full-bleed scene the note sits under the running head, clear of the storm's reach */
+.pusula:not([data-pusula='static']) .pusula__caption {
+  top: calc(var(--header-height) + var(--space-sm) + 30px);
+  bottom: auto;
+}
+
+/* ---------- The act rail: a chart scale of the whole scroll ---------- */
+.pusula__rail {
+  grid-area: rail;
+  padding: var(--space-sm) 0 var(--space-lg);
+}
+
+.pusula__steps {
+  display: grid;
+  /* segment widths = the acts' shares of the scroll (timeline.js PHASES) */
+  grid-template-columns: 18fr 34fr 26fr 22fr;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-display);
+  font-size: clamp(17px, 1.35vw, 21px);
+  line-height: 1.2;
+  color: var(--color-muted);
+}
+
+.pusula__steps li {
+  position: relative;
+  padding: 0 0 10px 12px;
+  white-space: nowrap;
+  transition: color var(--duration-normal) var(--ease-out-expo);
+}
+
+/* the act boundary: a long tick down onto the scale */
+.pusula__steps li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: -14px;
+  width: 1px;
+  background: var(--color-sumi);
+}
+
+.pusula__steps li[data-done='true'] {
+  color: var(--color-ink);
+}
+
+.pusula__steps li[data-active='true'] {
+  color: var(--color-sumi);
+}
+
+.pusula__act-num {
+  font-variant-numeric: lining-nums;
+}
+
+/* the current act: an ink bar under its name */
+.pusula__steps li::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  bottom: 2px;
+  width: calc(100% - 24px);
+  max-width: 7.5em;
+  height: 2px;
+  background: var(--color-sumi);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform var(--duration-slow) var(--ease-out-expo);
+}
+
+.pusula__steps li[data-active='true']::after {
+  transform: scaleX(1);
+}
+
+.pusula__scale {
+  position: relative;
+  height: 14px;
+  overflow: hidden;
+  border-right: 1px solid var(--color-sumi);
+  /* minor ticks every 2.5 % of the scroll over a base rule */
+  background:
+    linear-gradient(var(--color-sumi), var(--color-sumi)) 0 100% / 100% 1px no-repeat,
+    repeating-linear-gradient(90deg, var(--color-rule-soft) 0 1px, transparent 1px 2.5%) 0 100% / 100% 6px no-repeat;
+}
+
+.pusula__scale-ink,
+.pusula__playhead {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+}
+
+.pusula__scale-ink {
+  height: 3px;
+  background: var(--color-sumi);
+  transform: scaleX(var(--pusula-progress));
+  transform-origin: 0 50%;
+}
+
+/* the playhead: an ink wedge riding the scale's reading edge */
+.pusula__playhead {
+  top: 0;
+  transform: translateX(calc((var(--pusula-progress) - 1) * 100%));
+}
+
+.pusula__playhead::after {
+  content: '';
+  position: absolute;
+  right: -6px;
+  top: 0;
+  border: 6px solid transparent;
+  border-top: 8px solid var(--color-sumi);
+  border-bottom: 0;
+}
+
+/* ---------- Static composition (reduced motion / no script): still + the four acts as text ---------- */
+.pusula[data-pusula='static'] .pusula__stage {
+  grid-template-rows: auto auto auto auto auto auto;
+  grid-template-areas:
+    'head head'
+    'title visual'
+    'text visual'
+    'specs visual'
+    'cta visual'
+    'acts acts';
+  row-gap: var(--space-lg);
+  padding-bottom: var(--space-section);
+}
+
+.pusula[data-pusula='static'] .pusula__counter,
+.pusula[data-pusula='static'] .pusula__rail {
+  display: none;
+}
+
+.pusula[data-pusula='static'] .pusula__text {
+  grid-area: text;
+  display: block;
+}
+
+.pusula[data-pusula='static'] .pusula__specs {
+  grid-area: specs;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--gutter-panel);
+  margin: 0;
+}
+
+.pusula__spec {
+  padding: 10px 12px 12px;
+  font-size: clamp(17px, 1.3vw, 21px);
+}
+
+.pusula__spec:nth-child(2) {
+  --tilt: 0.6deg;
+}
+
+.pusula__spec:nth-child(3) {
+  --tilt: -0.4deg;
+}
+
+.pusula__specs dd {
+  margin: 0;
+  line-height: 1.1;
+}
+
+.pusula[data-pusula='static'] .pusula__visual {
+  min-height: min(62vh, 640px);
+  margin: 0;
+}
+
+/* the four acts read as a strip of four panels */
+.pusula[data-pusula='static'] .pusula__acts {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--gutter-panel);
+  margin-top: var(--space-lg);
+}
+
+.pusula[data-pusula='static'] .pusula__act {
+  grid-area: auto;
+  align-self: stretch;
+  max-width: none;
+}
+
+/* ---------- Tablet ---------- */
+@media (max-width: 1023px) {
+  .pusula__stage {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 6fr);
+    column-gap: var(--space-lg);
+  }
+
+  .pusula__label span {
+    display: none;
+  }
+
+  .pusula[data-pusula='static'] .pusula__acts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- Phone: one column, a shorter pin; the caption sits under the scene ---------- */
+@media (max-width: 767px) {
+  .pusula {
+    --pusula-pin: 260vh;
+  }
+
+  .pusula__stage {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'head'
+      'title'
+      'counter'
+      'visual'
+      'acts'
+      'rail';
+    padding: calc(var(--header-height) + var(--space-xs)) var(--gutter) 0;
+  }
+
+  .pusula:not([data-pusula='static']) .pusula__stage {
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'head'
+      'title'
+      '.'
+      'acts'
+      'rail';
+    /* the sticky demo bar owns the bottom edge on phones */
+    padding-bottom: calc(var(--sticky-cta-height, 56px) + 2 * var(--gutter-panel) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .pusula:not([data-pusula='static']) .pusula__dock {
+    position: relative;
+    z-index: 2;
+  }
+
+  .pusula .pusula__title {
+    margin-top: var(--space-md);
+    font-size: clamp(32px, 9.4vw, 42px);
+  }
+
+  .pusula__counter {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: var(--space-sm) 0 0;
+  }
+
+  .pusula__count {
+    font-size: clamp(56px, 17vw, 72px);
+  }
+
+  .pusula__unit {
+    font-size: 15px;
+  }
+
+  /* a low tag on phones: the number and its unit on one line */
+  .pusula:not([data-pusula='static']) .pusula__counter {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    padding: 12px 12px 8px;
+  }
+
+  .pusula:not([data-pusula='static']) .pusula__count {
+    font-size: clamp(34px, 10vw, 44px);
+  }
+
+  .pusula:not([data-pusula='static']) .pusula__caption {
+    top: calc(var(--header-height) + 136px);
+  }
+
+  .pusula:not([data-pusula='static']) .pusula__unit {
+    font-size: 13px;
+  }
+
+  .pusula__visual {
+    margin: 0 calc(-1 * var(--gutter));
+  }
+
+  .pusula__act {
+    max-width: none;
+    padding: 9px 12px 11px;
+    font-size: 17px;
+  }
+
+  .pusula:not([data-pusula='static']) .pusula__cta {
+    display: none;
+  }
+
+  .pusula__label span {
+    display: none;
+  }
+
+  .pusula__label {
+    padding-left: 34px;
+  }
+
+  .pusula__label::before {
+    left: calc(6px + var(--label-pull, 0px));
+    width: calc(22px - var(--label-pull, 0px));
+  }
+
+  .pusula__label strong {
+    font-size: 16px;
+  }
+
+  .pusula__canvas {
+    --feather-bottom: 96px;
+  }
+
+  .pusula__rail {
+    padding: var(--space-sm) 0 var(--space-sm);
+  }
+
+  .pusula__steps {
+    font-size: 12px;
+  }
+
+  .pusula__steps li {
+    padding-left: 5px;
+    overflow: hidden;
+    text-overflow: clip;
+  }
+
+  .pusula__steps li::after {
+    left: 5px;
+    width: calc(100% - 10px);
+  }
+
+  .pusula__caption {
+    right: var(--gutter);
+    bottom: 4px;
+  }
+
+  .pusula[data-pusula='static'] .pusula__stage {
+    grid-template-areas:
+      'head'
+      'title'
+      'text'
+      'specs'
+      'visual'
+      'acts'
+      'cta';
+  }
+
+  .pusula[data-pusula='static'] .pusula__visual {
+    min-height: 0;
+    aspect-ratio: 7 / 5;
+  }
+
+  .pusula[data-pusula='static'] .pusula__acts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Reduced motion: never tall (the script also switches to static; this covers the gap before it runs). */
+@media (prefers-reduced-motion: reduce) {
+  .pusula[data-pusula] {
+    height: auto;
+  }
+
+  .pusula[data-pusula] .pusula__stage {
+    position: static;
+    height: auto;
+  }
+}
