@@ -34,7 +34,8 @@ describe('buildStructuredData', () => {
   });
 
   it('adds sameAs only once a repository link exists', () => {
-    expect('sameAs' in data).toBe(false);
+    const noRepo = buildStructuredData({ ...SITE, links: { ...SITE.links, githubUrl: null } });
+    expect('sameAs' in noRepo).toBe(false);
     const withRepo = buildStructuredData({ ...SITE, links: { ...SITE.links, githubUrl: 'https://github.com/x/y' } });
     expect(withRepo.sameAs).toEqual(['https://github.com/x/y']);
   });
