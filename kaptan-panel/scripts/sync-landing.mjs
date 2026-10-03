@@ -27,7 +27,9 @@ if (!existsSync(join(LANDING, 'package.json'))) {
 
 const run = (cmd) => execSync(cmd, { cwd: LANDING, stdio: 'inherit' });
 
-if (!existsSync(join(LANDING, 'node_modules'))) run('npm ci --no-audit --no-fund');
+// Vercel builds with NODE_ENV=production, which makes npm skip devDependencies (Vite included),
+// and a restored build cache can hold a partial node_modules: install unless Vite is really there.
+if (!existsSync(join(LANDING, 'node_modules', 'vite', 'package.json'))) run('npm ci --include=dev --no-audit --no-fund');
 run('npm run build');
 
 const dist = join(LANDING, 'dist');
