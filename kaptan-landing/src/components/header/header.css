@@ -69,6 +69,7 @@
 
 .site-header__logo {
   display: block;
+  flex-shrink: 0;
   /* #kaptan-logo viewBox is 212 × 64 (3.31:1) */
   width: 186px;
   height: 56px;
@@ -144,8 +145,31 @@
   outline-offset: -4px;
 }
 
-.nav-link--demo {
-  margin-right: -10px;
+/* The way into the KAPtan Paneli: the one inked control in the running head. */
+.nav-link--panel {
+  min-height: 40px;
+  margin: 0 0 0 12px;
+  padding: 0 14px;
+  background: var(--color-sumi);
+  color: var(--color-paper);
+  border: 1.5px solid var(--color-sumi);
+  transition: background-color var(--duration-normal) ease, color var(--duration-normal) ease;
+}
+
+.nav-link + .nav-link--panel::before,
+.nav-link--panel::after {
+  content: none;
+}
+
+@media (hover: hover) {
+  .nav-link--panel:hover {
+    background: var(--color-paper);
+    color: var(--color-sumi);
+  }
+}
+
+.nav-link--panel:focus-visible {
+  outline-offset: 2px;
 }
 
 @media (max-width: 767px) {
@@ -169,5 +193,29 @@
 
   .nav-link {
     padding: 0 8px;
+  }
+
+  .nav-link--panel {
+    margin-left: 6px;
+    padding: 0 10px;
+  }
+
+  /* Phones: logo, İçindekiler and the panel button; Demo akışı stays in the sticky tab. */
+  .site-header__nav .nav-link--demo {
+    display: none;
+  }
+}
+
+/* Narrow phones (≤ 380px): a smaller mark keeps İçindekiler and the panel button on one line. */
+@media (max-width: 380px) {
+  .site-header__logo {
+    width: 118px;
+  }
+}
+
+/* Very narrow (≤ 340px): the button reads just "Panel". */
+@media (max-width: 340px) {
+  .nav-link__tail {
+    display: none;
   }
 }

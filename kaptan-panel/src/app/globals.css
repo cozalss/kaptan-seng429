@@ -1,0 +1,282 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────────────────
+   KAPtan Paneli — design tokens.
+   Same book as the landing (kaptan-landing/DESIGN.md §2): rice paper, sumi ink,
+   an indigo wash. North red is spent only on the kill switch, vetoes/rejections
+   and critical states; kaptan navy only on the wordmark, focus and selection.
+   Square corners, 1.5px ink lines, hard offset shadows (never blur).
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light only;
+
+  /* Colour — every colour has one job */
+  --paper: #f3f1ec; /* the page */
+  --panel: #fbfaf6; /* a brighter sheet laid on the page */
+  --sunk: #ebe8e1; /* recessed paper: table heads, wells, code */
+  --ink: #121318; /* type, ink lines, hard shadows (16.9:1 on paper) */
+  --ink-soft: #3b3c42; /* secondary type (10.1:1 on paper) */
+  --muted: #666663; /* meta lines (4.9:1 on paper, 5.3:1 on panel) */
+  --wash: #2b4261; /* indigo wash: active nav, hover fill, info */
+  --wash-tint: rgb(43 66 97 / 0.08);
+  --wash-tint-strong: rgb(43 66 97 / 0.16);
+  --rule-soft: rgb(18 19 24 / 0.28);
+  --hairline: rgb(18 19 24 / 0.14);
+  --scrim: rgb(243 241 236 / 0.72);
+  --north: #b3261e; /* kill switch, veto, reject, critical (6.1:1 on paper) */
+  --north-tint: rgb(179 38 30 / 0.08);
+  --ochre: #c9972c; /* the daily −1% "YENİ EMİR DURDU" band only (ink on ochre 7.4:1) */
+  --ochre-tint: rgb(201 151 44 / 0.16);
+  --brand: #0e3a66; /* wordmark, focus ring, ::selection */
+  --on-dark: #fbfaf6;
+
+  /* Ink marks */
+  --ink-line: 1.5px;
+  --shadow-ink: 3px 3px 0 var(--ink);
+  --shadow-ink-lg: 6px 6px 0 var(--ink);
+
+  /* Layout */
+  --sidebar-w: 232px;
+  --topbar-h: 56px;
+  --ribbon-h: 28px;
+
+  /* Motion */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-panel: var(--panel);
+  --color-sunk: var(--sunk);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted: var(--muted);
+  --color-wash: var(--wash);
+  --color-wash-tint: var(--wash-tint);
+  --color-wash-tint-strong: var(--wash-tint-strong);
+  --color-rule-soft: var(--rule-soft);
+  --color-hairline: var(--hairline);
+  --color-scrim: var(--scrim);
+  --color-north: var(--north);
+  --color-north-tint: var(--north-tint);
+  --color-ochre: var(--ochre);
+  --color-ochre-tint: var(--ochre-tint);
+  --color-brand: var(--brand);
+  --color-on-dark: var(--on-dark);
+
+  --font-display: var(--font-bodoni), "Didot", "Bodoni 72", Georgia, serif;
+  --font-wordmark: var(--font-wordmark-face), "Didot", Georgia, serif;
+  --font-sans: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+
+  --text-meta: 12px;
+  --text-meta--line-height: 16px;
+  --text-dense: 13px;
+  --text-dense--line-height: 18px;
+  --text-ui: 14px;
+  --text-ui--line-height: 20px;
+
+  --shadow-ink: var(--shadow-ink);
+  --shadow-ink-lg: var(--shadow-ink-lg);
+  --radius-*: initial;
+  --ease-out-expo: var(--ease-out-expo);
+}
+
+@layer base {
+  html {
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: -0.005em;
+    font-feature-settings: "cv11", "ss03";
+    min-height: 100dvh;
+  }
+  ::selection {
+    background: var(--brand);
+    color: var(--on-dark);
+  }
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+  /* Tabular numerals everywhere numbers are compared. */
+  .tabular,
+  table,
+  time {
+    font-variant-numeric: tabular-nums;
+  }
+  hr {
+    border-color: var(--hairline);
+  }
+}
+
+@layer components {
+  /* Bodoni display titles: uppercase via CSS so lang="tr" maps i → İ. */
+  .title-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    text-transform: uppercase;
+    line-height: 0.92;
+    letter-spacing: -0.012em;
+  }
+  /* The one justified mono use: codes (E1–E4, R01–R16, hashes, tickers). */
+  .code {
+    font-family: var(--font-mono);
+    font-size: max(12px, 0.86em);
+    letter-spacing: 0;
+  }
+  .ink-border {
+    border: var(--ink-line) solid var(--ink);
+  }
+  .ink-rule {
+    border-bottom: var(--ink-line) solid var(--ink);
+  }
+  /* A faint paper grain so large surfaces read as printed, not flat. */
+  .paper-grain {
+    background-image: radial-gradient(rgb(18 19 24 / 0.035) 0.6px, transparent 0.7px);
+    background-size: 3px 3px;
+  }
+  .sr-only-focusable:not(:focus) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* Ink-in: the printing verb. Content is set down from the left, never faded from nowhere. */
+@keyframes ink-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+/* A new row is washed once, lightly enough that muted meta text keeps AA contrast. */
+@keyframes row-arrive {
+  from {
+    background-color: var(--wash-tint);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+@keyframes drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes skeleton-sweep {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+/* The approval stamp: pressed onto the card (a slight over-scale settling in), never spun. */
+@keyframes stamp-in {
+  from {
+    transform: rotate(var(--stamp-rot, 0deg)) scale(1.18);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(var(--stamp-rot, 0deg)) scale(1);
+    opacity: 1;
+  }
+}
+.animate-stamp-in {
+  animation: stamp-in 420ms var(--ease-out-expo) both;
+}
+.animate-ink-in {
+  animation: ink-in 600ms var(--ease-out-expo) both;
+}
+.animate-row-arrive {
+  animation: row-arrive 2.4s ease-out both;
+}
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Toasts sit over the top bar's left half; without the sidebar (< 1024 px) they start at the edge. */
+@media (min-width: 600px) and (max-width: 1023px) {
+  [data-sonner-toaster].kaptan-toaster[data-x-position="left"] {
+    left: 8px !important;
+  }
+}
+
+/* /brief prints as one A4 sheet: only the brief (#ozet-sayfa) is visible. */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm 12mm 14mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  body * {
+    visibility: hidden !important;
+  }
+  #ozet-sayfa,
+  #ozet-sayfa * {
+    visibility: visible !important;
+  }
+  #ozet-sayfa {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    max-width: none !important;
+    zoom: 0.74;
+    background: #fff !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+  }
+  #ozet-sayfa section {
+    break-inside: avoid;
+  }
+  #ozet-sayfa a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-stamp-in,
+  .animate-ink-in {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
