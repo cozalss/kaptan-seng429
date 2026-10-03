@@ -9,7 +9,7 @@ import { useEventStream } from "@/lib/sse/use-event-stream";
 import { useNow, currentTimeMs } from "@/lib/clock";
 import { SessionProvider } from "@/lib/auth/session-context";
 
-const ANALYST = { uid: "u-analist", email: "analist@kaptan.demo", name: "Mert (Analist)", role: "analyst" as const };
+const OWNER_USER = { uid: "sen", name: "Sen" };
 
 afterEach(() => {
   stopAllTimers();
@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 function apiWith(db: MockDb): KaptanApi {
-  return createMockApi({ getActor: () => ({ uid: ANALYST.uid, name: ANALYST.name, role: ANALYST.role }), db, latencyMs: 0, live: false });
+  return createMockApi({ getActor: () => ({ uid: OWNER_USER.uid, name: OWNER_USER.name }), db, latencyMs: 0, live: false });
 }
 
 function Counter() {
@@ -59,7 +59,7 @@ describe("useApiQuery / useApiMutation", () => {
   it("tracks a mutation and returns undefined on failure", async () => {
     let result: unknown = "unset";
     function Note() {
-      const m = useApiMutation((api, body: string) => api.addNote(1, body));
+      const m = useApiMutation((api, ticketNo: string) => api.markTicket(ticketNo, { mark: "canceled" }));
       return (
         <button
           onClick={async () => {
@@ -78,7 +78,7 @@ describe("useApiQuery / useApiMutation", () => {
     );
     await user.click(screen.getByRole("button"));
     await waitFor(() => expect(result).not.toBe("unset"));
-    expect(result).toMatchObject({ body: "x" });
+    expect(result).toBeUndefined();
   });
 
   it("builds the mock client from the session when no api is given", async () => {
@@ -89,13 +89,13 @@ describe("useApiQuery / useApiMutation", () => {
       return <p>{q.data?.display_name ?? "…"}</p>;
     }
     render(
-      <SessionProvider user={ANALYST}>
+      <SessionProvider user={OWNER_USER}>
         <ApiProvider>
           <Me />
         </ApiProvider>
       </SessionProvider>,
     );
-    expect(await screen.findByText("Mert (Analist)", {}, { timeout: 3_000 })).toBeInTheDocument();
+    expect(await screen.findByText("Sen", {}, { timeout: 3_000 })).toBeInTheDocument();
   });
 
   it("throws outside the provider", () => {

@@ -1,17 +1,17 @@
 "use client";
 
-import { createContext, Fragment, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, Fragment, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { ApprovalCard, DayCounters, RiskStatus } from "@/lib/domain";
+import { ROUTES, href } from "@/lib/nav";
 import { useApi } from "@/lib/api/react";
 import { useEventStream, type StreamStatus } from "@/lib/sse/use-event-stream";
-import { fmtInt, fmtPrice } from "@/lib/format";
 import { notify } from "@/components/ui/toast";
 
 /**
- * Desk-wide live state for the shell (top bar, banners, palette): today's counters, risk
- * status and pending approvals, kept fresh by /stream/feed and /stream/desk. Screens may
- * read it with `useDesk()` instead of refetching the same things.
+ * Desk-wide live state for the shell and the three screens: today's counters,
+ * risk status and pending proposals, kept fresh by /stream/feed and
+ * /stream/desk. Screens read it with `useDesk()` instead of refetching the same things.
  */
 export interface DeskState {
   counters: DayCounters | null;
@@ -37,11 +37,19 @@ export function DeskStateProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<ApprovalCard[]>([]);
   const [epoch, setEpoch] = useState(0);
 
+  // A risk event that lands while a refresh is in flight is newer than the refresh's read.
+  const riskVersion = useRef(0);
+  const setLiveRisk = useCallback((r: RiskStatus) => {
+    riskVersion.current += 1;
+    setRisk(r);
+  }, []);
+
   const refresh = useCallback(async () => {
+    const startedAt = riskVersion.current;
     try {
       const [c, r, p] = await Promise.all([api.counters(), api.riskStatus(), api.listApprovals("pending")]);
       setCounters(c);
-      setRisk(r);
+      if (riskVersion.current === startedAt) setRisk(r);
       setPending(p);
     } catch {
       // The shell degrades quietly; screens show their own errors.
@@ -60,21 +68,19 @@ export function DeskStateProvider({ children }: { children: ReactNode }) {
   const deskStatus = useEventStream("desk", {
     "approval.requested": (card) => {
       setPending((list) => [card, ...list.filter((x) => x.proposal_id !== card.proposal_id)]);
-      // On the queue itself the card arrives in place; a toast would only repeat it.
-      if (pathname === "/approvals") return;
-      notify.event(`Onay bekliyor: ${card.ticker}`, `${card.event_type} · ${card.headline_tr}`, {
-        label: "Aç",
-        onClick: () => router.push("/approvals"),
+      // On Bugün the card arrives in place; elsewhere one quiet slip says so.
+      if (pathname === ROUTES.bugun) return;
+      notify.event(`Yeni öneri: ${card.company_name}`, undefined, {
+        label: "İncele",
+        onClick: () => router.push(href.proposal(card.proposal_id)),
       });
     },
     "approval.decided": (card) => setPending((list) => list.filter((x) => x.proposal_id !== card.proposal_id)),
-    fill: (f) => notify.success(`Dolum: ${f.ticker}`, `${fmtInt(f.qty)} lot @ ${fmtPrice(f.price)} (komisyon + kayma dahil)`),
     kill_switch: (r) => {
-      setRisk(r);
-      // The north-red band (RiskBanner) announces it on every screen; no duplicate toast.
+      setLiveRisk(r);
       if (r.kill_switch === "on") setPending([]);
     },
-    halt: (r) => setRisk(r),
+    halt: (r) => setLiveRisk(r),
   });
 
   const resetView = useCallback(() => {

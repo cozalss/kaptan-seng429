@@ -10,3 +10,5 @@ export * from "./reports";
 export * from "./user";
 export * from "./events";
 export * from "./labels";
+export * from "./crew";
+export * from "./personal";

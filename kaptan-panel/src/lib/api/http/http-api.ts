@@ -1,32 +1,5 @@
 import { z } from "zod";
-import {
-  ApprovalCard,
-  AuditEntry,
-  AuditStatus,
-  ChainVerifyResult,
-  ConfigView,
-  DayCounters,
-  DisclosureDetail,
-  DisclosureListItem,
-  EvalSummary,
-  Explain,
-  KillResetRequest,
-  LimitVersion,
-  LiveArmState,
-  Me,
-  MorningBrief,
-  Note,
-  Order,
-  OrderTicket,
-  pageOf,
-  PnlPoint,
-  Position,
-  RestrictedSecurity,
-  RiskStatus,
-  RunSummary,
-  UniverseEntry,
-} from "@/lib/domain";
-import { AdminUserView } from "../admin-types";
+import { ApprovalCard, DayCounters, Explain, Me, OrderTicket, PnlPoint, Position, RiskStatus } from "@/lib/domain";
 import { ApiError, type KaptanApi } from "../types";
 
 /**
@@ -66,9 +39,9 @@ async function request<T extends z.ZodType>(schema: T, path: string, init: Reque
     const msg = typeof detail?.detail === "string" ? detail.detail : null;
     const fallback: Record<number, string> = {
       401: "Oturumunuzun süresi doldu. Lütfen yeniden giriş yapın.",
-      403: "Bu işlem rolünüze kapalı.",
+      403: "Bu işlem şu an yapılamıyor.",
       404: "Kayıt bulunamadı.",
-      409: "Kayıt başka bir oturumda değişti ya da süresi doldu.",
+      409: "Kayıt bu arada değişti ya da süresi doldu.",
       422: "Girdi geçersiz.",
       429: "Çok fazla istek. Biraz sonra yeniden deneyin.",
     };
@@ -91,63 +64,37 @@ const qs = (o: Record<string, string | number | undefined>) => {
 const Void = z.undefined().or(z.null()).transform(() => undefined);
 
 export function createHttpApi(): KaptanApi {
+  const id = encodeURIComponent;
   return {
     mode: "http",
     me: () => request(Me, "/me"),
-    listDisclosures: (q = {}) =>
-      request(pageOf(DisclosureListItem).extend({ counters: DayCounters }), `/disclosures${qs({ ...q })}`),
-    getDisclosure: (index) => request(DisclosureDetail, `/disclosures/${index}`),
-    addNote: (index, body) => request(Note, `/disclosures/${index}/notes`, post({ body })),
     counters: () => request(DayCounters, "/disclosures/counters"),
-    listRuns: (q = {}) => request(z.array(RunSummary), `/runs${qs({ ...q })}`),
-    getRun: (id) => request(RunSummary, `/runs/${encodeURIComponent(id)}`),
-    explain: (id) => request(Explain, `/runs/${encodeURIComponent(id)}/explain`),
     listApprovals: (status = "pending") => request(z.array(ApprovalCard), `/approvals${qs({ status })}`),
-    decideApproval: (id, d) => request(ApprovalCard, `/approvals/${encodeURIComponent(id)}/decision`, post(d)),
-    listOrders: () => request(z.array(Order), "/orders"),
-    listTickets: () => request(z.array(OrderTicket), "/orders/tickets"),
-    manualFill: (id, input) => request(Order, `/orders/${encodeURIComponent(id)}/manual-fill`, post(input)),
+    decideApproval: (pid, d) => request(ApprovalCard, `/approvals/${id(pid)}/decision`, post(d)),
+    explain: (runId) => request(Explain, `/runs/${id(runId)}/explain`),
+    listTickets: () => request(z.array(OrderTicket), "/tickets"),
+    markTicket: (no, input) => request(OrderTicket, `/tickets/${id(no)}/mark`, post(input)),
     positions: () => request(z.array(Position), "/portfolio/positions"),
     pnl: (from, to) => request(z.array(PnlPoint), `/portfolio/pnl${qs({ from, to })}`),
     riskStatus: () => request(RiskStatus, "/risk/status"),
     killSwitch: (reason) => request(RiskStatus, "/risk/kill-switch", post({ reason })),
-    requestKillReset: (input) => request(KillResetRequest, "/risk/kill-switch/reset/request", post(input)),
-    confirmKillReset: (input) => request(RiskStatus, "/risk/kill-switch/reset/confirm", post(input)),
-    limits: () => request(LimitVersion, "/limits"),
-    limitsHistory: () => request(z.array(LimitVersion), "/limits/history"),
-    proposeLimits: (input) => request(LimitVersion, "/limits/proposals", post(input)),
-    decideLimits: (v, input) => request(LimitVersion, `/limits/proposals/${v}/approve`, post(input)),
-    audit: (q = {}) => request(pageOf(AuditEntry), `/audit${qs({ ...q })}`),
-    verifyAudit: () => request(ChainVerifyResult, "/audit/verify", post()),
-    auditStatus: () => request(AuditStatus, "/audit/status"),
-    evalSummary: () => request(EvalSummary, "/eval/summary"),
-    brief: (date) => request(MorningBrief, date ? `/brief/${date}` : "/brief/today"),
-    adminUsers: () => request(z.array(AdminUserView), "/admin/users"),
-    adminConfig: () => request(ConfigView, "/admin/config"),
-    universe: () => request(z.array(UniverseEntry), "/admin/universe"),
-    restricted: () => request(z.array(RestrictedSecurity), "/admin/restricted"),
-    addRestricted: (input) => request(RestrictedSecurity, "/admin/restricted", post(input)),
-    requestRestrictedRemoval: (id) => request(RestrictedSecurity, `/admin/restricted/${encodeURIComponent(id)}/remove-request`, post()),
-    confirmRestrictedRemoval: (id) => request(Void, `/admin/restricted/${encodeURIComponent(id)}/remove-confirm`, post()),
-    liveArm: () => request(LiveArmState, "/admin/live"),
-    armLive: (totp) => request(LiveArmState, "/admin/live/arm", post({ totp })),
-    confirmLive: (totp) => request(LiveArmState, "/admin/live/confirm", post({ totp })),
+    confirmKillReset: (input) => request(RiskStatus, "/risk/kill-switch/reset", post(input)),
     injectDemo: (scenario) =>
-      request(z.object({ disclosure_index: z.number().nullable(), run_id: z.string().nullable() }), "/admin/demo/inject", post({ scenario })),
-    setTamper: () => Promise.reject(new ApiError(403, "mock_only", "Kurcalama testi yalnızca demo veritabanında çalışır.")),
-    resetDemo: () => Promise.reject(new ApiError(403, "mock_only", "Demo verisini sıfırlama yalnızca mock modda vardır.")),
+      request(z.object({ disclosure_index: z.number().nullable(), run_id: z.string().nullable() }), "/demo/inject", post({ scenario })),
+    advanceDemoClock: (hours) => request(RiskStatus, "/demo/clock", post({ hours })),
+    resetDemo: () => request(Void, "/demo/reset", post()),
   };
 }
 
-/** POST /auth/login (http mode). Returns the user; the access token stays in memory. */
-export async function httpLogin(email: string, password: string): Promise<Me> {
+/** POST /auth/login with the single passphrase (http mode). The access token stays in memory. */
+export async function httpLogin(passphrase: string): Promise<Me> {
   const res = await fetch(`${BASE}/auth/login`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ passphrase }),
   });
-  if (!res.ok) throw new ApiError(res.status, "login", "Kimlik doğrulanamadı.");
+  if (!res.ok) throw new ApiError(res.status, "login", "Parola doğrulanamadı.");
   const body = z.object({ access_token: z.string(), user: Me }).parse(await res.json());
   accessToken = body.access_token;
   return body.user;

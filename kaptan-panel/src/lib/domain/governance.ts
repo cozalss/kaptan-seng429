@@ -2,6 +2,11 @@ import { z } from "zod";
 import { IsoDateTime } from "./common";
 
 /* ── Audit log: hash chain (07 §9 audit_log, 09 §7) ───────────────────── */
+/**
+ * Personal mode keeps recording everything (every agent output, your decisions, the risk
+ * monitor) in the append-only chain; there is no audit screen, but "Neden bu öneri?" shows a
+ * run's chain positions and Ayarlar can verify the chain (PERSONAL-SPEC §3.4).
+ */
 export const AuditActor = z.string().regex(/^(user|agent|system):[^\s]+$/);
 
 export const AuditEntry = z.object({
@@ -40,12 +45,12 @@ export const ChainVerifyResult = z.object({
 });
 export type ChainVerifyResult = z.infer<typeof ChainVerifyResult>;
 
+/** GET /audit — read-only slices of the chain for embedded views (Portföy risk log, Tayfa, Neden). */
 export const AuditQuery = z.object({
   entity: z.string().optional(),
   actor: z.string().optional(),
   action: z.string().optional(),
   from: z.string().optional(),
-  /** Entries written for one run (deep links from /runs/[id]). */
   run_id: z.string().optional(),
   page: z.number().int().positive().optional(),
   page_size: z.number().int().positive().max(500).optional(),
@@ -58,12 +63,10 @@ export const AuditStatus = z.object({
   head_hash: z.string(),
   last_verified_at: IsoDateTime.nullable(),
   anchor: z.object({ at: IsoDateTime, chain_pos: z.number().int().positive(), hash: z.string() }).nullable(),
-  /** Demo DB only: the tamper test is switched on. Always false against a real API. */
-  tamper_on: z.boolean(),
 });
 export type AuditStatus = z.infer<typeof AuditStatus>;
 
-/** GET /admin/config: read-only version labels (04 §11–12, 09 §8). */
+/** GET /settings/config: read-only version labels, models and the fallback chain (04 §11–12, 09 §8). */
 export const ConfigView = z.object({
   execution_mode: z.enum(["paper", "personal", "live"]),
   strategy_versions: z.array(z.object({ id: z.string(), frozen_at: IsoDateTime, scope_tr: z.string() })),
@@ -72,13 +75,15 @@ export const ConfigView = z.object({
   prompt_manifest_hash: z.string(),
   config_hash: z.string(),
   models: z.array(z.object({ role_tr: z.string(), model_id: z.string() })),
+  /** _KANONIK Revizyon 3: Flash-Lite ⇄ Groq gpt-oss → Azure → Ollama → HOLD. */
+  fallback_chain: z.array(z.object({ provider: z.string(), model_id: z.string(), note_tr: z.string() })),
   kap_poll_seconds: z.number().int().positive(),
   approval_deadline_tr: z.string(),
   demo_mode: z.boolean(),
 });
 export type ConfigView = z.infer<typeof ConfigView>;
 
-/* ── Limits (07 limit_versions / limits; canonical v1 seed) ───────────── */
+/* ── Limits (07 limit_versions; canonical v1 seed; personal preferences) ─ */
 export const LimitKey = z.enum([
   "risk_per_trade_pct",
   "max_position_pct",
@@ -99,35 +104,28 @@ export type LimitKey = z.infer<typeof LimitKey>;
 export const LimitValue = z.object({ key: LimitKey, value: z.number() });
 export type LimitValue = z.infer<typeof LimitValue>;
 
+/**
+ * A limits version. Personal mode: you change your own risk preferences with a written note;
+ * the new version is active at once and the old one is superseded (no second approver). Every
+ * value must stay at least as strict as the canonical v1 set (`limitViolations`).
+ */
 export const LimitVersion = z.object({
   version: z.number().int().positive(),
-  status: z.enum(["proposed", "active", "superseded", "rejected"]),
+  status: z.enum(["active", "superseded"]),
   reason: z.string().min(1),
-  created_by: z.string(),
-  created_by_name: z.string(),
   created_at: IsoDateTime,
-  approved_by: z.string().nullable(),
-  approved_by_name: z.string().nullable(),
-  approved_at: IsoDateTime.nullable(),
-  decision_comment: z.string().nullable(),
-  effective_from: IsoDateTime.nullable(),
+  effective_from: IsoDateTime,
   values: z.array(LimitValue),
 });
 export type LimitVersion = z.infer<typeof LimitVersion>;
 
-export const LimitProposalInput = z.object({
+export const LimitChangeInput = z.object({
   changes: z.array(LimitValue).min(1, "En az bir değişiklik"),
-  reason: z.string().trim().min(10, "Gerekçe en az 10 karakter").max(500),
+  reason: z.string().trim().min(10, "Not en az 10 karakter").max(500),
 });
-export type LimitProposalInput = z.infer<typeof LimitProposalInput>;
+export type LimitChangeInput = z.infer<typeof LimitChangeInput>;
 
-export const LimitDecisionInput = z.object({
-  decision: z.enum(["approve", "reject"]),
-  comment: z.string().trim().min(1, "Yorum zorunludur").max(500),
-});
-export type LimitDecisionInput = z.infer<typeof LimitDecisionInput>;
-
-/** Canonical v1 limits (_KANONIK-KARARLAR, 06 §9). */
+/** Canonical v1 limits (_KANONIK-KARARLAR, 06 §9): the ceiling for every personal preference. */
 export const LIMITS_V1: readonly LimitValue[] = [
   { key: "risk_per_trade_pct", value: 0.005 },
   { key: "max_position_pct", value: 0.1 },
@@ -144,23 +142,56 @@ export const LIMITS_V1: readonly LimitValue[] = [
   { key: "max_group_pct", value: 0.2 },
 ];
 
-export const LIMIT_META: Readonly<Record<LimitKey, { label_tr: string; unit: "pct" | "count" | "ratio" | "mult"; rule: string }>> = {
-  risk_per_trade_pct: { label_tr: "İşlem başına risk", unit: "pct", rule: "R07" },
-  max_position_pct: { label_tr: "Pozisyon tavanı", unit: "pct", rule: "R07" },
-  max_concurrent_positions: { label_tr: "En çok eşzamanlı pozisyon", unit: "count", rule: "R08" },
-  target_concurrent_positions: { label_tr: "Hedef eşzamanlı pozisyon", unit: "count", rule: "R08" },
-  max_adv_share: { label_tr: "Günlük hacim payı tavanı", unit: "pct", rule: "R07" },
-  price_band_pct: { label_tr: "Fiyat bandı", unit: "pct", rule: "R09" },
-  daily_loss_halt_pct: { label_tr: "Günlük zarar durdurması", unit: "pct", rule: "R02" },
-  kill_drawdown_pct: { label_tr: "Kill switch (zirveden düşüş)", unit: "pct", rule: "R01" },
-  min_edge_cost_ratio: { label_tr: "Avantaj / maliyet alt sınırı", unit: "ratio", rule: "R06" },
-  crisis_exposure_mult: { label_tr: "Kriz maruziyet çarpanı", unit: "mult", rule: "R10" },
-  leak_ret5d_threshold: { label_tr: "Sızıntı eşiği (5 seans)", unit: "pct", rule: "E*" },
-  max_sector_pct: { label_tr: "Sektör tavanı", unit: "pct", rule: "R08" },
-  max_group_pct: { label_tr: "Grup tavanı", unit: "pct", rule: "R08" },
+/**
+ * `stricter`: which direction tightens the limit. "lower" = a smaller number is stricter
+ * (risk per trade); "higher" = a larger number is stricter (edge/cost ≥ 2, or the −1% daily
+ * halt moved towards 0).
+ */
+export const LIMIT_META: Readonly<
+  Record<LimitKey, { label_tr: string; unit: "pct" | "count" | "ratio" | "mult"; rule: string; stricter: "lower" | "higher" }>
+> = {
+  risk_per_trade_pct: { label_tr: "İşlem başına risk", unit: "pct", rule: "R07", stricter: "lower" },
+  max_position_pct: { label_tr: "Pozisyon tavanı", unit: "pct", rule: "R07", stricter: "lower" },
+  max_concurrent_positions: { label_tr: "En çok eşzamanlı pozisyon", unit: "count", rule: "R08", stricter: "lower" },
+  target_concurrent_positions: { label_tr: "Hedef eşzamanlı pozisyon", unit: "count", rule: "R08", stricter: "lower" },
+  max_adv_share: { label_tr: "Günlük hacim payı tavanı", unit: "pct", rule: "R07", stricter: "lower" },
+  price_band_pct: { label_tr: "Fiyat bandı", unit: "pct", rule: "R09", stricter: "lower" },
+  daily_loss_halt_pct: { label_tr: "Günlük zarar durdurması", unit: "pct", rule: "R02", stricter: "higher" },
+  kill_drawdown_pct: { label_tr: "Kill switch (zirveden düşüş)", unit: "pct", rule: "R01", stricter: "higher" },
+  min_edge_cost_ratio: { label_tr: "Avantaj / maliyet alt sınırı", unit: "ratio", rule: "R06", stricter: "higher" },
+  crisis_exposure_mult: { label_tr: "Kriz maruziyet çarpanı", unit: "mult", rule: "R10", stricter: "lower" },
+  leak_ret5d_threshold: { label_tr: "Sızıntı eşiği (5 seans)", unit: "pct", rule: "E*", stricter: "lower" },
+  max_sector_pct: { label_tr: "Sektör tavanı", unit: "pct", rule: "R08", stricter: "lower" },
+  max_group_pct: { label_tr: "Grup tavanı", unit: "pct", rule: "R08", stricter: "lower" },
 };
 
-/* ── Admin (04 §11–12, 09 §5, §8) ─────────────────────────────────────── */
+/**
+ * Why a set of limits is not allowed (empty = fine). Personal preferences may only tighten
+ * the canonical limits, never loosen them; counts are whole numbers ≥ 1; signs are kept; the
+ * target position count may not exceed the maximum.
+ */
+export function limitViolations(values: readonly LimitValue[]): string[] {
+  const out: string[] = [];
+  const byKey = new Map(values.map((v) => [v.key, v.value]));
+  for (const canon of LIMITS_V1) {
+    const v = byKey.get(canon.key);
+    const meta = LIMIT_META[canon.key];
+    if (v === undefined || !Number.isFinite(v)) {
+      out.push(`${meta.label_tr}: değer eksik.`);
+      continue;
+    }
+    if (meta.unit === "count" && (!Number.isInteger(v) || v < 1)) out.push(`${meta.label_tr}: en az 1 olan bir tam sayı olmalı.`);
+    if (Math.sign(v) !== Math.sign(canon.value)) out.push(`${meta.label_tr}: işareti kanonik değerle aynı kalmalı.`);
+    const looser = meta.stricter === "lower" ? v > canon.value : v < canon.value;
+    if (looser) out.push(`${meta.label_tr}: kanonik sınırdan gevşek olamaz (${meta.rule}).`);
+  }
+  const target = byKey.get("target_concurrent_positions");
+  const max = byKey.get("max_concurrent_positions");
+  if (target !== undefined && max !== undefined && target > max) out.push("Hedef eşzamanlı pozisyon, en çok eşzamanlı pozisyondan büyük olamaz.");
+  return out;
+}
+
+/* ── Settings: universe, restricted list, live mode (06 §2, R13, R12) ─── */
 export const RestrictedKind = z.enum([
   "spk_tedbir",
   "vbts_brut_takas",
@@ -173,14 +204,20 @@ export const RestrictedKind = z.enum([
 ]);
 export type RestrictedKind = z.infer<typeof RestrictedKind>;
 
+/**
+ * R13 restricted list. `team_insider` is your own conflict (you, a relative or a friend works
+ * there, or you heard something non-public; 12 §7/4). The SPK/VBTS kinds come from the
+ * nightly restrictions sync. You add and remove your own entries directly; synced entries
+ * cannot be removed by hand.
+ */
 export const RestrictedSecurity = z.object({
   id: z.string(),
   ticker: z.string(),
   kind: RestrictedKind,
   source_ref: z.string().nullable(),
   added_at: IsoDateTime,
+  /** "user:sen" or "system:restrictions_sync". */
   added_by: z.string(),
-  removal_requested_by: z.string().nullable(),
 });
 export type RestrictedSecurity = z.infer<typeof RestrictedSecurity>;
 
@@ -191,15 +228,22 @@ export const UniverseEntry = z.object({
   group: z.string().nullable(),
   free_float_pct: z.number(),
   adv20_try: z.number(),
+  /** Passes the universe rules (06 §2, S-U); decided by code, not by you. */
   in_universe: z.boolean(),
+  /** On your watchlist: Köprü and the morning brief list it first. */
+  watched: z.boolean(),
 });
 export type UniverseEntry = z.infer<typeof UniverseEntry>;
 
+/**
+ * Live mode's three keys (_KANONIK, R12): config `execution.mode: live`, env
+ * `KAPTAN_LIVE_ENABLED=true`, and your own UI key for the session. All three or nothing; in
+ * the course build and in mock mode the first two are always off, so live mode never arms.
+ */
 export const LiveArmState = z.object({
   config_live: z.boolean(),
   env_enabled: z.boolean(),
-  ui_armed_by: z.string().nullable(),
-  ui_confirmed_by: z.string().nullable(),
+  ui_key: z.boolean(),
   armed: z.boolean(),
   expires_at: IsoDateTime.nullable(),
 });

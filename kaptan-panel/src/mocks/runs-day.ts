@@ -196,7 +196,7 @@ export const DAY_SPECS: readonly RunSpec[] = [
     ruleTrace: [trace("E1.capital_10d", true, "%0,34", "≥ %0,25", "Eşik üstünde."), trace("E1.execution", true, "gerçekleşen alım", "duyuru değil", "Gerçekleşen alım."), ...commonTrace("+%1,4", true, "2,7×", true, 64)],
     reasonCodes: ["E1_RULE_MET"], compliance: "pass", guardScore: 0.01,
     proposal: { refPrice: 88.4, qty: 560, stopPct: 0.085, holding: [20, 40], edgeBps: 90, costBps: 33, requestedNotional: 50_500, entry: "next_open_auction" },
-    decision: { status: "approved", by: "u-risk", atIso: at("09:12"), comment: "Kanıt güçlü, sızıntı yok. Onay.", approvedNotional: null, fill: { price: 89.6, atIso: at("09:55"), slippageBps: 7 } },
+    decision: { status: "approved", by: "sen", atIso: at("09:12"), comment: "Kanıt güçlü, sızıntı yok. Onay.", approvedNotional: null, fill: { price: 89.6, atIso: at("09:55"), slippageBps: 7 } },
     llmCalls: 5, tokens: [14_000, 2_000],
   }),
   mk({
@@ -212,7 +212,7 @@ export const DAY_SPECS: readonly RunSpec[] = [
     ruleTrace: [trace("E2.open_market", true, "borsada", "piyasadan", "Borsada alım."), ...commonTrace("+%6,1", true, "2,0×", true, 9)],
     reasonCodes: ["E2_RULE_MET"], compliance: "pass", guardScore: 0.02,
     proposal: { refPrice: 57.75, qty: 380, stopPct: 0.1, holding: [20, 60], edgeBps: 66, costBps: 33, requestedNotional: 44_000, entry: "intraday_limit" },
-    decision: { status: "rejected", by: "u-risk", atIso: at("10:20"), comment: "Hacim anormal; manipülasyon şüphesi taşıyan bir harekete girmek istemiyorum." },
+    decision: { status: "rejected", by: "sen", atIso: at("10:20"), comment: "Hacim anormal; manipülasyon şüphesi taşıyan bir harekete girmek istemiyorum." },
     llmCalls: 5, tokens: [13_200, 1_900],
   }),
   mk({
@@ -243,7 +243,7 @@ function hist(slotId: string, ticker: string, event: "E1" | "E2" | "E4", date: s
       ruleTrace: [trace(`${event}.rule`, true, "✓", "✓", "Kural sağlandı."), ...commonTrace("+%1,0", true, "2,5×", true, 40)],
       reasonCodes: [`${event}_RULE_MET`], compliance: "pass", guardScore: 0.01,
       proposal: { refPrice, qty, stopPct: 0.09, holding, edgeBps: 85, costBps: 33, requestedNotional: refPrice * qty, entry: "next_open_auction" },
-      decision: { status: "approved", by: "u-risk", atIso: istanbulIso(date, "09:05"), comment: "Onay.", fill: { price: fill, atIso: istanbulIso(date, "09:55"), slippageBps: 6 } },
+      decision: { status: "approved", by: "sen", atIso: istanbulIso(date, "09:05"), comment: "Onay.", fill: { price: fill, atIso: istanbulIso(date, "09:55"), slippageBps: 6 } },
       llmCalls: 5, tokens: [14_000, 2_000], strategy_version: version,
     }),
     disclosure_index: 1_640_000 + Number(slotId.replace(/\D/g, "")),

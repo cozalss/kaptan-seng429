@@ -1,0 +1,77 @@
+/* /login only: the calm sea drifts, the boat rocks, the compass needle settles on north.
+   Transform-only motion; all of it stops under prefers-reduced-motion. */
+@keyframes login-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-24px);
+  }
+}
+@keyframes login-rock {
+  0%,
+  100% {
+    transform: rotate(-2deg) translateY(0);
+  }
+  50% {
+    transform: rotate(2deg) translateY(-2px);
+  }
+}
+@keyframes login-settle {
+  0% {
+    transform: rotate(-38deg);
+  }
+  55% {
+    transform: rotate(9deg);
+  }
+  80% {
+    transform: rotate(-3deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes login-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+.login-swell {
+  animation: login-drift 16s ease-in-out infinite alternate;
+}
+.login-swell--b {
+  animation-duration: 21s;
+  animation-direction: alternate-reverse;
+}
+.login-swell--c {
+  animation-duration: 26s;
+}
+.login-boat {
+  transform-origin: 50% 90%;
+  animation: login-rock 5.5s ease-in-out infinite;
+}
+.login-compass g {
+  transform-box: view-box;
+  transform-origin: 32px 32px;
+  animation: login-settle 1.6s var(--ease-ink) 0.2s both;
+}
+.login-shake {
+  animation: login-shake 260ms var(--ease-ink) 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-swell,
+  .login-boat,
+  .login-compass g,
+  .login-shake {
+    animation: none !important;
+  }
+}

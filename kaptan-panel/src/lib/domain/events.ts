@@ -3,7 +3,8 @@ import { Confidence, EventType, IsoDateTime } from "./common";
 import { DayCounters, DisclosureListItem } from "./disclosure";
 import { LimitVersion } from "./governance";
 import { NodeName, RunOutcome, RunStatus } from "./run";
-import { ApprovalCard, Fill, Order, RiskStatus } from "./trading";
+import { ApprovalCard, Fill, Order, OrderTicket, RiskStatus } from "./trading";
+import { CrewActivity, CrewAgent } from "./crew";
 
 /**
  * SSE streams (04 §11). Each event is { stream, event, id, data }.
@@ -34,6 +35,13 @@ export const DeskEvent = z.discriminatedUnion("event", [
   z.object({ event: z.literal("kill_switch"), data: RiskStatus }),
   z.object({ event: z.literal("halt"), data: RiskStatus }),
   z.object({ event: z.literal("limits.changed"), data: LimitVersion }),
+  /** A ticket was created (after your approval) or marked (girildi / dolmadı / iptal / süresi doldu). */
+  z.object({ event: z.literal("ticket"), data: OrderTicket }),
+  /** A crew member changed what it is doing (Köprü and Tayfa live state). */
+  z.object({
+    event: z.literal("crew"),
+    data: z.object({ agent: CrewAgent, activity: CrewActivity, run_id: z.string().nullable(), ticker: z.string().nullable(), at: IsoDateTime }),
+  }),
 ]);
 export type DeskEvent = z.infer<typeof DeskEvent>;
 

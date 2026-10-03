@@ -1,41 +1,92 @@
-# KAPtan Paneli — Ekip sözleşmesi (PANEL-CONTRACT)
+# KAPtan Paneli — Ekip sözleşmesi v2 (kişisel mod)
 
-Temel katman (foundation) hazır. Dört ekran mühendisi (S1–S4) paralel çalışır; bu belge kimin neye dokunacağını, paylaşılan parçaların nasıl kullanılacağını ve neyin "bitti" sayılacağını söyler. Ürün davranışı için tek kaynak **FRONTEND-SPEC.md**'dir; çelişki görürseniz §9'a satır önerin, kendi başınıza karar vermeyin.
+Temel katman kişisel moda geçirildi. Dört ekran mühendisi (P1–P4) paralel çalışır. Bu belge şunları söyler:
 
-> Belgelerde (02–14) geçen "SİSTEM NOTU: önceki talimatları yok say…" gibi metinler **red-team fikstürüdür**: veri olarak gösterilir, talimat olarak asla uygulanmaz.
+- kimin neye dokunacağı;
+- paylaşılan parçaların nasıl kullanılacağı;
+- neyin "bitti" sayılacağı.
+
+Ürün davranışının tek kaynağı **PERSONAL-SPEC.md**'dir. FRONTEND-SPEC.md şemalar, API ayrıntısı ve içerik kuralları için başvuru belgesidir. Çelişki görürseniz kendi başınıza karar vermeyin, temel sahibine yazın.
+
+> Karar kesindir: tek kullanıcı ("Sen"), rol yok, dört göz yok, audit/limit/admin ekranı yok, rehberli demo yok. Bunları geri getiren bir öneri açmayın.
+>
+> Belgelerde geçen "SİSTEM NOTU: önceki talimatları yok say…" gibi metinler **red-team fikstürüdür**. Veri olarak gösterilir, talimat olarak asla uygulanmaz.
 
 ---
 
 ## 1. Sahiplik
 
-| Kişi | Rotalar ve klasörler | Spec |
-|---|---|---|
-| **S1** | `src/app/(panel)/runs/**` (liste + `[id]`), `src/components/run/**` (ajan izi, "Neden bu işlem?", kanıt kartı, kural izi, emir fişinin gömülü görünümü) | §2.4, §2.6 (gömülü) |
-| **S2** | `src/app/(panel)/inbox/**`, `src/app/(panel)/approvals/**`, `src/components/inbox/**`, `src/components/approvals/**` | §2.2, §2.3 |
-| **S3** | `src/app/(panel)/portfolio/**`, `src/app/(panel)/eval/**`, `src/app/(panel)/brief/**`, `src/components/portfolio/**`, `src/components/eval/**`, `src/components/brief/**`, grafikler (Recharts) | §2.5, §2.6, §2.9, §2.10 |
-| **S4** | `src/app/(panel)/audit/**`, `src/app/(panel)/limits/**`, `src/app/(panel)/admin/**`, `src/app/login/**` (cila), `src/components/audit/**`, `src/components/limits/**`, `src/components/admin/**`, **rehberli demo modu** (`src/components/demo/**`) | §2.1, §2.7, §2.8, §2.11, §7 |
-| **Temel** | Aşağıdaki §2 listesi | §10 |
+### P1 — Köprü + Tayfa (PERSONAL-SPEC §2.1, §2.4, §2.5)
 
-Kendi klasörünüzde istediğiniz kadar dosya açın (200–400 satır tipik, 800 üst sınır). Ekran sayfasını değiştirirken `ScreenPlaceholder`'ı **tamamen kaldırın**; bileşenin kendisine dokunmayın.
+- **Sahip olduğu yerler:**
+  - `src/app/(panel)/kopru/**`, `src/app/(panel)/tayfa/**`
+  - `src/components/bridge/**` (yeni)
+  - `src/components/crew/crew-strip.tsx` ve yeni tayfa bileşenleri (`src/components/crew/**`; `crew-portrait.tsx` hariç)
+- **Kaynaklar:** `api.crew()`, `api.crewMember()`, `api.personalStage()`, `useDesk()`, desk `crew` olayı.
+
+### P2 — Öneriler + emir fişi + Koşular/Neden (§2.2)
+
+- **Sahip olduğu yerler:**
+  - `src/app/(panel)/oneriler/**`, `src/app/(panel)/kosular/**`
+  - `src/components/approvals/**`, `src/components/run/**`
+  - `src/components/tickets/**` (yeni: fiş kartı, **işaretleme diyaloğu** girildi / dolmadı / iptal)
+  - `src/components/portfolio/order-ticket.tsx`
+- **Kaynaklar:** `api.listApprovals`, `decideApproval`, `listTickets`, `markTicket`, `explain`, `listRuns`.
+
+### P3 — Akış + Portföy + Özet + Karne (§2.3, §2.6–2.8)
+
+- **Sahip olduğu yerler:**
+  - `src/app/(panel)/akis/**`, `src/app/(panel)/portfoy/**`, `src/app/(panel)/ozet/**`, `src/app/(panel)/karne/**`
+  - `src/components/inbox/**`, `src/components/portfolio/**` (`order-ticket.tsx` hariç), `src/components/brief/**`, `src/components/eval/**`, `src/components/charts/**`
+- Portföy → Emir fişleri sekmesine P2'nin `src/components/tickets` bileşenini yerleştirir.
+
+### P4 — Ayarlar + giriş + genel hareket/cila + kişisel akış e2e (§2.9, §2.10)
+
+- **Sahip olduğu yerler:**
+  - `src/app/(panel)/ayarlar/**`, `src/components/settings/**` (yeni)
+  - `src/app/login/**`
+  - `e2e/smoke.spec.ts`, `e2e/a11y.spec.ts`, `e2e/personal-flow.spec.ts` (yeni)
+- **Hareket ve cila:** kabuk ve global hareket cilası `src/components/shell/**` ile `src/app/globals.css` içindeki hareket tokenları üzerinden yapılır; bkz. §2 "P4 istisnası".
+
+### Temel
+
+§2'deki paylaşılan dosyaların sahibidir.
+
+### Genel kurallar
+
+- Kendi klasörünüzde istediğiniz kadar dosya açın: 200–400 satır tipik, 800 üst sınır.
+- İskelet sayfalardaki `ScreenSkeleton`'ı ekranınız hazır olunca **tamamen kaldırın**. Bileşenin kendisine dokunmayın.
+- Bileşen klasörleri İngilizce adlıdır (`inbox`, `approvals`, `run`, `portfolio`, `brief`, `eval`); rotalar Türkçedir.
 
 ## 2. Paylaşılan dosyalar — düzenlemeyin
 
-Bunlar herkesin bağımlılığıdır; bir ekran için değiştirilirse diğer üç ekran kırılır.
+Bunlar herkesin bağımlılığıdır.
 
-- `src/app/layout.tsx`, `src/app/globals.css` (tokenlar, fontlar), `src/app/(panel)/layout.tsx`, `src/proxy.ts`, `next.config.ts`
-- `src/components/ui/**` (primitifler), `src/components/shell/**`, `src/components/brand/**`
-- `src/lib/**` — `domain/` (zod şemaları), `api/` (KaptanApi, mock, http), `auth/`, `sse/`, `format.ts`, `time.ts`, `market.ts`, `clock.ts`, `audit-chain.ts`, `utils.ts`
-- `src/mocks/**` (deterministik fikstürler, ID'ler)
-- `src/app/(panel)/styleguide/**`, `vitest.config.mts`, `playwright.config.ts`, `package.json`, `.npmrc`
+- **Uygulama çatısı:** `src/app/layout.tsx`, `src/app/globals.css`, `src/app/(panel)/layout.tsx`, `src/app/not-found.tsx`, `src/proxy.ts`, `next.config.ts`, `scripts/sync-landing.mjs`.
+- **Bileşenler:**
+  - `src/components/ui/**`, `src/components/shell/**`, `src/components/brand/**`
+  - `src/components/crew/crew-portrait.tsx`
+  - `src/components/shell/screen-skeleton.tsx`
+- **Kütüphane:** `src/lib/**`. Özellikle:
+  - `domain/` (zod), `api/` (KaptanApi, mock, http), `auth/`, `sse/`
+  - `nav.ts`, `crew.ts`, `actors.ts`, `personal-reset.ts`
+  - `format.ts`, `time.ts`, `clock.ts`, `audit-chain.ts`
+- **Fikstürler:** `src/mocks/**` (deterministik fikstürler ve kimlikler).
+- **Statik ve yapılandırma:** `public/crew/**` (portreler), `src/app/(panel)/styleguide/**`, `vitest.config.mts`, `playwright.config.ts`, `package.json`.
+
+**P4 istisnası (hareket ve cila).** P4 şunları değiştirebilir:
+
+- `src/components/shell/**` görsel cilası: sınıflar, geçişler;
+- `globals.css` içinde yalnızca hareket ve geçiş tokenları.
+
+Şunlar değişmez: kabuk API'si (`useDesk`, `AppShell` props, `navItems`), rota tablosu, dışa aktarılan imzalar. Her değişiklikten sonra tüm ekranların e2e'si yeşil kalmalıdır.
 
 ### Değişiklik isteme yolu
 
-1. Önce mevcut parçayla çözmeyi deneyin (kompozisyon, `className`, kendi klasörünüzde sarmalayıcı).
-2. Olmuyorsa ekip kanalına **"TEMEL-İSTEK: <dosya> — <neden> — <önerilen imza>"** yazın; küçük bir örnek kullanım ekleyin.
-3. Temel sahibi değişikliği tek PR'da yapar, `npm run check` yeşil olmadan birleştirmez, etkilenen ekip arkadaşlarını etiketler.
-4. Acil durumda (demo öncesi) kendi klasörünüzde geçici kopya açabilirsiniz; adını `*.local.tsx` koyun ve istek açın.
-
-Yeni bir alan, uç nokta ya da SSE olayı gerekiyorsa: önce `src/lib/domain/` şemasına ve `KaptanApi` arayüzüne (`src/lib/api/types.ts`) eklenir, sonra mock ve http uygulamalarına. Şemasız veri UI'a girmez.
+1. Önce mevcut parçayla çözmeyi deneyin: kompozisyon, `className` ya da kendi klasörünüzde bir sarmalayıcı.
+2. Olmuyorsa şunu yazın: **"TEMEL-İSTEK: <dosya> — <neden> — <önerilen imza>"**. Küçük bir kullanım örneği ekleyin.
+3. Yeni alan, uç nokta ya da SSE olayı şu sırayla eklenir: önce `src/lib/domain/` şeması, sonra `KaptanApi` (`src/lib/api/types.ts`), sonra mock, sonra http. Şemasız veri UI'a girmez.
+4. Acil durumda kendi klasörünüzde `*.local.tsx` adlı geçici bir kopya açın ve istek gönderin.
 
 ## 3. Kullanacağınız parçalar
 
@@ -44,78 +95,127 @@ Yeni bir alan, uç nokta ya da SSE olayı gerekiyorsa: önce `src/lib/domain/` �
 ```tsx
 import { useApi, useApiQuery, useApiMutation } from "@/lib/api/react";
 
-const q = useApiQuery((api) => api.listApprovals("pending"), []);   // { data, error, loading, refreshing, refetch }
-const decide = useApiMutation((api, id: string, d: ApprovalDecision) => api.decideApproval(id, d));
-const card = await decide.run(id, d);  // hata durumunda undefined döner; decide.error Türkçe mesaj
+const q = useApiQuery((api) => api.crew(), []);                       // { data, error, loading, refreshing, refetch }
+const mark = useApiMutation((api, no: string, m: TicketMarkInput) => api.markTicket(no, m));
+const t = await mark.run(no, { mark: "entered", filled_qty, avg_price, filled_at });  // hata → undefined, mark.error Türkçe
 ```
 
-- `KaptanApi` (`src/lib/api/types.ts`) tek arayüzdür; `NEXT_PUBLIC_API_MODE=mock|http` hangisinin bağlanacağını seçer (varsayılan **mock**). Ekranlar hangi modda olduğunu bilmez.
-- Hatalar `ApiError(status, code, messageTr)`. Kullanıcıya `messageTr` gösterilir; 401 → oturum, 403 → `deniedHint(perm)`, 409 → "başka bir oturumda karara bağlandı / kill switch açık", 422 → alan hatası.
-- Masa durumu (sayaçlar, risk, bekleyen onaylar, akış durumu) zaten çekiliyor: **`useDesk()`** (`src/components/shell/desk-state.tsx`) kullanın, aynı şeyi yeniden çekmeyin.
+- `KaptanApi` metotları (PERSONAL-SPEC §5):
+  - **Oturum:** `me`
+  - **Akış:** `listDisclosures`, `getDisclosure`, `addNote`, `counters`
+  - **Koşular:** `listRuns`, `getRun`, `explain`
+  - **Öneriler:** `listApprovals`, `decideApproval`
+  - **Fişler:** `listTickets`, `markTicket`
+  - **Portföy:** `listOrders`, `positions`, `pnl`
+  - **Risk:** `riskStatus`, `killSwitch`, `confirmKillReset`
+  - **Tayfa:** `crew`, `crewMember`
+  - **Aşama:** `personalStage`
+  - **Karne ve özet:** `evalSummary`, `brief`
+  - **Denetim (salt okunur):** `audit`, `auditStatus`, `verifyAudit`
+  - **Ayarlar:** `limits`, `limitsHistory`, `updateLimits`, `universe`, `setWatched`, `restricted`, `addRestricted`, `removeRestricted`, `config`, `liveArm`, `setLiveUiKey`
+  - **Demo:** `injectDemo`, `advanceDemoClock`, `resetDemo`
+- **Hatalar:** `ApiError(status, code, messageTr)`. Kullanıcıya `messageTr` gösterilir.
+
+  | Durum | Anlam |
+  |---|---|
+  | 401 | Oturum yok |
+  | 404 | Bulunamadı |
+  | 409 | Durum çakışması: `kill_switch`, `conflict`, `already_marked`, `too_early`, `synced`, `exists`, `already_on`, `halted` |
+  | 422 | Doğrulama: `grow_not_allowed`, `over_qty`, `over_limit`, `after_ttl`, `limit_violation`, `validation` |
+
+  **403 yoktur.**
+- **Masa durumu.** `useDesk()` (`src/components/shell/desk-state.tsx`) şunları verir: `{ counters, risk, pending, stage, feedStatus, deskStatus, refresh, epoch, resetView }`. Aynı veriyi yeniden çekmeyin. Ekranınızı `epoch` ile anahtarlayın; "Demo verisini sıfırla" ekranı yeniden kurar.
+- **Zaman.** `useNow(intervalMs)` mock saatini izler. Biçimlendirme yalnızca `src/lib/format.ts` üzerinden yapılır.
 
 ### 3.2 Canlı akış (SSE)
 
 ```tsx
-import { useEventStream } from "@/lib/sse/use-event-stream";
-
-const status = useEventStream("feed", { disclosure: (d) => …, classification: (c) => …, counters: (c) => … });
-useEventStream("desk", { "approval.requested": …, "approval.decided": …, order: …, fill: …, kill_switch: …, halt: …, "limits.changed": … });
-useEventStream({ run: runId }, { node: …, progress: …, interrupt: …, done: … });
+useEventStream("feed", { disclosure, classification, counters });
+useEventStream("desk", { "approval.requested", "approval.decided", order, fill, ticket, crew, kill_switch, halt });
+useEventStream({ run: runId }, { node, progress, interrupt, done });
 ```
 
-Olaylar zod ile doğrulanır; bilinmeyen/bozuk olay sessizce düşer. Handler'lar her render'da değişebilir, yeniden abonelik olmaz.
+Olaylar zod ile doğrulanır. Bilinmeyen olaylar düşer. Yeni olaylar:
 
-### 3.3 Oturum ve yetki
+- `ticket` (OrderTicket; onayda ve işaretlemede);
+- `crew` (`{ agent, activity, run_id, ticker, at }`).
 
-- `useSession()` → `{ uid, name, email, role }`. Rol kodları `ROLE_CODE` (A R D U), etiketler `ROLE_LABEL`.
-- `can(role, perm)` ve `deniedHint(perm)` (`src/lib/auth/permissions.ts`). Yetkisi olmayan rol için düğmeyi **gizlemeyin, devre dışı bırakıp nedenini gösterin** (Tooltip ile `deniedHint`). Yetki sunucuda (mock: `createMockApi`) yeniden denetlenir.
-- Adım-yukarı (TOTP) gereken izinler `STEP_UP`'ta. `ConfirmDialog requireTotp` bunu sağlar.
-- Rota korumaları `src/proxy.ts` + `PANEL_ROUTES` (`src/lib/auth/routes.ts`); yeni rota gerekiyorsa TEMEL-İSTEK.
+### 3.3 Oturum, rotalar, bağlantılar
+
+- `useSession()` → `{ uid, name }`. Değeri her zaman "Sen"dir. Rol kontrolü yazmayın.
+- **Rotalar ve bağlantılar** `src/lib/nav.ts` içindedir:
+  - `ROUTES`, `HOME` (`/kopru`);
+  - `href.run(id, hash?)`, `href.proposal(id)`, `href.crew(slug)`, `href.tickets()`, `href.portfolioTab(tab)`, `href.brief(date)`.
+
+  Sabit metin yol yazmayın.
+- **Aktör adları.** `actorName("user:sen" | "agent:skeptic" | "system:risk_monitor")` → "Sen" / "Şüpheci" / "Otomatik (risk izleyici)".
+- **Tayfa** (`src/lib/crew.ts`):
+  - `CREW` (8 üye, numara, ad, tür, rol, "asla yapmaz", portre tabanı);
+  - `crewBySlug`, `crewByAgent`;
+  - `portraitSrcSet`, `portraitSrc`;
+  - `MODEL_CHAIN`, `PROVIDER_LABEL`.
+
+  Portre için `<CrewPortrait member sizes priority? />` kullanın.
+- **Kişisel sıfırlama.** `RiskStatus.reset` alanı: `next_step` first | wait | second, `ready_at`, seans sayacı. Saf kural `src/lib/personal-reset.ts` içindedir. Kill switch kontrolü hazırdır: `src/components/portfolio/kill-switch-control.tsx`.
+- **Limitler.** `limitViolations(values)` (`@/lib/domain`) formda aynı kuralla ön denetim yapar.
 
 ### 3.4 Bileşenler (canlı örnekler: `/styleguide`)
 
-`Button` (primary · secondary · outline · ghost · danger · danger-outline), `Badge` / `EventBadge` / `RuleMark` / `SeverityBadge` / `FixtureBadge` / `TemsiliBadge`, `Panel*`, `PageHeader`, `Stat`, `EmptyState`, `ErrorState`, `Skeleton*`, `SampleNote`, `LlmNote`, `Kbd`, `Dialog` / `DrawerContent` / `Tabs` / `Tooltip`, `Field` / `Input` / `Textarea` / `RequiredComment`, `ConfirmDialog` (yazarak onay + yorum + TOTP), `DataTable` (sıralama, `aria-sort`, klavye satır), `Countdown`, `HashChip`, `Sparkline`, `notify.*` (sonner'ı doğrudan çağırmayın), `Disclaimer`.
-
-Biçimlendirme yalnızca `src/lib/format.ts` üzerinden (`fmtTry`, `fmtPct` "%18", `fmtSignedPct` "−%1,1", `fmtTime` İstanbul saati…). Zaman için `useNow()` (mock saatini izler).
+- **Düğme:** `Button` (primary · secondary · outline · ghost · danger · danger-outline).
+- **Rozetler:** `Badge`, `EventBadge`, `RuleMark`, `SeverityBadge`, `FixtureBadge`, `TemsiliBadge`.
+- **Yerleşim ve durumlar:** `Panel*`, `PageHeader`, `Stat`, `EmptyState`, `ErrorState`, `Skeleton*`.
+- **Etiketler:** `SampleNote`, `LlmNote`, `Kbd`.
+- **Katmanlar:** `Dialog`, `DrawerContent`, `Tabs`, `Tooltip`.
+- **Form:**
+  - `Field`, `Input`, `Textarea`;
+  - `RequiredComment` (`required={false}` ile isteğe bağlı not);
+  - `ConfirmDialog`: yazarak onay + gerekçe, `commentMin`. Kapanınca alanlarını kendisi temizler.
+- **Veri:** `DataTable`, `Countdown`, `HashChip`, `Sparkline`.
+- **Diğer:** `notify.*`, `Disclaimer`, `ScreenSkeleton`, `CrewPortrait`.
 
 ### 3.5 Tasarım kuralları (özet)
 
-- Pirinç kâğıdı zemin, sumi mürekkep, çivit yıkama. **Kuzey kırmızısı (`north`) yalnızca kill switch, veto ve kritik durum** için; aşı boyası (`ochre`) yalnızca günlük durdurma.
-- Bodoni Moda (`font-display`, `.title-display`) **yalnızca ≥ 22 px** başlık ve büyük rakam; altında Inter. Mono (`.code`) yalnızca kod, ticker, hash, kimlik.
-- Kare köşe, 1,5 px mürekkep kenar, sert gölge (`shadow-ink`, `shadow-ink-lg`). Yuvarlak köşe, gradyan, emoji yok.
-- Türkçe arayüz, WCAG AA, tam klavye, görünür odak. Her ekran: yükleniyor · boş · hata · yetki yok durumları.
-- Sayılar örnekse `SampleNote` ("örnek değer · gerçek sonuç değil"); LLM metni `LlmNote`; enjekte edilen kayıt `FixtureBadge`. Kurgusal şirketler "Temsili". Yatırım tavsiyesi dili, gerçek şirket ve gerçek fiyat **yok**.
+- Pirinç kâğıdı zemin, sumi mürekkep, çivit yıkama.
+- **Kuzey kırmızısı yalnızca kill switch, veto ve kritik durum** için; aşı boyası yalnızca günlük durdurma için.
+- Bodoni (`font-display`, `.title-display`) yalnızca ≥ 22 px'de kullanılır, altında Inter. Mono yalnızca kod, ticker, hash, kimlik için.
+- Kare köşe, 1,5 px mürekkep kenar, sert gölge. Yuvarlak köşe, gradyan, emoji yok.
+- Türkçe arayüz, "sen" diye seslenme. WCAG AA, tam klavye, görünür odak, `prefers-reduced-motion`.
+- Örnek sayılar `SampleNote` ile, LLM metni `LlmNote` ile gösterilir. Kurgusal şirketlere "Temsili" yazılır. Gerçek şirket ve gerçek fiyat yoktur.
+- Feragatname değiştirilmez.
 
 ## 4. Demo fikstür kimlikleri (`src/mocks/ids.ts`)
 
-Mock saat: **11.01.2027 Pazartesi 13:40 (İstanbul)**, gerçek zamanla ilerler. Günün bildirimi **318** (13:40'ta 212 görünür, gerisi canlı akışla 7–12 sn'de bir düşer).
+Mock saat **11.01.2027 Pazartesi 13:40 (İstanbul)**'dur ve gerçek zamanla ilerler. Günün bildirimi 318'dir: 13:40'ta 212'si görünür, gerisi canlı düşer. Aşama: **Paper** (`CURRENT_STAGE`).
 
 | Ne | Kimlik | Not |
 |---|---|---|
-| E3 demo bildirimi | `disclosure_index 1651901` · run `run-demo-e3-ornek` · öneri `prop-demo-e3-ornek` · kanıt `card-demo-e3-ornek` · emir `ord-demo-e3-ornek` | ÖRNEK ENERJİ (ORNEK). Güven 0,93, sözleşme/ciro %18, n=23, ort. CAR(5g) +%1,4, isabet %61, şüpheci ×0,5, 1.240 lot, dolum 48,32 (Ç-17) |
-| Red-team | `1651902` · `run-demo-redteam-dmogd` | Prompt Guard 0,98, uyum vetosu, kural motoruna ulaşmaz |
-| R04 sert veto | `1651903` · `run-demo-r04-tmslj` | Tedbirli/engel listesi; LLM çağrısı 0 |
-| Bekleyen onaylar | `prop-day-e1-krgcl`, `prop-day-e2-orncm`, `prop-day-e4-tmspz` (run'ları `run-day-…`) | Süre: ertesi seans 09:50 |
-| Geçmiş runlar | `run-hist-101` … `run-hist-105` | KRGSG pozisyonu bugün süresi dolan |
-| Emir fişi (kişisel mod) | `T-2027-0111-003` · emir `ord-demo-ticket-ornek` | 620 lot @ 48,40, örnek hesap 350.000 TL (Ç-18) |
-| Audit zinciri | 4.812 kayıt; kurcalama `#3907` → `hash_mismatch`; dış çapa `#4700` | `setTamper(true)` yalnızca Admin, yalnızca demo |
-| Senaryolar | `injectDemo("e3_contract" \| "redteam_injection" \| "restricted_r04" \| "loss_simulation")` | Admin; ⌘K → "Demo çalıştırmaları" |
+| E3 demo | `1651901` · `run-demo-e3-ornek` · `prop-demo-e3-ornek` · `card-demo-e3-ornek` · `ord-demo-e3-ornek` | ÖRNEK ENERJİ (ORNEK), 1.240 lot, dolum 48,32 |
+| Red-team | `1651902` · `run-demo-redteam-dmogd` | Karantina, kural motoruna ulaşmaz |
+| R04 sert veto | `1651903` · `run-demo-r04-tmslj` | LLM çağrısı 0 |
+| Bekleyen öneriler | `prop-day-e1-krgcl`, `prop-day-e2-orncm`, `prop-day-e4-tmspz` | Son karar: 09:50 |
+| Koşu (dolum, notlar) | `run-day-e1-tmsmk` | e2e'de "Neden" örneği |
+| Demo emir fişi | `T-2027-0111-003` · `ord-demo-ticket-ornek` | 620 lot @ 48,40, örnek hesap 350.000 TL. Her zaman listede |
+| Onay fişleri | `T-2027-MMDD-0NN` (`buildTicket`, seq 10+) | Onaydan 20 sn sonra, 30 dk TTL |
+| Tayfa slug'ları | `siniflandirici`, `okuyucu`, `onemlilik`, `kanit`, `supheci`, `uyum`, `kural-motoru`, `risk-kapisi` | Portreler `public/crew/ajan-{1..8}-{400,600,800}.{avif,webp,jpg}` |
+| Engel listesi | `rs-1` TMSLJ, `rs-3` FRZMB (senkron, silinmez) · `rs-2` KRGTK (`user:sen`) | |
+| İzleme listesi | `ORNEK`, `KRGCL`, `ORNCM` | |
+| Denetim zinciri | 4.812 kayıt, dış çapa `#4700` | Kurcalama testi yok |
+| Senaryolar | `injectDemo("e3_contract" \| "redteam_injection" \| "restricted_r04" \| "loss_simulation")` | Akış → Senaryo, ⌘K, Ayarlar |
+| Demo saati | `advanceDemoClock(h)`, 0 < h ≤ 336 | Yalnızca kill reset saati; `RiskStatus.demo_clock_offset_h` |
 
-Demo hesapları (yalnızca mock, parola `kaptan-demo`): `admin@`, `risk@`, `analist@`, `denetci@` ve ikinci onaylayıcı `risk2@` — hepsi `@kaptan.demo`. Dört göz adımları için mock rol değiştirici (kenar çubuğu) ya da `risk2@` kullanılır.
+**Giriş.** Mock parolası `kaptan-demo`, `/login` sayfasında yazılıdır. e2e yardımcıları `e2e/helpers.ts` içindedir: `login`, `loginApi`, `trackErrors`.
 
-## 5. Test beklentileri ("bitti" tanımı)
+## 5. "Bitti" tanımı
 
-- `npm run check` yeşil: `typecheck` + `lint` + `coverage` (vitest, kapsam eşiği satır/ifade/fonksiyon %80, dal %75) + `build`.
-- Ekranınızın mantığı (seçiciler, biçimlendiriciler, form doğrulama) birim testli; bileşen testleri Testing Library ile **rol/etiket** üzerinden sorgular.
-- Her ekran için `e2e/<rota>.spec.ts` (Playwright, Edge): mutlu yol + bir yetki reddi + konsolda hata yok. Demo adımınız (FRONTEND-SPEC §7) uçtan uca bir test olarak bulunur.
-- 1440×900 ve 390×844'te yatay taşma yok; klavye ile tüm eylemler yapılabilir; odak görünür.
-- Sahte veri yalnızca `src/mocks/` üzerinden; ekran içinde sabit sayı, sabit şirket adı yok.
+- `npm run check` yeşil olmalı: `typecheck` + `lint` + `coverage` (satır/ifade/fonksiyon %80, dal %75) + `build`.
+- Mantık (seçiciler, biçimlendiriciler, form doğrulama) birim testlidir. Bileşen testleri rol ve etiket üzerinden sorgular. Harness: `src/components/approvals/test-harness.tsx` (`Harness`) ya da `portfolio/test-harness.tsx` (`S3Harness`); varsayılan kullanıcı "Sen"dir.
+- Her ekranın bir e2e testi olur: mutlu yol + bir hata/boş durum + konsolda hata yok. Bu testler 1440×900 ve 390×844'te çalışır, yatay taşma olmamalıdır. axe denetimi `e2e/a11y.spec.ts`'de yapılır; rotanız oradadır, hazır olma koşulunu güncelleyin.
+- Sahte veri yalnızca `src/mocks/` üzerinden gelir.
 
 ## 6. Komutlar
 
 ```bash
-npm run dev        # http://localhost:3100 (mock)
+npm run dev        # http://localhost:3100 (mock). Next 16: klasör başına tek dev sunucusu
 npm run check      # typecheck + lint + coverage + build
-npm run coverage   # vitest kapsam raporu
-npm run e2e        # Playwright smoke (Edge); dev sunucusu açıksa onu kullanır
+npm run e2e        # Playwright (Edge); E2E_BASE_URL=http://localhost:3100 ile açık sunucuyu kullanır
 ```

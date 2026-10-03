@@ -7,7 +7,7 @@ import type { RunSpec } from "./run-spec";
 /**
  * The three injected demo scenarios (11 §2 Adım 2–3). Every one is a fixture
  * (`is_fixture: true` → "DEMO FİKSTÜRÜ"); none of these companies exist.
- * Publication time is set when Admin injects them; this is the default.
+ * Publication time is set when a scenario is injected; this is the default.
  */
 const AT = istanbulIso(DEMO_DAY, "13:41");
 

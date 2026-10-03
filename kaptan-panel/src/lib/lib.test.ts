@@ -1,27 +1,7 @@
-import { sessionState } from "./market";
 import { approvalExpiry, isTradingDay, istanbulIso, nextTradingDay, tradingDaysBetween } from "./time";
 import { fmtInt, fmtPct, fmtSignedPct, fmtTry, shortHash, upperTr } from "./format";
 import { appendToChain, GENESIS_PREV_HASH, hashOf, verifyChain } from "./audit-chain";
 import type { AuditEntry } from "./domain";
-
-describe("market session (BIST, Istanbul time)", () => {
-  it.each([
-    ["09:30", "pre_open", false],
-    ["09:45", "opening_auction", true],
-    ["09:57", "opening_match", true],
-    ["13:40", "continuous", true],
-    ["18:05", "closing", true],
-    ["18:30", "closed", false],
-  ] as const)("%s → %s", (hhmm, phase, open) => {
-    const s = sessionState(istanbulIso("2027-01-11", hhmm));
-    expect(s.phase).toBe(phase);
-    expect(s.isOpen).toBe(open);
-  });
-  it("is closed on weekends and holidays", () => {
-    expect(sessionState(istanbulIso("2027-01-09", "11:00")).phase).toBe("closed");
-    expect(sessionState(istanbulIso("2027-01-01", "11:00")).detail).toBe("İşlem günü değil");
-  });
-});
 
 describe("time", () => {
   it("converts Istanbul wall time to UTC", () => {

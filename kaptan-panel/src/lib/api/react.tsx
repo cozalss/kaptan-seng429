@@ -14,14 +14,13 @@ export function ApiProvider({ children, api }: { children: ReactNode; api?: Kapt
   const session = useOptionalSession();
   const uid = session?.uid ?? null;
   const name = session?.name ?? "";
-  const role = session?.role ?? null;
-  // A new client per signed-in identity: a role switch re-runs every query under the new role.
+  // One client per signed-in person (signing out drops it).
   const client = useMemo<KaptanApi>(() => {
     if (api) return api;
     if (API_MODE === "http") return createHttpApi();
-    const actor = uid && role ? { uid, name, role } : null;
+    const actor = uid ? { uid, name } : null;
     return createMockApi({ getActor: () => actor });
-  }, [api, uid, name, role]);
+  }, [api, uid, name]);
   return <ApiContext.Provider value={client}>{children}</ApiContext.Provider>;
 }
 

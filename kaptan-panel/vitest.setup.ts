@@ -10,3 +10,11 @@ globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObse
 if (typeof Element !== "undefined" && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = function scrollIntoView(): void {};
 }
+// Sonner (toasts) captures the pointer on press; jsdom has no pointer capture.
+if (typeof Element !== "undefined" && !Element.prototype.setPointerCapture) {
+  Element.prototype.setPointerCapture = function setPointerCapture(): void {};
+  Element.prototype.releasePointerCapture = function releasePointerCapture(): void {};
+  Element.prototype.hasPointerCapture = function hasPointerCapture(): boolean {
+    return false;
+  };
+}

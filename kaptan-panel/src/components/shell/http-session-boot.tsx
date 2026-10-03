@@ -20,8 +20,7 @@ export function HttpSessionBoot({ children }: { children: ReactNode }) {
     createHttpApi()
       .me()
       .then((me) => {
-        const role = me.roles[0];
-        if (alive && role) setUser({ uid: me.id, email: me.email, name: me.display_name, role });
+        if (alive) setUser({ uid: me.id, name: me.display_name });
       })
       .catch(() => router.replace("/login"));
     return () => {

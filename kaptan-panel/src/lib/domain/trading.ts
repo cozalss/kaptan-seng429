@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Confidence, EventCode, IsoDate, IsoDateTime, Ticker } from "./common";
 import { EvidenceStrength, FlagCode } from "./agents";
 import { RuleTraceEntry } from "./rules";
+import { StageId } from "./personal";
 
 /* ── TradeProposal (05) ───────────────────────────────────────────────── */
 export const TradeProposal = z.object({
@@ -101,12 +102,16 @@ export const ApprovalCard = z.object({
 });
 export type ApprovalCard = z.infer<typeof ApprovalCard>;
 
-/** Shrink = approve with a smaller amount; growing is never allowed (FR-24). */
+/**
+ * Your decision on a proposal (personal mode). Shrink = approve with a smaller amount; growing
+ * is never allowed (FR-24). The note is optional ("" = none); 12 §5 asks for a reason on
+ * reject, which the UI encourages but does not force. No TOTP: there is no second person to
+ * step up against (PERSONAL-SPEC §3).
+ */
 export const ApprovalDecision = z.object({
   decision: z.enum(["approve", "reject"]),
   approved_notional_try: z.number().positive().nullable(),
-  comment: z.string().trim().min(1, "Yorum zorunludur").max(500, "En çok 500 karakter"),
-  totp: z.string().regex(/^\d{6}$/, "6 haneli kod"),
+  comment: z.string().trim().max(500, "En çok 500 karakter"),
 });
 export type ApprovalDecision = z.infer<typeof ApprovalDecision>;
 
@@ -156,7 +161,7 @@ export const Order = z.object({
    * upper limit above the buy limit ("tavanda açıldı, dolmadı"), the kill switch, or the
    * unfilled remainder dropped at the close.
    */
-  cancel_reason: z.enum(["limit_up_open", "kill_switch", "day_end"]).nullish(),
+  cancel_reason: z.enum(["limit_up_open", "kill_switch", "day_end", "ticket_unfilled", "ticket_canceled", "ticket_expired"]).nullish(),
   is_fixture: z.boolean(),
 });
 export type Order = z.infer<typeof Order>;
@@ -178,13 +183,48 @@ export const Position = z.object({
   realized_pnl: z.number(),
   /** Set once the kill switch fires: positions are not sold, they exit by their own rules. */
   managed_by_exit_rule: z.boolean(),
+  /** paper = SimBIST ledger; personal = a ticket you entered at your own broker (12 §2). */
+  book: z.enum(["paper", "personal"]),
 });
 export type Position = z.infer<typeof Position>;
+
+/**
+ * What you did with a ticket at your broker (12 §2 "GERİ BİLDİRİM"): entered (with the fill you
+ * saw), did not fill (never chase the price), or canceled. `awaiting` until you mark it;
+ * `expired` once the 30-minute TTL or the session passed without a mark (R16).
+ */
+export const TicketEntryStatus = z.enum(["awaiting", "entered", "unfilled", "canceled", "expired"]);
+export type TicketEntryStatus = z.infer<typeof TicketEntryStatus>;
+
+export const TicketEntry = z.object({
+  status: TicketEntryStatus,
+  filled_qty: z.number().int().positive().nullable(),
+  avg_price: z.number().positive().nullable(),
+  filled_at: IsoDateTime.nullable(),
+  note: z.string().nullable(),
+  marked_at: IsoDateTime.nullable(),
+});
+export type TicketEntry = z.infer<typeof TicketEntry>;
+
+/** POST /tickets/{ticket_no}/mark — "girildi / dolmadı / iptal". */
+export const TicketMarkInput = z.discriminatedUnion("mark", [
+  z.object({
+    mark: z.literal("entered"),
+    filled_qty: z.number().int().positive("Adet pozitif olmalı"),
+    avg_price: z.number().positive("Fiyat pozitif olmalı"),
+    filled_at: IsoDateTime,
+    note: z.string().trim().max(500).optional(),
+  }),
+  z.object({ mark: z.literal("unfilled"), note: z.string().trim().max(500).optional() }),
+  z.object({ mark: z.literal("canceled"), note: z.string().trim().max(500).optional() }),
+]);
+export type TicketMarkInput = z.infer<typeof TicketMarkInput>;
 
 /** Personal-mode order ticket (12 §2). No sharing, no export (FR-27). */
 export const OrderTicket = z.object({
   ticket_no: z.string(),
   order_id: z.string(),
+  proposal_id: z.string(),
   run_id: z.string(),
   rules_version: z.string(),
   approved_at: IsoDateTime,
@@ -217,8 +257,11 @@ export const OrderTicket = z.object({
   planned_exit_tr: z.string(),
   gate_results: z.array(z.object({ code: z.string(), passed: z.boolean() })),
   approval_level: z.enum(["normal", "escalate"]),
+  /** The personal stage the ticket was issued in (paper = rehearsal, shadow = no real money, small_real = enter it). */
+  stage: StageId,
   audit_hash: z.string(),
   prev_hash: z.string(),
+  entry: TicketEntry,
   is_fixture: z.boolean(),
 });
 export type OrderTicket = z.infer<typeof OrderTicket>;
@@ -241,21 +284,34 @@ export const PnlPoint = z.object({
 });
 export type PnlPoint = z.infer<typeof PnlPoint>;
 
-/* ── Risk status, kill switch (04 §11, 06 §11, 09 §5) ─────────────────── */
-export const KillResetRequest = z.object({
-  id: z.string(),
-  requested_by: z.string(),
-  requested_by_name: z.string(),
-  requested_at: IsoDateTime,
-  reason: z.string(),
-  confirmations: z.union([z.literal(1), z.literal(2)]),
+/* ── Risk status, kill switch (06 §11, 12 §8/4: personal reset) ──────── */
+/**
+ * Personal kill-switch reset (06 §11 step 3, 12 §8/4, _KANONIK "Kişisel mod"): you confirm
+ * twice, each time with a written reason, the two confirmations ≥ 24 h apart, and the reset
+ * only takes effect once ≥ 5 sessions have closed since the trigger. Present while the kill
+ * switch is on; `null` when it is off.
+ */
+export const PersonalReset = z.object({
+  sessions_since_kill: z.number().int().nonnegative(),
+  sessions_required: z.number().int().positive(),
+  /** Close of the session that completes the wait (5th session after the trigger). */
+  sessions_ready_at: IsoDateTime,
+  min_gap_hours: z.number().positive(),
+  first: z.object({ at: IsoDateTime, reason: z.string() }).nullable(),
+  /** first.at + min_gap_hours; null before the first confirmation. */
+  second_allowed_at: IsoDateTime.nullable(),
+  /** first = write the first confirmation · wait = conditions not met yet · second = may reset now. */
+  next_step: z.enum(["first", "wait", "second"]),
+  /** When step 2 becomes possible (max of the two conditions); null before step 1. */
+  ready_at: IsoDateTime.nullable(),
 });
-export type KillResetRequest = z.infer<typeof KillResetRequest>;
+export type PersonalReset = z.infer<typeof PersonalReset>;
 
 export const RiskStatus = z.object({
   kill_switch: z.enum(["off", "on"]),
   kill_reason: z.string().nullable(),
   kill_at: IsoDateTime.nullable(),
+  /** "user:sen" (you pressed it) or "system:risk_monitor" (−5% from the peak, R01). */
   kill_by: z.string().nullable(),
   halted_today: z.boolean(),
   daily_pnl_pct: z.number(),
@@ -265,7 +321,9 @@ export const RiskStatus = z.object({
   regime: z.enum(["normal", "crisis"]),
   live_armed: z.boolean(),
   quota: z.array(z.object({ provider: z.string(), used: z.number().int().nonnegative(), limit: z.number().int().positive() })),
-  reset_request: KillResetRequest.nullable(),
+  reset: PersonalReset.nullable(),
+  /** Demo only: hours the reset clock was fast-forwarded in Ayarlar. Always 0 against a real API. */
+  demo_clock_offset_h: z.number().nonnegative(),
   as_of: IsoDateTime,
 });
 export type RiskStatus = z.infer<typeof RiskStatus>;

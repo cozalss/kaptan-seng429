@@ -79,18 +79,18 @@ describe("mock state persistence", () => {
   };
   it("round-trips session changes through storage", () => {
     const store = memory();
-    const s = { ...initialState(1_000), tamperOn: true };
+    const s = { ...initialState(1_000), clockOffsetH: 48 };
     saveState(store, s);
-    expect(loadState(store, 2_000).tamperOn).toBe(true);
+    expect(loadState(store, 2_000).clockOffsetH).toBe(48);
   });
   it("starts fresh on missing, stale or malformed data", () => {
     const store = memory();
     expect(loadState(null, 5).startedAtReal).toBe(5);
-    expect(loadState(store, 5).tamperOn).toBe(false);
+    expect(loadState(store, 5).clockOffsetH).toBe(0);
     store.setItem("kaptan-mock-state", "{not json");
-    expect(loadState(store, 5).tamperOn).toBe(false);
-    store.setItem("kaptan-mock-state", JSON.stringify({ v: 1, startedAtReal: 1, tamperOn: true }));
-    expect(loadState(store, 5).tamperOn).toBe(false);
+    expect(loadState(store, 5).clockOffsetH).toBe(0);
+    store.setItem("kaptan-mock-state", JSON.stringify({ v: 1, startedAtReal: 1, clockOffsetH: 99 }));
+    expect(loadState(store, 5).clockOffsetH).toBe(0);
   });
   it("survives a storage that throws", () => {
     expect(() =>
@@ -106,12 +106,12 @@ describe("mock state persistence", () => {
   });
   it("MockDb reloads, resets and keeps one instance per tab", () => {
     const db = new MockDb(window.localStorage);
-    db.update((s) => ({ ...s, tamperOn: true }));
+    db.update((s) => ({ ...s, clockOffsetH: 24 }));
     const twin = new MockDb(window.localStorage);
-    expect(twin.snapshot.tamperOn).toBe(true);
+    expect(twin.snapshot.clockOffsetH).toBe(24);
     db.reset();
     twin.reload();
-    expect(twin.snapshot.tamperOn).toBe(false);
+    expect(twin.snapshot.clockOffsetH).toBe(0);
     __setMockDb(null);
     expect(getMockDb()).toBe(getMockDb());
     __setMockDb(null);

@@ -1,102 +1,61 @@
-import { can, deniedHint, ROLE_PERMS, STEP_UP } from "./permissions";
-import { canAccessPath, homeFor, PANEL_ROUTES, routeFor, routesFor, safeNext } from "./routes";
 import { decodeSession, encodeSession, SESSION_MAX_AGE_S } from "./session";
-import { accountForRole, authenticateDemo, DEMO_ACCOUNTS, DEMO_PASSWORD, findAccountByUid } from "./accounts";
+import { DEMO_PASSPHRASE, passphraseMatches } from "./passphrase";
+import { activeNavHref, HOME, href, LEGACY_REDIRECTS, NAV_ITEMS, ROUTES, safeNext } from "@/lib/nav";
 
-describe("permissions (09 §5)", () => {
-  it("keeps segregation of duties: only the Risk Officer approves", () => {
-    expect(can("risk_officer", "approve")).toBe(true);
-    expect(can("admin", "approve")).toBe(false);
-    expect(can("analyst", "approve")).toBe(false);
-    expect(can("auditor", "approve")).toBe(false);
-  });
-  it("splits the kill-switch reset: Admin initiates, Risk Officer confirms (Ç-8)", () => {
-    expect(can("admin", "kill_reset_init")).toBe(true);
-    expect(can("admin", "kill_reset_confirm")).toBe(false);
-    expect(can("risk_officer", "kill_reset_confirm")).toBe(true);
-    expect(can("risk_officer", "kill_reset_init")).toBe(false);
-  });
-  it("gives the auditor no mutating permission", () => {
-    expect([...ROLE_PERMS.auditor].sort()).toEqual(["audit_export", "view"]);
-  });
-  it("lets only the Admin inject demo disclosures", () => {
-    expect((["analyst", "risk_officer", "auditor"] as const).some((r) => can(r, "demo_inject"))).toBe(false);
-    expect(can("admin", "demo_inject")).toBe(true);
-  });
-  it("denies everything without a role", () => {
-    expect(can(null, "view")).toBe(false);
-  });
-  it("requires step-up for approve and reset", () => {
-    expect(STEP_UP.has("approve")).toBe(true);
-    expect(STEP_UP.has("kill_reset_confirm")).toBe(true);
-    expect(STEP_UP.has("view")).toBe(false);
-  });
-  it("explains a denial in Turkish, with a generic fallback", () => {
-    expect(deniedHint("approve")).toMatch(/Risk Officer/);
-    expect(deniedHint("users")).toBe("Bu işlem rolünüze kapalı.");
+describe("passphrase", () => {
+  it("matches the demo passphrase exactly", () => {
+    expect(passphraseMatches(DEMO_PASSPHRASE)).toBe(true);
+    expect(passphraseMatches("kaptan-demo ")).toBe(false);
+    expect(passphraseMatches("KAPTAN-DEMO")).toBe(false);
+    expect(passphraseMatches("")).toBe(false);
+    expect(passphraseMatches("x", "x")).toBe(true);
   });
 });
 
-describe("routes", () => {
-  it("opens every view route to all roles except /admin", () => {
-    for (const r of PANEL_ROUTES) {
-      const expected = r.href === "/admin" ? ["admin"] : ["analyst", "risk_officer", "admin", "auditor"];
-      expect([...r.roles].sort()).toEqual([...expected].sort());
+describe("session cookie", () => {
+  const payload = { uid: "sen", name: "Sen", iat: 1_000_000 };
+  it("round-trips a payload (Turkish characters included)", () => {
+    const raw = encodeSession({ ...payload, name: "Şen Öz" });
+    expect(raw).not.toMatch(/[+/=]/);
+    expect(decodeSession(raw, 1_000_001)).toEqual({ ...payload, name: "Şen Öz" });
+  });
+  it("returns null for missing, malformed or expired cookies", () => {
+    expect(decodeSession(undefined)).toBeNull();
+    expect(decodeSession("%%%")).toBeNull();
+    expect(decodeSession(btoa(JSON.stringify({ uid: "" })))).toBeNull();
+    expect(decodeSession(encodeSession(payload), payload.iat + SESSION_MAX_AGE_S * 1000 + 1)).toBeNull();
+  });
+});
+
+describe("navigation", () => {
+  it("lands on Bugün and keeps two items in the top bar", () => {
+    expect(HOME).toBe("/bugun");
+    expect(NAV_ITEMS.map((r) => r.label)).toEqual(["Bugün", "Portföy"]);
+  });
+  it("lights Bugün for a proposal and nothing for unknown paths", () => {
+    expect(activeNavHref("/bugun")).toBe(ROUTES.bugun);
+    expect(activeNavHref("/oneri/p-1")).toBe(ROUTES.bugun);
+    expect(activeNavHref("/portfoy")).toBe(ROUTES.portfoy);
+    expect(activeNavHref("/ayarlar")).toBeNull();
+    expect(activeNavHref("/yok")).toBeNull();
+  });
+  it("builds proposal links", () => {
+    expect(href.proposal("p 1")).toBe("/oneri/p%201");
+  });
+  it("redirects every older path to one of the three screens", () => {
+    const dest = new Map(LEGACY_REDIRECTS.map((r) => [r.source, r.destination]));
+    for (const gone of ["/kopru", "/oneriler", "/akis", "/karne", "/ozet", "/kosular/:id", "/tayfa/:agent", "/styleguide", "/runs/:id", "/audit"]) {
+      expect(dest.get(gone)).toBe(ROUTES.bugun);
     }
+    expect(dest.get("/portfolio")).toBe(ROUTES.portfoy);
+    expect(dest.get("/admin")).toBe(ROUTES.ayarlar);
+    const live: string[] = [ROUTES.bugun, ROUTES.portfoy, ROUTES.ayarlar];
+    for (const r of LEGACY_REDIRECTS) expect(live).toContain(r.destination);
   });
-  it("guards /admin and resolves nested paths", () => {
-    expect(canAccessPath("risk_officer", "/admin")).toBe(false);
-    expect(canAccessPath("admin", "/admin")).toBe(true);
-    expect(canAccessPath("auditor", "/runs/run-demo-e3-ornek")).toBe(true);
-    expect(routeFor("/runs/x")?.href).toBe("/runs");
-  });
-  it("lets unknown paths fall through to not-found", () => {
-    expect(canAccessPath("analyst", "/yetkisiz")).toBe(true);
-  });
-  it("sends the Risk Officer to the queue and everyone else to the feed", () => {
-    expect(homeFor("risk_officer")).toBe("/approvals");
-    expect(homeFor("auditor")).toBe("/inbox");
-  });
-  it("hides /admin from non-admin navigation", () => {
-    expect(routesFor("analyst").some((r) => r.href === "/admin")).toBe(false);
-    expect(routesFor("admin").some((r) => r.href === "/admin")).toBe(true);
-  });
-  it("only accepts same-origin relative next paths", () => {
-    expect(safeNext("/audit?x=1")).toBe("/audit?x=1");
-    expect(safeNext("//evil.example")).toBeNull();
-    expect(safeNext("https://evil.example")).toBeNull();
-    expect(safeNext("/\\evil")).toBeNull();
-    expect(safeNext("/login")).toBeNull();
-    expect(safeNext(undefined)).toBeNull();
-  });
-  it("gives every route a unique go-key", () => {
-    const keys = PANEL_ROUTES.map((r) => r.goKey);
-    expect(new Set(keys).size).toBe(keys.length);
-  });
-});
-
-describe("mock session codec", () => {
-  const payload = { uid: "u-risk", email: "risk@kaptan.demo", name: "Zeynep Ş.", role: "risk_officer" as const, iat: 1_000 };
-  it("round-trips Turkish characters", () => {
-    expect(decodeSession(encodeSession(payload), 2_000)).toEqual(payload);
-  });
-  it("rejects expired, malformed and missing cookies without throwing", () => {
-    expect(decodeSession(encodeSession(payload), 1_000 + SESSION_MAX_AGE_S * 1000 + 1)).toBeNull();
-    expect(decodeSession("%%%not-base64")).toBeNull();
-    expect(decodeSession(encodeSession(payload).slice(0, 10))).toBeNull();
-    expect(decodeSession(null)).toBeNull();
-  });
-});
-
-describe("demo accounts", () => {
-  it("authenticates the seeded accounts with the shared demo password", () => {
-    for (const a of DEMO_ACCOUNTS) expect(authenticateDemo(a.email, DEMO_PASSWORD)?.uid).toBe(a.uid);
-  });
-  it("rejects a wrong password", () => {
-    expect(authenticateDemo("risk@kaptan.demo", "yanlis")).toBeNull();
-  });
-  it("maps every role to an account", () => {
-    expect(accountForRole("auditor").uid).toBe("u-denetci");
-    expect(findAccountByUid("u-risk2")?.role).toBe("risk_officer");
+  it("only honours same-site panel paths for ?next=", () => {
+    expect(safeNext("/oneri/p1")).toBe("/oneri/p1");
+    for (const bad of [null, undefined, "", "/", "//evil.example", "https://evil.example", "/\\evil", "/login", "/login?next=/x"]) {
+      expect(safeNext(bad)).toBeNull();
+    }
   });
 });

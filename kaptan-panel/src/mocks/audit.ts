@@ -26,7 +26,7 @@ const GENERIC: ReadonlyArray<{ action: string; actor: string; entity: string; w:
   { action: "proposal.created", actor: "agent:request_approval", entity: "trade_proposal", w: 1 },
   { action: "brief.generated", actor: "system:scheduler", entity: "brief", w: 1 },
   { action: "audit.verified", actor: "system:nightly_verify", entity: "audit_log", w: 1 },
-  { action: "note.added", actor: "user:u-analist", entity: "disclosure", w: 1 },
+  { action: "note.added", actor: "user:sen", entity: "disclosure", w: 1 },
 ];
 const TOTAL_W = GENERIC.reduce((a, g) => a + g.w, 0);
 
@@ -81,7 +81,7 @@ function todayEntries(): Fields[] {
     if (s.decision && s.decision.status !== "pending" && s.decision.atIso) {
       out.push({
         occurred_at: s.decision.atIso,
-        actor: `user:${s.decision.by ?? "u-risk"}`,
+        actor: `user:${s.decision.by ?? "sen"}`,
         action: "approval.decided",
         entity_type: "trade_proposal",
         entity_id: s.run_id.replace(/^run-/, "prop-"),
@@ -119,13 +119,13 @@ function build(): AuditEntry[] {
     if (i === limitsAt) {
       fields.push({
         occurred_at: at,
-        actor: "user:u-risk",
-        action: "limits.approved",
+        actor: "user:sen",
+        action: "limits.set",
         entity_type: "limit_version",
         entity_id: "1",
         run_id: null,
         strategy_version: null,
-        payload: { version: 1, proposer: "u-admin", approver: "u-risk" },
+        payload: { version: 1, reason: "Kanonik başlangıç limitleri" },
       });
       continue;
     }
@@ -153,7 +153,3 @@ export function baseAuditChain(): readonly AuditEntry[] {
   return cache;
 }
 
-/** Tamper test (demo DB only): change a payload without recomputing the hash. */
-export function tamperedChain(chain: readonly AuditEntry[], pos: number): AuditEntry[] {
-  return chain.map((e) => (e.chain_pos === pos ? { ...e, payload: { ...e.payload, kurcalandi: true } } : e));
-}

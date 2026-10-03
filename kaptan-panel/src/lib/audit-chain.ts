@@ -7,7 +7,7 @@ import { sha256Hex } from "@/lib/hash";
  *                run_id, strategy_version, payload]
  *   hash      = sha256(prev_hash || canonical), genesis prev_hash = "00".
  * The panel never trusts this for real verification (the API does); the mock uses it so
- * "Zinciri doğrula" and the tamper test behave exactly like the backend would.
+ * "Zinciri doğrula" (Ayarlar) behaves exactly like the backend would.
  */
 export const GENESIS_PREV_HASH = "00";
 

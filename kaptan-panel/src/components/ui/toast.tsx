@@ -2,38 +2,32 @@
 
 import type { CSSProperties } from "react";
 import { Toaster as Sonner, toast as sonnerToast } from "sonner";
-import { IS_MOCK } from "@/lib/api/config";
 
 /**
- * Toasts are printed slips: paper panel, ink border, hard shadow. On desktop they are laid
- * over the top bar's left half (session clock and counters: ambient, never an action), so a
- * toast never covers a screen's content, its primary actions (approval bar, kill switch,
- * charts) or the demo strip at the bottom. One line each, short-lived (4 s; errors 6 s) and
- * keyed by title, so a repeated message replaces itself instead of stacking. Use `notify.*`
- * — never call sonner directly — so tone stays consistent.
+ * Toasts are printed slips: paper panel, ink border, hard shadow — rare on purpose (a proposal
+ * arriving while you are elsewhere, an error). Bottom centre, one line, short-lived (4 s;
+ * errors 6 s), keyed by title so a repeat replaces itself. Use `notify.*`, never sonner directly.
  */
-const RIBBON_PX = IS_MOCK ? 28 : 0; // --ribbon-h (globals.css)
-const SIDEBAR_PX = 232; // --sidebar-w
 export const TOAST_MS = 4_000;
 const ERROR_MS = 6_000;
 
 export function Toaster() {
   return (
     <Sonner
-      position="top-left"
-      visibleToasts={3}
+      position="bottom-center"
+      visibleToasts={2}
       gap={6}
       duration={TOAST_MS}
-      offset={{ top: RIBBON_PX + 4, left: SIDEBAR_PX + 12 }}
-      mobileOffset={{ top: RIBBON_PX + 4, left: 8, right: 8 }}
+      offset={{ bottom: 20 }}
+      mobileOffset={{ bottom: 12, left: 12, right: 12 }}
       containerAriaLabel="Bildirimler"
       className="kaptan-toaster"
-      style={{ "--width": "440px" } as CSSProperties}
+      style={{ "--width": "420px" } as CSSProperties}
       toastOptions={{
         unstyled: true,
         classNames: {
           toast:
-            "pointer-events-auto flex min-h-12 w-[440px] max-w-[calc(100vw-16px)] items-center gap-3 border-[1.5px] border-ink bg-panel px-3 py-1.5 shadow-ink font-sans text-ui text-ink",
+            "pointer-events-auto flex min-h-12 w-[420px] max-w-[calc(100vw-24px)] items-center gap-3 border-[1.5px] border-ink bg-panel px-3 py-1.5 shadow-ink font-sans text-ui text-ink",
           content: "min-w-0 flex-1",
           title: "truncate font-medium leading-5",
           description: "truncate text-dense text-ink-soft",

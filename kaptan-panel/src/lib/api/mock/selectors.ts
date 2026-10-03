@@ -5,20 +5,24 @@ import type {
   DisclosureListItem,
   Explain,
   Order,
+  OrderTicket,
   Position,
   RiskStatus,
   RunSummary,
   TraceNode,
 } from "@/lib/domain";
 import { appendToChain } from "@/lib/audit-chain";
+import { personalReset } from "@/lib/personal-reset";
 import { addDays, nextTradingDay } from "@/lib/time";
-import { baseAuditChain, tamperedChain } from "@/mocks/audit";
-import { CLOCK_ANCHOR_MS, mockNowMs } from "@/mocks/clock";
+import { baseAuditChain } from "@/mocks/audit";
+import { CLOCK_ANCHOR_MS, DEMO_DAY, mockNowMs } from "@/mocks/clock";
 import { dayDisclosures } from "@/mocks/day";
 import { buildExplain, disclosureOf } from "@/mocks/explain-builder";
 import { liveEquity } from "@/mocks/pnl";
 import { DEMO_ORDER_TICKET } from "@/mocks/governance";
-import { AUDIT_TAMPER_POS, DAY_BY_ANCHOR, DEMO_E3_PROPOSAL, DEMO_E3_RUN, type DemoScenario } from "@/mocks/ids";
+import { DAY_BY_ANCHOR, DEMO_E3_RUN, type DemoScenario } from "@/mocks/ids";
+import { CURRENT_STAGE } from "@/mocks/personal";
+import { buildTicket, effectiveEntry } from "@/mocks/tickets";
 import { issuer } from "@/mocks/issuers";
 import { DAY_SPECS, HISTORY_SPECS } from "@/mocks/runs-day";
 import { DEMO_E3_SPEC, DEMO_INJ_SPEC, DEMO_R04_SPEC } from "@/mocks/runs-demo";
@@ -38,7 +42,12 @@ export function nowMs(state: MockState, realNow: number = Date.now()): number {
   return mockNowMs(realNow, state.startedAtReal);
 }
 
-/** Injected specs, re-timed to the moment Admin injected them. */
+/** "Now" for the kill-switch reset clock: the demo clock plus the hours fast-forwarded in Ayarlar. */
+export function resetClockMs(state: MockState, realNow: number = Date.now()): number {
+  return nowMs(state, realNow) + state.clockOffsetH * 3_600_000;
+}
+
+/** Injected specs, re-timed to the moment they were injected. */
 export function injectedSpecs(state: MockState): RunSpec[] {
   return state.injections.flatMap((inj) => {
     const spec = SCENARIO_SPEC[inj.scenario];
@@ -146,13 +155,14 @@ export function explainFor(state: MockState, runId: string, realNow: number = Da
   const progress = runProgress(state, runId, realNow);
   const approval = base.approval && progress >= 1 ? patchApproval(state, base.approval, realNow) : null;
   const isRunning = progress < 1;
-  const ticketOn = runId === DEMO_E3_RUN && approval?.status === "approved";
-  // Session orders (approvals, manual fills) replace fixture orders with the same id.
+  const ticket = approval ? ticketFor(state, spec, base, approval, realNow) : null;
+  // Session orders (approvals) replace fixture orders with the same id; the ticket's own order follows.
   const sessionOrders = state.orders.filter((o) => o.run_id === runId).map((o) => applyCancel(state, o));
   const sessionIds = new Set(sessionOrders.map((o) => o.id));
-  const fixtureOrders = [...base.orders, ...(ticketOn && approval ? [ticketOrder(spec.is_fixture, approval.decided_at)] : [])].filter((o) => !sessionIds.has(o.id));
+  const fixtureOrders = base.orders.filter((o) => !sessionIds.has(o.id));
+  const ticketOrders = ticket ? [ticketOrder(ticket, approval?.decided_at ?? null)] : [];
   // Paper (SimBIST) orders first; the personal-mode ticket order follows.
-  const orders = [...fixtureOrders, ...sessionOrders].sort((a, b) => Number(a.broker !== "simbist") - Number(b.broker !== "simbist"));
+  const orders = [...fixtureOrders, ...sessionOrders, ...ticketOrders].sort((a, b) => Number(a.broker !== "simbist") - Number(b.broker !== "simbist"));
   return {
     ...base,
     run: {
@@ -165,23 +175,37 @@ export function explainFor(state: MockState, runId: string, realNow: number = Da
     proposal: isRunning ? null : base.proposal,
     orders,
     fills: orders.flatMap((o) => o.fills),
-    ticket: ticketOn ? DEMO_ORDER_TICKET : base.ticket,
+    ticket,
     audit_positions: auditPositionsFor(state, runId),
     trace: { ...base.trace, nodes: progressTrace(base.trace.nodes, progress) },
   };
 }
 
+const istDay = (iso: string) => new Date(Date.parse(iso) + 3 * 3_600_000).toISOString().slice(0, 10);
+
 /**
- * Personal mode (12 §2): the same approval also yields an order ticket the person enters by
- * hand at their own broker; until a manual fill is recorded it waits as `awaiting_manual_entry`.
+ * Personal mode (12 §2): every proposal you approve on or after the demo day also yields an
+ * order ticket you enter by hand at your own broker. The demo E3 run keeps the canonical
+ * ticket (T-2027-0111-003); the others are built from their card. Your mark (girildi /
+ * dolmadı / iptal) lives in `ticketMarks`; an unmarked ticket past its TTL reads as expired.
  */
-function ticketOrder(isFixture: boolean, decidedAt: string | null): Order {
-  const t = DEMO_ORDER_TICKET;
+function ticketFor(state: MockState, spec: RunSpec, base: Explain, approval: ApprovalCard, realNow: number): OrderTicket | null {
+  if (approval.status !== "approved" || !approval.decided_at || istDay(approval.decided_at) < DEMO_DAY) return null;
+  const raw =
+    spec.run_id === DEMO_E3_RUN
+      ? DEMO_ORDER_TICKET
+      : buildTicket(approval, base, { seq: 10 + allSpecs(state).findIndex((s) => s.run_id === spec.run_id), decidedAt: approval.decided_at, stage: CURRENT_STAGE });
+  return { ...raw, entry: effectiveEntry(raw, state.ticketMarks[raw.ticket_no], nowMs(state, realNow)) };
+}
+
+/** The ticket's own order (broker `order_ticket`): waits for your mark, then mirrors it. */
+function ticketOrder(t: OrderTicket, decidedAt: string | null): Order {
   const created = decidedAt ? new Date(Date.parse(decidedAt) + 20_000).toISOString() : t.created_at;
-  return {
+  const e = t.entry;
+  const base: Order = {
     id: t.order_id,
     client_order_id: `fis-${t.ticket_no}`,
-    proposal_id: DEMO_E3_PROPOSAL,
+    proposal_id: t.proposal_id,
     run_id: t.run_id,
     ticker: t.ticker,
     company_name: t.company_name,
@@ -194,9 +218,26 @@ function ticketOrder(isFixture: boolean, decidedAt: string | null): Order {
     broker: "order_ticket",
     created_at: created,
     fills: [],
-    is_fixture: isFixture,
+    is_fixture: t.is_fixture,
   };
+  if (e.status === "entered" && e.filled_qty && e.avg_price && e.filled_at) {
+    const fill = { id: `fill-${t.ticket_no}`, order_id: t.order_id, qty: e.filled_qty, price: e.avg_price, commission: 0, bsmv: 0, slippage_bps: 0, filled_at: e.filled_at, source: "manual" as const };
+    return { ...base, status: e.filled_qty < t.qty ? "partially_filled" : "filled", fills: [fill] };
+  }
+  if (e.status === "unfilled") return { ...base, status: "canceled", cancel_reason: "ticket_unfilled" };
+  if (e.status === "canceled") return { ...base, status: "canceled", cancel_reason: "ticket_canceled" };
+  if (e.status === "expired") return { ...base, status: "canceled", cancel_reason: "ticket_expired" };
+  return base;
 }
+
+/** Every ticket issued so far (one per approval on or after the demo day), newest first. */
+export function allTickets(state: MockState, realNow: number = Date.now()): OrderTicket[] {
+  return allSpecs(state)
+    .map((s) => explainFor(state, s.run_id, realNow)?.ticket)
+    .filter((t): t is OrderTicket => Boolean(t))
+    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+}
+
 
 export function runSummaries(state: MockState, realNow: number = Date.now()): RunSummary[] {
   return allSpecs(state)
@@ -254,9 +295,42 @@ export function positions(state: MockState, realNow: number = Date.now()): Posit
       unrealized_pnl: Math.round((last - fill.price) * fill.qty),
       realized_pnl: 0,
       managed_by_exit_rule: state.positionsManagedByExit,
+      book: "paper",
     });
   }
-  return out.sort((a, b) => Date.parse(b.opened_at) - Date.parse(a.opened_at));
+  return [...out, ...personalPositions(state, realNow)].sort((a, b) => Date.parse(b.opened_at) - Date.parse(a.opened_at));
+}
+
+/** Positions you opened yourself: tickets marked "girildi" with the fill you saw at your broker. */
+function personalPositions(state: MockState, realNow: number): Position[] {
+  return allTickets(state, realNow).flatMap((t): Position[] => {
+    const e = t.entry;
+    const spec = specById(state, t.run_id);
+    if (e.status !== "entered" || !e.filled_qty || !e.avg_price || !e.filled_at || !spec?.event) return [];
+    const last = issuer(t.ticker).price;
+    let exit = e.filled_at.slice(0, 10);
+    for (let i = 0; i < 5; i += 1) exit = nextTradingDay(exit);
+    return [
+      {
+        ticker: t.ticker,
+        company_name: t.company_name,
+        qty: e.filled_qty,
+        avg_cost: e.avg_price,
+        last_price: last,
+        opened_at: e.filled_at,
+        planned_exit_date: exit,
+        holding_days: Math.max(0, Math.round((nowMs(state, realNow) - Date.parse(e.filled_at)) / 86_400_000)),
+        source_proposal: t.proposal_id,
+        run_id: t.run_id,
+        event_type: spec.event,
+        strategy_version: spec.strategy_version,
+        unrealized_pnl: Math.round((last - e.avg_price) * e.filled_qty),
+        realized_pnl: 0,
+        managed_by_exit_rule: state.positionsManagedByExit,
+        book: "personal",
+      },
+    ];
+  });
 }
 
 /* ── risk ────────────────────────────────────────────────────────────── */
@@ -283,15 +357,15 @@ export function riskStatus(state: MockState, realNow: number = Date.now()): Risk
       { provider: "Groq gpt-oss", used: 61 + injectedSpecs(state).length * 2, limit: 1_000 },
       { provider: "Prompt Guard 2", used: 140 + injectedSpecs(state).length, limit: 14_400 },
     ],
-    reset_request: r.reset_request,
+    reset: r.kill_switch === "on" && r.kill_at ? personalReset(r.kill_at, r.reset_first, new Date(resetClockMs(state, realNow)).toISOString()) : null,
+    demo_clock_offset_h: state.clockOffsetH,
     as_of: new Date(nowMs(state, realNow)).toISOString(),
   };
 }
 
 /* ── audit ───────────────────────────────────────────────────────────── */
 export function auditChain(state: MockState): AuditEntry[] {
-  const chain = state.auditAppends.length ? appendToChain(baseAuditChain(), state.auditAppends) : [...baseAuditChain()];
-  return state.tamperOn ? tamperedChain(chain, AUDIT_TAMPER_POS) : chain;
+  return state.auditAppends.length ? appendToChain(baseAuditChain(), state.auditAppends) : [...baseAuditChain()];
 }
 
 function auditPositionsFor(state: MockState, runId: string): Explain["audit_positions"] {

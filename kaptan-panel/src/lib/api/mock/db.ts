@@ -7,10 +7,10 @@ import { nowMs } from "./selectors";
  * The mock "database": one MockState plus the event bus. Every write goes through
  * `update()` (immutable: a new state object each time), is persisted, and may emit events.
  */
+/** The signed-in person. Personal mode has exactly one: `OWNER` ("Sen"). */
 export interface Actor {
   uid: string;
   name: string;
-  role: "analyst" | "risk_officer" | "admin" | "auditor";
 }
 
 export class MockDb {
@@ -37,7 +37,7 @@ export class MockDb {
     return this.state;
   }
 
-  /** Re-read from storage (another tab or a role switch may have written it). */
+  /** Re-read from storage (another tab may have written it). */
   reload(realNow: number = Date.now()): void {
     this.state = loadState(this.storage, realNow);
   }

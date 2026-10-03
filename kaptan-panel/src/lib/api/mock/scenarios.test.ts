@@ -5,7 +5,7 @@ import { engageKillSwitch, executeApproved, runDemoScenario, startLiveTicker, st
 import { DEMO_E3_PROPOSAL, DEMO_E3_RUN, DEMO_INJ_RUN, DEMO_R04_RUN, PENDING_PROPOSALS } from "@/mocks/ids";
 import type { BusMessage, StreamKey } from "@/lib/sse/bus";
 
-const ADMIN: Actor = { uid: "u-admin", name: "Burak (Admin)", role: "admin" };
+const OWNER: Actor = { uid: "sen", name: "Sen" };
 
 function recorder(db: MockDb, key: StreamKey) {
   const seen: BusMessage[] = [];
@@ -27,7 +27,7 @@ describe("demo scenario · E3 contract (11 §2 Adım 1–2)", () => {
     const db = new MockDb(null);
     const desk = recorder(db, "desk");
     const run = recorder(db, `run:${DEMO_E3_RUN}`);
-    const r = runDemoScenario(db, ADMIN, "e3_contract");
+    const r = runDemoScenario(db, OWNER, "e3_contract");
     expect(r.run_id).toBe(DEMO_E3_RUN);
 
     vi.advanceTimersByTime(DEMO_RUN_MS / 2);
@@ -43,11 +43,11 @@ describe("demo scenario · E3 contract (11 §2 Adım 1–2)", () => {
 
   it("fills an approved intraday order at the scripted 48,32 after 1,8 s", () => {
     const db = new MockDb(null);
-    runDemoScenario(db, ADMIN, "e3_contract");
+    runDemoScenario(db, OWNER, "e3_contract");
     vi.advanceTimersByTime(DEMO_RUN_MS + 100);
     db.update((s) => ({
       ...s,
-      approvals: { ...s.approvals, [DEMO_E3_PROPOSAL]: { status: "approved", decided_by: "u-risk", decided_at: db.nowIso(), decision_comment: "ok", approved_notional_try: null } },
+      approvals: { ...s.approvals, [DEMO_E3_PROPOSAL]: { status: "approved", decided_by: "sen", decided_at: db.nowIso(), decision_comment: "ok", approved_notional_try: null } },
     }));
     const desk = recorder(db, "desk");
     executeApproved(db, DEMO_E3_PROPOSAL);
@@ -61,7 +61,7 @@ describe("demo scenario · E3 contract (11 §2 Adım 1–2)", () => {
 describe("demo scenario · red-team and R04", () => {
   it("never lets the injection reach the rule engine", () => {
     const db = new MockDb(null);
-    runDemoScenario(db, ADMIN, "redteam_injection");
+    runDemoScenario(db, OWNER, "redteam_injection");
     vi.advanceTimersByTime(DEMO_RUN_MS + 100);
     const e = explainFor(db.snapshot, DEMO_INJ_RUN);
     expect(e?.trace.nodes.some((n) => n.node === "rule_engine")).toBe(false);
@@ -69,7 +69,7 @@ describe("demo scenario · red-team and R04", () => {
   });
   it("vetoes the restricted security before any LLM call", () => {
     const db = new MockDb(null);
-    runDemoScenario(db, ADMIN, "restricted_r04");
+    runDemoScenario(db, OWNER, "restricted_r04");
     vi.advanceTimersByTime(DEMO_RUN_MS + 100);
     expect(explainFor(db.snapshot, DEMO_R04_RUN)?.run.llm_calls).toBe(0);
   });
@@ -79,7 +79,7 @@ describe("loss simulation (11 Adım 4)", () => {
   it("halts the day at −%1 and trips the kill switch at −%5 drawdown", () => {
     const db = new MockDb(null);
     const desk = recorder(db, "desk");
-    runDemoScenario(db, ADMIN, "loss_simulation");
+    runDemoScenario(db, OWNER, "loss_simulation");
     vi.advanceTimersByTime(1_400 * 3 + 10);
     expect(db.snapshot.risk.halted_today).toBe(true);
     expect(db.snapshot.risk.kill_switch).toBe("off");
@@ -99,10 +99,10 @@ describe("kill switch", () => {
     const [p] = PENDING_PROPOSALS;
     db.update((s) => ({
       ...s,
-      approvals: { ...s.approvals, [p]: { status: "approved", decided_by: "u-risk", decided_at: db.nowIso(), decision_comment: "ok", approved_notional_try: null } },
+      approvals: { ...s.approvals, [p]: { status: "approved", decided_by: "sen", decided_at: db.nowIso(), decision_comment: "ok", approved_notional_try: null } },
     }));
     executeApproved(db, p);
-    engageKillSwitch(db, "user:u-risk", "Test");
+    engageKillSwitch(db, "user:sen", "Test");
     expect(db.snapshot.canceledOrderIds.length).toBeGreaterThan(0);
     expect(db.snapshot.positionsManagedByExit).toBe(true);
   });

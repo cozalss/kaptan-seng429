@@ -36,12 +36,17 @@
   --shadow-ink-lg: 6px 6px 0 var(--ink);
 
   /* Layout */
-  --sidebar-w: 232px;
-  --topbar-h: 56px;
-  --ribbon-h: 28px;
+  --ribbon-h: 24px;
 
-  /* Motion */
+  /* Motion — one hand: ink is set down quickly and settles, nothing bounces.
+     instant = press/hover feedback · quick = toggles, chips, focus · base = panels, drawers,
+     page ink-in · slow = stamps and the one moment a screen is about. */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-ink: cubic-bezier(0.2, 0, 0, 1);
+  --dur-instant: 90ms;
+  --dur-quick: 150ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
 }
 
 @theme inline {
@@ -80,6 +85,7 @@
   --shadow-ink-lg: var(--shadow-ink-lg);
   --radius-*: initial;
   --ease-out-expo: var(--ease-out-expo);
+  --ease-ink: var(--ease-ink);
 }
 
 @layer base {
@@ -208,6 +214,20 @@
     opacity: 1;
   }
 }
+/* A screen arriving: the page is set down, not flown in. */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-page-in {
+  animation: page-in var(--dur-base) var(--ease-ink) both;
+}
 .animate-stamp-in {
   animation: stamp-in 420ms var(--ease-out-expo) both;
 }
@@ -221,53 +241,47 @@
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
-/* Toasts sit over the top bar's left half; without the sidebar (< 1024 px) they start at the edge. */
-@media (min-width: 600px) and (max-width: 1023px) {
-  [data-sonner-toaster].kaptan-toaster[data-x-position="left"] {
-    left: 8px !important;
+/* A proposal arriving on Bugün: set down from just above, its sheet washed once. */
+@keyframes card-arrive {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+    box-shadow: 0 0 0 var(--ink);
+  }
+  60% {
+    opacity: 1;
+    transform: none;
+    box-shadow: 6px 6px 0 var(--wash);
+  }
+  100% {
+    box-shadow: 0 0 0 var(--wash);
   }
 }
-
-/* /brief prints as one A4 sheet: only the brief (#ozet-sayfa) is visible. */
-@media print {
-  @page {
-    size: A4;
-    margin: 12mm 12mm 14mm;
+.animate-card-arrive {
+  animation: card-arrive 1.1s var(--ease-out-expo) both;
+}
+/* Your station on the Öneri path breathes until you decide. */
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
   }
-  html,
-  body {
-    background: #fff !important;
+  50% {
+    opacity: 0.9;
+    transform: scale(1);
   }
-  body * {
-    visibility: hidden !important;
-  }
-  #ozet-sayfa,
-  #ozet-sayfa * {
-    visibility: visible !important;
-  }
-  #ozet-sayfa {
-    position: absolute;
-    inset: 0 auto auto 0;
-    width: 100%;
-    max-width: none !important;
-    zoom: 0.74;
-    background: #fff !important;
-    box-shadow: none !important;
-    border: 0 !important;
-    padding: 0 !important;
-  }
-  #ozet-sayfa section {
-    break-inside: avoid;
-  }
-  #ozet-sayfa a {
-    color: inherit;
-    text-decoration: none;
-  }
+}
+.animate-breathe {
+  animation: breathe 2.6s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-stamp-in,
-  .animate-ink-in {
+  .animate-ink-in,
+  .animate-page-in,
+  .animate-card-arrive,
+  .animate-breathe {
     animation: none;
   }
 

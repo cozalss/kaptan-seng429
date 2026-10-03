@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { LEGACY_REDIRECTS } from "./src/lib/nav";
 
 /**
  * KAPtan Paneli. Mock mode (default) needs no env and no backend.
@@ -25,6 +26,10 @@ const nextConfig: NextConfig = {
       // The landing's hashed Vite bundles never change under the same name.
       { source: "/assets/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
     ];
+  },
+  async redirects() {
+    // The enterprise paths (/inbox, /approvals, /runs/:id, /admin …) moved to the personal IA.
+    return LEGACY_REDIRECTS.map((r) => ({ ...r, permanent: false }));
   },
   async rewrites() {
     // "/" is the public landing page, built from ../kaptan-landing into public/ (scripts/sync-landing.mjs).

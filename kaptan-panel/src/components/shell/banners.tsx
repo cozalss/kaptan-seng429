@@ -1,62 +1,49 @@
 "use client";
 
 import Link from "next/link";
-import { fmtPct, fmtTime } from "@/lib/format";
-import { useNow } from "@/lib/clock";
+import { fmtPct } from "@/lib/format";
+import { ROUTES } from "@/lib/nav";
 import { useDesk } from "./desk-state";
 
 /**
- * Global risk bands (11 Adım 4, 06 §11): north red when the kill switch is on, ochre for
- * the daily −1% halt. Shown on every screen, under the top bar, announced politely.
+ * One quiet line under the top bar when the desk is not running normally: north red when you
+ * (or the −5% rule) stopped everything, ochre for the daily −1% pause. Announced politely.
  */
 export function RiskBanner() {
   const { risk } = useDesk();
   if (!risk) return null;
   if (risk.kill_switch === "on") {
-    const step = risk.reset_request ? "Sıfırlama başlatıldı (1/2) — Risk Officer onayı bekleniyor." : "Sıfırlama: Admin başlatır, Risk Officer onaylar (iki farklı kişi).";
     return (
-      <div role="status" aria-live="polite" className="border-b-[1.5px] border-ink bg-north text-on-dark">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2 sm:px-5">
-          <span className="font-display text-[22px] leading-none tracking-[-0.01em]">KILL SWITCH AÇIK</span>
-          <span className="text-dense">
-            Yeni emir yok · açık emirler iptal edildi · pozisyonlar satılmadı, çıkış kuralıyla yönetiliyor.
-            {risk.kill_reason ? ` Sebep: ${risk.kill_reason}.` : ""}
-          </span>
-          <span className="text-dense opacity-90">{step}</span>
-          <Link href="/portfolio" className="ml-auto text-dense font-medium underline underline-offset-4">
-            Risk durumuna git
+      <div role="status" aria-live="polite" className="bg-north text-on-dark">
+        <p className="mx-auto flex max-w-[752px] flex-wrap items-baseline gap-x-3 gap-y-0.5 px-4 py-2 text-[14px] sm:px-6">
+          <span className="font-medium">Durduruldu.</span>
+          <span className="opacity-90">Yeni öneri gelmez; elindekiler kendi kurallarıyla kapanır.</span>
+          <Link href={ROUTES.portfoy} className="ml-auto underline underline-offset-4">
+            Portföy
           </Link>
-        </div>
+        </p>
       </div>
     );
   }
   if (risk.halted_today) {
     return (
-      <div role="status" aria-live="polite" className="border-b-[1.5px] border-ink bg-ochre text-ink">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2 sm:px-5">
-          <span className="font-display text-[22px] leading-none">YENİ EMİR DURDU</span>
-          <span className="text-dense">
-            Günlük K/Z {fmtPct(risk.daily_pnl_pct, 1)} (sınır −%1, R02). Gün içinde kaldırılamaz; ertesi seans otomatik kalkar.
-          </span>
-        </div>
+      <div role="status" aria-live="polite" className="bg-ochre text-ink">
+        <p className="mx-auto max-w-[752px] px-4 py-2 text-[14px] sm:px-6">
+          <span className="font-medium">Bugün yeni emir yok.</span> Gün içi zarar {fmtPct(risk.daily_pnl_pct, 1)}; sınır −%1. Yarın kendiliğinden kalkar.
+        </p>
       </div>
     );
   }
   return null;
 }
 
-/** Mock-mode ribbon: nobody may mistake fixtures for live data (11 §4). */
+/** Mock-mode ribbon: nobody may mistake fixtures for live data (11 §4). Short on purpose. */
 export function DemoRibbon() {
-  const now = useNow(30_000);
   return (
-    <div className="sticky top-0 z-40 flex h-[var(--ribbon-h)] items-center gap-3 overflow-hidden bg-wash px-3 text-meta whitespace-nowrap text-on-dark sm:px-5">
-      <span className="border border-on-dark/70 px-1.5 leading-[16px] font-medium tracking-[0.02em]">DEMO VERİSİ</span>
-      <span className="truncate">
-        Tüm şirketler kurgusaldır (Temsili) · sayılar örnek değerdir, gerçek sonuç değildir · sanal para
-      </span>
-      <span className="ml-auto hidden tabular-nums opacity-85 sm:inline">
-        Demo saati {now === null ? "—" : `11.01.2027 ${fmtTime(new Date(now).toISOString())}`}
-      </span>
+    <div className="flex h-6 items-center justify-center gap-2 bg-wash px-3 text-[11.5px] tracking-[0.02em] whitespace-nowrap text-on-dark">
+      <span className="font-medium">DEMO VERİSİ</span>
+      <span aria-hidden className="opacity-60">·</span>
+      <span className="truncate opacity-90">kurgusal şirketler, sanal para</span>
     </div>
   );
 }

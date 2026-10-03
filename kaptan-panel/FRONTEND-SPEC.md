@@ -1,5 +1,7 @@
 # KAPtan Paneli — Frontend Spesifikasyonu
 
+> **Kişisel mod (03.10.2026): [`PERSONAL-SPEC.md`](./PERSONAL-SPEC.md) bu belgenin yerine geçer.** Roller (§1.2, §4), dört göz, `/audit`, `/limits`, `/admin`, `/yetkisiz`, TOTP ve rehberli demo kaldırıldı; rotalar Türkçeleşti. Bu belge şemalar (§6), API ayrıntısı (§5), içerik kuralları (§8) ve fikstürler (§7) için başvuru olarak kalır.
+
 > Sürüm 1.0 · 02.10.2026 · Sahip: Rol 4 (Frontend & Değerlendirme) · Durum: temel (foundation) teslim edildi.
 >
 > Bu belge `05-proje-dokumanlari/` altındaki belgelerden türetilmiştir. Her madde kaynağını köşeli parantezle verir:

@@ -1,42 +1,27 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { canAccessPath, homeFor, PUBLIC_PATHS } from "@/lib/auth/routes";
+import { HOME, PUBLIC_PATHS } from "@/lib/nav";
 import { decodeSession, SESSION_COOKIE } from "@/lib/auth/session";
 
 /**
- * Route guards (Next 16 `proxy`, formerly middleware).
- * mock: the session cookie carries the role → unauthenticated users go to /login,
- *       roles without access go to /yetkisiz.
- * http: only the presence of the refresh cookie is checked here; roles are enforced by
- *       the API and by <RoleGate> (FRONTEND-SPEC §9 Ç-16).
+ * Route guard (Next 16 `proxy`, formerly middleware). Personal mode: one user, no roles —
+ * the only question is "signed in or not".
+ * mock: the session cookie → signed-out users go to /login?next=…; a signed-in user who opens
+ *       /login goes to the panel home (/bugun).
+ * http: only the presence of the refresh cookie is checked here; the API owns the session.
+ * "/" is the public landing (rewritten to the static /index.html) and its files are excluded
+ * by the matcher below, so the landing never needs a session.
  */
 const IS_HTTP = process.env.NEXT_PUBLIC_API_MODE === "http";
 const REFRESH_COOKIE = "__Host-kaptan_rt";
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
-  // "/" is the public landing page (rewritten to the static /index.html), open to everyone.
   if (pathname === "/") return NextResponse.next();
   const isPublic = PUBLIC_PATHS.includes(pathname);
+  const signedIn = IS_HTTP ? request.cookies.has(REFRESH_COOKIE) : decodeSession(request.cookies.get(SESSION_COOKIE)?.value) !== null;
 
-  if (IS_HTTP) {
-    const has = request.cookies.has(REFRESH_COOKIE);
-    if (!has && !isPublic) return redirectToLogin(request, pathname + search);
-    return NextResponse.next();
-  }
-
-  const session = decodeSession(request.cookies.get(SESSION_COOKIE)?.value);
-  if (!session) {
-    if (isPublic) return NextResponse.next();
-    return redirectToLogin(request, pathname + search);
-  }
-  if (isPublic) {
-    return NextResponse.redirect(new URL(homeFor(session.role), request.url));
-  }
-  if (!canAccessPath(session.role, pathname)) {
-    const url = new URL("/yetkisiz", request.url);
-    url.searchParams.set("from", pathname);
-    return NextResponse.redirect(url);
-  }
+  if (!signedIn) return isPublic ? NextResponse.next() : redirectToLogin(request, pathname + search);
+  if (isPublic && !IS_HTTP) return NextResponse.redirect(new URL(HOME, request.url));
   return NextResponse.next();
 }
 
@@ -47,6 +32,6 @@ function redirectToLogin(request: NextRequest, next: string) {
 }
 
 export const config = {
-  // Everything except Next internals, the mock session API, and static files (the landing's too).
-  matcher: ["/((?!_next/static|_next/image|api/mock|icon.svg|favicon.ico|favicon.svg|index.html|assets/|images/|fonts/|.*\\.(?:png|jpg|svg|woff2|txt)$).*)"],
+  // Everything except Next internals, the mock session API, and static files (the landing's and the crew portraits).
+  matcher: ["/((?!_next/static|_next/image|api/mock|icon.svg|favicon.ico|favicon.svg|index.html|assets/|images/|fonts/|crew/|.*\.(?:png|jpg|jpeg|webp|avif|svg|woff2|txt)$).*)"],
 };

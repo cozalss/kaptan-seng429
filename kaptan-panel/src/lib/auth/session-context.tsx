@@ -1,14 +1,11 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
-import type { Role } from "@/lib/domain/user";
 
-/** The signed-in user as the server saw it (mock cookie or http /me). */
+/** The signed-in person (mock cookie or http /me). Personal mode: always one, "Sen". */
 export interface SessionUser {
   uid: string;
-  email: string;
   name: string;
-  role: Role;
 }
 
 const SessionContext = createContext<SessionUser | null>(null);

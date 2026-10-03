@@ -1,19 +1,16 @@
 import { z } from "zod";
-import { Role } from "@/lib/domain/user";
 
 /**
- * Mock session cookie. Read by src/proxy.ts (route guards) and server layouts.
- * Edge-safe: no Node APIs. Not a security boundary — mock mode is a demo with published
- * credentials; in http mode the API enforces roles (FRONTEND-SPEC §9 Ç-16).
+ * Mock session cookie. Read by src/proxy.ts (route guard) and the panel layout.
+ * Edge-safe: no Node APIs. Not a security boundary — mock mode is a demo whose passphrase is
+ * printed on /login; in http mode the API owns the session (PERSONAL-SPEC §4).
  */
 export const SESSION_COOKIE = "kaptan_mock_session";
 export const SESSION_MAX_AGE_S = 8 * 60 * 60; // mirrors the 8 h refresh-token life (09 §6)
 
 export const SessionPayload = z.object({
   uid: z.string().min(1),
-  email: z.email(),
   name: z.string().min(1),
-  role: Role,
   iat: z.number().int().positive(),
 });
 export type SessionPayload = z.infer<typeof SessionPayload>;

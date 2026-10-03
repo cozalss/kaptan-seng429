@@ -1,123 +1,43 @@
-import type {
-  AdminUserView,
-} from "./admin-types";
-import type {
-  ApprovalCard,
-  ApprovalDecision,
-  AuditEntry,
-  AuditQuery,
-  AuditStatus,
-  ChainVerifyResult,
-  ConfigView,
-  DayCounters,
-  DisclosureDetail,
-  DisclosureListItem,
-  EvalSummary,
-  Explain,
-  KillResetRequest,
-  LimitDecisionInput,
-  LimitProposalInput,
-  LimitVersion,
-  LiveArmState,
-  Me,
-  MorningBrief,
-  Note,
-  Order,
-  OrderTicket,
-  Page,
-  PnlPoint,
-  Position,
-  RestrictedSecurity,
-  RiskStatus,
-  RunSummary,
-  UniverseEntry,
-} from "@/lib/domain";
+import type { ApprovalCard, ApprovalDecision, DayCounters, Explain, Me, OrderTicket, PnlPoint, Position, RiskStatus, TicketMarkInput } from "@/lib/domain";
 import type { DemoScenario } from "@/mocks/ids";
 
 /**
- * The one typed client every screen uses (FRONTEND-SPEC §5). Two implementations:
- * `mock` (default, in-browser session state) and `http` (FastAPI /api/v1).
- * Screens never import an implementation directly — use `useApi()`.
+ * The one typed client the three screens use (API.md is the contract for the backend).
+ * Personal mode: one user, no roles. Two implementations: `mock` (default, in-browser state)
+ * and `http` (FastAPI /api/v1). Screens never import an implementation directly — use `useApi()`.
  */
-export interface DisclosureQuery {
-  date?: string;
-  ticker?: string;
-  event_code?: string;
-  /** "hide" (default) hides circuit-breaker noise; "only" shows only noise; "all". */
-  noise?: "hide" | "only" | "all";
-  page?: number;
-  page_size?: number;
-}
-
-export interface RunQuery {
-  status?: RunSummary["status"];
-  from?: string;
-}
-
 export interface KaptanApi {
   readonly mode: "mock" | "http";
 
   // session
   me(): Promise<Me>;
 
-  // feed
-  listDisclosures(q?: DisclosureQuery): Promise<Page<DisclosureListItem> & { counters: DayCounters }>;
-  getDisclosure(index: number): Promise<DisclosureDetail>;
-  addNote(index: number, body: string): Promise<Note>;
+  /** Today's counters for the one quiet line on Bugün ("212 bildirim okundu, 5 öneri"). */
   counters(): Promise<DayCounters>;
 
-  // runs
-  listRuns(q?: RunQuery): Promise<RunSummary[]>;
-  getRun(runId: string): Promise<RunSummary>;
-  explain(runId: string): Promise<Explain>;
-
-  // approvals
+  // proposals — your decision; an approval yields an order ticket
   listApprovals(status?: ApprovalCard["status"] | "all"): Promise<ApprovalCard[]>;
   decideApproval(proposalId: string, decision: ApprovalDecision): Promise<ApprovalCard>;
+  /** Everything the crew did for one run (the Öneri story reads from it). */
+  explain(runId: string): Promise<Explain>;
 
-  // orders & portfolio
-  listOrders(): Promise<Order[]>;
+  // order tickets (emir fişi) — you enter them by hand at your broker, then mark them
   listTickets(): Promise<OrderTicket[]>;
-  manualFill(orderId: string, input: { qty: number; price: number; filled_at: string }): Promise<Order>;
+  markTicket(ticketNo: string, input: TicketMarkInput): Promise<OrderTicket>;
+
+  // portfolio
   positions(): Promise<Position[]>;
   pnl(from?: string, to?: string): Promise<PnlPoint[]>;
 
-  // risk
+  // risk & kill switch (personal reset: two confirmations ≥ 24 h apart + 5 sessions)
   riskStatus(): Promise<RiskStatus>;
   killSwitch(reason: string): Promise<RiskStatus>;
-  requestKillReset(input: { reason: string; totp: string }): Promise<KillResetRequest>;
-  confirmKillReset(input: { request_id: string; comment: string; totp: string }): Promise<RiskStatus>;
+  confirmKillReset(input: { reason: string }): Promise<RiskStatus>;
 
-  // limits
-  limits(): Promise<LimitVersion>;
-  limitsHistory(): Promise<LimitVersion[]>;
-  proposeLimits(input: LimitProposalInput): Promise<LimitVersion>;
-  decideLimits(version: number, input: LimitDecisionInput): Promise<LimitVersion>;
-
-  // audit
-  audit(q?: AuditQuery): Promise<Page<AuditEntry>>;
-  verifyAudit(): Promise<ChainVerifyResult>;
-  auditStatus(): Promise<AuditStatus>;
-
-  // eval & brief
-  evalSummary(): Promise<EvalSummary>;
-  brief(date?: string): Promise<MorningBrief>;
-
-  // admin (D)
-  adminUsers(): Promise<AdminUserView[]>;
-  adminConfig(): Promise<ConfigView>;
-  universe(): Promise<UniverseEntry[]>;
-  restricted(): Promise<RestrictedSecurity[]>;
-  addRestricted(input: { ticker: string; kind: RestrictedSecurity["kind"]; source_ref: string | null }): Promise<RestrictedSecurity>;
-  requestRestrictedRemoval(id: string): Promise<RestrictedSecurity>;
-  confirmRestrictedRemoval(id: string): Promise<void>;
-  liveArm(): Promise<LiveArmState>;
-  armLive(totp: string): Promise<LiveArmState>;
-  confirmLive(totp: string): Promise<LiveArmState>;
-
-  // demo mode (D, DEMO_MODE only)
+  // demo / test (mock; http only with the backend's DEMO_MODE)
   injectDemo(scenario: DemoScenario): Promise<{ disclosure_index: number | null; run_id: string | null }>;
-  setTamper(on: boolean): Promise<void>;
+  /** Fast-forward the kill-switch reset clock (hours). Demo only; the demo day itself stays put. */
+  advanceDemoClock(hours: number): Promise<RiskStatus>;
   resetDemo(): Promise<void>;
 }
 

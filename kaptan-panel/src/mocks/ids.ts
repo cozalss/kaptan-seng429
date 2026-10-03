@@ -9,7 +9,7 @@ export const DAY_TOTAL = 318;
 /** Published by 13:40 (the clock anchor): 61 noise + 138 archived + 13 processed (11 Adım 1). */
 export const DAY_BY_ANCHOR = { total: 212, noise: 61, archived: 138, processed: 13 } as const;
 
-/* Demo scenarios (11 §2), injected by Admin via "Senaryo". */
+/* Demo scenarios (11 §2), injected from Canlı akış → "Senaryo", ⌘K or Ayarlar → Demo. */
 export const DEMO_E3_INDEX = 1_651_901;
 export const DEMO_E3_RUN = "run-demo-e3-ornek";
 export const DEMO_E3_PROPOSAL = "prop-demo-e3-ornek";
@@ -28,7 +28,6 @@ export const DEMO_TICKET_ORDER = "ord-demo-ticket-ornek";
 
 /* Audit chain (11 Adım 4). */
 export const AUDIT_BASE_LENGTH = 4_812;
-export const AUDIT_TAMPER_POS = 3_907;
 
 /* Pre-existing runs of the day that reached the approval queue. */
 export const PENDING_RUNS = ["run-day-e1-krgcl", "run-day-e2-orncm", "run-day-e4-tmspz"] as const;

@@ -29,7 +29,7 @@ export default defineConfig({
       provider: "v8",
       include: ["src/lib/**", "src/mocks/**", "src/components/**"],
       // The http client needs the real API (covered when the backend exists).
-      exclude: ["**/*.test.*", "src/lib/api/http/**"],
+      exclude: ["**/*.test.*", "**/*.test-utils.*", "src/lib/api/http/**"],
       thresholds: { lines: 80, functions: 80, branches: 75, statements: 80 },
     },
   },
