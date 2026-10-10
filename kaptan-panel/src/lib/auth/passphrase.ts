@@ -1,5 +1,5 @@
 /**
- * Single-user sign-in (PERSONAL-SPEC §4). Mock mode has one demo passphrase, printed on
+ * Single-user sign-in (SPEC §4). Mock mode has one demo passphrase, printed on
  * /login on purpose ("demo parolası"): the mock deployment is a public demo with fictional
  * data, and the cookie it sets is not a security boundary. In http mode the passphrase is
  * checked by the API, never here.

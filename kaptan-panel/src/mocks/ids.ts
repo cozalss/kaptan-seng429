@@ -28,6 +28,8 @@ export const DEMO_TICKET_ORDER = "ord-demo-ticket-ornek";
 
 /* Audit chain (11 Adım 4). */
 export const AUDIT_BASE_LENGTH = 4_812;
+/** The record the tamper test changes ("Kayıt #3.907'de zincir kırık", 11 Adım 4). */
+export const AUDIT_TAMPER_POS = 3_907;
 
 /* Pre-existing runs of the day that reached the approval queue. */
 export const PENDING_RUNS = ["run-day-e1-krgcl", "run-day-e2-orncm", "run-day-e4-tmspz"] as const;

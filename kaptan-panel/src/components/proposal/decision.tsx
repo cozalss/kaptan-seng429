@@ -11,6 +11,8 @@ import { Dialog, DialogContent } from "@/components/ui/overlay";
 import { decideGate, STATUS_LABEL } from "@/components/approvals/approvals-logic";
 import { deadlineLine, holdLine } from "@/components/story/plain";
 import { OrderSlip } from "./order-slip";
+import { Denied } from "@/components/roles/denied";
+import { useRole } from "@/components/roles/use-role";
 
 /** Bodoni's comma reads as a full stop at display size; set decimal commas in the UI face. */
 function withSansCommas(text: string) {
@@ -18,14 +20,15 @@ function withSansCommas(text: string) {
 }
 
 const CLOSED: Partial<Record<ApprovalStatus, { title: string; body: string }>> = {
-  rejected: { title: "Reddettin.", body: "Emir yazılmadı. Kararın kayda geçti." },
-  cancelled: { title: "İptal oldu.", body: "Her şeyi durdurduğun için bu öneri düştü." },
+  rejected: { title: "Reddedildi.", body: "Emir yazılmadı. Ret denetim defterine geçti." },
+  cancelled: { title: "İptal oldu.", body: "Her şey durdurulduğu için bu öneri düştü." },
   expired: { title: "Süresi doldu.", body: "Karar için son saat geçti; öneri kendiliğinden düştü." },
 };
 
 /**
  * "Öneri" — the one decision on the page. A single Onayla; Reddet is a quiet link with an
- * optional note. Once approved, the emir fişi takes this place.
+ * optional note. Only the Risk Sorumlusu signs; other roles see the same buttons closed with
+ * the plain reason. Once approved, the emir fişi takes this place.
  */
 export function Decision({
   card,
@@ -41,6 +44,8 @@ export function Decision({
   onDecided: (c: ApprovalCard) => void;
 }) {
   const desk = useDesk();
+  const { can } = useRole();
+  const maySign = can("proposal.decide");
   const [rejecting, setRejecting] = useState(false);
   const [note, setNote] = useState("");
   const decide = useApiMutation((api, decision: "approve" | "reject", comment: string) =>
@@ -60,7 +65,7 @@ export function Decision({
     return (
       <section aria-labelledby="karar" className="space-y-6">
         <p id="karar" className="text-[15px] text-muted">
-          Onayladın{card.decided_at ? ` · ${fmtTime(card.decided_at)}` : ""}. Fişi aracı kurum uygulamana gir, sonra burada işaretle.
+          İmzalandı{card.decided_at ? ` · ${fmtTime(card.decided_at)}` : ""}. Fişi aracı kurum uygulamasına gir, sonra burada işaretle.
         </p>
         {ticket ? <OrderSlip ticket={ticket} /> : <p className="text-[17px] text-ink-soft">Emir fişin hazırlanıyor…</p>}
         {ticket && ticket.qty !== card.qty ? (
@@ -96,17 +101,17 @@ export function Decision({
 
       {gate.reason ? (
         <p role="status" className="border-l-[3px] border-ink bg-sunk px-4 py-2.5 text-[15px] text-ink">
-          {gate.tone === "kill" ? "Durdurdun; yeni öneri onaylanamaz." : gate.tone === "halt" ? "Bugün yeni emir yok (günlük −%1 sınırı); yalnızca reddedebilirsin." : gate.reason}
+          {gate.tone === "kill" ? "Her şey durduruldu; yeni öneri onaylanamaz." : gate.tone === "halt" ? "Bugün yeni emir yok (günlük −%1 sınırı); yalnızca reddedebilirsin." : gate.reason}
         </p>
       ) : null}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
-        <Button variant="primary" size="lg" className="h-14 w-full px-10 text-[17px] sm:w-auto" disabled={!gate.canApprove || decide.pending} onClick={() => void run("approve")}>
+        <Button variant="primary" size="lg" className="h-14 w-full px-10 text-[17px] sm:w-auto" disabled={!maySign || !gate.canApprove || decide.pending} onClick={() => void run("approve")}>
           {decide.pending && !rejecting ? "Onaylanıyor…" : "Onayla"}
         </Button>
         <button
           type="button"
-          disabled={!gate.canDecide || decide.pending}
+          disabled={!maySign || !gate.canDecide || decide.pending}
           onClick={() => {
             decide.reset();
             setRejecting(true);
@@ -116,6 +121,7 @@ export function Decision({
           Reddet
         </button>
       </div>
+      <Denied action="proposal.decide" />
       {decide.error && !rejecting ? (
         <p role="alert" className="text-[15px] text-north">
           {decide.error}

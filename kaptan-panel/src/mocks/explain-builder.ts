@@ -389,6 +389,7 @@ function approvalOf(spec: RunSpec, proposal: TradeProposal, card: EvidenceCard |
     expires_at: approvalExpiry(created),
     status: d?.status ?? "pending",
     decided_by: d?.by ?? null,
+    decided_role: d?.by ? "risk_officer" : null,
     decided_at: d?.atIso ?? null,
     decision_comment: d?.comment ?? null,
     approved_notional_try: d?.approvedNotional ?? null,

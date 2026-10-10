@@ -1,4 +1,4 @@
-import type { ApprovalCard, LimitVersion, LiveArmState, Note, Order, RestrictedSecurity, TicketEntry } from "@/lib/domain";
+import type { ApprovalCard, LimitVersion, LiveArmState, Note, Order, ProposalNote, RestrictedSecurity, Signature, TicketEntry } from "@/lib/domain";
 import type { ChainFields } from "@/lib/audit-chain";
 import type { DemoScenario } from "@/mocks/ids";
 import { SEED_LIMIT_VERSIONS, SEED_LIVE_ARM, SEED_RESTRICTED, SEED_WATCHLIST } from "@/mocks/governance";
@@ -13,11 +13,11 @@ const OPENING_DAILY_PNL = 0.0021;
  * reload keeps the story. "Demo verisini sıfırla" clears it.
  */
 export const STORAGE_KEY = "kaptan-mock-state";
-export const STATE_VERSION = 5;
+export const STATE_VERSION = 6;
 
 export type ApprovalPatch = Pick<
   ApprovalCard,
-  "status" | "decided_by" | "decided_at" | "decision_comment" | "approved_notional_try"
+  "status" | "decided_by" | "decided_role" | "decided_at" | "decision_comment" | "approved_notional_try"
 >;
 
 export interface Injection {
@@ -34,8 +34,8 @@ export interface MockRisk {
   /** Daily P&L and drawdown overrides set by the loss simulation. */
   daily_pnl_pct: number;
   drawdown_pct: number;
-  /** Your first reset confirmation (personal reset, step 1 of 2). */
-  reset_first: { at: string; reason: string } | null;
+  /** The Yönetici's start of a restart (1/2); the Risk Sorumlusu confirms it (2/2). */
+  reset_started: Signature | null;
 }
 
 export interface MockState {
@@ -58,8 +58,10 @@ export interface MockState {
   verifiedAt: string | null;
   /** Your marks on order tickets, by ticket number (girildi / dolmadı / iptal). */
   ticketMarks: Record<string, TicketEntry>;
-  /** Demo: hours the kill-switch reset clock was fast-forwarded (Ayarlar → "zamanı ileri sar"). */
-  clockOffsetH: number;
+  /** Notes on proposals (Analist, Risk Sorumlusu, Yönetici). */
+  proposalNotes: ProposalNote[];
+  /** Demo: one audit record changed behind the chain's back (Ayarlar → Kurcalama testi). */
+  tamperOn: boolean;
 }
 
 export function initialState(nowReal: number): MockState {
@@ -80,7 +82,7 @@ export function initialState(nowReal: number): MockState {
       halted_today: false,
       daily_pnl_pct: OPENING_DAILY_PNL,
       drawdown_pct: liveEquity(OPENING_DAILY_PNL).drawdown,
-      reset_first: null,
+      reset_started: null,
     },
     positionsManagedByExit: false,
     limitVersions: [...SEED_LIMIT_VERSIONS],
@@ -90,7 +92,8 @@ export function initialState(nowReal: number): MockState {
     liveArm: { ...SEED_LIVE_ARM },
     verifiedAt: null,
     ticketMarks: {},
-    clockOffsetH: 0,
+    proposalNotes: [],
+    tamperOn: false,
   };
 }
 

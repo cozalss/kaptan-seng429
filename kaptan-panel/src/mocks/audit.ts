@@ -2,7 +2,7 @@ import type { AuditEntry } from "@/lib/domain";
 import { appendToChain, type ChainFields } from "@/lib/audit-chain";
 import { CLOCK_ANCHOR_MS } from "./clock";
 import { AUDIT_BASE_LENGTH } from "./ids";
-import { ISSUERS } from "./issuers";
+import { issuer, ISSUERS } from "./issuers";
 import { createRng } from "./rng";
 import { DAY_SPECS } from "./runs-day";
 
@@ -26,7 +26,7 @@ const GENERIC: ReadonlyArray<{ action: string; actor: string; entity: string; w:
   { action: "proposal.created", actor: "agent:request_approval", entity: "trade_proposal", w: 1 },
   { action: "brief.generated", actor: "system:scheduler", entity: "brief", w: 1 },
   { action: "audit.verified", actor: "system:nightly_verify", entity: "audit_log", w: 1 },
-  { action: "note.added", actor: "user:sen", entity: "disclosure", w: 1 },
+  { action: "note.added", actor: "user:uye-2", entity: "disclosure", w: 1 },
 ];
 const TOTAL_W = GENERIC.reduce((a, g) => a + g.w, 0);
 
@@ -43,6 +43,7 @@ function todayEntries(): Fields[] {
   const out: Fields[] = [];
   for (const s of DAY_SPECS) {
     const at = s.publishedAtIso;
+    const company = issuer(s.ticker).name;
     const plus = (ms: number) => new Date(Date.parse(at) + ms).toISOString();
     out.push({
       occurred_at: plus(21_000),
@@ -52,7 +53,7 @@ function todayEntries(): Fields[] {
       entity_id: String(s.disclosure_index),
       run_id: null,
       strategy_version: null,
-      payload: { ticker: s.ticker, subject: s.subject },
+      payload: { ticker: s.ticker, company, subject: s.subject },
     });
     if (s.kind === "pregate_veto") {
       out.push({
@@ -63,7 +64,7 @@ function todayEntries(): Fields[] {
         entity_id: String(s.disclosure_index),
         run_id: s.run_id,
         strategy_version: s.strategy_version,
-        payload: { reasons: s.preGateReasons ?? [], llm_calls: 0 },
+        payload: { ticker: s.ticker, company, reasons: s.preGateReasons ?? [], llm_calls: 0 },
       });
     }
     if (s.kind === "propose") {
@@ -75,19 +76,19 @@ function todayEntries(): Fields[] {
         entity_id: s.run_id.replace(/^run-/, "prop-"),
         run_id: s.run_id,
         strategy_version: s.strategy_version,
-        payload: { ticker: s.ticker, qty: s.proposal?.qty ?? 0, event_type: s.event },
+        payload: { ticker: s.ticker, company, qty: s.proposal?.qty ?? 0, event_type: s.event },
       });
     }
     if (s.decision && s.decision.status !== "pending" && s.decision.atIso) {
       out.push({
         occurred_at: s.decision.atIso,
-        actor: `user:${s.decision.by ?? "sen"}`,
+        actor: `user:${s.decision.by ?? "uye-3"}`,
         action: "approval.decided",
         entity_type: "trade_proposal",
         entity_id: s.run_id.replace(/^run-/, "prop-"),
         run_id: s.run_id,
         strategy_version: s.strategy_version,
-        payload: { decision: s.decision.status, comment: s.decision.comment ?? "" },
+        payload: { ticker: s.ticker, company, decision: s.decision.status, role: "risk_officer", comment: s.decision.comment ?? "" },
       });
       if (s.decision.fill) {
         out.push({
@@ -119,13 +120,13 @@ function build(): AuditEntry[] {
     if (i === limitsAt) {
       fields.push({
         occurred_at: at,
-        actor: "user:sen",
-        action: "limits.set",
+        actor: "user:uye-3",
+        action: "limits.approved",
         entity_type: "limit_version",
         entity_id: "1",
         run_id: null,
         strategy_version: null,
-        payload: { version: 1, reason: "Kanonik başlangıç limitleri" },
+        payload: { version: 1, proposed_by: "uye-1", reason: "Kanonik başlangıç limitleri" },
       });
       continue;
     }
@@ -153,3 +154,8 @@ export function baseAuditChain(): readonly AuditEntry[] {
   return cache;
 }
 
+
+/** Tamper test (demo DB only): change one record's payload without recomputing its hash. */
+export function tamperedChain(chain: readonly AuditEntry[], pos: number): AuditEntry[] {
+  return chain.map((e) => (e.chain_pos === pos ? { ...e, payload: { ...e.payload, kurcalandi: true } } : e));
+}

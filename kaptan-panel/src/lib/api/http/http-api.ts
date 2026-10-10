@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ApprovalCard, DayCounters, Explain, Me, OrderTicket, PnlPoint, Position, RiskStatus } from "@/lib/domain";
+import { ApprovalCard, AuditPage, ChainVerifyResult, DayCounters, Explain, LimitsView, Me, OrderTicket, PnlPoint, Position, ProposalNote, RiskStatus, TeamMember } from "@/lib/domain";
 import { ApiError, type KaptanApi } from "../types";
 
 /**
@@ -39,13 +39,14 @@ async function request<T extends z.ZodType>(schema: T, path: string, init: Reque
     const msg = typeof detail?.detail === "string" ? detail.detail : null;
     const fallback: Record<number, string> = {
       401: "Oturumunuzun süresi doldu. Lütfen yeniden giriş yapın.",
-      403: "Bu işlem şu an yapılamıyor.",
+      403: "Bu işlem rolüne kapalı.",
       404: "Kayıt bulunamadı.",
       409: "Kayıt bu arada değişti ya da süresi doldu.",
       422: "Girdi geçersiz.",
       429: "Çok fazla istek. Biraz sonra yeniden deneyin.",
     };
-    throw new ApiError(res.status, "http", msg ?? fallback[res.status] ?? "Sunucu hatası.");
+    const code = typeof detail?.code === "string" ? detail.code : "http";
+    throw new ApiError(res.status, code, msg ?? fallback[res.status] ?? "Sunucu hatası.");
   }
   if (res.status === 204) return schema.parse(undefined);
   const json: unknown = await res.json();
@@ -68,20 +69,34 @@ export function createHttpApi(): KaptanApi {
   return {
     mode: "http",
     me: () => request(Me, "/me"),
+    setRole: async (role) => {
+      const body = await request(z.object({ access_token: z.string(), user: Me }), "/auth/role", post({ role }));
+      accessToken = body.access_token;
+      return body.user;
+    },
+    users: () => request(z.array(TeamMember), "/admin/users"),
     counters: () => request(DayCounters, "/disclosures/counters"),
     listApprovals: (status = "pending") => request(z.array(ApprovalCard), `/approvals${qs({ status })}`),
     decideApproval: (pid, d) => request(ApprovalCard, `/approvals/${id(pid)}/decision`, post(d)),
     explain: (runId) => request(Explain, `/runs/${id(runId)}/explain`),
+    listNotes: (pid) => request(z.array(ProposalNote), `/approvals/${id(pid)}/notes`),
+    addNote: (pid, body) => request(ProposalNote, `/approvals/${id(pid)}/notes`, post({ body })),
     listTickets: () => request(z.array(OrderTicket), "/tickets"),
     markTicket: (no, input) => request(OrderTicket, `/tickets/${id(no)}/mark`, post(input)),
     positions: () => request(z.array(Position), "/portfolio/positions"),
     pnl: (from, to) => request(z.array(PnlPoint), `/portfolio/pnl${qs({ from, to })}`),
     riskStatus: () => request(RiskStatus, "/risk/status"),
     killSwitch: (reason) => request(RiskStatus, "/risk/kill-switch", post({ reason })),
-    confirmKillReset: (input) => request(RiskStatus, "/risk/kill-switch/reset", post(input)),
+    startKillReset: (input) => request(RiskStatus, "/risk/kill-switch/reset/request", post(input)),
+    confirmKillReset: (input) => request(RiskStatus, "/risk/kill-switch/reset/confirm", post(input)),
+    limits: () => request(LimitsView, "/limits"),
+    proposeLimit: (input) => request(LimitsView, "/limits/proposals", post(input)),
+    decideLimit: (version, input) => request(LimitsView, `/limits/proposals/${version}/decision`, post(input)),
+    auditList: (q = {}) => request(AuditPage, `/audit${qs({ scope: q.scope, q: q.q, limit: q.limit })}`),
+    verifyAudit: () => request(ChainVerifyResult, "/audit/verify", post()),
     injectDemo: (scenario) =>
       request(z.object({ disclosure_index: z.number().nullable(), run_id: z.string().nullable() }), "/demo/inject", post({ scenario })),
-    advanceDemoClock: (hours) => request(RiskStatus, "/demo/clock", post({ hours })),
+    setTamper: (on) => request(z.object({ tamper_on: z.boolean() }), "/demo/tamper", post({ on })),
     resetDemo: () => request(Void, "/demo/reset", post()),
   };
 }

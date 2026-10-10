@@ -11,6 +11,8 @@ import { fmtDuration, fmtInt, fmtPrice, fmtTime } from "@/lib/format";
 import { ROUTES } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Denied } from "@/components/roles/denied";
+import { useRole } from "@/components/roles/use-role";
 import { Input } from "@/components/ui/field";
 import { buildMarkInput, ENTRY_LABEL, hasMarkErrors, initialDraft, isMarkable, markErrors, ticketCopyText, ticketPhase, validFrom, type MarkDraft, type MarkKind } from "@/components/tickets/ticket-logic";
 
@@ -106,6 +108,8 @@ function Marked({ ticket }: { ticket: OrderTicket }) {
 
 function SlipActions({ ticket, onMarked }: { ticket: OrderTicket; onMarked: (t: OrderTicket) => void }) {
   const api = useApi();
+  const { can } = useRole();
+  const mayMark = can("ticket.mark");
   const [copied, setCopied] = useState<"idle" | "done" | "fail">("idle");
   const [draft, setDraft] = useState<MarkDraft | null>(null);
   const [busy, setBusy] = useState(false);
@@ -179,14 +183,14 @@ function SlipActions({ ticket, onMarked }: { ticket: OrderTicket; onMarked: (t: 
       ) : (
         <>
           <div className="flex items-center gap-3">
-            <Button variant="primary" size="lg" onClick={() => setDraft(initialDraft("entered", ticket, currentTimeMs()))}>
+            <Button variant="primary" size="lg" disabled={!mayMark} onClick={() => setDraft(initialDraft("entered", ticket, currentTimeMs()))}>
               Girdim
             </Button>
             <Button variant="secondary" size="lg" onClick={() => void copy()}>
               {copied === "done" ? "Kopyalandı ✓" : "Kopyala"}
             </Button>
             <M.Root modal={false}>
-              <M.Trigger aria-label="Başka bir sonuç" disabled={busy} className="ml-auto grid size-12 place-items-center text-[20px] leading-none text-ink-soft hover:bg-wash-tint hover:text-ink">
+              <M.Trigger aria-label="Başka bir sonuç" disabled={busy || !mayMark} className="ml-auto grid size-12 place-items-center text-[20px] leading-none text-ink-soft hover:bg-wash-tint hover:text-ink">
                 <span aria-hidden>…</span>
               </M.Trigger>
               <M.Portal>
@@ -204,6 +208,7 @@ function SlipActions({ ticket, onMarked }: { ticket: OrderTicket; onMarked: (t: 
           <p className="mt-2.5 text-[13px] text-muted" aria-live="polite">
             {copied === "fail" ? "Panoya kopyalanamadı; alanları elle yaz." : "Kopyala: sembol, yön, lot, limit, seans — aracı kurum uygulamana yapıştırmak için."}
           </p>
+          <Denied action="ticket.mark" className="mt-2.5" />
           {error ? (
             <p role="alert" className="mt-2 text-[14px] text-north">
               {error}

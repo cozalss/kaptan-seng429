@@ -13,7 +13,7 @@ describe("passphrase", () => {
 });
 
 describe("session cookie", () => {
-  const payload = { uid: "sen", name: "Sen", iat: 1_000_000 };
+  const payload = { uid: "uye-3", name: "Üye 3", role: "risk_officer" as const, iat: 1_000_000 };
   it("round-trips a payload (Turkish characters included)", () => {
     const raw = encodeSession({ ...payload, name: "Şen Öz" });
     expect(raw).not.toMatch(/[+/=]/);
@@ -25,17 +25,24 @@ describe("session cookie", () => {
     expect(decodeSession(btoa(JSON.stringify({ uid: "" })))).toBeNull();
     expect(decodeSession(encodeSession(payload), payload.iat + SESSION_MAX_AGE_S * 1000 + 1)).toBeNull();
   });
+  it("reads an old cookie without a role as the default role, and refuses an unknown role", () => {
+    const old = btoa(JSON.stringify({ uid: "x", name: "X", iat: 1_000_000 })).replace(/=+$/, "");
+    expect(decodeSession(old, 1_000_001)?.role).toBe("risk_officer");
+    const bad = btoa(JSON.stringify({ uid: "x", name: "X", role: "kral", iat: 1_000_000 })).replace(/=+$/, "");
+    expect(decodeSession(bad, 1_000_001)).toBeNull();
+  });
 });
 
 describe("navigation", () => {
-  it("lands on Bugün and keeps two items in the top bar", () => {
+  it("lands on Bugün and keeps three items in the top bar", () => {
     expect(HOME).toBe("/bugun");
-    expect(NAV_ITEMS.map((r) => r.label)).toEqual(["Bugün", "Portföy"]);
+    expect(NAV_ITEMS.map((r) => r.label)).toEqual(["Bugün", "Portföy", "Denetim"]);
   });
   it("lights Bugün for a proposal and nothing for unknown paths", () => {
     expect(activeNavHref("/bugun")).toBe(ROUTES.bugun);
     expect(activeNavHref("/oneri/p-1")).toBe(ROUTES.bugun);
     expect(activeNavHref("/portfoy")).toBe(ROUTES.portfoy);
+    expect(activeNavHref("/denetim")).toBe(ROUTES.denetim);
     expect(activeNavHref("/ayarlar")).toBeNull();
     expect(activeNavHref("/yok")).toBeNull();
   });
@@ -44,12 +51,13 @@ describe("navigation", () => {
   });
   it("redirects every older path to one of the three screens", () => {
     const dest = new Map(LEGACY_REDIRECTS.map((r) => [r.source, r.destination]));
-    for (const gone of ["/kopru", "/oneriler", "/akis", "/karne", "/ozet", "/kosular/:id", "/tayfa/:agent", "/styleguide", "/runs/:id", "/audit"]) {
+    for (const gone of ["/kopru", "/oneriler", "/akis", "/karne", "/ozet", "/kosular/:id", "/tayfa/:agent", "/styleguide", "/runs/:id"]) {
       expect(dest.get(gone)).toBe(ROUTES.bugun);
     }
     expect(dest.get("/portfolio")).toBe(ROUTES.portfoy);
+    expect(dest.get("/audit")).toBe(ROUTES.denetim);
     expect(dest.get("/admin")).toBe(ROUTES.ayarlar);
-    const live: string[] = [ROUTES.bugun, ROUTES.portfoy, ROUTES.ayarlar];
+    const live: string[] = [ROUTES.bugun, ROUTES.portfoy, ROUTES.denetim, ROUTES.ayarlar];
     for (const r of LEGACY_REDIRECTS) expect(live).toContain(r.destination);
   });
   it("only honours same-site panel paths for ?next=", () => {

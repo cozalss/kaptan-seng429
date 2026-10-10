@@ -3,6 +3,7 @@ import { Confidence, EventCode, IsoDate, IsoDateTime, Ticker } from "./common";
 import { EvidenceStrength, FlagCode } from "./agents";
 import { RuleTraceEntry } from "./rules";
 import { StageId } from "./personal";
+import { Role, Signature } from "./user";
 
 /* ── TradeProposal (05) ───────────────────────────────────────────────── */
 export const TradeProposal = z.object({
@@ -95,6 +96,8 @@ export const ApprovalCard = z.object({
   expires_at: IsoDateTime,
   status: ApprovalStatus,
   decided_by: z.string().nullable(),
+  /** The role the signer acted in (only Risk Sorumlusu may sign; 04 §11). */
+  decided_role: Role.nullable(),
   decided_at: IsoDateTime.nullable(),
   decision_comment: z.string().nullable(),
   approved_notional_try: z.number().nullable(),
@@ -106,7 +109,7 @@ export type ApprovalCard = z.infer<typeof ApprovalCard>;
  * Your decision on a proposal (personal mode). Shrink = approve with a smaller amount; growing
  * is never allowed (FR-24). The note is optional ("" = none); 12 §5 asks for a reason on
  * reject, which the UI encourages but does not force. No TOTP: there is no second person to
- * step up against (PERSONAL-SPEC §3).
+ * step up against (SPEC §3).
  */
 export const ApprovalDecision = z.object({
   decision: z.enum(["approve", "reject"]),
@@ -284,34 +287,22 @@ export const PnlPoint = z.object({
 });
 export type PnlPoint = z.infer<typeof PnlPoint>;
 
-/* ── Risk status, kill switch (06 §11, 12 §8/4: personal reset) ──────── */
+/* ── Risk status, kill switch (06 §11; _KANONIK "Enterprise": reset = Yönetici + Risk Sorumlusu) ── */
 /**
- * Personal kill-switch reset (06 §11 step 3, 12 §8/4, _KANONIK "Kişisel mod"): you confirm
- * twice, each time with a written reason, the two confirmations ≥ 24 h apart, and the reset
- * only takes effect once ≥ 5 sessions have closed since the trigger. Present while the kill
- * switch is on; `null` when it is off.
+ * Restarting after Durdur takes two people: the Yönetici starts it (1/2) and the Risk
+ * Sorumlusu confirms it (2/2). Present while the kill switch is on; `null` when it is off.
  */
-export const PersonalReset = z.object({
-  sessions_since_kill: z.number().int().nonnegative(),
-  sessions_required: z.number().int().positive(),
-  /** Close of the session that completes the wait (5th session after the trigger). */
-  sessions_ready_at: IsoDateTime,
-  min_gap_hours: z.number().positive(),
-  first: z.object({ at: IsoDateTime, reason: z.string() }).nullable(),
-  /** first.at + min_gap_hours; null before the first confirmation. */
-  second_allowed_at: IsoDateTime.nullable(),
-  /** first = write the first confirmation · wait = conditions not met yet · second = may reset now. */
-  next_step: z.enum(["first", "wait", "second"]),
-  /** When step 2 becomes possible (max of the two conditions); null before step 1. */
-  ready_at: IsoDateTime.nullable(),
+export const KillReset = z.object({
+  /** The Yönetici's start (1/2), or null before anyone asked. */
+  started: Signature.nullable(),
 });
-export type PersonalReset = z.infer<typeof PersonalReset>;
+export type KillReset = z.infer<typeof KillReset>;
 
 export const RiskStatus = z.object({
   kill_switch: z.enum(["off", "on"]),
   kill_reason: z.string().nullable(),
   kill_at: IsoDateTime.nullable(),
-  /** "user:sen" (you pressed it) or "system:risk_monitor" (−5% from the peak, R01). */
+  /** "user:<uid>" (someone pressed it) or "system:risk_monitor" (−5% from the peak, R01). */
   kill_by: z.string().nullable(),
   halted_today: z.boolean(),
   daily_pnl_pct: z.number(),
@@ -321,9 +312,7 @@ export const RiskStatus = z.object({
   regime: z.enum(["normal", "crisis"]),
   live_armed: z.boolean(),
   quota: z.array(z.object({ provider: z.string(), used: z.number().int().nonnegative(), limit: z.number().int().positive() })),
-  reset: PersonalReset.nullable(),
-  /** Demo only: hours the reset clock was fast-forwarded in Ayarlar. Always 0 against a real API. */
-  demo_clock_offset_h: z.number().nonnegative(),
+  reset: KillReset.nullable(),
   as_of: IsoDateTime,
 });
 export type RiskStatus = z.infer<typeof RiskStatus>;

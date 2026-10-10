@@ -1,6 +1,5 @@
 import type { PnlPoint, Position } from "@/lib/domain";
 import { holdingProgress, istanbulDate, positionReturn, sessionsBetween } from "./risk-math";
-import { resetClockMs } from "./reset-timeline";
 import { exitLine } from "./holdings";
 import { equitySeries, linePath } from "./equity-line";
 
@@ -33,10 +32,6 @@ describe("calendar", () => {
     expect(sessionsBetween("2027-01-04", "2027-01-11")).toBe(5);
     expect(sessionsBetween("2026-12-31", "2027-01-04")).toBe(1);
     expect(sessionsBetween("2027-01-12", "2027-01-11")).toBe(0);
-  });
-  it("moves the reset clock by the demo offset only", () => {
-    expect(resetClockMs(1_000, 0)).toBe(1_000);
-    expect(resetClockMs(0, 2)).toBe(7_200_000);
   });
 });
 

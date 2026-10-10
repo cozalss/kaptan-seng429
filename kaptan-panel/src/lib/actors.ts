@@ -1,18 +1,35 @@
-import { NODE_LABELS, NodeName, OWNER } from "@/lib/domain";
+import { NODE_LABELS, NodeName } from "@/lib/domain";
+import { memberByUid, ROLE_LABEL } from "@/lib/domain/user";
 
-/**
- * Who did it, in words, for audit actors and `decided_by` values: "user:sen" / "sen" → "Sen",
- * "agent:skeptic" → "Şüpheci", "system:risk_monitor" → "Otomatik (risk izleyici)".
- */
-export function actorName(actor: string | null | undefined): string {
-  if (!actor) return "—";
-  if (actor === OWNER.uid || actor === `user:${OWNER.uid}`) return OWNER.name;
-  if (actor.startsWith("user:")) return actor.slice(5);
+const SYSTEM_NAMES: Readonly<Record<string, string>> = {
+  kap_poller: "KAP okuyucu",
+  simbist: "Paper borsa (SimBIST)",
+  risk_monitor: "Risk izleyici",
+  order_ticket: "Fiş yazıcı",
+  scheduler: "Zamanlayıcı",
+  nightly_verify: "Gece doğrulaması",
+  restrictions_sync: "Tedbir listesi",
+};
+
+/** Who did it, in words, as two parts: the name and what they are ("Üye 3", "Risk Sorumlusu"). */
+export function actorParts(actor: string | null | undefined): { name: string; kind: string } {
+  if (!actor) return { name: "—", kind: "" };
+  const member = memberByUid(actor);
+  if (member) return { name: member.name, kind: ROLE_LABEL[member.role] };
+  if (actor.startsWith("user:")) return { name: actor.slice(5), kind: "Kullanıcı" };
   if (actor.startsWith("agent:")) {
     const node = NodeName.safeParse(actor.slice(6));
-    return node.success ? NODE_LABELS[node.data].tr : actor.slice(6);
+    return { name: node.success ? NODE_LABELS[node.data].tr : actor.slice(6), kind: "Tayfa" };
   }
-  if (actor.startsWith("system:risk_monitor")) return "Otomatik (risk izleyici)";
-  if (actor.startsWith("system:")) return `Sistem (${actor.slice(7)})`;
-  return actor;
+  if (actor.startsWith("system:")) return { name: SYSTEM_NAMES[actor.slice(7)] ?? actor.slice(7), kind: "Sistem" };
+  return { name: actor, kind: "" };
+}
+
+/**
+ * Who did it, in one string, for audit actors and `decided_by` values:
+ * "uye-3" → "Üye 3 (Risk Sorumlusu)", "agent:skeptic" → "Şüpheci", "system:risk_monitor" → "Risk izleyici".
+ */
+export function actorName(actor: string | null | undefined): string {
+  const p = actorParts(actor);
+  return memberByUid(actor) ? `${p.name} (${p.kind})` : p.name;
 }

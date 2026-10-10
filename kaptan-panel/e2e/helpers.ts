@@ -28,7 +28,7 @@ export async function loginApi(page: Page) {
 }
 
 /** Navigate with the top bar (client-side, so the in-tab mock desk and its timers keep running). */
-export async function go(page: Page, label: "Bugün" | "Portföy", url: RegExp) {
+export async function go(page: Page, label: "Bugün" | "Portföy" | "Denetim", url: RegExp) {
   await page.getByRole("navigation", { name: "Ana gezinme" }).getByRole("link", { name: label }).click();
   await expect(page).toHaveURL(url);
 }
@@ -38,4 +38,11 @@ export async function openSettings(page: Page) {
   await page.getByRole("button", { name: "Ayarlar ve çıkış" }).click();
   await page.getByRole("menuitem", { name: "Ayarlar" }).click();
   await expect(page).toHaveURL(/\/ayarlar$/);
+}
+
+/** Look through another role's eyes with the top-bar picker (client-side; the choice is kept in the session). */
+export async function pickRole(page: Page, label: "Analist" | "Risk Sorumlusu" | "Yönetici" | "Denetçi") {
+  await page.getByRole("button", { name: /Kimin gözüyle bakıyorsun\?/ }).click();
+  await page.getByRole("menuitemradio", { name: new RegExp(`^${label} ·`) }).click();
+  await expect(page.getByRole("button", { name: new RegExp(`^Rol: ${label}\\.`) })).toBeVisible();
 }

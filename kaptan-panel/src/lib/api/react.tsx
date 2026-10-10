@@ -5,22 +5,30 @@ import { useOptionalSession } from "@/lib/auth/session-context";
 import { API_MODE } from "./config";
 import { createHttpApi } from "./http/http-api";
 import { createMockApi } from "./mock/mock-api";
-import { errorMessage, type KaptanApi } from "./types";
+import type { Role } from "@/lib/domain/user";
+import { ApiError, errorMessage, type KaptanApi } from "./types";
 
 const ApiContext = createContext<KaptanApi | null>(null);
+
+/** Mock mode: keep the chosen role in the session cookie so a reload keeps it. */
+async function storeMockRole(role: Role): Promise<void> {
+  const res = await fetch("/api/mock/session", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role }) });
+  if (!res.ok) throw new ApiError(res.status, "role", "Rol değiştirilemedi; oturum süresi dolmuş olabilir.");
+}
 
 /** Provides the one API client for the tree (mock or http, by NEXT_PUBLIC_API_MODE). */
 export function ApiProvider({ children, api }: { children: ReactNode; api?: KaptanApi }) {
   const session = useOptionalSession();
   const uid = session?.uid ?? null;
   const name = session?.name ?? "";
-  // One client per signed-in person (signing out drops it).
+  const role = session?.role ?? null;
+  // One client per signed-in person and role (signing out or switching role replaces it).
   const client = useMemo<KaptanApi>(() => {
     if (api) return api;
     if (API_MODE === "http") return createHttpApi();
-    const actor = uid ? { uid, name } : null;
-    return createMockApi({ getActor: () => actor });
-  }, [api, uid, name]);
+    const actor = uid && role ? { uid, name, role } : null;
+    return createMockApi({ getActor: () => actor, onRoleChange: storeMockRole });
+  }, [api, uid, name, role]);
   return <ApiContext.Provider value={client}>{children}</ApiContext.Provider>;
 }
 

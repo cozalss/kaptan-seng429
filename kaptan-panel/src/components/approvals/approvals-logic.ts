@@ -1,7 +1,7 @@
 import type { ApprovalCard, ApprovalStatus } from "@/lib/domain";
 
 /**
- * Pure logic behind Bugün and the Öneri page (PERSONAL-SPEC §2.2, FR-24): which proposals are
+ * Pure logic behind Bugün and the Öneri page (SPEC §2.2, FR-24): which proposals are
  * still open, in what order, and when you may decide. Tested without React.
  */
 

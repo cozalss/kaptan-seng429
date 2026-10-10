@@ -1,7 +1,7 @@
 import type { Position } from "@/lib/domain";
 import { addDays, ISTANBUL_OFFSET_H, tradingDaysBetween } from "@/lib/time";
 
-/** Pure portfolio logic for /portfoy (PERSONAL-SPEC §2.6). Unit-tested in risk-math.test.ts. */
+/** Pure portfolio logic for /portfoy (SPEC §2.6). Unit-tested in risk-math.test.ts. */
 
 /** Istanbul calendar date (YYYY-MM-DD) of an instant. */
 export function istanbulDate(ms: number): string {

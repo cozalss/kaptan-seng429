@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { IsoDateTime } from "./common";
+import { Role, Signature } from "./user";
 
 /* ── Audit log: hash chain (07 §9 audit_log, 09 §7) ───────────────────── */
 /**
- * Personal mode keeps recording everything (every agent output, your decisions, the risk
- * monitor) in the append-only chain; there is no audit screen, but "Neden bu öneri?" shows a
- * run's chain positions and Ayarlar can verify the chain (PERSONAL-SPEC §3.4).
+ * Every step (agent outputs, signatures, the risk monitor) is appended to one hash chain.
+ * /denetim shows it as a plain timeline and walks the chain on "Defteri doğrula" (SPEC §2.3).
  */
 export const AuditActor = z.string().regex(/^(user|agent|system):[^\s]+$/);
 
@@ -105,25 +105,44 @@ export const LimitValue = z.object({ key: LimitKey, value: z.number() });
 export type LimitValue = z.infer<typeof LimitValue>;
 
 /**
- * A limits version. Personal mode: you change your own risk preferences with a written note;
- * the new version is active at once and the old one is superseded (no second approver). Every
- * value must stay at least as strict as the canonical v1 set (`limitViolations`).
+ * A limits version (07 limit_versions). Changing a limit takes two signatures: the Yönetici
+ * proposes with a reason (1/2), a different person — the Risk Sorumlusu — approves (2/2);
+ * only then the new version becomes active and the old one is superseded.
  */
 export const LimitVersion = z.object({
   version: z.number().int().positive(),
-  status: z.enum(["active", "superseded"]),
+  status: z.enum(["proposed", "active", "superseded", "rejected"]),
   reason: z.string().min(1),
   created_at: IsoDateTime,
-  effective_from: IsoDateTime,
+  effective_from: IsoDateTime.nullable(),
   values: z.array(LimitValue),
+  proposed_by: Signature,
+  decided_by: Signature.nullable(),
 });
 export type LimitVersion = z.infer<typeof LimitVersion>;
 
-export const LimitChangeInput = z.object({
-  changes: z.array(LimitValue).min(1, "En az bir değişiklik"),
-  reason: z.string().trim().min(10, "Not en az 10 karakter").max(500),
+/** GET /limits: the active set, the one waiting for its second signature, and the history. */
+export const LimitsView = z.object({
+  active: LimitVersion,
+  pending: LimitVersion.nullable(),
+  history: z.array(LimitVersion),
 });
-export type LimitChangeInput = z.infer<typeof LimitChangeInput>;
+export type LimitsView = z.infer<typeof LimitsView>;
+
+/** POST /limits/proposals: one limit, its new value and why. */
+export const LimitProposalInput = z.object({
+  key: LimitKey,
+  value: z.number().finite(),
+  reason: z.string().trim().min(10, "Gerekçe en az 10 harf olmalı").max(500),
+});
+export type LimitProposalInput = z.infer<typeof LimitProposalInput>;
+
+/** POST /limits/proposals/{version}/decision. */
+export const LimitDecisionInput = z.object({
+  decision: z.enum(["approve", "reject"]),
+  comment: z.string().trim().max(500).default(""),
+});
+export type LimitDecisionInput = z.input<typeof LimitDecisionInput>;
 
 /** Canonical v1 limits (_KANONIK-KARARLAR, 06 §9): the ceiling for every personal preference. */
 export const LIMITS_V1: readonly LimitValue[] = [
@@ -248,3 +267,35 @@ export const LiveArmState = z.object({
   expires_at: IsoDateTime.nullable(),
 });
 export type LiveArmState = z.infer<typeof LiveArmState>;
+
+/* ── Notes on a proposal (Analist: "okur, not ekler") ─────────────────── */
+export const ProposalNote = z.object({
+  id: z.string(),
+  proposal_id: z.string(),
+  uid: z.string(),
+  name: z.string(),
+  role: Role,
+  body: z.string().min(1).max(500),
+  created_at: IsoDateTime,
+});
+export type ProposalNote = z.infer<typeof ProposalNote>;
+
+export const NoteInput = z.object({ body: z.string().trim().min(3, "Not en az 3 harf olmalı").max(500, "Not en fazla 500 harf") });
+
+/** GET /audit: one page of the chain, newest first. */
+export const AuditPage = z.object({
+  items: z.array(AuditEntry),
+  total: z.number().int().nonnegative(),
+  /** Length of the whole chain (what "Defteri doğrula" walks). */
+  length: z.number().int().nonnegative(),
+  /** Demo: a record was changed behind the chain's back (Ayarlar → Kurcalama testi). */
+  tamper_on: z.boolean(),
+});
+export type AuditPage = z.infer<typeof AuditPage>;
+
+export const AuditListQuery = z.object({
+  scope: z.enum(["today", "all"]).default("today"),
+  q: z.string().trim().max(100).optional(),
+  limit: z.number().int().positive().max(500).default(200),
+});
+export type AuditListQuery = z.input<typeof AuditListQuery>;

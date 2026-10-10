@@ -3,7 +3,7 @@ import { fmtInt, fmtPct, fmtPrice, fmtSignedPct, fmtTime, fmtTry } from "@/lib/f
 import { dative, locative, possessive, possessiveLocative } from "./turkish";
 
 /**
- * The panel speaks plain Turkish (PERSONAL-SPEC §2): every number arrives inside a sentence a
+ * The panel speaks plain Turkish (SPEC §2): every number arrives inside a sentence a
  * non-expert reads in seconds. Pure functions over the API types; the screens only lay them out.
  */
 type Card = Pick<ApprovalCard, "event_type" | "sub_type_tr" | "headline_tr" | "rule_trace_summary">;
@@ -89,7 +89,7 @@ export function deadlineLine(expiresAt: string, nowMs: number | null): string {
 
 /** The one big sentence on Bugün. */
 export function todayHeadline(count: number, stopped: boolean): string {
-  if (stopped) return "Durdurdun — yeni öneri gelmez.";
+  if (stopped) return "Her şey durduruldu — yeni öneri gelmez.";
   if (count === 0) return "Bugün öneri yok — tayfa izliyor.";
   return `Bugün ${fmtInt(count)} öneri var.`;
 }
@@ -147,7 +147,7 @@ export function crewLines(card: ApprovalCard, e: Explain | null): CrewLine[] {
     { agent: "materiality", text: materialityLine(card.event_type, rule?.observed ?? null) },
     { agent: "evidence", text: `Geçmişte ${fmtInt(card.evidence_summary.n)} benzer olay buldu, sonuçlarına bakmadan seçti.` },
     { agent: "skeptic", text: `${firstSentence(card.skeptic_note_tr)}. ${SHRINK[card.size_multiplier] ?? ""}`.trim() },
-    { agent: "compliance", text: flagged ? "Tedbir yok; bir noktayı senin bakman için işaretledi." : "Tedbir yok, metinde gizli talimat yok." },
+    { agent: "compliance", text: flagged ? "Tedbir yok; bir noktayı insan incelemesi için işaretledi." : "Tedbir yok, metinde gizli talimat yok." },
     { agent: "rule_engine", text: `${tally.passed}/${tally.total} kural geçti; ${card.event_type} şartı sağlandı.` },
     {
       agent: "risk_gate",

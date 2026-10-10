@@ -6,7 +6,7 @@ Temel katman kişisel moda geçirildi. Dört ekran mühendisi (P1–P4) paralel 
 - paylaşılan parçaların nasıl kullanılacağı;
 - neyin "bitti" sayılacağı.
 
-Ürün davranışının tek kaynağı **PERSONAL-SPEC.md**'dir. FRONTEND-SPEC.md şemalar, API ayrıntısı ve içerik kuralları için başvuru belgesidir. Çelişki görürseniz kendi başınıza karar vermeyin, temel sahibine yazın.
+Ürün davranışının tek kaynağı **SPEC.md**'dir. FRONTEND-SPEC.md şemalar, API ayrıntısı ve içerik kuralları için başvuru belgesidir. Çelişki görürseniz kendi başınıza karar vermeyin, temel sahibine yazın.
 
 > Karar kesindir: tek kullanıcı ("Sen"), rol yok, dört göz yok, audit/limit/admin ekranı yok, rehberli demo yok. Bunları geri getiren bir öneri açmayın.
 >
@@ -16,7 +16,7 @@ Temel katman kişisel moda geçirildi. Dört ekran mühendisi (P1–P4) paralel 
 
 ## 1. Sahiplik
 
-### P1 — Köprü + Tayfa (PERSONAL-SPEC §2.1, §2.4, §2.5)
+### P1 — Köprü + Tayfa (SPEC §2.1, §2.4, §2.5)
 
 - **Sahip olduğu yerler:**
   - `src/app/(panel)/kopru/**`, `src/app/(panel)/tayfa/**`
@@ -100,7 +100,7 @@ const mark = useApiMutation((api, no: string, m: TicketMarkInput) => api.markTic
 const t = await mark.run(no, { mark: "entered", filled_qty, avg_price, filled_at });  // hata → undefined, mark.error Türkçe
 ```
 
-- `KaptanApi` metotları (PERSONAL-SPEC §5):
+- `KaptanApi` metotları (SPEC §5):
   - **Oturum:** `me`
   - **Akış:** `listDisclosures`, `getDisclosure`, `addNote`, `counters`
   - **Koşular:** `listRuns`, `getRun`, `explain`

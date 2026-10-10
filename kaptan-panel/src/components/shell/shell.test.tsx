@@ -23,11 +23,12 @@ afterEach(() => {
 });
 
 describe("top bar", () => {
-  it("has only Bugün, Portföy and the ⚙ menu, and marks the current one", async () => {
+  it("has Bugün, Portföy, Denetim, the role picker and the ⚙ menu, and marks the current one", async () => {
     nav.pathname = "/oneri/p-1";
-    render(<TopBar />);
+    renderWithDesk(<TopBar />);
     const main = screen.getByRole("navigation", { name: "Ana gezinme" });
-    expect(within(main).getAllByRole("link").map((a) => a.textContent)).toEqual(["Bugün", "Portföy"]);
+    expect(within(main).getAllByRole("link").map((a) => a.textContent)).toEqual(["Bugün", "Portföy", "Denetim"]);
+    expect(screen.getAllByRole("button", { name: /Rol: Risk Sorumlusu/ }).length).toBeGreaterThan(0);
     expect(within(main).getByRole("link", { name: "Bugün" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "KAPtan — Bugün" })).toHaveAttribute("href", "/bugun");
   });
@@ -35,7 +36,7 @@ describe("top bar", () => {
   it("opens Ayarlar and signs out from the ⚙ menu", async () => {
     const u = userEvent.setup({ delay: null });
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 204 }));
-    render(<TopBar />);
+    renderWithDesk(<TopBar />);
     await u.click(screen.getByRole("button", { name: "Ayarlar ve çıkış" }));
     expect(await screen.findByRole("menuitem", { name: "Ayarlar" })).toHaveAttribute("href", "/ayarlar");
     await u.click(screen.getByRole("menuitem", { name: "Çıkış" }));
@@ -57,7 +58,7 @@ describe("banners", () => {
   it("says nothing when all is normal, and north red once stopped", async () => {
     const { db } = renderWithDesk(<RiskBanner />);
     await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
-    act(() => engageKillSwitch(db, "user:sen", "Elle durdurdum"));
+    act(() => engageKillSwitch(db, "user:uye-3", "Elle durdurdum"));
     expect(await screen.findByRole("status")).toHaveTextContent("Durduruldu.");
   });
 
@@ -76,7 +77,7 @@ describe("app shell", () => {
     nav.pathname = "/portfoy";
     render(
       <>
-        <AppShell user={{ uid: "sen", name: "Sen" }}>
+        <AppShell user={{ uid: "uye-3", name: "Üye 3", role: "risk_officer" }}>
           <p>ekran</p>
         </AppShell>
         <Toaster />

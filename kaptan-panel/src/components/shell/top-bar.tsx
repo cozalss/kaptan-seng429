@@ -6,9 +6,13 @@ import { DropdownMenu as M } from "radix-ui";
 import { activeNavHref, HOME, NAV_ITEMS, ROUTES } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { Wordmark } from "@/components/brand/marks";
+import { RolePicker } from "@/components/roles/role-picker";
 import { logout } from "./session-actions";
 
-/** KAPtan · Bugün · Portföy · ⚙ — nothing else. Sticky, paper, one hairline under it. */
+/**
+ * KAPtan · Bugün · Portföy · Denetim · [rol] · ⚙. Sticky, paper, one hairline under it. On a
+ * phone the role chip moves to a slim second row so the nav keeps its room.
+ */
 export function TopBar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -17,8 +21,8 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-30 border-b border-hairline bg-paper/92 backdrop-blur-[2px]">
       <div className="mx-auto flex h-14 max-w-[752px] items-center gap-1 px-4 sm:px-6">
-        <Link href={HOME} aria-label="KAPtan — Bugün" className="-ml-1 mr-auto p-1">
-          <Wordmark className="h-7 w-auto" />
+        <Link href={HOME} aria-label="KAPtan — Bugün" className="-ml-1 mr-auto shrink-0 p-1">
+          <Wordmark className="h-6 w-auto sm:h-7" />
         </Link>
         <nav aria-label="Ana gezinme" className="flex items-center">
           {NAV_ITEMS.map((item) => {
@@ -29,7 +33,7 @@ export function TopBar() {
                 href={item.href}
                 aria-current={on ? "page" : undefined}
                 className={cn(
-                  "relative px-3 py-2 text-[15px] transition-colors duration-[var(--dur-quick)]",
+                  "relative px-2 py-2 text-[15px] transition-colors duration-[var(--dur-quick)] sm:px-3",
                   on ? "font-medium text-ink" : "text-ink-soft hover:text-ink",
                 )}
               >
@@ -37,7 +41,7 @@ export function TopBar() {
                 <span
                   aria-hidden
                   className={cn(
-                    "absolute inset-x-3 -bottom-[1px] h-[2px] origin-left bg-ink transition-transform duration-[var(--dur-base)] ease-[var(--ease-ink)]",
+                    "absolute inset-x-2 -bottom-[1px] sm:inset-x-3 h-[2px] origin-left bg-ink transition-transform duration-[var(--dur-base)] ease-[var(--ease-ink)]",
                     on ? "scale-x-100" : "scale-x-0",
                   )}
                 />
@@ -45,11 +49,14 @@ export function TopBar() {
             );
           })}
         </nav>
+        <div className="hidden sm:block">
+          <RolePicker />
+        </div>
         <M.Root modal={false}>
           <M.Trigger
             aria-label="Ayarlar ve çıkış"
             className={cn(
-              "ml-1 grid size-10 place-items-center text-[19px] leading-none text-ink-soft transition-colors hover:bg-wash-tint hover:text-ink data-[state=open]:bg-wash-tint data-[state=open]:text-ink",
+              "grid size-10 place-items-center sm:ml-1 text-[19px] leading-none text-ink-soft transition-colors hover:bg-wash-tint hover:text-ink data-[state=open]:bg-wash-tint data-[state=open]:text-ink",
               pathname === ROUTES.ayarlar && "text-ink",
             )}
           >
@@ -80,6 +87,10 @@ export function TopBar() {
             </M.Content>
           </M.Portal>
         </M.Root>
+      </div>
+      <div className="mx-auto flex h-10 max-w-[752px] items-center justify-between gap-3 border-t border-hairline px-4 sm:hidden">
+        <span className="text-[13px] text-muted">Kimin gözüyle bakıyorsun?</span>
+        <RolePicker />
       </div>
     </header>
   );

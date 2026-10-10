@@ -2,14 +2,14 @@ import { cn } from "@/lib/utils";
 
 /**
  * The road a proposal travelled, drawn as four stations on one ink line:
- * Bildirim → Tayfa → Kurallar → Sen. The last station is yours: an open ring that breathes
- * softly until you decide (still under reduced motion), then it is inked solid.
+ * Bildirim → Tayfa → Kurallar → Risk Sorumlusu. The last station is a person's signature: an
+ * open ring that breathes softly until someone signs (still under reduced motion), then inked.
  */
 const STOPS = [
   { label: "Bildirim", note: "KAP" },
   { label: "Tayfa", note: "8 üye okudu" },
   { label: "Kurallar", note: "eşikler, risk" },
-  { label: "Sen", note: "son imza" },
+  { label: "İnsan", note: "son imza" },
 ] as const;
 
 export function CrewPath({ decided }: { decided: boolean }) {

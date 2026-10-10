@@ -2,17 +2,19 @@
 
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { IS_MOCK } from "@/lib/api/config";
+import { DEMO_MODE, IS_MOCK } from "@/lib/api/config";
 import { ApiProvider } from "@/lib/api/react";
 import { SessionProvider, type SessionUser } from "@/lib/auth/session-context";
 import { Disclaimer } from "@/components/brand/disclaimer";
 import { DemoRibbon, RiskBanner } from "./banners";
 import { DeskStateProvider, ResetBoundary } from "./desk-state";
 import { TopBar } from "./top-bar";
+import { GuidedDemo } from "@/components/demo/guided-demo";
 
 /**
- * The panel's frame: a thin demo ribbon, a quiet top bar (KAPtan · Bugün · Portföy · ⚙), one
- * calm column (~720 px) for the screen, and the required disclaimer under it.
+ * The panel's frame: a thin demo ribbon, a quiet top bar (KAPtan · Bugün · Portföy · Denetim ·
+ * rol · ⚙), one calm column (~720 px) for the screen, the required disclaimer under it, and
+ * the guided-demo bar when it is running.
  */
 export function AppShell({ user, children }: { user: SessionUser; children: ReactNode }) {
   const pathname = usePathname();
@@ -37,6 +39,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
           <div className="mx-auto w-full max-w-[752px] px-4 sm:px-6">
             <Disclaimer />
           </div>
+          {DEMO_MODE ? <GuidedDemo /> : null}
         </DeskStateProvider>
       </ApiProvider>
     </SessionProvider>

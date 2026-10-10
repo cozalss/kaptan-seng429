@@ -12,15 +12,14 @@ import type {
   TraceNode,
 } from "@/lib/domain";
 import { appendToChain } from "@/lib/audit-chain";
-import { personalReset } from "@/lib/personal-reset";
 import { addDays, nextTradingDay } from "@/lib/time";
-import { baseAuditChain } from "@/mocks/audit";
+import { baseAuditChain, tamperedChain } from "@/mocks/audit";
 import { CLOCK_ANCHOR_MS, DEMO_DAY, mockNowMs } from "@/mocks/clock";
 import { dayDisclosures } from "@/mocks/day";
 import { buildExplain, disclosureOf } from "@/mocks/explain-builder";
 import { liveEquity } from "@/mocks/pnl";
 import { DEMO_ORDER_TICKET } from "@/mocks/governance";
-import { DAY_BY_ANCHOR, DEMO_E3_RUN, type DemoScenario } from "@/mocks/ids";
+import { AUDIT_TAMPER_POS, DAY_BY_ANCHOR, DEMO_E3_RUN, type DemoScenario } from "@/mocks/ids";
 import { CURRENT_STAGE } from "@/mocks/personal";
 import { buildTicket, effectiveEntry } from "@/mocks/tickets";
 import { issuer } from "@/mocks/issuers";
@@ -40,11 +39,6 @@ const SCENARIO_SPEC: Partial<Record<DemoScenario, RunSpec>> = {
 
 export function nowMs(state: MockState, realNow: number = Date.now()): number {
   return mockNowMs(realNow, state.startedAtReal);
-}
-
-/** "Now" for the kill-switch reset clock: the demo clock plus the hours fast-forwarded in Ayarlar. */
-export function resetClockMs(state: MockState, realNow: number = Date.now()): number {
-  return nowMs(state, realNow) + state.clockOffsetH * 3_600_000;
 }
 
 /** Injected specs, re-timed to the moment they were injected. */
@@ -357,15 +351,16 @@ export function riskStatus(state: MockState, realNow: number = Date.now()): Risk
       { provider: "Groq gpt-oss", used: 61 + injectedSpecs(state).length * 2, limit: 1_000 },
       { provider: "Prompt Guard 2", used: 140 + injectedSpecs(state).length, limit: 14_400 },
     ],
-    reset: r.kill_switch === "on" && r.kill_at ? personalReset(r.kill_at, r.reset_first, new Date(resetClockMs(state, realNow)).toISOString()) : null,
-    demo_clock_offset_h: state.clockOffsetH,
+    reset: r.kill_switch === "on" ? { started: r.reset_started } : null,
     as_of: new Date(nowMs(state, realNow)).toISOString(),
   };
 }
 
 /* ── audit ───────────────────────────────────────────────────────────── */
+/** The whole chain; with the tamper test on, record #3.907's payload was changed behind its back. */
 export function auditChain(state: MockState): AuditEntry[] {
-  return state.auditAppends.length ? appendToChain(baseAuditChain(), state.auditAppends) : [...baseAuditChain()];
+  const chain = state.auditAppends.length ? appendToChain(baseAuditChain(), state.auditAppends) : [...baseAuditChain()];
+  return state.tamperOn ? tamperedChain(chain, AUDIT_TAMPER_POS) : chain;
 }
 
 function auditPositionsFor(state: MockState, runId: string): Explain["audit_positions"] {

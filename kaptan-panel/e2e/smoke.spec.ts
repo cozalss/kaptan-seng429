@@ -30,8 +30,14 @@ for (const size of [
     await expect(page.getByRole("heading", { name: "Elindekiler" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Durdur", exact: true })).toBeVisible();
 
+    await go(page, "Denetim", /\/denetim$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Her adım bir deftere yazılır.");
+    await expect(page.getByRole("list", { name: "Denetim kayıtları" })).toBeVisible();
+
     await openSettings(page);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Ayarlar");
+    await expect(page.getByRole("list", { name: "Geçerli sınırlar" })).toBeVisible();
+    await expect(page.getByRole("table")).toBeVisible();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
@@ -47,6 +53,7 @@ test("old paths land on the closest new screen", async ({ page }) => {
     ["/kosular/run-day-e1-krgcl", /\/bugun$/],
     ["/tayfa/supheci", /\/bugun$/],
     ["/portfolio", /\/portfoy$/],
+    ["/audit", /\/denetim$/],
   ];
   for (const [from, to] of cases) {
     await page.goto(from);

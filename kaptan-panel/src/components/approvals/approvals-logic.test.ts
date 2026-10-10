@@ -39,6 +39,7 @@ function card(over: Partial<ApprovalCard> & { proposal_id: string }): ApprovalCa
     expires_at: "2027-01-12T06:50:00.000Z",
     status: "pending",
     decided_by: null,
+    decided_role: null,
     decided_at: null,
     decision_comment: null,
     approved_notional_try: null,

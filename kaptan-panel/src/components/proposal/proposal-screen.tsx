@@ -19,6 +19,8 @@ import { CrewVoices } from "./crew-voices";
 import { Decision } from "./decision";
 import { Details } from "./details";
 import { HistoryStrip } from "./history-strip";
+import { Notes } from "./notes";
+import { SignatureChain } from "./signatures";
 
 /**
  * /oneri/[id] — the decision, told as a short story: Ne oldu → Neden önemli → Geçmişte ne
@@ -38,6 +40,7 @@ export function ProposalScreen({ proposalId }: { proposalId: string }) {
   const explain = ex.data && ex.data.run.run_id === runId ? ex.data : null;
 
   useEventStream("desk", {
+    "approval.requested": (c) => (c.proposal_id === proposalId ? void cards.refetch() : undefined),
     "approval.decided": (c) => (c.proposal_id === proposalId ? setDecided(c) : undefined),
     ticket: (t) => (t.proposal_id === proposalId ? setLiveTicket(t) : undefined),
   });
@@ -125,7 +128,11 @@ export function ProposalScreen({ proposalId }: { proposalId: string }) {
 
       <Fleuron />
 
+      <SignatureChain card={card} status={status} />
+
       <Decision card={card} status={status} nowMs={now} ticket={ticket} onDecided={setDecided} />
+
+      <Notes card={card} />
 
       {explain ? <Details card={card} explain={explain} /> : null}
     </article>

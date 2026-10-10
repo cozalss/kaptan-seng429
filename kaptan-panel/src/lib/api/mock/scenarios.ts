@@ -1,6 +1,7 @@
 import type { NodeName, Order } from "@/lib/domain";
 import { CrewAgent, NODE_LABELS } from "@/lib/domain";
 import { DAY_BY_ANCHOR, DAY_TOTAL, DEMO_E3_RUN, type DemoScenario } from "@/mocks/ids";
+import { issuer } from "@/mocks/issuers";
 import { liveEquity } from "@/mocks/pnl";
 import { DEMO_E3_SPEC, DEMO_INJ_SPEC, DEMO_R04_SPEC } from "@/mocks/runs-demo";
 import type { Actor, MockDb } from "./db";
@@ -67,7 +68,7 @@ export function runDemoScenario(db: MockDb, actor: Actor, scenario: DemoScenario
   const spec = SPEC_OF[scenario];
   if (!spec) return { disclosure_index: null, run_id: null };
   db.update((s) => ({ ...s, injections: [...s.injections.filter((i) => i.scenario !== scenario), { scenario, atMs: Date.now() }] }));
-  db.audit(`user:${actor.uid}`, "demo.injected", "disclosure", String(spec.disclosure_index), { scenario, fixture: true }, spec.run_id);
+  db.audit(`user:${actor.uid}`, "demo.injected", "disclosure", String(spec.disclosure_index), { scenario, ticker: spec.ticker, fixture: true }, spec.run_id);
   const first = visibleDisclosures(db.snapshot).find((d) => d.disclosure_index === spec.disclosure_index);
   if (first) db.bus.emit("feed", "disclosure", first);
   emitCounters(db);
@@ -88,6 +89,7 @@ export function runDemoScenario(db: MockDb, actor: Actor, scenario: DemoScenario
     const e = explainFor(db.snapshot, spec.run_id);
     if (!e) return;
     if (e.classifier) db.bus.emit("feed", "classification", { disclosure_index: spec.disclosure_index, event_type: e.classifier.event_type, confidence: e.classifier.confidence });
+    auditOutcome(db, spec);
     if (e.approval) {
       db.bus.emit(`run:${spec.run_id}`, "interrupt", { proposal_id: e.approval.proposal_id });
       db.bus.emit("desk", "approval.requested", e.approval);
@@ -96,6 +98,18 @@ export function runDemoScenario(db: MockDb, actor: Actor, scenario: DemoScenario
     emitCounters(db);
   });
   return { disclosure_index: spec.disclosure_index, run_id: spec.run_id };
+}
+
+/** What the crew decided, in the ledger: a proposal, a caught hidden instruction or a hard veto. */
+function auditOutcome(db: MockDb, spec: typeof DEMO_E3_SPEC): void {
+  const base = { ticker: spec.ticker, company: issuer(spec.ticker).name };
+  if (spec.kind === "propose") {
+    db.audit("agent:request_approval", "proposal.created", "trade_proposal", spec.run_id.replace(/^run-/, "prop-"), { ...base, qty: spec.proposal?.qty ?? 0 }, spec.run_id);
+  } else if (spec.kind === "pregate_veto") {
+    db.audit("agent:pre_gate", "risk.rejected", "disclosure", String(spec.disclosure_index), { ...base, reasons: spec.preGateReasons ?? [], llm_calls: 0 }, spec.run_id);
+  } else {
+    db.audit("agent:compliance", "compliance.rejected", "disclosure", String(spec.disclosure_index), { ...base, reason: "prompt_injection" }, spec.run_id);
+  }
 }
 
 /** Crew live state: a crew member started or finished its node (kept for the SSE contract). */
@@ -164,15 +178,15 @@ export function executeApproved(db: MockDb, proposalId: string): void {
 }
 
 /* ── kill switch & loss simulation (06 §11, 11 Adım 4) ───────────────── */
-export function engageKillSwitch(db: MockDb, by: string, reason: string): void {
+export function engageKillSwitch(db: MockDb, by: string, reason: string, role: string | null = null): void {
   const open = db.snapshot.orders.filter((o) => o.status === "pending_open" || o.status === "accepted").map((o) => o.id);
   db.update((s) => ({
     ...s,
-    risk: { ...s.risk, kill_switch: "on", kill_reason: reason, kill_at: db.nowIso(), kill_by: by, reset_first: null },
+    risk: { ...s.risk, kill_switch: "on", kill_reason: reason, kill_at: db.nowIso(), kill_by: by, reset_started: null },
     canceledOrderIds: [...new Set([...s.canceledOrderIds, ...open])],
     positionsManagedByExit: true,
   }));
-  db.audit(by, "kill_switch.on", "system_flag", "kill_switch", { reason, canceled_orders: open.length });
+  db.audit(by, "kill_switch.on", "system_flag", "kill_switch", { reason, role, canceled_orders: open.length });
   db.bus.emit("desk", "kill_switch", riskStatus(db.snapshot));
 }
 

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Confidence, EventType, IsoDateTime } from "./common";
 import { DayCounters, DisclosureListItem } from "./disclosure";
-import { LimitVersion } from "./governance";
+import { LimitsView } from "./governance";
 import { NodeName, RunOutcome, RunStatus } from "./run";
 import { ApprovalCard, Fill, Order, OrderTicket, RiskStatus } from "./trading";
 import { CrewActivity, CrewAgent } from "./crew";
@@ -34,7 +34,8 @@ export const DeskEvent = z.discriminatedUnion("event", [
   z.object({ event: z.literal("fill"), data: Fill.extend({ ticker: z.string() }) }),
   z.object({ event: z.literal("kill_switch"), data: RiskStatus }),
   z.object({ event: z.literal("halt"), data: RiskStatus }),
-  z.object({ event: z.literal("limits.changed"), data: LimitVersion }),
+  /** A limit change was proposed (1/2), approved (2/2) or rejected. */
+  z.object({ event: z.literal("limits.changed"), data: LimitsView }),
   /** A ticket was created (after your approval) or marked (girildi / dolmadı / iptal / süresi doldu). */
   z.object({ event: z.literal("ticket"), data: OrderTicket }),
   /** A crew member changed what it is doing (Köprü and Tayfa live state). */

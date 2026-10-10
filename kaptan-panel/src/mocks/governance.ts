@@ -5,7 +5,10 @@ import { DEMO_DAY } from "./clock";
 import { DEMO_TICKET, DEMO_TICKET_ORDER, DEMO_E3_PROPOSAL, DEMO_E3_RUN } from "./ids";
 import { ISSUERS } from "./issuers";
 
-/** Limits: v1 (the canonical set) active since the forward test started; you may tighten it in Ayarlar. */
+/**
+ * Limits: v1 (the canonical set), proposed by the Yönetici and signed by the Risk Sorumlusu
+ * before the forward test started. Any change goes through the same two signatures.
+ */
 export const SEED_LIMIT_VERSIONS: readonly LimitVersion[] = [
   {
     version: 1,
@@ -14,13 +17,15 @@ export const SEED_LIMIT_VERSIONS: readonly LimitVersion[] = [
     created_at: "2026-11-08T09:00:00.000Z",
     effective_from: "2026-11-09T06:00:00.000Z",
     values: [...LIMITS_V1],
+    proposed_by: { uid: "uye-1", name: "Üye 1", role: "admin", at: "2026-11-08T09:00:00.000Z", reason: "Kanonik başlangıç limitleri." },
+    decided_by: { uid: "uye-3", name: "Üye 3", role: "risk_officer", at: "2026-11-08T11:30:00.000Z", reason: "Kanonik değerlerle aynı; onay." },
   },
 ];
 
 /** R13: two synced restrictions plus one of your own conflicts (12 §7/4). */
 export const SEED_RESTRICTED: readonly RestrictedSecurity[] = [
   { id: "rs-1", ticker: "TMSLJ", kind: "vbts_brut_takas", source_ref: "VBTS tedbir listesi (temsili)", added_at: istanbulIso("2027-01-07", "18:20"), added_by: "system:restrictions_sync" },
-  { id: "rs-2", ticker: "KRGTK", kind: "team_insider", source_ref: "Kendi beyanım: yakın bir tanıdığım çalışıyor (temsili)", added_at: "2026-10-20T09:00:00.000Z", added_by: "user:sen" },
+  { id: "rs-2", ticker: "KRGTK", kind: "team_insider", source_ref: "Kendi beyanım: yakın bir tanıdığım çalışıyor (temsili)", added_at: "2026-10-20T09:00:00.000Z", added_by: "user:uye-1" },
   { id: "rs-3", ticker: "FRZMB", kind: "spk_tedbir", source_ref: "SPK tedbir kararı (temsili)", added_at: istanbulIso("2027-01-04", "19:05"), added_by: "system:restrictions_sync" },
 ];
 

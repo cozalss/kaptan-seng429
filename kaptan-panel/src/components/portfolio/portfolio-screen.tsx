@@ -20,14 +20,14 @@ import { StopControl } from "./stop-control";
 const LIVE_STRATEGY = "kaptan:v1.1-fwd";
 
 /**
- * /portfoy — your money in one big number, one small line, what you hold, the fişler still
- * waiting for your mark, and Durdur.
+ * /portfoy — the money in one big number, one small line, what is held, the fişler still
+ * waiting for a mark, and Durdur (stop: one person; restart: two).
  */
 export function PortfolioScreen() {
   const { risk } = useDesk();
   const now = useNow(30_000);
   const today = now === null ? null : istanbulDate(now);
-  const riskKey = risk ? `${risk.kill_switch}|${risk.reset?.next_step ?? ""}` : "";
+  const riskKey = risk ? `${risk.kill_switch}|${risk.reset?.started?.at ?? ""}` : "";
   const q = useApiQuery((api) => Promise.all([api.positions(), api.pnl(), api.listTickets()]), [riskKey]);
   useEventStream("desk", { fill: () => void q.refetch(), ticket: () => void q.refetch(), order: () => void q.refetch() });
 

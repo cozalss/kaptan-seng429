@@ -3,7 +3,7 @@ import { fmtDateTime, fmtInt, fmtPct, fmtPrice, fmtTime } from "@/lib/format";
 import { istanbulIso, istanbulMinutes, ISTANBUL_OFFSET_H } from "@/lib/time";
 
 /**
- * Pure logic behind the emir fişi (12 §2, PERSONAL-SPEC §2.2): its validity window, the
+ * Pure logic behind the emir fişi (12 §2, SPEC §2.2): its validity window, the
  * key-field text you copy into your broker app, and the "girildi / dolmadı / iptal" form
  * with the same rules the API enforces (over_qty, over_limit, after_ttl). No React here.
  */
@@ -123,7 +123,7 @@ export function initialDraft(kind: MarkKind, t: OrderTicket, nowMs: number): Mar
   };
 }
 
-/** Client-side check with the API's own rules (PERSONAL-SPEC §2.2). */
+/** Client-side check with the API's own rules (SPEC §2.2). */
 export function markErrors(d: MarkDraft, t: Pick<OrderTicket, "qty" | "limit_price" | "created_at" | "valid_until">): MarkErrors {
   const note = d.note.trim().length > NOTE_MAX ? `Not en çok ${NOTE_MAX} karakter.` : null;
   if (d.kind !== "entered") return { qty: null, price: null, time: null, note };

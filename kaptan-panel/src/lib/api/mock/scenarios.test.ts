@@ -5,7 +5,7 @@ import { engageKillSwitch, executeApproved, runDemoScenario, startLiveTicker, st
 import { DEMO_E3_PROPOSAL, DEMO_E3_RUN, DEMO_INJ_RUN, DEMO_R04_RUN, PENDING_PROPOSALS } from "@/mocks/ids";
 import type { BusMessage, StreamKey } from "@/lib/sse/bus";
 
-const OWNER: Actor = { uid: "sen", name: "Sen" };
+const OWNER: Actor = { uid: "uye-1", name: "Üye 1", role: "admin" };
 
 function recorder(db: MockDb, key: StreamKey) {
   const seen: BusMessage[] = [];
@@ -47,7 +47,7 @@ describe("demo scenario · E3 contract (11 §2 Adım 1–2)", () => {
     vi.advanceTimersByTime(DEMO_RUN_MS + 100);
     db.update((s) => ({
       ...s,
-      approvals: { ...s.approvals, [DEMO_E3_PROPOSAL]: { status: "approved", decided_by: "sen", decided_at: db.nowIso(), decision_comment: "ok", approved_notional_try: null } },
+      approvals: { ...s.approvals, [DEMO_E3_PROPOSAL]: { status: "approved", decided_by: "uye-3", decided_role: "risk_officer", decided_at: db.nowIso(), decision_comment: "ok", approved_notional_try: null } },
     }));
     const desk = recorder(db, "desk");
     executeApproved(db, DEMO_E3_PROPOSAL);
@@ -99,7 +99,7 @@ describe("kill switch", () => {
     const [p] = PENDING_PROPOSALS;
     db.update((s) => ({
       ...s,
-      approvals: { ...s.approvals, [p]: { status: "approved", decided_by: "sen", decided_at: db.nowIso(), decision_comment: "ok", approved_notional_try: null } },
+      approvals: { ...s.approvals, [p]: { status: "approved", decided_by: "uye-3", decided_role: "risk_officer", decided_at: db.nowIso(), decision_comment: "ok", approved_notional_try: null } },
     }));
     executeApproved(db, p);
     engageKillSwitch(db, "user:sen", "Test");

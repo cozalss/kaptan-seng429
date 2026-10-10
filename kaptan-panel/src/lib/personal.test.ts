@@ -1,7 +1,6 @@
 import { CREW, crewByAgent, crewBySlug, MODEL_CHAIN, portraitSrc, portraitSrcSet, PROVIDER_LABEL } from "@/lib/crew";
 import { actorName } from "@/lib/actors";
 import { LIMITS_V1, limitViolations, type LimitValue } from "@/lib/domain";
-import { nthSessionCloseAfter, personalReset, RESET_SESSIONS_REQUIRED, sessionsClosedSince } from "@/lib/personal-reset";
 import { effectiveEntry, EMPTY_ENTRY, ticketNumber, ticketValidUntil, TICKET_TTL_MS } from "@/mocks/tickets";
 
 describe("crew registry", () => {
@@ -33,13 +32,15 @@ describe("crew registry", () => {
 });
 
 describe("actorName", () => {
-  it("names you, the agents and the system", () => {
+  it("names team members with their role, the agents and the system", () => {
     expect(actorName(null)).toBe("—");
-    expect(actorName("sen")).toBe("Sen");
-    expect(actorName("user:sen")).toBe("Sen");
+    expect(actorName("uye-3")).toBe("Üye 3 (Risk Sorumlusu)");
+    expect(actorName("user:uye-1")).toBe("Üye 1 (Yönetici)");
+    expect(actorName("user:biri")).toBe("biri");
     expect(actorName("agent:compliance")).toBe("Uyum");
-    expect(actorName("system:risk_monitor")).toBe("Otomatik (risk izleyici)");
-    expect(actorName("system:simbist")).toBe("Sistem (simbist)");
+    expect(actorName("agent:yok")).toBe("yok");
+    expect(actorName("system:risk_monitor")).toBe("Risk izleyici");
+    expect(actorName("system:bilinmez")).toBe("bilinmez");
     expect(actorName("başka")).toBe("başka");
   });
 });
@@ -62,25 +63,6 @@ describe("limitViolations (tighten only)", () => {
   it("keeps the target at or below the maximum", () => {
     const vals = withValue("max_concurrent_positions", 5);
     expect(limitViolations(vals).join(" ")).toMatch(/Hedef eşzamanlı/);
-  });
-});
-
-describe("personal reset rule", () => {
-  const KILL = "2027-01-11T10:40:00.000Z"; // Monday 13:40 Istanbul
-  it("counts sessions closed after the trigger day, skipping weekends", () => {
-    expect(nthSessionCloseAfter(KILL, 1)).toBe("2027-01-12T15:10:00.000Z");
-    expect(nthSessionCloseAfter(KILL, 5)).toBe("2027-01-18T15:10:00.000Z");
-    expect(sessionsClosedSince(KILL, "2027-01-11T16:00:00.000Z")).toBe(0);
-    expect(sessionsClosedSince(KILL, "2027-01-16T12:00:00.000Z")).toBe(4);
-    expect(sessionsClosedSince(KILL, "2027-02-20T12:00:00.000Z", 5)).toBe(5);
-  });
-  it("walks first → wait → second", () => {
-    expect(personalReset(KILL, null, KILL)).toMatchObject({ next_step: "first", ready_at: null, sessions_required: RESET_SESSIONS_REQUIRED });
-    const first = { at: "2027-01-18T16:00:00.000Z", reason: "İnceleme tamam" };
-    // Sessions are done, but the 24 h gap is not.
-    const wait = personalReset(KILL, first, "2027-01-19T10:00:00.000Z");
-    expect(wait).toMatchObject({ next_step: "wait", second_allowed_at: "2027-01-19T16:00:00.000Z", ready_at: "2027-01-19T16:00:00.000Z" });
-    expect(personalReset(KILL, first, "2027-01-19T16:00:00.000Z").next_step).toBe("second");
   });
 });
 

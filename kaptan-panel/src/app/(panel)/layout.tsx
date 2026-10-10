@@ -13,5 +13,5 @@ export default async function PanelLayout({ children }: { children: React.ReactN
   if (API_MODE === "http") return <HttpSessionBoot>{children}</HttpSessionBoot>;
   const session = decodeSession((await cookies()).get(SESSION_COOKIE)?.value);
   if (!session) redirect("/login");
-  return <AppShell user={{ uid: session.uid, name: session.name }}>{children}</AppShell>;
+  return <AppShell user={{ uid: session.uid, name: session.name, role: session.role }}>{children}</AppShell>;
 }

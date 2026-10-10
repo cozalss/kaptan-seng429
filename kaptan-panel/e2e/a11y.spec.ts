@@ -8,7 +8,8 @@ const SCREENS: ReadonlyArray<{ path: string; signedIn: boolean; ready: (p: Page)
   { path: "/bugun", signedIn: true, ready: (p) => expect(p.getByRole("list", { name: "Bekleyen öneriler" })).toBeVisible() },
   { path: "/oneri/prop-day-e1-krgcl", signedIn: true, ready: (p) => expect(p.getByRole("list", { name: "Tayfanın notları" })).toBeVisible() },
   { path: "/portfoy", signedIn: true, ready: (p) => expect(p.getByRole("list", { name: "Elindekiler" })).toBeVisible() },
-  { path: "/ayarlar", signedIn: true, ready: (p) => expect(p.getByTestId("reset-clock")).toBeVisible() },
+  { path: "/denetim", signedIn: true, ready: (p) => expect(p.getByRole("list", { name: "Denetim kayıtları" })).toBeVisible() },
+  { path: "/ayarlar", signedIn: true, ready: (p) => expect(p.getByRole("list", { name: "Geçerli sınırlar" })).toBeVisible() },
 ];
 
 for (const width of [390, 1440]) {

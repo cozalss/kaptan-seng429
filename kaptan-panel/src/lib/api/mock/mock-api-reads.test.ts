@@ -1,4 +1,4 @@
-import { createMockApi, OWNER_ACTOR } from "./mock-api";
+import { actorFor, createMockApi } from "./mock-api";
 import { MockDb } from "./db";
 import { stopAllTimers, stopLiveTicker } from "./scenarios";
 import { isApiError, errorMessage, ApiError, type KaptanApi } from "../types";
@@ -8,7 +8,7 @@ import { Explain } from "@/lib/domain";
 
 function setup() {
   const db = new MockDb(null);
-  const api: KaptanApi = createMockApi({ getActor: () => OWNER_ACTOR, db, latencyMs: 0, live: false });
+  const api: KaptanApi = createMockApi({ getActor: () => actorFor("risk_officer"), db, latencyMs: 0, live: false });
   return { db, api };
 }
 
@@ -30,7 +30,7 @@ afterEach(() => {
 describe("mock API · reads", () => {
   it("returns the signed-in user", async () => {
     const { api } = setup();
-    expect((await api.me()).display_name).toBe(OWNER_ACTOR.name);
+    expect((await api.me()).display_name).toBe("Üye 3");
   });
 
   it("serves explain for a run and 404s an unknown one", async () => {

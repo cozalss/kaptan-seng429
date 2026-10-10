@@ -1,7 +1,7 @@
 /**
- * The panel's three screens (PERSONAL-SPEC §2): Bugün, an Öneri, Portföy — plus Ayarlar behind
- * the ⚙ menu. One user, no roles. This module is the single source for paths and the legacy
- * redirects (next.config.ts imports `LEGACY_REDIRECTS`).
+ * The panel's screens (SPEC.md §1): Bugün, an Öneri, Portföy, Denetim — plus Ayarlar behind
+ * the ⚙ menu. This module is the single source for paths and the legacy redirects
+ * (next.config.ts imports `LEGACY_REDIRECTS`).
  *
  * No imports on purpose: next.config.ts loads this file at build time.
  */
@@ -9,6 +9,7 @@ export const ROUTES = {
   bugun: "/bugun",
   oneri: "/oneri",
   portfoy: "/portfoy",
+  denetim: "/denetim",
   ayarlar: "/ayarlar",
   login: "/login",
 } as const;
@@ -21,10 +22,11 @@ export const href = {
   proposal: (proposalId: string) => `${ROUTES.oneri}/${encodeURIComponent(proposalId)}`,
 } as const;
 
-/** The two items in the top bar (Ayarlar lives in the ⚙ menu). */
+/** The items in the top bar (Ayarlar lives in the ⚙ menu). */
 export const NAV_ITEMS: ReadonlyArray<{ href: string; label: string }> = [
   { href: ROUTES.bugun, label: "Bugün" },
   { href: ROUTES.portfoy, label: "Portföy" },
+  { href: ROUTES.denetim, label: "Denetim" },
 ];
 
 /** Paths that never need a session. "/" (the landing) and static files are handled by the proxy matcher. */
@@ -36,7 +38,8 @@ export const LEGACY_REDIRECTS: ReadonlyArray<{ source: string; destination: stri
     source,
     destination: ROUTES.bugun,
   })),
-  ...["/inbox", "/approvals", "/runs", "/runs/:id", "/brief", "/eval", "/audit", "/yetkisiz"].map((source) => ({ source, destination: ROUTES.bugun })),
+  ...["/inbox", "/approvals", "/runs", "/runs/:id", "/brief", "/eval", "/yetkisiz"].map((source) => ({ source, destination: ROUTES.bugun })),
+  { source: "/audit", destination: ROUTES.denetim },
   { source: "/portfolio", destination: ROUTES.portfoy },
   { source: "/limits", destination: ROUTES.ayarlar },
   { source: "/admin", destination: ROUTES.ayarlar },
@@ -46,6 +49,7 @@ export const LEGACY_REDIRECTS: ReadonlyArray<{ source: string; destination: stri
 export function activeNavHref(pathname: string): string | null {
   if (pathname === ROUTES.bugun || pathname.startsWith(`${ROUTES.oneri}/`)) return ROUTES.bugun;
   if (pathname === ROUTES.portfoy) return ROUTES.portfoy;
+  if (pathname === ROUTES.denetim) return ROUTES.denetim;
   return null;
 }
 

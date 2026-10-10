@@ -107,7 +107,7 @@ describe("today", () => {
   it("has one big sentence for each state", () => {
     expect(todayHeadline(2, false)).toBe("Bugün 2 öneri var.");
     expect(todayHeadline(0, false)).toBe("Bugün öneri yok — tayfa izliyor.");
-    expect(todayHeadline(3, true)).toBe("Durdurdun — yeni öneri gelmez.");
+    expect(todayHeadline(3, true)).toBe("Her şey durduruldu — yeni öneri gelmez.");
   });
   it("tells what the crew did", () => {
     expect(crewDayLine(null)).toBeNull();
@@ -138,7 +138,7 @@ describe("the crew, one line each", () => {
     const text = Object.fromEntries(crewLines(e4.card, null).map((l) => [l.agent, l.text]));
     expect(text.classifier).toBe("Bunu “finansal sonuç” olarak tanıdı.");
     expect(text.reader).toBe("Metindeki rakamları ve tarafları çıkardı.");
-    expect(text.compliance).toBe("Tedbir yok; bir noktayı senin bakman için işaretledi.");
+    expect(text.compliance).toBe("Tedbir yok; bir noktayı insan incelemesi için işaretledi.");
     expect(text.risk_gate).not.toContain("risk kontrolü");
     const unshrunk = crewLines({ ...e1.card, final_notional_try: e1.card.requested_notional_try }, null);
     expect(unshrunk.at(-1)?.text).toMatch(/^Tutar: /);

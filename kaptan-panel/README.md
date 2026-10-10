@@ -1,20 +1,23 @@
 # KAPtan Paneli
 
-Tek kişilik, üç ekranlı panel. Tayfa (8 ajan) KAP bildirimlerini okur, kurallar tartar; sana kalan
-tek şey kararı vermek ve ne olduğunu **anlamak**. Next.js 16 · React 19 · Tailwind 4 · zod · Vitest · Playwright.
+Sade çekirdek + ince bir kurumsal katman (SENG 429 *Enterprise* Application Development Lab). Tayfa (8 ajan)
+KAP bildirimlerini okur, kurallar tartar; insan ne olduğunu **anlar** ve **son imzayı atar**.
+Next.js 16 · React 19 · Tailwind 4 · zod · Vitest · Playwright.
 
-- **Bugün** (`/bugun`, girişten sonra): tek büyük cümle ("Bugün 3 öneri var."), karar saatine kalan süre,
-  tayfanın bugün ne yaptığı, öneri kartları (şirket, düz Türkçe olay, "1.240 lot · en fazla 48,35 TL", İncele →),
-  portföy satırı. Yeni öneri canlı (SSE) mürekkeple belirir.
-- **Öneri** (`/oneri/[id]`): kısa bir hikâye — Ne oldu? · Neden önemli? · Geçmişte ne oldu? (şerit grafik) ·
-  Tayfa ne dedi? (8 portre, birer satır) · Risk · Öneri. Tek eylem **Onayla**; "Reddet" sessiz bir bağlantı.
-  Onaydan sonra emir fişi: Kopyala, **Girdim**, "…" altında Dolmadı / İptal. En altta kapalı "Tüm ayrıntılar".
-- **Portföy** (`/portfoy`): toplam, bugünkü değişim, küçük çizgi, elindekiler (lot, kâr/zarar, kalan gün),
-  girilecek fişler, **Durdur**. Durdurunca: 24 saat + 5 seans bekleme, geri sayım, sonra ikinci onayla yeniden başlat.
-- **⚙ Ayarlar** (`/ayarlar`): demo senaryoları, zamanı ileri sar, demo verisini sıfırla, sabit sınırlar (tek satır), çıkış.
+- **Bugün** (`/bugun`): tek büyük cümle, karar saati, öneri kartları (canlı belirir), portföy satırı.
+- **Öneri** (`/oneri/[id]`): kısa hikâye (Ne oldu? · Neden önemli? · Geçmişte ne oldu? · Tayfa ne dedi? · Risk),
+  **iki imza** (Tayfa önerdi → Kurallar onayladı → Risk Sorumlusu imzalar), Onayla / Reddet, emir fişi, **notlar**.
+- **Portföy** (`/portfoy`): toplam, çizgi, elindekiler, girilecek fişler, **Durdur**. Yeniden başlatma iki kişi:
+  Yönetici başlatır (1/2), Risk Sorumlusu onaylar (2/2).
+- **Denetim** (`/denetim`): hash zincirli defter düz bir zaman çizelgesi olarak; **Defteri doğrula** zinciri
+  ekranda yürür ("Zincir sağlam." ya da "Kayıt #3.907'de zincir kırık.").
+- **⚙ Ayarlar** (`/ayarlar`): sınırlar (cümleler, iki imzalı değişiklik, sürümler), ekip ve "Kim ne yapabilir?",
+  demo (**Rehberli demo**, senaryolar, kurcalama testi, sıfırla), çıkış.
+- **Roller**: üst çubukta "Kimin gözüyle bakıyorsun?" — Analist (okur, not ekler) · Risk Sorumlusu (onaylar ya da
+  reddeder; durdurur) · Yönetici (kullanıcılar, ayarlar, demo) · Denetçi (her şeyi görür, hiçbir şeyi değiştiremez).
+  Yetkisiz düğme kapalı durur ve nedenini söyler: "Bunu Risk Sorumlusu yapar."
 
-Eski yollar (`/kopru`, `/oneriler`, `/akis`, `/karne`, `/ozet`, `/kosular`, `/tayfa`, `/styleguide`…) en yakın ekrana yönlenir.
-Backend sözleşmesi: **[API.md](API.md)**. Ürün kuralları: [PERSONAL-SPEC.md](PERSONAL-SPEC.md).
+Ürün kuralları: **[SPEC.md](SPEC.md)**. Backend sözleşmesi: **[API.md](API.md)**.
 
 ## Hızlı başlangıç
 
@@ -27,11 +30,8 @@ Mock modunda parola sayfada yazar: `kaptan-demo`. Demo saati 11.01.2027 13:40'ta
 
 ## Demo akışı
 
-1. Giriş → Bugün (3 öneri).
-2. ⚙ → Ayarlar → "Yeni iş (E3)" Ekle → Bugün'e git: ÖRNEK ENERJİ kartı birkaç saniyede belirir.
-3. İncele → hikâyeyi oku → Onayla → emir fişi → Girdim → Kaydet → "Portföyünde →".
-4. Portföy → Durdur (bir cümle gerekçe) → "24 saat ve 5 seans" bekleme.
-5. Ayarlar → "Beklemeyi doldur" → Portföy → Yeniden başlat.
+En kolayı: ⚙ → Ayarlar → **Rehberli demoyu başlat**. Alttaki çubuk 6 perdeyi (15 adım) → / ← ile yürür, rolü
+kendisi değiştirir, her adımda sunucuya tek cümle; elle basılan adımlarda yedek düğme vardır. Elle akış SPEC.md §5'te.
 
 ## Komutlar
 
@@ -44,7 +44,7 @@ Mock modunda parola sayfada yazar: `kaptan-demo`. Demo saati 11.01.2027 13:40'ta
 | `npm test` | Vitest birim + bileşen testleri |
 | `npm run coverage` | Kapsam raporu; eşik satır/ifade/fonksiyon %80, dal %75 |
 | `npm run e2e` | Playwright e2e (Microsoft Edge kanalı); açık dev sunucusunu kullanır. `E2E_BASE_URL=http://localhost:3100` ile açık bir sunucuya yönlendirilir |
-| `npx playwright test e2e/a11y.spec.ts` | Üç ekran + Ayarlar + giriş, 390 ve 1440 px'de axe-core WCAG 2.1 A/AA |
+| `npx playwright test e2e/a11y.spec.ts` | Bütün ekranlar + giriş, 390 ve 1440 px'de axe-core WCAG 2.1 A/AA |
 | `npm run check` | typecheck + lint + coverage + build |
 
 ## Modlar: mock ve http
@@ -58,7 +58,7 @@ Mock modunda parola sayfada yazar: `kaptan-demo`. Demo saati 11.01.2027 13:40'ta
 
 `NEXT_PUBLIC_*` değişkenleri derleme anında gömülür: modu değiştirmek yeniden derleme ister.
 
-Mock saat **11.01.2027 Pazartesi 13:40 (İstanbul)** ile başlar ve gerçek zamanla ilerler. Durum `localStorage`'da tutulur; ⚙ → Ayarlar → "Demo verisini sıfırla" temizler.
+Mock saat **11.01.2027 Pazartesi 13:40 (İstanbul)** ile başlar ve gerçek zamanla ilerler. Durum `localStorage`'da tutulur; ⚙ → Ayarlar → "Demo verisini sıfırla" (Yönetici) temizler. Seçilen rol oturum çerezindedir; giriş Risk Sorumlusu olarak başlar.
 
 ## Vercel
 
@@ -78,19 +78,23 @@ Mock saat **11.01.2027 Pazartesi 13:40 (İstanbul)** ile başlar ve gerçek zama
 
 ```
 src/
-  app/                 (panel)/bugun, (panel)/oneri/[id], (panel)/portfoy, (panel)/ayarlar · login/ · api/mock/session
+  app/                 (panel)/bugun, oneri/[id], portfoy, denetim, ayarlar · login/ · api/mock/session (giriş, rol, çıkış)
   components/
-    today/             Bugün: büyük cümle, öneri kartları
-    proposal/          Öneri: hikâye bölümleri, tayfa yolu, geçmiş şeridi, tayfa notları, karar, emir fişi
-    portfolio/         Portföy: toplam, çizgi, elindekiler, Durdur
-    settings/          Ayarlar: demo senaryoları, zamanı ileri sar, sıfırla, çıkış
-    story/             düz Türkçe cümleler (plain.ts) ve sayı ekleri (turkish.ts: %18’i, 09:50’ye)
-    shell/             üst çubuk, demo şeridi, risk bandı, masa durumu (SSE)
-    approvals/ tickets/ saf karar ve fiş mantığı · ui/ brand/ crew/  küçük parçalar
-  lib/                 domain (zod), api (KaptanApi: mock + http), auth, sse, nav, format, time
-  mocks/               deterministik fikstürler (bildirimler, demo koşuları, P&L, fişler)
+    today/ proposal/   Bugün; Öneri hikâyesi, iki imza (signatures), notlar, emir fişi
+    portfolio/         Portföy, Durdur (iki damgalı yeniden başlatma)
+    audit/             Denetim: zaman çizelgesi, Defteri doğrula (chain-walk)
+    settings/          Sınırlar (iki imza), ekip ve "Kim ne yapabilir?", demo
+    roles/             rol seçici, useRole, <Denied> (düz gerekçe + "… gözüyle bak →")
+    demo/              Rehberli demo: adımlar, durum, eylemler, alt çubuk
+    story/ shell/ ui/  düz cümleler; üst çubuk, bantlar, masa durumu; küçük parçalar
+  lib/
+    auth/permissions.ts  can(role, action), deniedReason, canOpen (tek yetki tablosu)
+    audit-chain.ts       hash zinciri · audit-words.ts kayıt → düz cümle
+    domain (zod) · api (KaptanApi: mock + http; mock/enterprise.ts, mock/guard.ts) · sse · nav · format
+  mocks/               deterministik fikstürler (bildirimler, koşular, 4.812 kayıtlık defter, P&L, fişler)
   proxy.ts             oturum koruması; / ve statik dosyalar açık
-e2e/                   smoke (giriş → her ekran, iki genişlik), flow (E3 → onay → fiş → portföy → durdur → bekleme → yeniden başlat), a11y
+e2e/                   smoke (her ekran, iki genişlik), flow (E3 → imza → fiş → portföy), enterprise (roller,
+                       iki imza, defter + kurcalama, sınır, iki kişilik yeniden başlatma), guided-demo (15 adım), a11y
 ```
 
 ## Lisanslar
