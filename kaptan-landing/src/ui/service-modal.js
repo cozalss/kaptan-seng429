@@ -240,7 +240,7 @@ export function createServiceModal({ mount, agents, lockScroll, unlockScroll, sc
   function renderAgent(agent) {
     currentAgent = agent;
     renderMedia(media, image, agent);
-    image.alt = `${agent.name} ajanı için temsili görsel`;
+    image.alt = `${agent.name} ajanının çizimi`;
     headTitle.replaceChildren(h('strong', null, 'Bölüm 2'), ` · Tayfa — ${agent.number} ${agent.name}`);
     nameLine.textContent = agent.name;
     // The caps are sized so the longest word always fits the text column (service-modal.css).

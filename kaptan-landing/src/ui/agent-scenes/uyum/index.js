@@ -15,9 +15,9 @@ export default Object.freeze({
   ]),
   // spoken as the plate's text alternative: one sentence
   summary:
-    'Temsili canlı şema: Uyum her bildirimde SPK tedbirini ve satır arasına gizlenmiş talimatı arar; şüpheli bildirim mühürlü kutuya düşer ve sayaç hep "Emir: 0" gösterir.',
+    'Canlı şema: Uyum her bildirimde SPK tedbirini ve satır arasına gizlenmiş talimatı arar; şüpheli bildirim mühürlü kutuya düşer ve sayaç hep "Emir: 0" gösterir.',
   description:
-    'Temsili canlı şema: kurgusal bildirimler sırayla fenerin altındaki okuma masasına konur. Fenerin ışığı, şirket dosyasındaki SPK tedbir damgasını ya da satır arasına soluk mürekkeple gizlenmiş bir talimatı açığa çıkarır. Temiz bildirim işaretlenip yoluna devam eder; tedbirli bildirim durdurulur; gizli satırın üstü çizilir, bildirime bayrak takılır ve mühürlü kutuya düşürülür. Kutunun önündeki sayaç hep "Emir: 0" gösterir: kötü niyetli bir bildirimden emir çıkmaz.',
+    'Canlı şema: bildirimler sırayla fenerin altındaki okuma masasına konur. Fenerin ışığı, şirket dosyasındaki SPK tedbir damgasını ya da satır arasına soluk mürekkeple gizlenmiş bir talimatı açığa çıkarır. Temiz bildirim işaretlenip yoluna devam eder; tedbirli bildirim durdurulur; gizli satırın üstü çizilir, bildirime bayrak takılır ve mühürlü kutuya düşürülür. Kutunun önündeki sayaç hep "Emir: 0" gösterir: kötü niyetli bir bildirimden emir çıkmaz.',
   stillElapsed: STILL_ELAPSED,
   /** @param {{ canvas: HTMLCanvasElement, keys?: Float32Array | null }} options (`keys`: see ../keys.js) */
   create({ canvas, keys = null }) {

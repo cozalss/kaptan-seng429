@@ -8,7 +8,7 @@ const TITLE_ID = 'about-modal-title';
 
 const PARAGRAPHS = [
   'KAPtan, Borsa İstanbul şirketlerinin Kamuyu Aydınlatma Platformu’nda (KAP) yayımladığı bildirimleri — günde yaklaşık 350 — izleyen çok ajanlı bir yapay zekâ projesidir. Yapay zekâ okur ve kanıt toplar, deterministik kurallar karar verir, insan onaylar. Otomatik emir yoktur.',
-  'Dört kişilik bir ekibin ders projesidir. Canlı testler sanal parayla yapılır; site ve proje yatırım tavsiyesi değildir.',
+  'Dört kişilik bir ekibin ders projesidir. Site ve proje yatırım tavsiyesi değildir.',
 ];
 
 /** Course facts as `dl` rows: [label, value]. */

@@ -29,7 +29,7 @@ export const SPOTS = Object.freeze({
 });
 
 /**
- * The loop's three drafts (fictional, "Temsili"). `size` is the proposed size as a fraction of
+ * The loop's three drafts (fictional). `size` is the proposed size as a fraction of
  * the bar; `finding` what the sweep turns up; `verdict` what Şüpheci does with it.
  */
 export const CAST = Object.freeze(

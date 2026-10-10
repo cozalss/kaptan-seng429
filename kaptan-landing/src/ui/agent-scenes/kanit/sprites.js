@@ -1,5 +1,5 @@
 // Kanıt — printed matter, inked once into canvases: per round the event card (fictional issuer,
-// "Temsili", its rule code in mono) and three index cards of past events, each with its heading on
+// its rule code in mono) and three index cards of past events, each with its heading on
 // top and its later return — a small ink line — on the lower half; plus the indigo paper mask that
 // covers that half until the code lifts it. Canvas 2D only.
 
@@ -56,10 +56,7 @@ function heading(ctx, { issuer, title }, folioRight, iw, random) {
   ctx.textBaseline = 'alphabetic';
   ctx.font = `400 11px ${SANS}`;
   ctx.fillStyle = INK.muted;
-  ctx.fillText('Temsili', PAD, PAD + 8);
-  ctx.textAlign = 'right';
-  ctx.fillText(folioRight, iw - PAD, PAD + 8);
-  ctx.textAlign = 'left';
+  ctx.fillText(folioRight, PAD, PAD + 8);
   ctx.font = `500 13px ${SANS}`;
   ctx.fillStyle = INK.sumi;
   ctx.fillText(issuer, PAD, PAD + 32, iw - PAD * 2);

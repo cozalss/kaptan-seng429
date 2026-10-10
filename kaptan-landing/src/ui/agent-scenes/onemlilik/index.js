@@ -17,9 +17,9 @@ export default Object.freeze({
   ]),
   // spoken as the plate's text alternative: one sentence
   summary:
-    'Temsili canlı şema: tutar terazinin bir kefesine, şirketin yıllık geliri ve piyasa değeri öbürüne konur; ibre eşiğe hiç değmez, çünkü eşiğe kurallar karar verir.',
+    'Canlı şema: tutar terazinin bir kefesine, şirketin yıllık geliri ve piyasa değeri öbürüne konur; ibre eşiğe hiç değmez, çünkü eşiğe kurallar karar verir.',
   description:
-    'Temsili canlı şema: bildirimdeki tutar küçük bir ağırlık olarak terazinin sol kefesine konur; kurgusal şirketin defterleri — yıllık gelir ve piyasa değeri — sandıktan alınıp sağ kefeye konur. Terazi yalnızca bir eğimle ve kadrandaki ibreyle tartar; kadrandaki eşik çizgisini kurallar çizmiştir ve ibre ona hiç değmez: Önemlilik tartar, eşiğe karar vermez.',
+    'Canlı şema: bildirimdeki tutar küçük bir ağırlık olarak terazinin sol kefesine konur; şirketin defterleri — yıllık gelir ve piyasa değeri — sandıktan alınıp sağ kefeye konur. Terazi yalnızca bir eğimle ve kadrandaki ibreyle tartar; kadrandaki eşik çizgisini kurallar çizmiştir ve ibre ona hiç değmez: Önemlilik tartar, eşiğe karar vermez.',
   stillElapsed: STILL_ELAPSED,
   /** @param {{ canvas: HTMLCanvasElement, keys?: Float32Array | null }} options (`keys`: see ../keys.js) */
   create({ canvas, keys = null }) {

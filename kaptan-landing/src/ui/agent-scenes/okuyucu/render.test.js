@@ -52,7 +52,7 @@ describe('Okuyucu renderer', () => {
     expect(scene.id).toBe('okuyucu');
     expect(scene.legend.map((l) => l.key)).toEqual(['a', 'b', 'c']);
     expect(scene.legend.map((l) => l.text)).toEqual(['metin', 'alan', 'form']);
-    expect(scene.description).toMatch(/Temsili/);
+    expect(scene.description).toMatch(/^Canlı şema: /);
     expect(scene.description).toMatch(/birleştirme düğümü/);
   });
 });

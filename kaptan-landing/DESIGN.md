@@ -77,10 +77,10 @@ The header's "İçindekiler" drawer (`src/ui/menu-drawer.js`, `SECTION_LINKS`) l
 chapters. If you add, rename or reorder a chapter, update the running head, the menu and this table.
 
 Bölüm 5 · Liman (`#demo`) was removed: the course facts live in the colophon, the final's date in
-the "Demo akışı" drawer. Nothing links to `#demo` any more.
+the "Altı adımda" drawer. Nothing links to `#demo` any more.
 
 **Content rules** (unchanged, from `KAPTAN-BRIEF.md` §0): all copy Turkish, calm, specific;
-`lang="tr"`; fictional documents only ("ÖRNEK ENERJİ A.Ş." / "ORNEK", marked "Temsili"); never
+`lang="tr"`; fictional documents only ("ÖRNEK ENERJİ A.Ş." / "ORNEK"), shown plainly: no "Temsili", "Kurgusal", "Demo" or "Sanal para" labels or disclaimers anywhere in the visible copy, alt text, captions or canvas text; never
 imitate KAP, Borsa İstanbul or SPK; "Yatırım tavsiyesi değildir." in the
 Bölüm 3 footnote, the colophon and the legal modal; no forms, no personal data; say who decides
 (rules) and who approves (a human); every chapter carries one plain sentence saying what it means for the project.
@@ -223,7 +223,7 @@ layout; nothing can leave a visitor stuck behind the loader.
 | Rota (≥ 1024px) | The dotted course runs on from the Pusula bridge and draws down the page through I–IV (mask + DrawSVG, scrub 0.8) with the pen on the eye line (`EYE` in `rota-geometry.js`: 72 % → 86 %); the boat is set on the water as the pen reaches it (`.is-launched`), sails it (MotionPath), bobbing on the inked sea's swell and leaving a wake; waypoints are marked reached as it passes. It moors low on the page in a taller harbour (`--rota-harbour`), so the moored boat is the chapter's last frame before the colophon's running head comes up (W5). | `ritual/rota-course.js`, `rota-geometry.js`, `rota-sea.js`, `rota-sea-render.js` (SVG sea, rebuilt on resize) | < 1024px or reduced: whole course printed, boat at rest in port. |
 | Header | Transparent over the hero with a paper scrim; after 40px of scroll: paper at 90 %, light backdrop blur, ink hairline. | `header/header.js`, `header.css` | Same (no motion involved). |
 | Drawers / modals | Drawers slide in from the right (450 ms, ease-out-expo); modals ink in via clip-path; focus trapped, Escape/scrim close, focus returns. | `ui/overlay.js`, `overlay-base.css` | Opacity-only fades. |
-| Mobile sticky tab | One small ink tab bottom-right, "İçindekiler · Demo akışı", 47px tall (44px targets), < 768px only. Shown only while the reader navigates: hero off screen, no overlay open, no quiet zone on screen (`QUIET_SELECTOR`: `[data-sticky-quiet]` = the rules bench, all of `#ajanlar`, every in-section ink button `main .pill`) **and** the last scroll went up (`nextScrollIntent`, 12px slop). Reading down hides it, so at rest it never covers a caption panel. | `sticky-cta/sticky-cta.js` | Same (opacity-only transition). |
+| Mobile sticky tab | One small ink tab bottom-right, "İçindekiler · Altı adımda", 47px tall (44px targets), < 768px only. Shown only while the reader navigates: hero off screen, no overlay open, no quiet zone on screen (`QUIET_SELECTOR`: `[data-sticky-quiet]` = the rules bench, all of `#ajanlar`, every in-section ink button `main .pill`) **and** the last scroll went up (`nextScrollIntent`, 12px slop). Reading down hides it, so at rest it never covers a caption panel. | `sticky-cta/sticky-cta.js` | Same (opacity-only transition). |
 | Running-head folio | The current chapter's tick inks with progress; the page number follows the scroll (one passive listener, rAF-throttled). | `lib/folio.js`, `styles/book.css` | Same (nothing animates). |
 
 ### Junctions (one book, one sea, one boat)
@@ -271,7 +271,7 @@ Agent live plates (`src/ui/agent-scenes/`): all eight dioramas are built (Sını
 Önemlilik, Kanıt, Şüpheci, Uyum, Kural Motoru, Risk Kapısı); contract and style rules are in
 `src/ui/agent-scenes/SCENES.md`; the shared Canvas 2D kit is `src/lib/ink3d/`.
 
-**Demo storyboard** (`src/ui/storyboard-art.js`): the six frames of the "Demo akışı" drawer are
+**Demo storyboard** (`src/ui/storyboard-art.js`): the six frames of the "Altı adımda" drawer are
 drawn at runtime as SVG data in the crew plates' language: `brush()` strokes that swell and thin
 (deterministic pressure, tapered ends, `straight` for ruled edges), flat indigo washes in two or
 three values (`.storyboard__wash` + `fill-opacity`), sumi masses, paper sheets with a heavier
@@ -322,7 +322,7 @@ These read as template output and were removed on purpose. Don't bring them back
   set through `ScrollTrigger.clearScrollMemory`).
 - Pinned strip: keyboard focus scrolls the pin so the focused panel is centred.
 - Loading state is announced once ("Sayfa hazır") through a live region outside the loader.
-- One name per overlay everywhere: the demo drawer is "Demo akışı" in the header, the menu, the
+- One name per overlay everywhere: the demo drawer is "Altı adımda" in the header, the menu, the
   sticky tab and the drawer's title (`DEMO_LABEL`), with the meta "Final sunumunda gösterilecek".
   Nothing is called "canlı" unless it runs live (the agent dioramas' "Canlı şema" does).
 - Links without a URL render as muted "· yakında" text, never a dead `#`; new-tab links carry a

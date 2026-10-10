@@ -13,11 +13,11 @@ export const LEGAL_SECTIONS = Object.freeze([
   },
   {
     heading: 'Yatırım tavsiyesi değildir',
-    body: 'Bu sitedeki hiçbir içerik yatırım tavsiyesi, alım-satım önerisi ya da getiri vaadi değildir. Testler sanal parayla yapılır; beklenti sıfır da olabilir.',
+    body: 'Bu sitedeki hiçbir içerik yatırım tavsiyesi, alım-satım önerisi ya da getiri vaadi değildir. Otomatik emir yoktur; beklenti sıfır da olabilir.',
   },
   {
     heading: 'Bağlantı yok',
-    body: 'Proje; Kamuyu Aydınlatma Platformu (KAP), Borsa İstanbul ve Sermaye Piyasası Kurulu (SPK) ile bağlantılı değildir, onlar tarafından onaylanmamıştır. Görsellerdeki bildirimler ve şirketler kurgusal ve temsilidir.',
+    body: 'Proje; Kamuyu Aydınlatma Platformu (KAP), Borsa İstanbul ve Sermaye Piyasası Kurulu (SPK) ile bağlantılı değildir, onlar tarafından onaylanmamıştır.',
   },
   {
     heading: 'Sinyal paylaşılmaz',

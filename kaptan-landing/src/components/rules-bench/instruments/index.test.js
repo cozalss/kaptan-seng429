@@ -36,7 +36,7 @@ describe('createInstrument', () => {
   it.each(['E1', 'E2', 'E3', 'E4', 'leak', 'screen'])('%s prints a representative plate', (rule) => {
     const { host, events } = mount(rule);
     const fig = host.querySelector('figure.inst');
-    expect(fig.querySelector('figcaption').textContent).toContain('Temsili');
+    expect(fig.querySelector('figcaption').textContent).toContain('ÖRNEK ENERJİ A.Ş.');
     expect(fig.textContent).toContain('ÖRNEK ENERJİ A.Ş.');
     expect(fig.querySelector('.inst__result').textContent).toBe(RESULT_LINE);
     expect(fig.querySelectorAll('[aria-live="polite"]')).toHaveLength(1);
@@ -46,11 +46,11 @@ describe('createInstrument', () => {
     expect(fig.dataset.fired).toBe(String(events[0].fired));
   });
 
-  it('wraps E-codes in .rule-code and tags the plate "Temsili"', () => {
+  it('wraps E-codes in .rule-code and prints no qualifier tag on the plate', () => {
     const { host } = mount('E3');
     const tag = host.querySelector('.inst__tag');
     expect(tag.querySelector('.rule-code').textContent).toBe('E3');
-    expect(tag.querySelector('.inst__temsili').textContent).toBe('Temsili');
+    expect(tag.textContent).not.toMatch(/Temsili|kurgu|demo/i);
     expect(mount('leak').host.querySelector('.inst__tag .rule-code')).toBeNull();
   });
 

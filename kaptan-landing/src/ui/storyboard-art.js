@@ -1,4 +1,4 @@
-// Ink drawings for the six storyboard panels of the "Demo akışı" drawer (src/data/demo-flow.js
+// Ink drawings for the six storyboard panels of the "Altı adımda" drawer (src/data/demo-flow.js
 // `art`), in the crew plates' language (scripts/kaptan-visuals/crew/STYLE.md): brush contours that
 // swell and thin, flat indigo washes in two or three values, sumi masses, paper left bare, the
 // storm's rain and horizon behind. No red: the page's three red marks are the needle, the boat

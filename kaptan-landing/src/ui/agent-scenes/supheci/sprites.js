@@ -1,5 +1,5 @@
 // Şüpheci — printed matter, inked once into canvases: the loop's three draft proposals (fictional
-// issuers, "Temsili"), each with a small price chart against its disclosure line, a note column and
+// issuers), each with a small price chart against its disclosure line, a note column and
 // the size bar, plus the indigo Veto stamp. Canvas 2D only.
 
 import { INK, inkLine, inkRect, makeCanvas } from '../../../lib/ink3d/ink.js';
@@ -138,13 +138,10 @@ function drawSlip(ctx, slip, x, y) {
   ctx.fillRect(inset, inset, w - inset * 2, h - inset * 2);
   ctx.textBaseline = 'alphabetic';
   const pad = px(-0.88);
-  // folio line: "Temsili" and the draft's serial, in the book's small Inter
+  // folio line: the draft's serial, in the book's small Inter
   ctx.font = `400 13px ${SANS}`;
   ctx.fillStyle = INK.muted;
-  ctx.fillText('Temsili', pad, 30);
-  ctx.textAlign = 'right';
-  ctx.fillText(`Taslak öneri · No. ${String(slip.index + 51).padStart(3, '0')}`, w - pad, 30);
-  ctx.textAlign = 'left';
+  ctx.fillText(`Taslak öneri · No. ${String(slip.index + 51).padStart(3, '0')}`, pad, 30);
   ctx.font = `500 15px ${SANS}`;
   ctx.fillStyle = INK.sumi;
   ctx.fillText(slip.issuer, pad, 56);

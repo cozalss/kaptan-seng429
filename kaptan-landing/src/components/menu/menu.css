@@ -222,7 +222,7 @@
 }
 
 /* Inside the slot an instrument is a drawing on the page, not a panel: no sheet, border or shadow,
-   and the one "Temsili · ÖRNEK ENERJİ A.Ş." line above the slot replaces each plate's own tag. */
+   and the one "ÖRNEK ENERJİ A.Ş." line above the slot replaces each plate's own tag. */
 .rules__slot .inst {
   padding: 0;
   background: none;
@@ -230,7 +230,6 @@
   box-shadow: none;
 }
 
-.rules__slot .inst__temsili,
 .rules__slot .inst__issuer {
   display: none;
 }

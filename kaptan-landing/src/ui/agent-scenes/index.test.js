@@ -54,7 +54,7 @@ function stubScene() {
       { key: 'a', text: 'gelen' },
       { key: 'b', text: 'okuma' },
     ],
-    description: 'Temsili canlı şema.',
+    description: 'Canlı şema: test.',
     stillElapsed: 7,
     create: ({ keys }) => ({
       setSize: (...args) => scene.sizes.push(args),
@@ -91,8 +91,8 @@ describe('createAgentScene', () => {
     expect(host.querySelector('.agent-scene__stage').getAttribute('aria-hidden')).toBe('true');
     expect(host.querySelector('canvas')).not.toBeNull();
     expect(host.querySelector('.agent-scene__caption').hasAttribute('aria-hidden')).toBe(false);
-    expect(host.querySelector('.agent-scene__summary').textContent).toBe('Temsili canlı şema.');
-    expect(host.querySelector('.agent-scene__caption').textContent).toBe('Temsili canlı şema.Canlı şema · Temsilia gelen · b okuma');
+    expect(host.querySelector('.agent-scene__summary').textContent).toBe('Canlı şema: test.');
+    expect(host.querySelector('.agent-scene__caption').textContent).toBe('Canlı şema: test.Canlı şemaa gelen · b okuma');
     expect([...host.querySelectorAll('.agent-scene__pin')].map((pin) => pin.textContent)).toEqual(['a', 'b', '']);
     plate.destroy();
   });

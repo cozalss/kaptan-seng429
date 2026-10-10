@@ -47,7 +47,7 @@ describe('#olaylar: hosts for the bench', () => {
       'E4',
       'leak',
     ]);
-    expect(section.querySelector('.rules__sample').textContent).toBe('Temsili · ÖRNEK ENERJİ A.Ş.');
+    expect(section.querySelector('.rules__sample').textContent).toBe('ÖRNEK ENERJİ A.Ş.');
   });
 
   it('keeps the leak button hidden until the bench can answer it', () => {

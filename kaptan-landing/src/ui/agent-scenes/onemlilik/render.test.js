@@ -38,7 +38,7 @@ describe('Önemlilik renderer', () => {
     for (let e = 0; e < LOOP + 1; e += 0.23) plate.render(e);
     plate.render(STILL_ELAPSED);
     expect(calls.filter((c) => c === 'drawImage').length).toBeGreaterThan(80);
-    for (const word of ['Tutar', 'Yıllık gelir', 'Piyasa değeri', 'eşik', 'Temsili', 'ÖRNEK']) expect(calls).toContain(`text:${word}`);
+    for (const word of ['Tutar', 'Yıllık gelir', 'Piyasa değeri', 'eşik', 'ÖRNEK']) expect(calls).toContain(`text:${word}`);
     expect(calls).toContain('clip');
     plate.dispose();
     expect(canvas.width).toBe(0);
@@ -52,7 +52,7 @@ describe('Önemlilik renderer', () => {
   it('carries its plate copy: a legend keyed a–c and a spoken description', () => {
     expect(scene.id).toBe('onemlilik');
     expect(scene.legend.map((l) => l.key)).toEqual(['a', 'b', 'c']);
-    expect(scene.description).toMatch(/Temsili/);
+    expect(scene.description).toMatch(/^Canlı şema: /);
     expect(scene.description).toMatch(/yıllık gelir/);
     expect(scene.description).toMatch(/karar vermez/);
     expect(scene.stillElapsed).toBe(STILL_ELAPSED);

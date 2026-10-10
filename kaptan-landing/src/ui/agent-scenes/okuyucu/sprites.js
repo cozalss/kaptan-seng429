@@ -1,5 +1,5 @@
 // Okuyucu — printed matter, inked once into canvases: the loop's pages of continuous-feed paper
-// (sprocket margins, as in the portrait; fictional issuers, "Temsili"), the nine value tags and the
+// (sprocket margins, as in the portrait; fictional issuers), the nine value tags and the
 // blank reading form with its three fields and its struck-through "Oran" row. Canvas 2D only.
 
 import { INK, inkLine, inkRect, makeCanvas } from '../../../lib/ink3d/ink.js';
@@ -88,10 +88,7 @@ function drawPage(ctx, page, x, y, spots) {
   ctx.textBaseline = 'alphabetic';
   ctx.font = `400 10px ${SANS}`;
   ctx.fillStyle = INK.muted;
-  ctx.fillText('Temsili', left, 20);
-  ctx.textAlign = 'right';
-  ctx.fillText(`No. ${String(page.index + 201)}`, right, 20);
-  ctx.textAlign = 'left';
+  ctx.fillText(`No. ${String(page.index + 201)}`, left, 20);
   ctx.font = `500 12px ${SANS}`;
   ctx.fillStyle = INK.sumi;
   ctx.fillText(page.issuer, left, 42, right - left);
@@ -170,9 +167,6 @@ export function drawFormSheet(doc) {
   ctx.fillStyle = INK.sheet;
   ctx.fillRect(0, 0, w, h);
   ctx.textBaseline = 'alphabetic';
-  ctx.font = `400 13px ${SANS}`;
-  ctx.fillStyle = INK.muted;
-  ctx.fillText('Temsili', L.left, 26);
   ctx.font = `400 31px ${DISPLAY}`;
   ctx.fillStyle = INK.sumi;
   ctx.fillText('Okuma formu', L.left, 64, L.right - L.left);

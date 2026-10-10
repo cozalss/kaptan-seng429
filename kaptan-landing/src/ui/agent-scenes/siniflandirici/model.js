@@ -20,7 +20,7 @@ export const BINS = Object.freeze([
 const BIN_INDEX = Object.freeze(Object.fromEntries(BINS.map((bin, i) => [bin.id, i])));
 
 /**
- * One day of disclosures (fictional, "Temsili"). Most of what arrives is neither E1–E4: the mix
+ * One day of disclosures (fictional). Most of what arrives is neither E1–E4: the mix
  * is weighted to "Diğer" and "Filtre" as a day's traffic is. Titles are illustrative only.
  */
 export const CAST = Object.freeze(

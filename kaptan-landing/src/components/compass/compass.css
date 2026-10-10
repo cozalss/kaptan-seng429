@@ -495,21 +495,6 @@
   display: none;
 }
 
-.pusula__caption {
-  position: absolute;
-  right: var(--gutter);
-  bottom: var(--space-sm);
-  font-family: var(--font-sans);
-  font-size: 12px;
-  color: var(--color-muted);
-}
-
-/* in the full-bleed scene the note sits under the running head, clear of the storm's reach */
-.pusula:not([data-pusula='static']) .pusula__caption {
-  top: calc(var(--header-height) + var(--space-sm) + 30px);
-  bottom: auto;
-}
-
 /* ---------- The act rail: a chart scale of the whole scroll ---------- */
 .pusula__rail {
   grid-area: rail;
@@ -774,10 +759,6 @@
     font-size: clamp(34px, 10vw, 44px);
   }
 
-  .pusula:not([data-pusula='static']) .pusula__caption {
-    top: calc(var(--header-height) + 136px);
-  }
-
   .pusula:not([data-pusula='static']) .pusula__unit {
     font-size: 13px;
   }
@@ -834,11 +815,6 @@
   .pusula__steps li::after {
     left: 5px;
     width: calc(100% - 10px);
-  }
-
-  .pusula__caption {
-    right: var(--gutter);
-    bottom: 4px;
   }
 
   .pusula[data-pusula='static'] .pusula__stage {

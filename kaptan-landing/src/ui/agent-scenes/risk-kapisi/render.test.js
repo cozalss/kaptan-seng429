@@ -85,7 +85,7 @@ describe('Risk Kapısı renderer', () => {
   it('carries its plate copy: a legend keyed a–c and a spoken description', () => {
     expect(scene.id).toBe('risk-kapisi');
     expect(scene.legend.map((l) => l.key)).toEqual(['a', 'b', 'c']);
-    expect(scene.description).toMatch(/Temsili/);
+    expect(scene.description).toMatch(/^Canlı şema: /);
     expect(scene.description).toMatch(/R01–R16/);
     expect(scene.description).toMatch(/büyütmez/);
     expect(scene.description).toMatch(/pozisyon satılmaz/);

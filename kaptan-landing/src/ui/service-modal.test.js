@@ -64,7 +64,7 @@ describe('createServiceModal (agent detail)', () => {
     expect(mount.querySelector('.service-modal__meta').textContent).toBe('Girdi: olay · Çıktı: benzer geçmiş olaylar');
     expect(mount.querySelector('.service-modal__description').textContent).toBe(AGENTS[0].description);
     expect(mount.querySelector('.service-modal__not').textContent).toBe('Ne yapmazGetiri görmez, istatistik hesaplamaz.');
-    expect(mount.querySelector('.service-modal__image').getAttribute('alt')).toBe('Kanıt ajanı için temsili görsel');
+    expect(mount.querySelector('.service-modal__image').getAttribute('alt')).toBe('Kanıt ajanının çizimi');
     const nameEl = mount.querySelector('.service-modal__name');
     expect(modal.panel.getAttribute('aria-labelledby')).toBe(nameEl.id);
     expect(modal.panel.hasAttribute('aria-label')).toBe(false);

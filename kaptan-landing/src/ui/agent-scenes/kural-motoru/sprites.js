@@ -1,5 +1,5 @@
 // Kural Motoru — printed matter, inked once into canvases: one punched evidence card per distinct
-// input (fictional issuers, "Temsili") and the telegraph's dial face with its E1–E4 sectors, as in
+// input (fictional issuers) and the telegraph's dial face with its E1–E4 sectors, as in
 // the portrait. Canvas 2D only.
 
 import { INK, inkLine, makeCanvas } from '../../../lib/ink3d/ink.js';
@@ -52,10 +52,7 @@ function drawCard(ctx, input, x, y) {
   ctx.textBaseline = 'alphabetic';
   ctx.font = `400 13px ${SANS}`;
   ctx.fillStyle = INK.muted;
-  ctx.fillText('Temsili', 16, PUNCH_Y + 42);
-  ctx.textAlign = 'right';
-  ctx.fillText(`No. ${input.serial}`, w - 16, PUNCH_Y + 42);
-  ctx.textAlign = 'left';
+  ctx.fillText(`No. ${input.serial}`, 16, PUNCH_Y + 42);
   ctx.font = `600 17px ${SANS}`;
   ctx.fillStyle = INK.sumi;
   ctx.fillText(input.issuer, 16, PUNCH_Y + 68, w - 32);

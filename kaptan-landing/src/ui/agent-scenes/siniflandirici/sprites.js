@@ -1,5 +1,5 @@
 // Sınıflandırıcı — printed matter, inked once into canvases: one slip per disclosure of the day
-// (fictional issuers, "Temsili") and the six indigo type stamps. Canvas 2D only.
+// (fictional issuers) and the six indigo type stamps. Canvas 2D only.
 
 import { INK, inkLine, inkRect, makeCanvas } from '../../../lib/ink3d/ink.js';
 import { seededRandom } from '../../../lib/ink3d/random.js';
@@ -49,13 +49,10 @@ function drawSlip(ctx, slip, x, y) {
   ctx.fillStyle = INK.sheet;
   ctx.fillRect(0, 0, iw, ih);
   ctx.textBaseline = 'alphabetic';
-  // folio line: "Temsili" and a serial, in the book's small Inter
+  // folio line: the serial, in the book's small Inter
   ctx.font = `400 11px ${SANS}`;
   ctx.fillStyle = INK.muted;
-  ctx.fillText('Temsili', pad, pad + 8);
-  ctx.textAlign = 'right';
-  ctx.fillText(`No. ${String(slip.index + 101).padStart(3, '0')}`, iw - pad, pad + 8);
-  ctx.textAlign = 'left';
+  ctx.fillText(`No. ${String(slip.index + 101).padStart(3, '0')}`, pad, pad + 8);
   ctx.font = `500 13px ${SANS}`;
   ctx.fillStyle = INK.sumi;
   ctx.fillText(slip.issuer, pad, pad + 32, iw - pad * 2);

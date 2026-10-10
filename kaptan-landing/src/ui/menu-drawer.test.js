@@ -48,11 +48,11 @@ describe('createMenuDrawer', () => {
     expect(meta).toEqual(['KAPtan · SENG 429 · Çankaya Üniversitesi · © 2026']);
   });
 
-  it('renders a "Demo akışı" pill that closes the menu and opens the demo drawer', () => {
+  it('renders a "Altı adımda" pill that closes the menu and opens the demo drawer', () => {
     const overlay = mountDrawer();
     overlay.open();
     const cta = mount.querySelector('.menu-drawer__cta');
-    expect(cta.textContent).toBe('Demo akışı');
+    expect(cta.textContent).toBe('Altı adımda');
     cta.click();
     expect(overlay.isOpen()).toBe(false);
     expect(openDemo).toHaveBeenCalledTimes(1);

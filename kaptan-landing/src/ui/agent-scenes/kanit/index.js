@@ -15,9 +15,9 @@ export default Object.freeze({
   ]),
   // spoken as the plate's text alternative: one sentence
   summary:
-    'Temsili canlı şema: Kanıt olay hafızasından benzer geçmiş olayları yalnızca başlıklarına bakarak seçer; örtülü getirileri seçimden sonra kod açar ve sayar.',
+    'Canlı şema: Kanıt olay hafızasından benzer geçmiş olayları yalnızca başlıklarına bakarak seçer; örtülü getirileri seçimden sonra kod açar ve sayar.',
   description:
-    'Temsili canlı şema: kurgusal bir olay kartı gelir; olay hafızasının çekmecelerinden benzer geçmiş olayların kartları çıkar. Her kartın alt yarısı — sonraki getiri — örtülüdür; Kanıt kartları yalnızca başlıklarına bakarak seçer ve sıraya dizer. Seçim kapandıktan sonra örtüleri kod kaldırır ve istatistiği kod tutar.',
+    'Canlı şema: bir olay kartı gelir; olay hafızasının çekmecelerinden benzer geçmiş olayların kartları çıkar. Her kartın alt yarısı — sonraki getiri — örtülüdür; Kanıt kartları yalnızca başlıklarına bakarak seçer ve sıraya dizer. Seçim kapandıktan sonra örtüleri kod kaldırır ve istatistiği kod tutar.',
   stillElapsed: STILL_ELAPSED,
   /** @param {{ canvas: HTMLCanvasElement, keys?: Float32Array | null }} options (`keys`: see ../keys.js) */
   create({ canvas, keys = null }) {

@@ -1,4 +1,4 @@
-// The header's "Demo akışı" drawer: the six steps one disclosure will go through in the final's demo, drawn as
+// The header's "Altı adımda" drawer: the six steps one disclosure will go through in the final's demo, drawn as
 // a 2 × 3 comic storyboard — ink panels with gutters, each caption set below its panel — then the
 // final's date. Static copy only: there is nothing to
 // fill in, select or send.
@@ -11,10 +11,10 @@ import { renderStoryboardArt } from './storyboard-art.js';
 
 const TITLE_ID = 'demo-drawer-title';
 /** The one name of this drawer everywhere: header button, menu, sticky bar and the drawer's title. */
-export const DEMO_LABEL = 'Demo akışı';
+export const DEMO_LABEL = 'Altı adımda';
 
 function buildHeader(onClose) {
-  const closeButton = h('button', { type: 'button', class: 'overlay__close', 'aria-label': 'Demo akışını kapat', onClick: onClose }, '✕');
+  const closeButton = h('button', { type: 'button', class: 'overlay__close', 'aria-label': 'Kapat', onClick: onClose }, '✕');
   const head = h('p', { class: 'demo-drawer__head' }, h('span', null, 'Final sunumunda gösterilecek'), h('span', null, 'Altı kare'));
   const title = h('h2', { class: 'demo-drawer__title', id: TITLE_ID }, DEMO_LABEL);
   return h('div', { class: 'demo-drawer__header' }, h('div', { class: 'demo-drawer__heading' }, head, title), closeButton);
@@ -58,7 +58,7 @@ export function createDemoDrawer({ mount, lockScroll, unlockScroll }) {
   const lead = h(
     'p',
     { class: 'demo-drawer__lead' },
-    'Final sunumunda tek bir bildirim, sahnede uçtan uca bu altı adımdan geçer. Sanal para; gerçek emir yok.',
+    'Final sunumunda tek bir bildirim, sahnede uçtan uca bu altı adımdan geçer. Otomatik emir yok.',
   );
   const steps = h('ol', { class: 'demo-drawer__steps', role: 'list' }, ...DEMO_STEPS.map(buildStep));
   const footer = buildFooter();

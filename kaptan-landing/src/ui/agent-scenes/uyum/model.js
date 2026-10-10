@@ -13,7 +13,7 @@ export const TAU = Math.PI * 2;
 /** What the light finds on a slip: nothing (it goes on), an SPK measure, or a hidden instruction. */
 export const VERDICTS = Object.freeze({ pass: 0, tedbir: 1, inject: 2 });
 
-/** One loop of disclosures (fictional, "Temsili"); titles are illustrative only. */
+/** One loop of disclosures (fictional); titles are illustrative only. */
 export const CAST = Object.freeze(
   [
     { verdict: 'pass', issuer: 'ÖRNEK GIDA A.Ş.', title: 'Genel kurul ilanı' },

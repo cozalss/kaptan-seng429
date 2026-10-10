@@ -16,9 +16,9 @@ export default Object.freeze({
   ]),
   // spoken as the plate's text alternative: one sentence
   summary:
-    'Temsili canlı şema: kurgusal bir bildirimin metninden tutar, karşı taraf ve süre birer etiket olarak alınıp forma iğnelenir; oran satırı boş kalır.',
+    'Canlı şema: bir bildirimin metninden tutar, karşı taraf ve süre birer etiket olarak alınıp forma iğnelenir; oran satırı boş kalır.',
   description:
-    'Temsili canlı şema: kurgusal bir bildirimin serbest metni eğik bir okuma masasında satır satır okunur; tutar, karşı taraf ve süre metinden birer kâğıt etiket olarak kalkar ve yandaki formun üç alanına iğnelenir. Formdaki oran satırı boş ve üstü çizili kalır: oranı birleştirme düğümü hesaplar. Dolan form yığına konur, sıradaki sayfa gelir.',
+    'Canlı şema: bir bildirimin serbest metni eğik bir okuma masasında satır satır okunur; tutar, karşı taraf ve süre metinden birer kâğıt etiket olarak kalkar ve yandaki formun üç alanına iğnelenir. Formdaki oran satırı boş ve üstü çizili kalır: oranı birleştirme düğümü hesaplar. Dolan form yığına konur, sıradaki sayfa gelir.',
   stillElapsed: STILL_ELAPSED,
   /** @param {{ canvas: HTMLCanvasElement, keys?: Float32Array | null }} options (`keys`: see ../keys.js) */
   create({ canvas, keys = null }) {

@@ -1,4 +1,4 @@
-// Shared browser glue of every instrument: the printed plate (Temsili · issuer · title), the
+// Shared browser glue of every instrument: the printed plate (issuer · title), the
 // visible state sentence, one debounced polite live region, a rAF tween that stops when done
 // (zero work when idle), and the value → rule → render → onChange loop.
 
@@ -10,17 +10,16 @@ export { nextId } from './dom.js';
 const ANNOUNCE_DELAY = 450;
 
 /**
- * Builds the compact plate inside `host`: the drawing (with a "Temsili · E1 · ÖRNEK ENERJİ A.Ş."
+ * Builds the compact plate inside `host`: the drawing (with an "E1 · ÖRNEK ENERJİ A.Ş."
  * tag in its corner), the controls, a one-line verdict, the live region and the result line.
  * `short` = [not fired, fired] verdicts printed in one grid cell so the height never changes.
  */
 export function plate(host, { rule, title, short, hint }) {
   host.replaceChildren();
   const fig = h('figure', { class: `inst inst--${rule.toLowerCase()}`, 'data-fired': 'false' }, host);
-  h('figcaption', { class: 'visually-hidden', text: `${title}. Temsili örnek, ${ISSUER}.` }, fig);
+  h('figcaption', { class: 'visually-hidden', text: `${title}. ${ISSUER}.` }, fig);
   const art = h('div', { class: 'inst__art' }, fig);
   const tag = h('p', { class: 'inst__tag', 'aria-hidden': 'true' }, art);
-  h('span', { class: 'inst__temsili', text: 'Temsili' }, tag);
   if (/^E\d$/.test(rule)) h('span', { class: 'rule-code', text: rule }, tag);
   h('span', { class: 'inst__issuer', text: ISSUER }, tag);
   if (hint) h('span', { class: 'inst__hint', text: hint }, tag);

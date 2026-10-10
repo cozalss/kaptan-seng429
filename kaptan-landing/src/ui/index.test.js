@@ -72,7 +72,7 @@ describe('initKaptanUI', () => {
     expect(state('demo-drawer')).toBe('open');
   });
 
-  it('the menu drawer\'s "Demo akışı" pill hands over to the demo drawer', () => {
+  it('the menu drawer\'s "Altı adımda" pill hands over to the demo drawer', () => {
     boot();
     document.querySelector('[data-action="open-menu"]').click();
     document.querySelector('.menu-drawer__cta').click();

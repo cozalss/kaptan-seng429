@@ -16,7 +16,7 @@ export const FIELDS = Object.freeze([
   Object.freeze({ id: 'sure', label: 'Süre' }),
 ]);
 
-/** The pages read in one loop (fictional, "Temsili"): the issuer, a title and the three values. */
+/** The pages read in one loop (fictional): the issuer, a title and the three values. */
 export const CAST = Object.freeze(
   [
     { issuer: 'ÖRNEK ENERJİ A.Ş.', title: 'Yeni iş ilişkisi', values: ['48,6 milyon TL', 'ÖRNEK ALTYAPI A.Ş.', '18 ay'] },

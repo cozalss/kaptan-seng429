@@ -14,9 +14,9 @@ export default Object.freeze({
   ]),
   // spoken as the plate's text alternative: one sentence
   summary:
-    'Temsili canlı şema: kurgusal bildirim fişleri okunur, türü damgalanır (E1–E4, Filtre ya da Diğer) ve raftaki kendi gözüne konur.',
+    'Canlı şema: bildirim fişleri okunur, türü damgalanır (E1–E4, Filtre ya da Diğer) ve raftaki kendi gözüne konur.',
   description:
-    'Temsili canlı şema: kurgusal bildirim fişleri sırayla okunur, her birine türü damgalanır — E1, E2, E3, E4, Filtre ya da Diğer — ve altı gözlü raftaki kendi gözüne konur; her gözün üstünde günün çetelesi tutulur.',
+    'Canlı şema: bildirim fişleri sırayla okunur, her birine türü damgalanır — E1, E2, E3, E4, Filtre ya da Diğer — ve altı gözlü raftaki kendi gözüne konur; her gözün üstünde günün çetelesi tutulur.',
   stillElapsed: STILL_ELAPSED,
   /** @param {{ canvas: HTMLCanvasElement, keys?: Float32Array | null }} options (`keys`: see ../keys.js) */
   create({ canvas, keys = null }) {

@@ -53,7 +53,7 @@ describe('Sınıflandırıcı renderer', () => {
   it('carries its plate copy: a legend keyed a–c and a spoken description', () => {
     expect(scene.id).toBe('siniflandirici');
     expect(scene.legend.map((l) => l.key)).toEqual(['a', 'b', 'c']);
-    expect(scene.description).toMatch(/Temsili/);
+    expect(scene.description).toMatch(/^Canlı şema: /);
     expect(scene.description).toMatch(/E1/);
   });
 });

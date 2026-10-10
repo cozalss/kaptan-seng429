@@ -15,9 +15,9 @@ export default Object.freeze({
   ]),
   // spoken as the plate's text alternative: one sentence
   summary:
-    'Temsili canlı şema: kurgusal kanıt kartları E1–E4 kurallarının yazılı eşiklerinden geçer ve aynı girdi her seferinde aynı kutuya düşer.',
+    'Canlı şema: kanıt kartları E1–E4 kurallarının yazılı eşiklerinden geçer ve aynı girdi her seferinde aynı kutuya düşer.',
   description:
-    'Temsili canlı şema: kurgusal kanıt kartları sırayla okunur; değerleri E1–E4 kurallarının yazılı eşikleriyle karşılaştırılır (örneğin E1 için 10 seansta sermayenin en az %0,25’i) ve her kart kendi kapısından ilgili kutuya düşer, eşiği karşılamayan kart karar almaz. Aynı kart iki kez gelir ve iki kez de aynı kutuya düşer: aynı girdi, aynı karar. Hiçbir adım rastlantıya ya da bir dil modeline bağlı değildir.',
+    'Canlı şema: kanıt kartları sırayla okunur; değerleri E1–E4 kurallarının yazılı eşikleriyle karşılaştırılır (örneğin E1 için 10 seansta sermayenin en az %0,25’i) ve her kart kendi kapısından ilgili kutuya düşer, eşiği karşılamayan kart karar almaz. Aynı kart iki kez gelir ve iki kez de aynı kutuya düşer: aynı girdi, aynı karar. Hiçbir adım rastlantıya ya da bir dil modeline bağlı değildir.',
   stillElapsed: STILL_ELAPSED,
   /** @param {{ canvas: HTMLCanvasElement, keys?: Float32Array | null }} options (`keys`: see ../keys.js) */
   create({ canvas, keys = null }) {

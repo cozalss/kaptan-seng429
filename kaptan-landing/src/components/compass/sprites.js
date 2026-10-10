@@ -1,6 +1,6 @@
 // Printed matter of the ink scene, drawn once into canvases: the sheet of small disclosure slips
 // (ink line work, no legible text — at their size text would only blur), the one approved slip at
-// full resolution (real type, marked "Temsili") and the north-red ONAYLANDI stamp. Every document
+// full resolution (real type) and the north-red ONAYLANDI stamp. Every document
 // is fictional: no real company, price or signal.
 
 import { VARIANTS, seededRandom } from './funnel.js';
@@ -107,7 +107,7 @@ export function drawSlipSheet(doc) {
 export const SLIP_ASPECT = CELL.width / CELL.height;
 
 /**
- * The approved slip at full resolution: Bodoni title, ruled rows of Inter, "Temsili".
+ * The approved slip at full resolution: Bodoni title, ruled rows of Inter.
  * @param {Document} doc
  * @param {number} height  device px
  */
@@ -126,7 +126,7 @@ export function drawApprovedSlip(doc, height) {
   ctx.textBaseline = 'alphabetic';
   ctx.font = `${22 * u}px ${SANS}`;
   ctx.fillStyle = INK.muted;
-  ctx.fillText('Temsili · kurgusal belge', pad, pad + 10 * u);
+  ctx.fillText('KAPtan', pad, pad + 10 * u);
   ctx.textAlign = 'right';
   ctx.fillText('No. 001', w - pad, pad + 10 * u);
   ctx.textAlign = 'left';

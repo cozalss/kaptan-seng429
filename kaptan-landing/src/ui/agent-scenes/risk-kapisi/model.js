@@ -37,7 +37,7 @@ export const FATES = Object.freeze({ aynen: 0, kucult: 1, reddet: 2, iptal: 3 })
 export const VERDICTS = Object.freeze(['Aynen', 'Küçült', 'Reddet', 'İptal']);
 
 /**
- * One loop's barges (fictional, "Temsili"). `size` is the stack's height as a share of the largest
+ * One loop's barges (fictional). `size` is the stack's height as a share of the largest
  * proposal; a cut lowers it to `to` at rule `rule` (an index into RULES) and never raises it.
  */
 export const CAST = Object.freeze(

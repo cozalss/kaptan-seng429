@@ -1,5 +1,5 @@
 // Uyum — printed matter, inked once into canvases: one slip per disclosure of the loop (fictional
-// issuers, "Temsili"), each with its company-file line and a blank gap between two body lines; the
+// issuers), each with its company-file line and a blank gap between two body lines; the
 // pale hidden line the lantern raises (illegible by design but for "…talimat…" — never a real
 // prompt); and the indigo measure stamp. Canvas 2D only.
 
@@ -63,10 +63,7 @@ function drawSlip(ctx, slip, x, y) {
   ctx.textBaseline = 'alphabetic';
   ctx.font = `400 11px ${SANS}`;
   ctx.fillStyle = INK.muted;
-  ctx.fillText('Temsili', pad, pad + 8);
-  ctx.textAlign = 'right';
-  ctx.fillText(`No. ${String(slip.index + 201).padStart(3, '0')}`, iw - pad, pad + 8);
-  ctx.textAlign = 'left';
+  ctx.fillText(`No. ${String(slip.index + 201).padStart(3, '0')}`, pad, pad + 8);
   ctx.font = `500 13px ${SANS}`;
   ctx.fillStyle = INK.sumi;
   ctx.fillText(slip.issuer, pad, pad + 32, iw - pad * 2);

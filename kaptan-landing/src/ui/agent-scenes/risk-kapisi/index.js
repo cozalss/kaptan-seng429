@@ -15,9 +15,9 @@ export default Object.freeze({
   ]),
   // spoken as the plate's text alternative: one sentence
   summary:
-    'Temsili canlı şema: öneriler R01–R16 kurallarının önünden geçer; kurallar bir öneriyi yalnızca küçültür ya da reddeder, kill switch açık emirleri iptal eder ama pozisyon satmaz.',
+    'Canlı şema: öneriler R01–R16 kurallarının önünden geçer; kurallar bir öneriyi yalnızca küçültür ya da reddeder, kill switch açık emirleri iptal eder ama pozisyon satmaz.',
   description:
-    'Temsili canlı şema: kurgusal öneriler, yükü bir kâğıt destesi olan mavnalar olarak kanalda R01–R16 numaralı on altı kural babasının önünden geçer. Bir kural yükü yalnızca keserek küçültür ya da mavnayı geri çevirir; hiçbir kural yükü büyütmez. Geçenler kapıda aynen ya da küçültülmüş olarak damgalanır. Döngüde bir kez kill switch çekilir (zirveden −%5): kuyrukta bekleyen mavnaların halatları çözülür, açık emirler iptal edilir; limandaki mavnalar bağlı kalır, pozisyon satılmaz.',
+    'Canlı şema: öneriler, yükü bir kâğıt destesi olan mavnalar olarak kanalda R01–R16 numaralı on altı kural babasının önünden geçer. Bir kural yükü yalnızca keserek küçültür ya da mavnayı geri çevirir; hiçbir kural yükü büyütmez. Geçenler kapıda aynen ya da küçültülmüş olarak damgalanır. Döngüde bir kez kill switch çekilir (zirveden −%5): kuyrukta bekleyen mavnaların halatları çözülür, açık emirler iptal edilir; limandaki mavnalar bağlı kalır, pozisyon satılmaz.',
   stillElapsed: STILL_ELAPSED,
   /** @param {{ canvas: HTMLCanvasElement, keys?: Float32Array | null }} options (`keys`: see ../keys.js) */
   create({ canvas, keys = null }) {

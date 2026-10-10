@@ -264,7 +264,7 @@ export function createRig(ctx, images) {
 
   /**
    * The dial: its face (sprite), the rules' threshold ruled straight across the outer band and
-   * the bezel with "eşik" beside it, "Temsili" in the lower half, then the needle and its hub.
+   * the bezel with "eşik" beside it, then the needle and its hub.
    */
   function drawDial(frame, alpha, dpr) {
     if (!images.dial) return;
@@ -278,14 +278,6 @@ export function createRig(ctx, images) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const s = scr.pivot[3];
     drawThreshold(frame, alpha, s);
-    // "Temsili" on the face's lower half, as the portrait prints its "%"
-    const small = Math.max(8, Math.min(11, s * 0.13));
-    ctx.font = sans(small);
-    ctx.fillStyle = INK.muted;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    project(frame, px, py - R * 0.42, pz + BALANCE.dialZ, tmp);
-    ctx.fillText('Temsili', tmp[0], tmp[1], R * s * 1.1);
     drawNeedle(alpha, s);
   }
 

@@ -1,4 +1,4 @@
-// Mobile sticky bar (< 768px; CSS hides it on wider screens): one small ink tab, "İçindekiler · Demo akışı".
+// Mobile sticky bar (< 768px; CSS hides it on wider screens): one small ink tab, "İçindekiler · Altı adımda".
 // It only appears when the reader is navigating, never over what they are reading:
 //   - the hero is off screen and no overlay is open;
 //   - no quiet zone is on screen: [data-sticky-quiet] (the hands-on rules bench), the whole of

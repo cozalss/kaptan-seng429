@@ -18,7 +18,7 @@ export const DRAWER_ROWS = 4;
 export const DRAWERS = DRAWER_COLS * DRAWER_ROWS;
 
 /**
- * Two events per loop (fictional, "Temsili"); each with three similar past events picked from the
+ * Two events per loop (fictional); each with three similar past events picked from the
  * memory. `drawer` is where a card is kept; `result` is the fictional later return as a bar on the
  * code's tally (−1…1, no unit, no number is ever printed); `curve` is its little ink line.
  */

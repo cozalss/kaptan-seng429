@@ -11,7 +11,7 @@
 export const TAU = Math.PI * 2;
 
 /**
- * One loop of weighings (fictional, "Temsili"). `weight` is the size of the amount's weight,
+ * One loop of weighings (fictional). `weight` is the size of the amount's weight,
  * `rest` the beam's settled tilt (radians, right pan down). Values are illustrative only: the
  * plate shows a tilt, never a number.
  */

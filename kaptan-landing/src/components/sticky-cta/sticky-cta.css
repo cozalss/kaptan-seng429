@@ -1,4 +1,4 @@
-/* ---------- Mobile sticky bar: one small ink tab, "İçindekiler · Demo akışı" ---------- */
+/* ---------- Mobile sticky bar: one small ink tab, "İçindekiler · Altı adımda" ---------- */
 :root {
   /* 44px touch target + the 1.5px ink border top and bottom = 47px, under the 48px cap */
   --sticky-cta-height: 44px;

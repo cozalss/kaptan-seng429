@@ -88,7 +88,7 @@
   }
 }
 
-/* "Proje · İçindekiler · Demo": sentence case Inter, separated by middle dots like a running head. */
+/* "Proje · İçindekiler · Altı adımda": sentence case Inter, separated by middle dots like a running head. */
 .site-header__nav {
   display: flex;
   align-items: center;
@@ -200,7 +200,7 @@
     padding: 0 10px;
   }
 
-  /* Phones: logo, İçindekiler and the panel button; Demo akışı stays in the sticky tab. */
+  /* Phones: logo, İçindekiler and the panel button; Altı adımda stays in the sticky tab. */
   .site-header__nav .nav-link--demo {
     display: none;
   }

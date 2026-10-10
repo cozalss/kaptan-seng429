@@ -1,5 +1,5 @@
 // Kural Motoru — the plate's timeline, as pure functions of the clock. Punched evidence cards
-// (fictional, "Temsili") wait in a hopper; one at a time a card is fed under the reading bridge,
+// (fictional) wait in a hopper; one at a time a card is fed under the reading bridge,
 // whose pins drop onto its punch row; the slate writes the card's value against the written
 // threshold, the telegraph's needle swings to the decided gate (E1–E4, or "eşik altı"), and the
 // card runs along the rail to that gate and drops into its tray. Card No. 201 is fed twice in a

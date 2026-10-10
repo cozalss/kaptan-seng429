@@ -56,7 +56,7 @@ describe('Kural Motoru renderer', () => {
   it('carries its plate copy: a legend keyed a–c and a spoken description', () => {
     expect(scene.id).toBe('kural-motoru');
     expect(scene.legend.map((l) => l.key)).toEqual(['a', 'b', 'c']);
-    expect(scene.description).toMatch(/Temsili/);
+    expect(scene.description).toMatch(/^Canlı şema: /);
     expect(scene.description).toMatch(/%0,25/);
     expect(scene.description).toMatch(/aynı girdi, aynı karar/);
   });

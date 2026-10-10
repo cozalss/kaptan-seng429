@@ -4,7 +4,7 @@
 export const MAX_DPR = 1.5;
 export const MAX_DPR_COMPACT = 2;
 export const COMPACT_MAX_WIDTH = 767;
-/** Slips in the funnel, the approved one included (the counter always reads 350: these are temsili). */
+/** Slips in the funnel, the approved one included (the counter always reads 350: these are illustrative). */
 export const CARD_COUNT = Object.freeze({ wide: 300, compact: 140 });
 
 /**

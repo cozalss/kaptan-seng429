@@ -94,7 +94,6 @@ export const LEAK_FILTER = Object.freeze({ sessions: 5, risePct: 8 });
 export const BENCH_COPY = Object.freeze({
   result: 'Öneri adayı → filtreler → insan onayı. Otomatik emir yok.',
   issuer: 'ÖRNEK ENERJİ A.Ş.',
-  sample: 'Temsili',
   leakEffect: 'Öneri atlanır ya da yarıya indirilir.',
 });
 

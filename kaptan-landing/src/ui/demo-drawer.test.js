@@ -23,7 +23,7 @@ describe('createDemoDrawer', () => {
     const overlay = mountDrawer();
     expect(document.getElementById('demo-drawer').classList.contains('overlay--drawer')).toBe(true);
     expect(overlay.panel.getAttribute('aria-labelledby')).toBe('demo-drawer-title');
-    expect(mount.querySelector('.demo-drawer__title').textContent).toBe('Demo akışı');
+    expect(mount.querySelector('.demo-drawer__title').textContent).toBe('Altı adımda');
     expect(mount.querySelector('.demo-drawer__head').textContent).toContain('Final sunumunda gösterilecek');
     expect(mount.textContent).not.toMatch(/canlı/i);
   });

@@ -16,7 +16,7 @@ service-modal.js ── createAgentScene({ host, agentId, reduced }) ──► i
   modal keeps the host hidden, never an empty frame.
 - The runtime (`index.js`) builds the plate: the canvas and three HTML letters (`.agent-scene__pin`)
   in an `aria-hidden` stage, and a readable caption — the scene's one-sentence `summary` (visually
-  hidden), "Canlı şema · Temsili" and the a · b · c legend (13 px Inter, 16 px Bodoni keys). It loads the scene chunk and
+  hidden), "Canlı şema" and the a · b · c legend (13 px Inter, 16 px Bodoni keys). It loads the scene chunk and
   the fonts, sizes the canvas (DPR ≤ 2, ≤ 1.5 above 260 000 CSS px²), and runs a rAF loop **only**
   while started, on screen (IntersectionObserver) and the tab is visible. Its clock pauses with it
   and advances by at most 0.1 s a frame. `reduced: true` draws the scene's still once, never loops.
@@ -39,8 +39,8 @@ service-modal.js ── createAgentScene({ host, agentId, reduced }) ──► i
 export default {
   id: 'okuyucu',
   legend: [{ key: 'a', text: '…' }, { key: 'b', text: '…' }, { key: 'c', text: '…' }],
-  summary: 'Temsili canlı şema: …',       // ONE sentence, the plate's text alternative; facts only
-  description: 'Temsili canlı şema: …',   // the longer account (kept for docs and tests)
+  summary: 'Canlı şema: …',       // ONE sentence, the plate's text alternative; facts only
+  description: 'Canlı şema: …',   // the longer account (kept for docs and tests)
   stillElapsed: 12.3,                     // the frame printed for prefers-reduced-motion
   create({ canvas, keys }) {              // throw if canvas.getContext('2d') is null; keys: see above
     return { setSize(cssW, cssH, dpr) {}, render(elapsedSeconds) {}, dispose() {} };
@@ -75,8 +75,8 @@ The Pusula interlude (`src/components/compass/`) uses the same modules (re-expor
   the portrait's E4 bookmark ribbon). Stamps are indigo.
 - **Type:** Bodoni Moda Display for printed titles and the plate's letters (a · b · c), Inter for
   small print, mono **only** for rule codes (E1–E4, R01–R16). Sentence case, no tracked caps.
-- **Facts only** (KAPTAN-BRIEF.md §0). Every document is fictional and marked: issuers
-  "ÖRNEK … A.Ş.", "Temsili" on the paper and in the caption. No real company, price, signal or
+- **Facts only** (KAPTAN-BRIEF.md §0). Every document is fictional, shown plainly: issuers
+  "ÖRNEK … A.Ş.", no qualifier labels on the paper or in the caption. No real company, price, signal or
   logo; nothing that imitates KAP, Borsa İstanbul or SPK. Never show an order being placed — the
   AI reads and collects evidence, rules decide, a human approves.
 - **Motion with meaning.** One legible action per few seconds, calm pace, a seamless loop (state
