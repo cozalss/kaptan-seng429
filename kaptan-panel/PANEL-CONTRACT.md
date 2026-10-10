@@ -203,7 +203,7 @@ Mock saat **11.01.2027 Pazartesi 13:40 (İstanbul)**'dur ve gerçek zamanla iler
 | Senaryolar | `injectDemo("e3_contract" \| "redteam_injection" \| "restricted_r04" \| "loss_simulation")` | Akış → Senaryo, ⌘K, Ayarlar |
 | Demo saati | `advanceDemoClock(h)`, 0 < h ≤ 336 | Yalnızca kill reset saati; `RiskStatus.demo_clock_offset_h` |
 
-**Giriş.** Mock parolası `kaptan-demo`, `/login` sayfasında yazılıdır. e2e yardımcıları `e2e/helpers.ts` içindedir: `login`, `loginApi`, `trackErrors`.
+**Giriş.** Mock parolası `kaptan2026`, `/login` sayfasında yazılıdır. e2e yardımcıları `e2e/helpers.ts` içindedir: `login`, `loginApi`, `trackErrors`.
 
 ## 5. "Bitti" tanımı
 

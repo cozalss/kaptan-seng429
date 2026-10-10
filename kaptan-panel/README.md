@@ -12,9 +12,13 @@ Next.js 16 · React 19 · Tailwind 4 · zod · Vitest · Playwright.
 - **Denetim** (`/denetim`): hash zincirli defter düz bir zaman çizelgesi olarak; **Defteri doğrula** zinciri
   ekranda yürür ("Zincir sağlam." ya da "Kayıt #3.907'de zincir kırık.").
 - **⚙ Ayarlar** (`/ayarlar`): sınırlar (cümleler, iki imzalı değişiklik, sürümler), ekip ve "Kim ne yapabilir?",
-  demo (**Rehberli demo**, senaryolar, kurcalama testi, sıfırla), çıkış.
+  senaryolar (**Rehberli tur**, senaryo ekleme, kurcalama testi, sıfırla), çıkış.
+- **Giriş** (`/login`): tek giriş, dört kapı — Analist, Risk Sorumlusu, Yönetici, Denetçi. Her kapı o rolün kendi
+  ekranını açar (`/login/analist`, `/login/risk`, `/login/yonetici`, `/login/denetci`): rengi, çizimi, "Bu rolle neler
+  yaparsın" ve parola; oturum o rolle başlar. Kapıdan ekrana geçiş View Transitions ile (destekleyen tarayıcıda, azaltılmış
+  harekette kapalı). `?next=` kapıdan geçer.
 - **Roller**: üst çubukta "Kimin gözüyle bakıyorsun?" — Analist (okur, not ekler) · Risk Sorumlusu (onaylar ya da
-  reddeder; durdurur) · Yönetici (kullanıcılar, ayarlar, demo) · Denetçi (her şeyi görür, hiçbir şeyi değiştiremez).
+  reddeder; durdurur) · Yönetici (kullanıcılar, ayarlar, senaryolar) · Denetçi (her şeyi görür, hiçbir şeyi değiştiremez).
   Yetkisiz düğme kapalı durur ve nedenini söyler: "Bunu Risk Sorumlusu yapar."
 
 Ürün kuralları: **[SPEC.md](SPEC.md)**. Backend sözleşmesi: **[API.md](API.md)**.
@@ -23,14 +27,14 @@ Next.js 16 · React 19 · Tailwind 4 · zod · Vitest · Playwright.
 
 ```bash
 npm ci
-npm run dev        # http://localhost:3100 → / tanıtım sayfası, /login panel
+npm run dev        # http://localhost:3100 → / tanıtım sayfası, /login dört kapı
 ```
 
-Mock modunda parola sayfada yazar: `kaptan-demo`. Demo saati 11.01.2027 13:40'tan başlar.
+Mock modunda parola sayfada yazar: `kaptan2026`. Demo saati 11.01.2027 13:40'tan başlar.
 
 ## Demo akışı
 
-En kolayı: ⚙ → Ayarlar → **Rehberli demoyu başlat**. Alttaki çubuk 6 perdeyi (15 adım) → / ← ile yürür, rolü
+En kolayı: ⚙ → Ayarlar → **Rehberli turu başlat**. Alttaki çubuk 6 perdeyi (15 adım) → / ← ile yürür, rolü
 kendisi değiştirir, her adımda sunucuya tek cümle; elle basılan adımlarda yedek düğme vardır. Elle akış SPEC.md §5'te.
 
 ## Komutlar
@@ -51,14 +55,14 @@ kendisi değiştirir, her adımda sunucuya tek cümle; elle basılan adımlarda 
 
 | Değişken | Değer | Etki |
 |---|---|---|
-| `NEXT_PUBLIC_API_MODE` | `mock` (varsayılan, env gerekmez) | Tarayıcı içi deterministik mock API, `kaptan_mock_session` çerezi, "DEMO VERİSİ" şeridi, demo parolası, senaryolar ve "zamanı ileri sar" |
+| `NEXT_PUBLIC_API_MODE` | `mock` (varsayılan, env gerekmez) | Tarayıcı içi deterministik mock API, `kaptan_mock_session` çerezi, sayfada yazan parola, senaryolar ve "zamanı ileri sar" |
 | | `http` | Gerçek FastAPI: `/api/v1/*` Next rewrite ile `KAPTAN_API_ORIGIN`'e gider (refresh çerezi birinci taraf kalır); JWT bellekte + `__Host-kaptan_rt` refresh çerezi; SSE bileti. Parola API'de denetlenir; demo parolası görünmez |
 | `KAPTAN_API_ORIGIN` | ör. `https://api.example` | Yalnızca http modunda |
 | `NEXT_PUBLIC_DEMO_MODE` | `true` | http modunda demo enjeksiyonunu açar (backend `DEMO_MODE` ile birlikte) |
 
 `NEXT_PUBLIC_*` değişkenleri derleme anında gömülür: modu değiştirmek yeniden derleme ister.
 
-Mock saat **11.01.2027 Pazartesi 13:40 (İstanbul)** ile başlar ve gerçek zamanla ilerler. Durum `localStorage`'da tutulur; ⚙ → Ayarlar → "Demo verisini sıfırla" (Yönetici) temizler. Seçilen rol oturum çerezindedir; giriş Risk Sorumlusu olarak başlar.
+Mock saat **11.01.2027 Pazartesi 13:40 (İstanbul)** ile başlar ve gerçek zamanla ilerler. Durum `localStorage`'da tutulur; ⚙ → Ayarlar → "Verileri sıfırla" (Yönetici) temizler. Seçilen rol oturum çerezindedir; giriş, girilen kapının rolüyle başlar.
 
 ## Vercel
 

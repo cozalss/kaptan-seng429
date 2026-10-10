@@ -35,7 +35,7 @@ describe("day fixture", () => {
 describe("issuers", () => {
   it("are all obviously fictional", () => {
     for (const i of ISSUERS) {
-      expect(i.name).toMatch(/^(ÖRNEK|DEMO|TEMSİLİ|KURGU|MİSAL|FARAZİ) /);
+      expect(i.name).toMatch(/^(ÖRNEK|DOĞU|TOROS|KORU|MİSAL|FARAZİ) /);
       expect(i.ticker).toMatch(/^(ORN|DMO|TMS|KRG|MSL|FRZ)/);
     }
   });

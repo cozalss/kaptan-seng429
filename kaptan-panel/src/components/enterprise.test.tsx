@@ -145,9 +145,9 @@ describe("Ayarlar · ekip ve demo", () => {
     await u.click(within(tamper).getByRole("button", { name: "Kurcalamayı geri al" }));
     expect(await within(tamper).findByText("Şu an: defter temiz")).toBeInTheDocument();
 
-    await u.click(screen.getByRole("button", { name: "Demo verisini sıfırla" }));
+    await u.click(screen.getByRole("button", { name: "Verileri sıfırla" }));
     await u.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Sıfırla" }));
-    expect(await screen.findByText("Demo verisi sıfırlandı.")).toBeInTheDocument();
+    expect(await screen.findByText("Veriler sıfırlandı.")).toBeInTheDocument();
     expect(db.snapshot.injections).toHaveLength(0);
 
     await u.click(screen.getByRole("button", { name: "Çıkış" }));
@@ -159,7 +159,7 @@ describe("Ayarlar · ekip ve demo", () => {
     renderWithDesk(<SettingsScreen />, new MockDb(null), "analyst");
     expect(await screen.findByTestId("denied-users.view")).toHaveTextContent("Bunu Yönetici yapar.");
     expect(screen.getByRole("button", { name: "Senaryo ekle: Gizli talimat" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Demo verisini sıfırla" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Verileri sıfırla" })).toBeDisabled();
     expect(await screen.findByTestId("denied-limits.propose")).toBeInTheDocument();
   });
 });
@@ -180,7 +180,7 @@ describe("rol seçici", () => {
     expect(items.map((i) => i.textContent)).toEqual([
       "Analist · Üye 2Okur, not ekler.",
       "Risk Sorumlusu · Üye 3Onaylar ya da reddeder; durdurur.",
-      "Yönetici · Üye 1Kullanıcılar, ayarlar, demo.",
+      "Yönetici · Üye 1Kullanıcılar, ayarlar, senaryolar.",
       "Denetçi · DenetçiHer şeyi görür, hiçbir şeyi değiştiremez (jüri için).",
     ]);
     await u.click(items[3]!);
@@ -200,7 +200,7 @@ describe("rehberli demo", () => {
       new MockDb(null),
       "risk_officer",
     );
-    await u.click(await screen.findByRole("button", { name: "Rehberli demoyu başlat" }));
+    await u.click(await screen.findByRole("button", { name: "Rehberli turu başlat" }));
     const bar = await screen.findByTestId("guided-demo");
     expect(within(bar).getByTestId("demo-step-title")).toHaveTextContent(DEMO_STEPS[0]!.title);
     expect(bar).toHaveTextContent("Perde 1/6");
@@ -214,7 +214,7 @@ describe("rehberli demo", () => {
     expect(demoStore.get().index).toBe(0);
     await u.click(within(bar).getByRole("button", { name: "Sonraki adım" }));
     expect(demoStore.get().index).toBe(1);
-    await u.click(within(bar).getByRole("button", { name: "Rehberli demoyu kapat" }));
+    await u.click(within(bar).getByRole("button", { name: "Rehberli turu kapat" }));
     expect(screen.queryByTestId("guided-demo")).toBeNull();
   });
 
@@ -240,7 +240,7 @@ describe("rehberli demo", () => {
     await waitFor(() => expect(db.snapshot.limitVersions.find((v) => v.version === 2)?.status).toBe("active"));
 
     act(() => goToStep(DEMO_STEPS.length - 1));
-    await u.click(await within(bar).findByRole("button", { name: "Demoyu bitir" }));
+    await u.click(await within(bar).findByRole("button", { name: "Turu bitir" }));
     expect(demoStore.get().active).toBe(false);
   });
 });

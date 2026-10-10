@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { HOME, PUBLIC_PATHS } from "@/lib/nav";
+import { HOME, isPublicPath } from "@/lib/nav";
 import { decodeSession, SESSION_COOKIE } from "@/lib/auth/session";
 
 /**
  * Route guard (Next 16 `proxy`, formerly middleware). Personal mode: one user, no roles —
  * the only question is "signed in or not".
  * mock: the session cookie → signed-out users go to /login?next=…; a signed-in user who opens
- *       /login goes to the panel home (/bugun).
+ *       /login or a role door (/login/<rol>) goes to the panel home (/bugun).
  * http: only the presence of the refresh cookie is checked here; the API owns the session.
  * "/" is the public landing (rewritten to the static /index.html) and its files are excluded
  * by the matcher below, so the landing never needs a session.
@@ -17,7 +17,7 @@ const REFRESH_COOKIE = "__Host-kaptan_rt";
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   if (pathname === "/") return NextResponse.next();
-  const isPublic = PUBLIC_PATHS.includes(pathname);
+  const isPublic = isPublicPath(pathname);
   const signedIn = IS_HTTP ? request.cookies.has(REFRESH_COOKIE) : decodeSession(request.cookies.get(SESSION_COOKIE)?.value) !== null;
 
   if (!signedIn) return isPublic ? NextResponse.next() : redirectToLogin(request, pathname + search);

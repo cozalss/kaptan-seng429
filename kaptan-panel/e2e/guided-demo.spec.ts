@@ -14,12 +14,12 @@ test.beforeEach(async ({ page }) => {
 
 const role = (bar: Locator, label: string) => expect(bar).toContainText(`Rol: ${label}`, { timeout: 15_000 });
 
-test("Rehberli demo: 6 perde, 15 adım", async ({ page }) => {
+test("Rehberli tur: 6 perde, 15 adım", async ({ page }) => {
   test.setTimeout(240_000);
   const errors = trackErrors(page);
   await login(page);
   await openSettings(page);
-  await page.getByRole("button", { name: "Rehberli demoyu başlat" }).click();
+  await page.getByRole("button", { name: "Rehberli turu başlat" }).click();
   const bar = page.getByTestId("guided-demo");
   const title = bar.getByTestId("demo-step-title");
   const next = async (expected: string) => {
@@ -88,7 +88,7 @@ test("Rehberli demo: 6 perde, 15 adım", async ({ page }) => {
   await page.keyboard.press("ArrowLeft");
   await expect(title).toHaveText("Denetçi gözüyle: sonuçlar");
   await page.keyboard.press("ArrowRight");
-  await bar.getByRole("button", { name: "Demoyu bitir" }).click();
+  await bar.getByRole("button", { name: "Turu bitir" }).click();
   await expect(bar).toHaveCount(0);
   expect(errors).toEqual([]);
 });

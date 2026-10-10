@@ -51,7 +51,7 @@ const PHRASES: Readonly<Record<string, Phrase>> = {
   "note.added": (_e, who) => `${who} not ekledi.`,
   "audit.verified": (e, who) => (e.actor.startsWith("system:") ? "Gece doğrulaması defteri baştan sona yürüdü." : `${who} defteri doğruladı.`),
   "brief.generated": () => "Sabah özeti hazırlandı.",
-  "demo.injected": (e) => `Demo senaryosu eklendi: ${SCENARIO_TR[str(e.payload.scenario) ?? e.entity_id] ?? "senaryo"}.`,
+  "demo.injected": (e) => `Senaryo eklendi: ${SCENARIO_TR[str(e.payload.scenario) ?? e.entity_id] ?? "senaryo"}.`,
 };
 
 export function auditSentence(e: AuditEntry): string {

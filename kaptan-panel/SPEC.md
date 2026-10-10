@@ -78,7 +78,7 @@ sahnede olması gerekeni yapar (senaryo ekle, defteri doğrula). Elle basılan a
 vardır. Her adımda sunucuya tek cümle. Adımlar `src/components/demo/demo-steps.ts`.
 
 ## 3. Oturum
-- **Mock.** `POST /api/mock/session {passphrase}` → `kaptan_mock_session` çerezi (8 saat, rol içinde). Parola `kaptan-demo`. `PUT {role}` rolü değiştirir. Demo içindir, güvenlik sınırı değildir.
+- **Mock.** `POST /api/mock/session {passphrase}` → `kaptan_mock_session` çerezi (8 saat, rol içinde). Parola `kaptan2026`. `PUT {role}` rolü değiştirir. Demo içindir, güvenlik sınırı değildir.
 - **http.** Tek parola; rol `POST /auth/role` ile seçilir (API.md §2).
 - **Proxy** (`src/proxy.ts`). Panel rotaları oturum ister; `/`, açılış sayfasının dosyaları ve `/crew/*` açıktır.
 

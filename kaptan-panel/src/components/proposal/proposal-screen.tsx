@@ -52,7 +52,7 @@ export function ProposalScreen({ proposalId }: { proposalId: string }) {
       <div className="space-y-6">
         <BigSentence>Bu öneri bulunamadı.</BigSentence>
         <p className="text-[17px] text-ink-soft">
-          Süresi dolmuş ya da demo verisi sıfırlanmış olabilir.{" "}
+          Süresi dolmuş ya da veriler sıfırlanmış olabilir.{" "}
           <Link href={ROUTES.bugun} className="font-medium text-ink underline underline-offset-4">
             Bugün’e dön
           </Link>
@@ -80,7 +80,6 @@ export function ProposalScreen({ proposalId }: { proposalId: string }) {
           <span className="font-medium tracking-[0.03em] text-ink">{shortName(card.company_name)}</span>
           <CodeTag>{card.ticker}</CodeTag>
           <CodeTag>{card.event_type}</CodeTag>
-          {card.is_fixture ? <span className="text-[12px] font-medium text-wash">DEMO FİKSTÜRÜ</span> : null}
         </Kicker>
         <BigSentence id="oneri-baslik">{plainEvent(card)}</BigSentence>
         <CrewPath decided={status !== "pending"} />

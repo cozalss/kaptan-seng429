@@ -42,7 +42,7 @@ describe("audit sentences", () => {
     expect(auditSentence(entry({ actor: "user:uye-3", action: "limits.approved" }))).toMatch(/\(2\/2\)/);
     expect(auditSentence(entry({ actor: "user:uye-3", action: "limits.rejected" }))).toMatch(/reddetti/);
     expect(auditSentence(entry({ actor: "agent:skeptic", action: "agent.output" }))).toBe("Şüpheci notunu yazdı.");
-    expect(auditSentence(entry({ actor: "user:uye-1", action: "demo.injected", payload: { scenario: "loss_simulation" } }))).toBe("Demo senaryosu eklendi: zarar simülasyonu.");
+    expect(auditSentence(entry({ actor: "user:uye-1", action: "demo.injected", payload: { scenario: "loss_simulation" } }))).toBe("Senaryo eklendi: zarar simülasyonu.");
     expect(auditSentence(entry({ actor: "system:nightly_verify", action: "audit.verified" }))).toMatch(/Gece doğrulaması/);
     expect(auditSentence(entry({ actor: "user:uye-2", action: "audit.verified" }))).toBe("Analist defteri doğruladı.");
     expect(auditSentence(entry({ action: "order.filled", payload: { qty: 620 } }))).toBe("Paper emir doldu: 620 lot.");

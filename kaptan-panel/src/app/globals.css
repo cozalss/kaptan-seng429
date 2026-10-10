@@ -30,6 +30,14 @@
   --brand: #0e3a66; /* wordmark, focus ring, ::selection */
   --on-dark: #fbfaf6;
 
+  /* Role tones — one ink per door (/login/<rol>) and the top-bar role chip. Dark enough to be
+     type on paper and to carry on-dark type (all ≥ 6.4:1 both ways). The panel is light-only
+     (color-scheme above, same as the landing), so there is no dark set to keep in step. */
+  --role-analyst: #1d5c58; /* verdigris: the reader (6.8:1 on paper) */
+  --role-risk: #7e4a10; /* umber: the signature's ink (6.5:1) */
+  --role-admin: #5a3368; /* plum: the one who sets the desk (8.8:1) */
+  --role-auditor: #3a4750; /* slate: sees all, touches nothing (8.5:1) */
+
   /* Ink marks */
   --ink-line: 1.5px;
   --shadow-ink: 3px 3px 0 var(--ink);
@@ -149,6 +157,27 @@
   .paper-grain {
     background-image: radial-gradient(rgb(18 19 24 / 0.035) 0.6px, transparent 0.7px);
     background-size: 3px 3px;
+  }
+  /* Role tone: sets --tone (ink) and --tone-wash (a page-sized tint light enough that muted
+     meta text keeps AA on it) for everything inside. */
+  .tone-analyst {
+    --tone: var(--role-analyst);
+  }
+  .tone-risk_officer {
+    --tone: var(--role-risk);
+  }
+  .tone-admin {
+    --tone: var(--role-admin);
+  }
+  .tone-auditor {
+    --tone: var(--role-auditor);
+  }
+  .tone-analyst,
+  .tone-risk_officer,
+  .tone-admin,
+  .tone-auditor {
+    --tone-wash: color-mix(in srgb, var(--tone) 7%, var(--paper));
+    --tone-tint: color-mix(in srgb, var(--tone) 14%, transparent);
   }
   .sr-only-focusable:not(:focus) {
     position: absolute;

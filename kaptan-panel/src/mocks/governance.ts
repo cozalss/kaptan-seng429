@@ -24,9 +24,9 @@ export const SEED_LIMIT_VERSIONS: readonly LimitVersion[] = [
 
 /** R13: two synced restrictions plus one of your own conflicts (12 §7/4). */
 export const SEED_RESTRICTED: readonly RestrictedSecurity[] = [
-  { id: "rs-1", ticker: "TMSLJ", kind: "vbts_brut_takas", source_ref: "VBTS tedbir listesi (temsili)", added_at: istanbulIso("2027-01-07", "18:20"), added_by: "system:restrictions_sync" },
-  { id: "rs-2", ticker: "KRGTK", kind: "team_insider", source_ref: "Kendi beyanım: yakın bir tanıdığım çalışıyor (temsili)", added_at: "2026-10-20T09:00:00.000Z", added_by: "user:uye-1" },
-  { id: "rs-3", ticker: "FRZMB", kind: "spk_tedbir", source_ref: "SPK tedbir kararı (temsili)", added_at: istanbulIso("2027-01-04", "19:05"), added_by: "system:restrictions_sync" },
+  { id: "rs-1", ticker: "TMSLJ", kind: "vbts_brut_takas", source_ref: "VBTS tedbir listesi", added_at: istanbulIso("2027-01-07", "18:20"), added_by: "system:restrictions_sync" },
+  { id: "rs-2", ticker: "KRGTK", kind: "team_insider", source_ref: "Kendi beyanım: yakın bir tanıdığım çalışıyor", added_at: "2026-10-20T09:00:00.000Z", added_by: "user:uye-1" },
+  { id: "rs-3", ticker: "FRZMB", kind: "spk_tedbir", source_ref: "SPK tedbir kararı", added_at: istanbulIso("2027-01-04", "19:05"), added_by: "system:restrictions_sync" },
 ];
 
 /** Your starting watchlist (Köprü and the brief list these first). */
@@ -77,7 +77,7 @@ export const DEMO_ORDER_TICKET: OrderTicket = {
   side: "buy",
   ticker: "ORNEK",
   company_name: "ÖRNEK ENERJİ A.Ş.",
-  market: "Ana Pazar (temsili)",
+  market: "Ana Pazar",
   order_type: "limit",
   session_tr: "SÜREKLİ İŞLEM (10:00–18:00) · GÜNLÜK",
   qty: 620,
@@ -87,7 +87,7 @@ export const DEMO_ORDER_TICKET: OrderTicket = {
   est_notional_try: 30_008,
   account_equity_try: 350_000,
   event_line_tr: "E3 — Yeni iş ilişkisi (bağlayıcı hizmet sözleşmesi)",
-  kap_line_tr: "idx 1651901, 11.01.2027 13:41 “Özel Durum Açıklaması (Genel)” · Temsili",
+  kap_line_tr: "idx 1651901, 11.01.2027 13:41 “Özel Durum Açıklaması (Genel)”",
   materiality_line_tr: "Yıllıklandırılmış tutar yıllık gelirin %18'i (eşik %10) ✓",
   leakage_line_tr: "Son 5 seans +%4,1 (eşik %8) ✓",
   evidence_line_tr: "Benzer 23 olay · ort. 5 günlük anormal getiri +%1,4 · isabet %61 (örnek değer)",

@@ -29,8 +29,15 @@ export const NAV_ITEMS: ReadonlyArray<{ href: string; label: string }> = [
   { href: ROUTES.denetim, label: "Denetim" },
 ];
 
-/** Paths that never need a session. "/" (the landing) and static files are handled by the proxy matcher. */
+/**
+ * Paths that never need a session: /login (the four doors) and every /login/<rol> screen.
+ * "/" (the landing) and static files are handled by the proxy matcher.
+ */
 export const PUBLIC_PATHS: readonly string[] = [ROUTES.login];
+
+export function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 /** Every older path → the closest of the three screens (permanent: false while the IA settles). */
 export const LEGACY_REDIRECTS: ReadonlyArray<{ source: string; destination: string }> = [
@@ -56,6 +63,6 @@ export function activeNavHref(pathname: string): string | null {
 /** Only same-site panel paths are honoured for ?next= (no open redirect; "/" is the landing). */
 export function safeNext(next: string | null | undefined): string | null {
   if (!next || next === "/" || !next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return null;
-  if (PUBLIC_PATHS.some((p) => next === p || next.startsWith(`${p}?`))) return null;
+  if (isPublicPath(next.split(/[?#]/)[0] ?? next)) return null;
   return next;
 }

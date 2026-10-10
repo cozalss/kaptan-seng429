@@ -4,7 +4,12 @@ import { loginApi } from "./helpers";
 
 /** WCAG 2.1 A/AA (axe-core) on every screen, after its data has loaded, at both widths. */
 const SCREENS: ReadonlyArray<{ path: string; signedIn: boolean; ready: (p: Page) => Promise<void> }> = [
-  { path: "/login", signedIn: false, ready: (p) => expect(p.getByLabel("Parola")).toBeVisible() },
+  { path: "/login", signedIn: false, ready: (p) => expect(p.getByRole("list", { name: "Roller" })).toBeVisible() },
+  ...["analist", "risk", "yonetici", "denetci"].map((slug) => ({
+    path: `/login/${slug}`,
+    signedIn: false,
+    ready: (p: Page) => expect(p.getByLabel("Parola")).toBeVisible(),
+  })),
   { path: "/bugun", signedIn: true, ready: (p) => expect(p.getByRole("list", { name: "Bekleyen öneriler" })).toBeVisible() },
   { path: "/oneri/prop-day-e1-krgcl", signedIn: true, ready: (p) => expect(p.getByRole("list", { name: "Tayfanın notları" })).toBeVisible() },
   { path: "/portfoy", signedIn: true, ready: (p) => expect(p.getByRole("list", { name: "Elindekiler" })).toBeVisible() },

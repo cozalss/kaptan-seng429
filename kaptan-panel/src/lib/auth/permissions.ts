@@ -49,7 +49,7 @@ export const ACTION_LABEL: Readonly<Record<Action, string>> = {
   "limits.decide": "Sınır değişikliğini onaylar",
   "audit.verify": "Defteri doğrular",
   "users.view": "Kullanıcıları görür",
-  "demo.run": "Demoyu yönetir",
+  "demo.run": "Senaryoları yönetir",
 };
 
 /** The plain reason a control is closed: "Bunu Risk Sorumlusu yapar." */

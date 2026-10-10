@@ -14,7 +14,7 @@ type Partial2 = Omit<RunSpec, "disclosure_index" | "publishedAtIso" | "headline_
   Partial<Pick<RunSpec, "status" | "outcome" | "strategy_version">> & { slot: number; headline: string; body: string; publishedAtIso?: string };
 
 function text(ticker: string, subject: string, body: string): string {
-  return `${issuer(ticker).name} — ${subject} · Temsili\n\n${body}\n\nBu metin KAPtan fikstürüdür; gerçek bir şirkete veya bildirime ait değildir.`;
+  return `${issuer(ticker).name} — ${subject}\n\n${body}\n\nBu metin KAPtan fikstürüdür; gerçek bir şirkete veya bildirime ait değildir.`;
 }
 
 function mk(p: Partial2): RunSpec {
@@ -233,7 +233,7 @@ function hist(slotId: string, ticker: string, event: "E1" | "E2" | "E4", date: s
       slot: 0, run_id: `run-hist-${slotId}`, ticker, event, classifiedAs: event, classifierConfidence: 0.96, method: "subject_map",
       route: event, subject, kind: "propose", publishedAtIso: istanbulIso(date, "08:20"),
       headline: event === "E1" ? "Geri alım eşiği aşıldı" : event === "E2" ? "Yönetici borsadan pay aldı" : "Beklenti üstü sonuç",
-      body: "Geçmiş tarihli temsili bildirim (ileri dönük paper dönemi).",
+      body: "Geçmiş tarihli bildirim (ileri dönük paper dönemi).",
       sub_type: event === "E1" ? "buyback_execution" : event === "E2" ? "insider_or_major_holder_trade" : "financial_results",
       sub_type_tr: event === "E1" ? "Pay geri alım işlemi" : event === "E2" ? "Yönetici pay alımı" : "Finansal sonuç",
       reader: event === "E1" ? e1Reader("nominal değerli pay", 0.003, 3_000_000) : event === "E2" ? e2Reader("pay satın almıştır", 2_000_000) : e4Reader("kâr artmıştır"),

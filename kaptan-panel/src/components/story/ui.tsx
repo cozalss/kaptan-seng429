@@ -48,7 +48,7 @@ export function CodeTag({ children, title }: { children: ReactNode; title?: stri
 
 export function SampleTag({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-1 text-[12px] whitespace-nowrap text-muted", className)} title="Demo verisi: gerçek sonuç değil">
+    <span className={cn("inline-flex items-center gap-1 text-[12px] whitespace-nowrap text-muted", className)} title="Örnek veri: gerçek sonuç değil">
       <span aria-hidden className="inline-block size-[5px] rotate-45 border border-muted" />
       örnek değer
     </span>

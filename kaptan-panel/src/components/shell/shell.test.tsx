@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/toast";
 import { renderWithDesk } from "../harness.test-utils";
 import { nav } from "../nav.test-utils";
 import { AppShell } from "./app-shell";
-import { DemoRibbon, RiskBanner } from "./banners";
+import { RiskBanner } from "./banners";
 import { TopBar } from "./top-bar";
 import { logout } from "./session-actions";
 
@@ -50,11 +50,6 @@ describe("top bar", () => {
 });
 
 describe("banners", () => {
-  it("prints the short demo ribbon", () => {
-    render(<DemoRibbon />);
-    expect(screen.getByText("DEMO VERİSİ")).toBeInTheDocument();
-  });
-
   it("says nothing when all is normal, and north red once stopped", async () => {
     const { db } = renderWithDesk(<RiskBanner />);
     await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
@@ -84,7 +79,6 @@ describe("app shell", () => {
       </>,
     );
     expect(screen.getByRole("main")).toHaveTextContent("ekran");
-    expect(screen.getByText("DEMO VERİSİ")).toBeInTheDocument();
     expect(screen.getByText(/yatırım tavsiyesi değildir/)).toBeInTheDocument();
     await waitFor(() => expect(db.bus.listenerCount("desk")).toBeGreaterThan(0));
     act(() => {

@@ -9,7 +9,7 @@ export function Disclaimer({ className }: { className?: string }) {
     <footer className={cn("border-t border-hairline pt-4 pb-6 text-meta leading-[18px] text-muted", className)}>
       <p className="max-w-[920px]">{DISCLAIMER_TR}</p>
       <p className="mt-1.5">
-        SENG 429 · Çankaya Üniversitesi · Güz 2026 · Sanal para (SimBIST paper) · Şirket adları kurgusaldır (Temsili).
+        SENG 429 · Çankaya Üniversitesi · Güz 2026
       </p>
     </footer>
   );

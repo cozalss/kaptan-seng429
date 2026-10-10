@@ -30,7 +30,7 @@ export function SettingsScreen() {
           </a>
           {DEMO_MODE ? (
             <a href="#demo" className="text-ink-soft underline decoration-rule-soft underline-offset-4 hover:text-ink">
-              Demo
+              Senaryolar
             </a>
           ) : null}
         </nav>

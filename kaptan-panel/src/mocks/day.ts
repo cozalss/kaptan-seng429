@@ -37,7 +37,7 @@ const ARCHIVE: readonly Template[] = [
   { subject: "Faaliyet Raporu", route: "archive_only", cls: "FR", summary: "Ara dönem faaliyet raporu." },
   { subject: "Sermaye Artırımı - Bedelsiz", route: "avoid:bonus_issue", cls: "ODA", summary: "Bedelsiz sermaye artırımı için SPK'ya başvuru." },
   { subject: "Sermaye Artırımı - Bedelli", route: "avoid:dilutive_rights", cls: "ODA", summary: "Bedelli sermaye artırımı kararı." },
-  { subject: "Borsa İstanbul Tedbir Duyurusu", route: "avoid:measure", cls: "DUY", summary: "Pay için tedbir uygulandığı duyuruldu (temsili)." },
+  { subject: "Borsa İstanbul Tedbir Duyurusu", route: "avoid:measure", cls: "DUY", summary: "Pay için tedbir uygulandığı duyuruldu." },
   { subject: "Özel Durum Açıklaması (Genel)", route: "archive_only", cls: "ODA", summary: "Şube açılışı hakkında bilgilendirme." },
   { subject: "Derecelendirme", route: "archive_only", cls: "ODA", summary: "Kredi derecelendirme notu teyit edildi." },
 ];

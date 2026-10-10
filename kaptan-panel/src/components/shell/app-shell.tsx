@@ -2,17 +2,17 @@
 
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { DEMO_MODE, IS_MOCK } from "@/lib/api/config";
+import { DEMO_MODE } from "@/lib/api/config";
 import { ApiProvider } from "@/lib/api/react";
 import { SessionProvider, type SessionUser } from "@/lib/auth/session-context";
 import { Disclaimer } from "@/components/brand/disclaimer";
-import { DemoRibbon, RiskBanner } from "./banners";
+import { RiskBanner } from "./banners";
 import { DeskStateProvider, ResetBoundary } from "./desk-state";
 import { TopBar } from "./top-bar";
 import { GuidedDemo } from "@/components/demo/guided-demo";
 
 /**
- * The panel's frame: a thin demo ribbon, a quiet top bar (KAPtan · Bugün · Portföy · Denetim ·
+ * The panel's frame: a quiet top bar (KAPtan · Bugün · Portföy · Denetim ·
  * rol · ⚙), one calm column (~720 px) for the screen, the required disclaimer under it, and
  * the guided-demo bar when it is running.
  */
@@ -25,7 +25,6 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
           <a href="#icerik" className="sr-only-focusable fixed top-2 left-2 z-[70] border-[1.5px] border-ink bg-panel px-3 py-2 text-ui font-medium">
             İçeriğe geç
           </a>
-          {IS_MOCK ? <DemoRibbon /> : null}
           <TopBar />
           <RiskBanner />
           <main id="icerik" tabIndex={-1} className="mx-auto w-full max-w-[752px] px-4 pt-10 pb-16 outline-none sm:px-6 sm:pt-14">

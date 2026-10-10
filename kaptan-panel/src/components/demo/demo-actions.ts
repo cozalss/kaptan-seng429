@@ -29,7 +29,7 @@ export async function runAction(api: KaptanApi, a: DemoAction, env: ActionEnv = 
   switch (a.kind) {
     case "reset":
       await api.resetDemo();
-      return "Demo günü baştan başladı.";
+      return "Gün baştan başladı.";
     case "inject":
       await api.injectDemo(a.scenario);
       return null;
@@ -48,7 +48,7 @@ export async function runAction(api: KaptanApi, a: DemoAction, env: ActionEnv = 
       await until(async () => (await api.listApprovals("pending")).some((c) => c.proposal_id === a.proposal), patience, 400);
       const card = (await api.listApprovals("all")).find((c) => c.proposal_id === a.proposal);
       if (!card || card.status !== "pending") return null;
-      await api.decideApproval(a.proposal, { decision: "approve", approved_notional_try: null, comment: "Rehberli demo: kanıt, şüpheci ve kurallar okundu." });
+      await api.decideApproval(a.proposal, { decision: "approve", approved_notional_try: null, comment: "Rehberli tur: kanıt, şüpheci ve kurallar okundu." });
       return "İmzalandı (2/2).";
     }
     case "reset_start": {

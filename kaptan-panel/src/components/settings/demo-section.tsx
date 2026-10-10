@@ -56,18 +56,18 @@ export function DemoSection() {
     <section aria-labelledby="demo-baslik" id="demo" className="scroll-mt-28 space-y-8">
       <div className="space-y-2">
         <h2 id="demo-baslik" className={sectionTitle}>
-          Demo
+          Senaryolar
         </h2>
-        <p className="max-w-[600px] text-[16px] leading-[25px] text-ink-soft">Her şey kurgusal. Demo verisini değiştiren düğmeler Yönetici’nindir.</p>
+        <p className="max-w-[600px] text-[16px] leading-[25px] text-ink-soft">Veriyi değiştiren düğmeler Yönetici’nindir.</p>
       </div>
 
       <div className="space-y-3 border-[1.5px] border-ink bg-panel px-5 py-5 shadow-ink">
-        <p className="font-display text-[26px] leading-tight text-ink">Rehberli demo</p>
+        <p className="font-display text-[26px] leading-tight text-ink">Rehberli tur</p>
         <p className="max-w-[560px] text-[15px] leading-[23px] text-ink-soft">
           Final sunumunun altı perdesini adım adım yürür: alttaki çubukta → ve ← ile ilerlersin, gerektiğinde rol kendiliğinden değişir, her adımda sunucuya bir cümle.
         </p>
         <Button variant="primary" size="lg" onClick={() => startGuidedDemo()}>
-          Rehberli demoyu başlat
+          Rehberli turu başlat
         </Button>
       </div>
 
@@ -130,19 +130,19 @@ export function DemoSection() {
       </div>
 
       <div className="flex items-center justify-between gap-5 border-t border-hairline pt-5">
-        <p className="text-[14px] leading-[21px] text-muted">Her şeyi demo gününün başına döndürür.</p>
+        <p className="text-[14px] leading-[21px] text-muted">Her şeyi günün başına döndürür.</p>
         <button
           type="button"
           disabled={!mayRun}
           className="shrink-0 text-[15px] text-ink underline decoration-rule-soft underline-offset-4 hover:decoration-ink disabled:opacity-45"
           onClick={() => setConfirmReset(true)}
         >
-          Demo verisini sıfırla
+          Verileri sıfırla
         </button>
       </div>
 
       <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
-        <DialogContent title="Demo verisini sıfırla" description="Eklenen senaryolar, imzalar, fişler ve sınır değişiklikleri silinir; gün baştan başlar." size="sm">
+        <DialogContent title="Verileri sıfırla" description="Eklenen senaryolar, imzalar, fişler ve sınır değişiklikleri silinir; gün baştan başlar." size="sm">
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setConfirmReset(false)}>
               Vazgeç
@@ -151,7 +151,7 @@ export function DemoSection() {
               variant="primary"
               onClick={async () => {
                 setConfirmReset(false);
-                await act("reset", () => api.resetDemo(), "Demo verisi sıfırlandı.");
+                await act("reset", () => api.resetDemo(), "Veriler sıfırlandı.");
                 desk.resetView();
               }}
             >

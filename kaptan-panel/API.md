@@ -29,13 +29,19 @@ ekipten bir kişiye bağlıdır (`TEAM`, `src/lib/domain/user.ts`): aynı kişi 
 
 | Yöntem | Yol | İstek | Yanıt |
 |---|---|---|---|
-| POST | `/auth/login` | `{"passphrase":"…"}` | `200 {"access_token":"<jwt>","user":Me}` + `Set-Cookie: __Host-kaptan_rt=…; HttpOnly; Secure; SameSite=Strict; Path=/`. İlk rol `risk_officer` |
+| POST | `/auth/login` | `{"passphrase":"…","role"?:"analyst\|risk_officer\|admin\|auditor"}` | `200 {"access_token":"<jwt>","user":Me}` + `Set-Cookie: __Host-kaptan_rt=…; HttpOnly; Secure; SameSite=Strict; Path=/`. İlk rol: aşağıdaki "Kapıdan istenen rol" |
 | POST | `/auth/role` | `{"role":"analyst\|risk_officer\|admin\|auditor"}` | `200 {"access_token":"<jwt>","user":Me}` (yeni rol; refresh ailesi rolü hatırlar) |
 | POST | `/auth/refresh` | başlık `X-KAPtan-CSRF: 1`, çerez | `200 {"access_token":"<jwt>"}` |
 | POST | `/auth/logout` | çerez | `204` |
 | GET | `/me` | Bearer | `200 Me` = `{"id":"uye-3","display_name":"Üye 3","role":"risk_officer"}` |
 
 Access JWT yalnızca bellekte; `401` → bir kez `/auth/refresh`, olmazsa `/login`. Yanlış parola: `401`.
+
+**Kapıdan istenen rol.** `/login` dört kapı gösterir; her kapı kendi giriş ekranıdır (`/login/analist`, `/login/risk`,
+`/login/yonetici`, `/login/denetci`). Panel `POST /auth/login` gövdesine kapının rolünü `role` olarak ekler. Bu bir
+**istek**tir, yetki değil: rolü backend belirler (ör. kullanıcıya açık değilse yok sayar ya da `risk_officer` verir) ve
+panel yanıttaki `user.role`'ü kullanır. Bilinmeyen bir rol değeri `400` alır. `role` yoksa ilk rol `risk_officer`.
+Mock modunda `/api/mock/session` aynı gövdeyi alır ve oturumu doğrudan o rolle açar.
 
 ## 3. Uç noktalar
 

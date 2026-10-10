@@ -168,7 +168,7 @@ Kaynak: [09 §5] tablosu ve `ROLE_PERMS`; uç nokta rolleri [04 §11]. Panelde `
 
 **Görevler ayrılığı** [09 §5]: (a) öneren onaylayamaz; (b) reset başlatan onaylayamaz; (c) Admin öneri onaylayamaz; (d) Auditor başka rolle birleşemez. **Dört göz akışları** (UI): limit önerisi → farklı kullanıcı onayı; kill switch reset "1/2 başlatıldı (Admin)" → "2/2 onaylandı (Risk Officer)" [11 Adım 4, §9 Ç-8].
 
-**Seed hesaplar (yalnızca mock)** [09 §5 önerisi]: `admin@kaptan.demo` (Admin, Burak), `risk@kaptan.demo` (Risk Officer, Zeynep), `analist@kaptan.demo` (Analist, Mert), `denetci@kaptan.demo` (Auditor, "Hoca"). Parola tümünde `kaptan-demo`. Ek olarak ikinci bir Risk Officer (`risk2@kaptan.demo`) limitlerde dört göz denemesi için.
+**Seed hesaplar (yalnızca mock)** [09 §5 önerisi]: `admin@kaptan.demo` (Admin, Burak), `risk@kaptan.demo` (Risk Officer, Zeynep), `analist@kaptan.demo` (Analist, Mert), `denetci@kaptan.demo` (Auditor, "Hoca"). Parola tümünde `kaptan2026`. Ek olarak ikinci bir Risk Officer (`risk2@kaptan.demo`) limitlerde dört göz denemesi için.
 
 ---
 

@@ -140,14 +140,14 @@ function Bar({ index, nonce }: { index: number; nonce: number }) {
     <>
       <div aria-hidden className="h-52 sm:h-40" />
       <section
-        aria-label="Rehberli demo"
+        aria-label="Rehberli tur"
         data-testid="guided-demo"
         className="fixed inset-x-0 bottom-0 z-40 border-t-[1.5px] border-ink bg-panel shadow-[0_-3px_0_var(--ink)]"
       >
         <div className="mx-auto flex max-w-[960px] flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-6 sm:px-6 sm:py-4">
           <div className="min-w-0 flex-1 space-y-1">
             <p className="text-[12px] tracking-[0.02em] text-muted">
-              Rehberli demo · Perde {pos.act}/6 · {ACT_TITLES[pos.act]} · <span className="tabular-nums">Adım {index + 1}/{DEMO_STEPS.length}</span>
+              Rehberli tur · Perde {pos.act}/6 · {ACT_TITLES[pos.act]} · <span className="tabular-nums">Adım {index + 1}/{DEMO_STEPS.length}</span>
             </p>
             <p className="text-[16px] leading-[22px] font-medium text-ink" data-testid="demo-step-title">
               {step.title}
@@ -166,10 +166,10 @@ function Bar({ index, nonce }: { index: number; nonce: number }) {
             <Button variant="secondary" size="icon" aria-label="Önceki adım" disabled={index === 0} onClick={() => prevStep()}>
               ←
             </Button>
-            <Button variant="primary" size="icon" aria-label={last ? "Demoyu bitir" : "Sonraki adım"} onClick={() => (last ? stopGuidedDemo() : nextStep())}>
+            <Button variant="primary" size="icon" aria-label={last ? "Turu bitir" : "Sonraki adım"} onClick={() => (last ? stopGuidedDemo() : nextStep())}>
               {last ? "✓" : "→"}
             </Button>
-            <Button variant="ghost" size="icon" aria-label="Rehberli demoyu kapat" onClick={() => stopGuidedDemo()}>
+            <Button variant="ghost" size="icon" aria-label="Rehberli turu kapat" onClick={() => stopGuidedDemo()}>
               ×
             </Button>
           </div>

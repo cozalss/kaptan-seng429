@@ -22,7 +22,7 @@ export const ROLE_LABEL: Readonly<Record<Role, string>> = {
 export const ROLE_LINE: Readonly<Record<Role, string>> = {
   analyst: "Okur, not ekler.",
   risk_officer: "Onaylar ya da reddeder; durdurur.",
-  admin: "Kullanıcılar, ayarlar, demo.",
+  admin: "Kullanıcılar, ayarlar, senaryolar.",
   auditor: "Her şeyi görür, hiçbir şeyi değiştiremez (jüri için).",
 };
 
@@ -80,5 +80,17 @@ export const LoginInput = z.object({
   passphrase: z.string().min(1, "Parola gerekli").max(200, "Parola çok uzun"),
 });
 export type LoginInput = z.infer<typeof LoginInput>;
+
+/**
+ * What the sign-in endpoint accepts (mock route; the http API takes the same body). `role` is
+ * the door you came through: mock starts the session as that role; in http mode it is only a
+ * hint and the backend decides (API.md §2). Unknown roles are refused, not ignored.
+ */
+export const LoginRequest = z.object({
+  passphrase: z.string().max(200),
+  next: z.string().max(500).nullish(),
+  role: Role.optional(),
+});
+export type LoginRequest = z.infer<typeof LoginRequest>;
 
 export const RoleInput = z.object({ role: Role });

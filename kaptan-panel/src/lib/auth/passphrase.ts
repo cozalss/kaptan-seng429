@@ -4,7 +4,7 @@
  * data, and the cookie it sets is not a security boundary. In http mode the passphrase is
  * checked by the API, never here.
  */
-export const DEMO_PASSPHRASE = "kaptan-demo";
+export const DEMO_PASSPHRASE = "kaptan2026";
 
 /** Length-independent comparison (no early exit on the first differing character). */
 export function passphraseMatches(input: string, expected: string = DEMO_PASSPHRASE): boolean {

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { LoginInput } from "@/lib/domain/user";
+import { LoginInput, ROLE_LABEL, type Role } from "@/lib/domain/user";
 import { DEMO_PASSPHRASE } from "@/lib/auth/passphrase";
 import { HOME, safeNext } from "@/lib/nav";
 import { IS_MOCK } from "@/lib/api/config";
@@ -11,11 +11,12 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 /**
- * Single-user sign-in: one passphrase, no accounts. A wrong passphrase gives one generic
- * message and a short shake (none under reduced motion). Mock mode prints the demo passphrase
- * and can fill it in one click.
+ * Sign-in behind one role's door: one passphrase, no accounts. The session starts as `role`
+ * (mock); in http mode the role is a request and the API decides. A wrong passphrase gives one
+ * generic message and a short shake (none under reduced motion). Mock mode prints the
+ * passphrase and can fill it in one click. The button wears the door's tone (`--tone`).
  */
-export function LoginForm({ next }: { next: string | null }) {
+export function LoginForm({ next, role }: { next: string | null; role: Role }) {
   const router = useRouter();
   const [passphrase, setPassphrase] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +42,7 @@ export function LoginForm({ next }: { next: string | null }) {
           const res = await fetch("/api/mock/session", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(next ? { ...parsed.data, next } : parsed.data),
+            body: JSON.stringify(next ? { ...parsed.data, role, next } : { ...parsed.data, role }),
           });
           if (!res.ok) {
             fail(res.status === 401 ? "Parola doğrulanamadı." : "Giriş şu an yapılamıyor.");
@@ -52,7 +53,7 @@ export function LoginForm({ next }: { next: string | null }) {
           router.refresh();
           return;
         }
-        await httpLogin(parsed.data.passphrase);
+        await httpLogin(parsed.data.passphrase, role);
         router.replace(safeNext(next) ?? HOME);
       } catch {
         fail("Parola doğrulanamadı.");
@@ -88,12 +89,19 @@ export function LoginForm({ next }: { next: string | null }) {
           {error}
         </p>
       ) : null}
-      <Button type="submit" variant="primary" size="lg" className="h-13 w-full text-[16px]" disabled={pending}>
-        {pending ? "Giriliyor…" : "Giriş"}
+      <Button
+        type="submit"
+        variant="primary"
+        size="lg"
+        className="h-13 w-full border-[var(--tone,var(--ink))] bg-[var(--tone,var(--ink))] text-[16px] hover:border-ink hover:bg-ink"
+        disabled={pending}
+      >
+        {pending ? "Giriliyor…" : `${ROLE_LABEL[role]} olarak gir`}
+        <span aria-hidden>→</span>
       </Button>
       {IS_MOCK ? (
         <p className="pt-2 text-[14px] text-muted">
-          Demo parolası: <span className="code text-ink">{DEMO_PASSPHRASE}</span> ·{" "}
+          Parola: <span className="code text-ink">{DEMO_PASSPHRASE}</span> ·{" "}
           <button
             type="button"
             disabled={pending}
@@ -101,7 +109,7 @@ export function LoginForm({ next }: { next: string | null }) {
               setPassphrase(DEMO_PASSPHRASE);
               submit(undefined, DEMO_PASSPHRASE);
             }}
-            className="font-medium text-ink underline underline-offset-4 hover:text-wash"
+            className="inline-flex min-h-11 items-center font-medium text-ink underline underline-offset-4 hover:text-[var(--tone,var(--wash))]"
           >
             doldur ve gir
           </button>

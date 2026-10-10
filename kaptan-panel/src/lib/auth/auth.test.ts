@@ -5,7 +5,7 @@ import { activeNavHref, HOME, href, LEGACY_REDIRECTS, NAV_ITEMS, ROUTES, safeNex
 describe("passphrase", () => {
   it("matches the demo passphrase exactly", () => {
     expect(passphraseMatches(DEMO_PASSPHRASE)).toBe(true);
-    expect(passphraseMatches("kaptan-demo ")).toBe(false);
+    expect(passphraseMatches("kaptan2026 ")).toBe(false);
     expect(passphraseMatches("KAPTAN-DEMO")).toBe(false);
     expect(passphraseMatches("")).toBe(false);
     expect(passphraseMatches("x", "x")).toBe(true);

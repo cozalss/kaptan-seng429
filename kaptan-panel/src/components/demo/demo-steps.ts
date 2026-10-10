@@ -145,7 +145,7 @@ export const DEMO_STEPS: readonly DemoStep[] = [
       { kind: "tamper", on: true, when: "before" },
       { kind: "verify", when: "after" },
     ],
-    note: "Demo verisinde tek bir kayıt arkadan değişti. Doğrulama tam orada durur: “Kayıt #3.907’de zincir kırık”.",
+    note: "Verideki tek bir kayıt arkadan değişti. Doğrulama tam orada durur: “Kayıt #3.907’de zincir kırık”.",
   },
   {
     id: "4f",

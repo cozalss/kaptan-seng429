@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 
-/** The mock deployment's demo passphrase (printed on /login on purpose). */
-export const PASSPHRASE = "kaptan-demo";
+/** The mock deployment's passphrase (printed on every door's screen on purpose). */
+export const PASSPHRASE = "kaptan2026";
 
 /** Collect console errors and uncaught page errors for a "no console errors" assertion. */
 export function trackErrors(page: Page): string[] {
@@ -13,11 +13,15 @@ export function trackErrors(page: Page): string[] {
   return errors;
 }
 
-/** Sign in through the login form; lands on Bugün (or ?next=). */
-export async function login(page: Page) {
+export type RoleLabel = "Analist" | "Risk Sorumlusu" | "Yönetici" | "Denetçi";
+
+/** Sign in through a door on /login (Risk Sorumlusu by default); lands on Bugün. */
+export async function login(page: Page, label: RoleLabel = "Risk Sorumlusu") {
   await page.goto("/login");
+  await page.getByRole("list", { name: "Roller" }).getByRole("link", { name: label, exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: label })).toBeVisible();
   await page.getByLabel("Parola").fill(PASSPHRASE);
-  await page.getByRole("button", { name: "Giriş", exact: true }).click();
+  await page.getByRole("button", { name: `${label} olarak gir` }).click();
   await expect(page).toHaveURL(/\/bugun$/);
 }
 
@@ -41,7 +45,7 @@ export async function openSettings(page: Page) {
 }
 
 /** Look through another role's eyes with the top-bar picker (client-side; the choice is kept in the session). */
-export async function pickRole(page: Page, label: "Analist" | "Risk Sorumlusu" | "Yönetici" | "Denetçi") {
+export async function pickRole(page: Page, label: RoleLabel) {
   await page.getByRole("button", { name: /Kimin gözüyle bakıyorsun\?/ }).click();
   await page.getByRole("menuitemradio", { name: new RegExp(`^${label} ·`) }).click();
   await expect(page.getByRole("button", { name: new RegExp(`^Rol: ${label}\\.`) })).toBeVisible();

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ApprovalCard, AuditPage, ChainVerifyResult, DayCounters, Explain, LimitsView, Me, OrderTicket, PnlPoint, Position, ProposalNote, RiskStatus, TeamMember } from "@/lib/domain";
+import type { Role } from "@/lib/domain/user";
 import { ApiError, type KaptanApi } from "../types";
 
 /**
@@ -101,13 +102,16 @@ export function createHttpApi(): KaptanApi {
   };
 }
 
-/** POST /auth/login with the single passphrase (http mode). The access token stays in memory. */
-export async function httpLogin(passphrase: string): Promise<Me> {
+/**
+ * POST /auth/login with the single passphrase (http mode). The access token stays in memory.
+ * `role` is the door's request; the backend decides the role it actually grants (API.md §2).
+ */
+export async function httpLogin(passphrase: string, role?: Role): Promise<Me> {
   const res = await fetch(`${BASE}/auth/login`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ passphrase }),
+    body: JSON.stringify(role ? { passphrase, role } : { passphrase }),
   });
   if (!res.ok) throw new ApiError(res.status, "login", "Parola doğrulanamadı.");
   const body = z.object({ access_token: z.string(), user: Me }).parse(await res.json());

@@ -29,7 +29,7 @@ export function Holdings({ positions, today }: { positions: readonly Position[];
             <div className="min-w-0">
               <p className="truncate text-[16px] font-medium text-ink">{shortName(p.company_name)}</p>
               <p className="mt-0.5 text-[14px] text-muted">
-                {fmtInt(p.qty)} lot · {p.book === "personal" ? "hesabında" : "sanal"} · {exitLine(p, today)}
+                {fmtInt(p.qty)} lot · {p.book === "personal" ? "hesabında" : "paper"} · {exitLine(p, today)}
               </p>
             </div>
             <div className="shrink-0 text-right tabular-nums">

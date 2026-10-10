@@ -36,14 +36,3 @@ export function RiskBanner() {
   }
   return null;
 }
-
-/** Mock-mode ribbon: nobody may mistake fixtures for live data (11 §4). Short on purpose. */
-export function DemoRibbon() {
-  return (
-    <div className="flex h-6 items-center justify-center gap-2 bg-wash px-3 text-[11.5px] tracking-[0.02em] whitespace-nowrap text-on-dark">
-      <span className="font-medium">DEMO VERİSİ</span>
-      <span aria-hidden className="opacity-60">·</span>
-      <span className="truncate opacity-90">kurgusal şirketler, sanal para</span>
-    </div>
-  );
-}

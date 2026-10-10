@@ -1,4 +1,4 @@
-/* /login only: the calm sea drifts, the boat rocks, the compass needle settles on north.
+/* /login and /login/<rol>: the calm sea drifts, the boat rocks, the compass needle settles on north.
    Transform-only motion; all of it stops under prefers-reduced-motion. */
 @keyframes login-drift {
   from {
@@ -73,5 +73,70 @@
   .login-compass g,
   .login-shake {
     animation: none !important;
+  }
+}
+
+/* The door opening: /login → /login/<rol> (and back) is a cross-document navigation; where the
+   browser supports it, the door's arch, emblem and name glide into the role's screen (shared
+   view-transition names, set inline per role). Elsewhere the page simply loads. Off under
+   prefers-reduced-motion: the opt-in itself sits inside no-preference. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+::view-transition-group(*) {
+  animation-duration: var(--dur-slow);
+  animation-timing-function: var(--ease-ink);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-base);
+}
+
+/* A door: lifted off the page on hover/focus, its shadow in the role's ink; the arch deepens.
+   The lift uses `translate`, not `transform`, so it composes with the page-in animation. */
+.login-door {
+  transition:
+    translate var(--dur-base) var(--ease-ink),
+    box-shadow var(--dur-base) var(--ease-ink);
+}
+.login-door .login-arch {
+  transition: background-color var(--dur-base) var(--ease-ink);
+}
+.login-door .login-emblem {
+  transition: transform var(--dur-slow) var(--ease-out-expo);
+}
+.login-door:hover,
+.login-door:focus-within {
+  translate: -3px -3px;
+  box-shadow: 6px 6px 0 var(--tone);
+}
+.login-door:hover .login-arch,
+.login-door:focus-within .login-arch {
+  background-color: color-mix(in srgb, var(--tone) 13%, var(--paper));
+}
+.login-door:hover .login-emblem,
+.login-door:focus-within .login-emblem {
+  transform: translateY(-4px);
+}
+.login-door:active {
+  translate: 0 0;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-door,
+  .login-door .login-arch,
+  .login-door .login-emblem {
+    transition: none;
+  }
+  .login-door:hover,
+  .login-door:focus-within {
+    translate: none;
+  }
+  .login-door:hover .login-emblem,
+  .login-door:focus-within .login-emblem {
+    transform: none;
   }
 }

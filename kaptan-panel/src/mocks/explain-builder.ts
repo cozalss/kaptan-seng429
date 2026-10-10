@@ -30,8 +30,8 @@ import { buildTrace } from "./trace-builder";
 export const PAPER_EQUITY_TRY = 1_016_480; // örnek değer
 export const RULES_HASH = sha256Hex("rules-v1.0-prereg").slice(0, 16);
 export const PROMPT_MANIFEST_HASH = sha256Hex("manifest:v1.1-fwd").slice(0, 16);
-const MODEL_FLASH_LITE = "gemini-flash-lite-temsili-001";
-const MODEL_GPT_OSS = "groq/gpt-oss-120b-temsili";
+const MODEL_FLASH_LITE = "gemini-flash-lite-001";
+const MODEL_GPT_OSS = "groq/gpt-oss-120b";
 
 const plusMs = (iso: string, ms: number): string => new Date(Date.parse(iso) + ms).toISOString();
 
@@ -151,7 +151,7 @@ function evidenceOf(spec: RunSpec): { card: EvidenceCard | null; events: Evidenc
       ticker: t,
       company_name: issuer(t).name,
       published_at: new Date(Date.UTC(2019 + (i % 7), (i * 5) % 12, 3 + (i % 25), 12)).toISOString(),
-      title: `${issuer(t).name} — ${spec.sub_type_tr} (temsili geçmiş olay)`,
+      title: `${issuer(t).name} — ${spec.sub_type_tr} (geçmiş olay)`,
       car_1d: round(car5 * 0.4 + rng.normal(0, 0.006), 4),
       car_5d: car5,
       car_20d: round(ev.mean20 + rng.normal(0, 0.05), 4),
