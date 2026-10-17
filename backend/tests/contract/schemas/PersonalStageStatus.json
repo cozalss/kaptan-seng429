@@ -1,0 +1,144 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "current": {
+   "type": "string",
+   "enum": [
+    "evidence",
+    "paper",
+    "shadow",
+    "small_real"
+   ]
+  },
+  "started_on": {
+   "type": "string",
+   "format": "date",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+  },
+  "stages": {
+   "minItems": 4,
+   "maxItems": 4,
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "enum": [
+       "evidence",
+       "paper",
+       "shadow",
+       "small_real"
+      ]
+     },
+     "n": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3
+     },
+     "label_tr": {
+      "type": "string"
+     },
+     "window_tr": {
+      "type": "string"
+     },
+     "summary_tr": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "done",
+       "current",
+       "next",
+       "locked"
+      ]
+     }
+    },
+    "required": [
+     "id",
+     "n",
+     "label_tr",
+     "window_tr",
+     "summary_tr",
+     "status"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "criteria": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "label_tr": {
+      "type": "string"
+     },
+     "current_tr": {
+      "type": "string"
+     },
+     "target_tr": {
+      "type": "string"
+     },
+     "progress": {
+      "anyOf": [
+       {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "met": {
+      "type": "boolean"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "kanonik",
+       "kisisel"
+      ]
+     }
+    },
+    "required": [
+     "id",
+     "label_tr",
+     "current_tr",
+     "target_tr",
+     "progress",
+     "met",
+     "source"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "ticket_mode_tr": {
+   "type": "string"
+  },
+  "as_of": {
+   "type": "string",
+   "format": "date-time",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+  },
+  "is_sample": {
+   "type": "boolean"
+  }
+ },
+ "required": [
+  "current",
+  "started_on",
+  "stages",
+  "criteria",
+  "ticket_mode_tr",
+  "as_of",
+  "is_sample"
+ ],
+ "additionalProperties": false
+}

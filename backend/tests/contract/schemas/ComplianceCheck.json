@@ -1,0 +1,46 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "code": {
+   "type": "string",
+   "enum": [
+    "SPK_MEASURE",
+    "VBTS_MEASURE",
+    "WATCHLIST_MARKET",
+    "TRADING_HALT",
+    "INFO_PUBLIC",
+    "MARKET_ABUSE_RISK",
+    "RESTRICTED_LIST",
+    "SIGNAL_SHARING",
+    "PROMPT_INJECTION",
+    "RATIONALE_INTEGRITY"
+   ]
+  },
+  "result": {
+   "type": "string",
+   "enum": [
+    "pass",
+    "fail",
+    "escalate",
+    "unknown"
+   ]
+  },
+  "basis_ref": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "detail_tr": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "code",
+  "result",
+  "basis_ref",
+  "detail_tr"
+ ],
+ "additionalProperties": false
+}

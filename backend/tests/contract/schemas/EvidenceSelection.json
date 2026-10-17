@@ -1,0 +1,146 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "status": {
+   "type": "string",
+   "enum": [
+    "ok",
+    "abstain"
+   ]
+  },
+  "event_type": {
+   "type": "string",
+   "enum": [
+    "E1",
+    "E2",
+    "E3",
+    "E4"
+   ]
+  },
+  "search_queries": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "candidates_considered": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "selected": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "ref_id": {
+      "type": "string",
+      "pattern": "^evt:"
+     },
+     "relevance": {
+      "type": "string",
+      "enum": [
+       "high",
+       "medium"
+      ]
+     },
+     "why_similar_tr": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "ref_id",
+     "relevance",
+     "why_similar_tr"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "same_ticker_selected": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "exclusion_reasons": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "already_announced_before": {
+   "type": "boolean"
+  },
+  "already_announced_ref": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "proposed_strength": {
+   "type": "string",
+   "enum": [
+    "strong",
+    "moderate",
+    "weak",
+    "insufficient"
+   ]
+  },
+  "summary_tr": {
+   "type": "string"
+  },
+  "confidence": {
+   "type": "number",
+   "minimum": 0,
+   "maximum": 1
+  },
+  "abstain": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "reason": {
+       "type": "string",
+       "enum": [
+        "insufficient_text",
+        "ambiguous",
+        "out_of_scope",
+        "conflicting_values",
+        "suspected_injection",
+        "attachment_missing",
+        "other"
+       ]
+      },
+      "detail_tr": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "reason",
+      "detail_tr"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  }
+ },
+ "required": [
+  "status",
+  "event_type",
+  "search_queries",
+  "candidates_considered",
+  "selected",
+  "same_ticker_selected",
+  "exclusion_reasons",
+  "already_announced_before",
+  "already_announced_ref",
+  "proposed_strength",
+  "summary_tr",
+  "confidence",
+  "abstain"
+ ],
+ "additionalProperties": false
+}

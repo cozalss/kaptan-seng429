@@ -1,0 +1,31 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "uid": {
+   "type": "string"
+  },
+  "name": {
+   "type": "string"
+  },
+  "role": {
+   "type": "string",
+   "enum": [
+    "analyst",
+    "risk_officer",
+    "admin",
+    "auditor"
+   ]
+  },
+  "duty_tr": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "uid",
+  "name",
+  "role",
+  "duty_tr"
+ ],
+ "additionalProperties": false
+}

@@ -1,0 +1,29 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "scope": {
+   "default": "today",
+   "type": "string",
+   "enum": [
+    "today",
+    "all"
+   ]
+  },
+  "q": {
+   "type": "string",
+   "maxLength": 100
+  },
+  "limit": {
+   "default": 200,
+   "type": "integer",
+   "exclusiveMinimum": 0,
+   "maximum": 500
+  }
+ },
+ "required": [
+  "scope",
+  "limit"
+ ],
+ "additionalProperties": false
+}

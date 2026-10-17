@@ -1,0 +1,14 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "string",
+ "enum": [
+  "signed_contract",
+  "order_received",
+  "tender_award_final",
+  "tender_award_not_final",
+  "lowest_or_best_bid_only",
+  "framework_agreement",
+  "mou_or_loi",
+  "unknown"
+ ]
+}

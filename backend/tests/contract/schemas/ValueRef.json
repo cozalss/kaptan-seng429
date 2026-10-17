@@ -1,0 +1,21 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "name": {
+   "type": "string"
+  },
+  "value": {
+   "type": "number"
+  },
+  "ref_id": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "name",
+  "value",
+  "ref_id"
+ ],
+ "additionalProperties": false
+}

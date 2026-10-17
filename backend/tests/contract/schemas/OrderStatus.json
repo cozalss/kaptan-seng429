@@ -1,0 +1,13 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "string",
+ "enum": [
+  "pending_open",
+  "accepted",
+  "awaiting_manual_entry",
+  "partially_filled",
+  "filled",
+  "canceled",
+  "rejected"
+ ]
+}

@@ -1,0 +1,302 @@
+[
+ {
+  "ticker": "ORNEK",
+  "name": "ÖRNEK ENERJİ A.Ş.",
+  "sector": "Enerji",
+  "group": "Örnek Holding",
+  "freeFloat": 0.34,
+  "adv20Try": 20000000,
+  "price": 47.4,
+  "inUniverse": true
+ },
+ {
+  "ticker": "ORNCM",
+  "name": "ÖRNEK ÇİMENTO A.Ş.",
+  "sector": "Çimento",
+  "group": "Örnek Holding",
+  "freeFloat": 0.29,
+  "adv20Try": 96000000,
+  "price": 112.3,
+  "inUniverse": true
+ },
+ {
+  "ticker": "ORNTX",
+  "name": "ÖRNEK TEKSTİL A.Ş.",
+  "sector": "Tekstil",
+  "group": null,
+  "freeFloat": 0.41,
+  "adv20Try": 38000000,
+  "price": 18.72,
+  "inUniverse": true
+ },
+ {
+  "ticker": "ORNYZ",
+  "name": "ÖRNEK YAZILIM A.Ş.",
+  "sector": "Teknoloji",
+  "group": null,
+  "freeFloat": 0.52,
+  "adv20Try": 71000000,
+  "price": 63.85,
+  "inUniverse": true
+ },
+ {
+  "ticker": "ORNGD",
+  "name": "ÖRNEK GIDA A.Ş.",
+  "sector": "Gıda",
+  "group": "Örnek Holding",
+  "freeFloat": 0.37,
+  "adv20Try": 55000000,
+  "price": 29.06,
+  "inUniverse": true
+ },
+ {
+  "ticker": "DMOGD",
+  "name": "DOĞU GIDA SANAYİ A.Ş.",
+  "sector": "Gıda",
+  "group": null,
+  "freeFloat": 0.46,
+  "adv20Try": 44000000,
+  "price": 22.18,
+  "inUniverse": true
+ },
+ {
+  "ticker": "DMOEN",
+  "name": "DOĞU ENERJİ ÜRETİM A.Ş.",
+  "sector": "Enerji",
+  "group": "Doğu Grup",
+  "freeFloat": 0.31,
+  "adv20Try": 128000000,
+  "price": 35.9,
+  "inUniverse": true
+ },
+ {
+  "ticker": "DMOIN",
+  "name": "DOĞU İNŞAAT A.Ş.",
+  "sector": "İnşaat",
+  "group": "Doğu Grup",
+  "freeFloat": 0.27,
+  "adv20Try": 61000000,
+  "price": 14.44,
+  "inUniverse": true
+ },
+ {
+  "ticker": "DMOKM",
+  "name": "DOĞU KİMYA A.Ş.",
+  "sector": "Kimya",
+  "group": null,
+  "freeFloat": 0.39,
+  "adv20Try": 33000000,
+  "price": 51.2,
+  "inUniverse": true
+ },
+ {
+  "ticker": "DMOOT",
+  "name": "DOĞU OTOMOTİV A.Ş.",
+  "sector": "Otomotiv",
+  "group": "Doğu Grup",
+  "freeFloat": 0.33,
+  "adv20Try": 187000000,
+  "price": 141.7,
+  "inUniverse": true
+ },
+ {
+  "ticker": "TMSLJ",
+  "name": "TOROS LOJİSTİK A.Ş.",
+  "sector": "Ulaştırma",
+  "group": null,
+  "freeFloat": 0.24,
+  "adv20Try": 27000000,
+  "price": 9.86,
+  "inUniverse": true
+ },
+ {
+  "ticker": "TMSPZ",
+  "name": "TOROS PERAKENDE A.Ş.",
+  "sector": "Perakende",
+  "group": null,
+  "freeFloat": 0.44,
+  "adv20Try": 92000000,
+  "price": 76.15,
+  "inUniverse": true
+ },
+ {
+  "ticker": "TMSSG",
+  "name": "TOROS SAĞLIK HİZMETLERİ A.Ş.",
+  "sector": "Sağlık",
+  "group": null,
+  "freeFloat": 0.38,
+  "adv20Try": 49000000,
+  "price": 41.3,
+  "inUniverse": true
+ },
+ {
+  "ticker": "TMSMK",
+  "name": "TOROS MAKİNE A.Ş.",
+  "sector": "Makine",
+  "group": "Toros Sanayi",
+  "freeFloat": 0.3,
+  "adv20Try": 58000000,
+  "price": 88.4,
+  "inUniverse": true
+ },
+ {
+  "ticker": "TMSKG",
+  "name": "TOROS KAĞIT A.Ş.",
+  "sector": "Kağıt",
+  "group": "Toros Sanayi",
+  "freeFloat": 0.35,
+  "adv20Try": 21000000,
+  "price": 12.96,
+  "inUniverse": true
+ },
+ {
+  "ticker": "KRGMD",
+  "name": "KORU MADENCİLİK A.Ş.",
+  "sector": "Madencilik",
+  "group": null,
+  "freeFloat": 0.28,
+  "adv20Try": 66000000,
+  "price": 57.75,
+  "inUniverse": true
+ },
+ {
+  "ticker": "KRGTK",
+  "name": "KORU TEKNOLOJİ A.Ş.",
+  "sector": "Teknoloji",
+  "group": null,
+  "freeFloat": 0.49,
+  "adv20Try": 83000000,
+  "price": 104.2,
+  "inUniverse": true
+ },
+ {
+  "ticker": "KRGCL",
+  "name": "KORU ÇELİK A.Ş.",
+  "sector": "Metal",
+  "group": "Koru Holding",
+  "freeFloat": 0.32,
+  "adv20Try": 119000000,
+  "price": 33.48,
+  "inUniverse": true
+ },
+ {
+  "ticker": "KRGGY",
+  "name": "KORU GAYRİMENKUL YO A.Ş.",
+  "sector": "GYO",
+  "group": "Koru Holding",
+  "freeFloat": 0.42,
+  "adv20Try": 37000000,
+  "price": 7.92,
+  "inUniverse": true
+ },
+ {
+  "ticker": "KRGSG",
+  "name": "KORU SİGORTA A.Ş.",
+  "sector": "Sigorta",
+  "group": "Koru Holding",
+  "freeFloat": 0.26,
+  "adv20Try": 29000000,
+  "price": 26.6,
+  "inUniverse": true
+ },
+ {
+  "ticker": "MSLEL",
+  "name": "MİSAL ELEKTRONİK A.Ş.",
+  "sector": "Elektronik",
+  "group": null,
+  "freeFloat": 0.47,
+  "adv20Try": 52000000,
+  "price": 69.1,
+  "inUniverse": true
+ },
+ {
+  "ticker": "MSLTR",
+  "name": "MİSAL TARIM A.Ş.",
+  "sector": "Tarım",
+  "group": null,
+  "freeFloat": 0.36,
+  "adv20Try": 18000000,
+  "price": 15.38,
+  "inUniverse": true
+ },
+ {
+  "ticker": "MSLHV",
+  "name": "MİSAL HAVACILIK A.Ş.",
+  "sector": "Ulaştırma",
+  "group": null,
+  "freeFloat": 0.3,
+  "adv20Try": 241000000,
+  "price": 205.5,
+  "inUniverse": true
+ },
+ {
+  "ticker": "MSLCM",
+  "name": "MİSAL CAM A.Ş.",
+  "sector": "Cam",
+  "group": null,
+  "freeFloat": 0.34,
+  "adv20Try": 64000000,
+  "price": 46.84,
+  "inUniverse": true
+ },
+ {
+  "ticker": "MSLIL",
+  "name": "MİSAL İLAÇ A.Ş.",
+  "sector": "Sağlık",
+  "group": null,
+  "freeFloat": 0.4,
+  "adv20Try": 41000000,
+  "price": 58.02,
+  "inUniverse": true
+ },
+ {
+  "ticker": "FRZBN",
+  "name": "FARAZİ BANKA A.Ş.",
+  "sector": "Banka",
+  "group": null,
+  "freeFloat": 0.22,
+  "adv20Try": 402000000,
+  "price": 31.24,
+  "inUniverse": true
+ },
+ {
+  "ticker": "FRZEN",
+  "name": "FARAZİ ENERJİ DAĞITIM A.Ş.",
+  "sector": "Enerji",
+  "group": null,
+  "freeFloat": 0.29,
+  "adv20Try": 76000000,
+  "price": 24.7,
+  "inUniverse": true
+ },
+ {
+  "ticker": "FRZTL",
+  "name": "FARAZİ TELEKOM A.Ş.",
+  "sector": "Telekom",
+  "group": null,
+  "freeFloat": 0.21,
+  "adv20Try": 155000000,
+  "price": 52.36,
+  "inUniverse": true
+ },
+ {
+  "ticker": "FRZMB",
+  "name": "FARAZİ MOBİLYA A.Ş.",
+  "sector": "Mobilya",
+  "group": null,
+  "freeFloat": 0.45,
+  "adv20Try": 12000000,
+  "price": 8.44,
+  "inUniverse": false
+ },
+ {
+  "ticker": "FRZTS",
+  "name": "FARAZİ TURİZM A.Ş.",
+  "sector": "Turizm",
+  "group": null,
+  "freeFloat": 0.51,
+  "adv20Try": 9000000,
+  "price": 5.97,
+  "inUniverse": false
+ }
+]

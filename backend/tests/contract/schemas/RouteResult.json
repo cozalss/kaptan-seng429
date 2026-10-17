@@ -1,0 +1,24 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "route": {
+   "type": "string"
+  },
+  "sub_type_hint": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "table_version": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "route",
+  "sub_type_hint",
+  "table_version"
+ ],
+ "additionalProperties": false
+}

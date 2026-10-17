@@ -1,0 +1,610 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "is_sample": {
+   "type": "boolean"
+  },
+  "label": {
+   "type": "string"
+  },
+  "as_of": {
+   "type": "string",
+   "format": "date-time",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+  },
+  "l1": {
+   "type": "object",
+   "properties": {
+    "split": {
+     "type": "string",
+     "const": "gold_test_200"
+    },
+    "macro_f1": {
+     "type": "number"
+    },
+    "target_macro_f1": {
+     "type": "number",
+     "const": 0.85
+    },
+    "per_class": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "cls": {
+        "type": "string",
+        "enum": [
+         "E1",
+         "E2",
+         "E3",
+         "E4",
+         "X",
+         "O"
+        ]
+       },
+       "f1": {
+        "type": "number"
+       },
+       "precision": {
+        "type": "number"
+       },
+       "recall": {
+        "type": "number"
+       },
+       "support": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+       }
+      },
+      "required": [
+       "cls",
+       "f1",
+       "precision",
+       "recall",
+       "support"
+      ],
+      "additionalProperties": false
+     }
+    },
+    "confusion": {
+     "type": "array",
+     "items": {
+      "type": "array",
+      "items": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      }
+     }
+    },
+    "kappa": {
+     "type": "number"
+    },
+    "ece": {
+     "type": "number"
+    },
+    "models": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "model_id": {
+        "type": "string"
+       },
+       "macro_f1": {
+        "type": "number"
+       },
+       "e3_f1": {
+        "type": "number"
+       },
+       "x_recall": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "model_id",
+       "macro_f1",
+       "e3_f1",
+       "x_recall"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   "required": [
+    "split",
+    "macro_f1",
+    "target_macro_f1",
+    "per_class",
+    "confusion",
+    "kappa",
+    "ece",
+    "models"
+   ],
+   "additionalProperties": false
+  },
+  "l2": {
+   "type": "object",
+   "properties": {
+    "questions": {
+     "type": "number",
+     "const": 50
+    },
+    "faithfulness": {
+     "type": "number"
+    },
+    "context_precision": {
+     "type": "number"
+    },
+    "context_recall": {
+     "type": "number"
+    },
+    "recall_at_10": {
+     "type": "number"
+    },
+    "mrr": {
+     "type": "number"
+    },
+    "time_violations": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "stores": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "store": {
+        "type": "string",
+        "enum": [
+         "pgvector",
+         "chroma"
+        ]
+       },
+       "faithfulness": {
+        "type": "number"
+       },
+       "recall_at_10": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "store",
+       "faithfulness",
+       "recall_at_10"
+      ],
+      "additionalProperties": false
+     }
+    },
+    "trend": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "d": {
+        "type": "string",
+        "format": "date",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+       },
+       "faithfulness": {
+        "type": "number"
+       },
+       "context_precision": {
+        "type": "number"
+       },
+       "context_recall": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "d",
+       "faithfulness",
+       "context_precision",
+       "context_recall"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   "required": [
+    "questions",
+    "faithfulness",
+    "context_precision",
+    "context_recall",
+    "recall_at_10",
+    "mrr",
+    "time_violations",
+    "stores",
+    "trend"
+   ],
+   "additionalProperties": false
+  },
+  "l3": {
+   "type": "object",
+   "properties": {
+    "window": {
+     "type": "string",
+     "const": "2025-01-01 → 2026-10-31"
+    },
+    "run_once": {
+     "type": "boolean",
+     "const": true
+    },
+    "rows": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "event_type": {
+        "type": "string",
+        "enum": [
+         "E1",
+         "E2",
+         "E3",
+         "E4",
+         "ALL"
+        ]
+       },
+       "n": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+       },
+       "car_1": {
+        "type": "number"
+       },
+       "car_5": {
+        "type": "number"
+       },
+       "car_20": {
+        "type": "number"
+       },
+       "car_60": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "t_stat": {
+        "type": "number"
+       },
+       "sharpe": {
+        "type": "number"
+       },
+       "sortino": {
+        "type": "number"
+       },
+       "max_dd": {
+        "type": "number"
+       },
+       "cost_scenario": {
+        "type": "string",
+        "enum": [
+         "base_005",
+         "stress_020"
+        ]
+       }
+      },
+      "required": [
+       "event_type",
+       "n",
+       "car_1",
+       "car_5",
+       "car_20",
+       "car_60",
+       "t_stat",
+       "sharpe",
+       "sortino",
+       "max_dd",
+       "cost_scenario"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   "required": [
+    "window",
+    "run_once",
+    "rows"
+   ],
+   "additionalProperties": false
+  },
+  "l4": {
+   "type": "object",
+   "properties": {
+    "series": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "d": {
+        "type": "string",
+        "format": "date",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+       },
+       "strategy": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "kaptan:v1.0-fwd",
+           "kaptan:v1.1-fwd",
+           "baseline:xu100_bh",
+           "baseline:ew_universe"
+          ]
+         },
+         {
+          "type": "string",
+          "pattern": "^ablation:[a-z0-9_]+$"
+         }
+        ]
+       },
+       "equity": {
+        "type": "number"
+       },
+       "daily_return": {
+        "type": "number"
+       },
+       "peak_equity": {
+        "type": "number"
+       },
+       "drawdown": {
+        "type": "number",
+        "maximum": 0
+       },
+       "n_positions": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+       },
+       "n_trades": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+       }
+      },
+      "required": [
+       "d",
+       "strategy",
+       "equity",
+       "daily_return",
+       "peak_equity",
+       "drawdown",
+       "n_positions",
+       "n_trades"
+      ],
+      "additionalProperties": false
+     }
+    },
+    "since": {
+     "type": "object",
+     "properties": {
+      "v1_0": {
+       "type": "string",
+       "format": "date",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+      },
+      "v1_1": {
+       "type": "string",
+       "format": "date",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+      }
+     },
+     "required": [
+      "v1_0",
+      "v1_1"
+     ],
+     "additionalProperties": false
+    },
+    "closed_trades": {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    }
+   },
+   "required": [
+    "series",
+    "since",
+    "closed_trades"
+   ],
+   "additionalProperties": false
+  },
+  "ablations": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "arm": {
+      "type": "string",
+      "pattern": "^(B[0-3]|A[0-7])$"
+     },
+     "label_tr": {
+      "type": "string"
+     },
+     "sharpe": {
+      "type": "number"
+     },
+     "max_dd": {
+      "type": "number"
+     },
+     "total_return": {
+      "type": "number"
+     },
+     "n_trades": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     }
+    },
+    "required": [
+     "arm",
+     "label_tr",
+     "sharpe",
+     "max_dd",
+     "total_return",
+     "n_trades"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "redteam": {
+   "type": "object",
+   "properties": {
+    "malicious": {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    "benign": {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    "orders_from_malicious": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "block_rate": {
+     "type": "number"
+    },
+    "false_alarm_rate": {
+     "type": "number"
+    },
+    "by_code": {
+     "type": "object",
+     "properties": {
+      "Q": {
+       "type": "integer",
+       "minimum": -9007199254740991,
+       "maximum": 9007199254740991
+      },
+      "N": {
+       "type": "integer",
+       "minimum": -9007199254740991,
+       "maximum": 9007199254740991
+      },
+      "H": {
+       "type": "integer",
+       "minimum": -9007199254740991,
+       "maximum": 9007199254740991
+      },
+      "F": {
+       "type": "integer",
+       "minimum": -9007199254740991,
+       "maximum": 9007199254740991
+      }
+     },
+     "required": [
+      "Q",
+      "N",
+      "H",
+      "F"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "malicious",
+    "benign",
+    "orders_from_malicious",
+    "block_rate",
+    "false_alarm_rate",
+    "by_code"
+   ],
+   "additionalProperties": false
+  },
+  "latency": {
+   "type": "object",
+   "properties": {
+    "p50_s": {
+     "type": "number"
+    },
+    "p95_s": {
+     "type": "number"
+    },
+    "target_p95_s": {
+     "type": "number",
+     "const": 60
+    }
+   },
+   "required": [
+    "p50_s",
+    "p95_s",
+    "target_p95_s"
+   ],
+   "additionalProperties": false
+  },
+  "cost": {
+   "type": "object",
+   "properties": {
+    "calls_today": {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    "tokens_today": {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    "tokens_per_decision": {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    }
+   },
+   "required": [
+    "calls_today",
+    "tokens_today",
+    "tokens_per_decision"
+   ],
+   "additionalProperties": false
+  },
+  "shadow": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "proposal_id": {
+      "type": "string"
+     },
+     "ticker": {
+      "type": "string"
+     },
+     "rejected_by": {
+      "type": "string"
+     },
+     "shadow_return_20d": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "proposal_id",
+     "ticker",
+     "rejected_by",
+     "shadow_return_20d"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "is_sample",
+  "label",
+  "as_of",
+  "l1",
+  "l2",
+  "l3",
+  "l4",
+  "ablations",
+  "redteam",
+  "latency",
+  "cost",
+  "shadow"
+ ],
+ "additionalProperties": false
+}

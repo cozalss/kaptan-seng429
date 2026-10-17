@@ -1,0 +1,403 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "run_id": {
+   "type": "string"
+  },
+  "disclosure_index": {
+   "type": "integer",
+   "exclusiveMinimum": 0,
+   "maximum": 9007199254740991
+  },
+  "ticker": {
+   "type": "string"
+  },
+  "as_of": {
+   "type": "string",
+   "format": "date-time",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+  },
+  "event_type": {
+   "type": "string",
+   "enum": [
+    "E1",
+    "E2",
+    "E3",
+    "E4",
+    "FILTER",
+    "IGNORE"
+   ]
+  },
+  "sub_type": {
+   "type": "string"
+  },
+  "agent_status": {
+   "type": "object",
+   "propertyNames": {
+    "type": "string"
+   },
+   "additionalProperties": {
+    "type": "string",
+    "enum": [
+     "ok",
+     "abstain",
+     "failed",
+     "skipped"
+    ]
+   }
+  },
+  "agent_confidence": {
+   "type": "object",
+   "propertyNames": {
+    "type": "string"
+   },
+   "additionalProperties": {
+    "type": "number",
+    "minimum": 0,
+    "maximum": 1
+   }
+  },
+  "any_injection_flag": {
+   "type": "boolean"
+  },
+  "degraded": {
+   "type": "boolean"
+  },
+  "e1_nature": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "new_buyback_rows": {
+   "anyOf": [
+    {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "buyback_10d_capital_pct": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "buyback_10d_notice_count": {
+   "anyOf": [
+    {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "buyback_sale_within_20d": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "insider_role_class": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "insider_open_market": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "insider_net_buy_value_try": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "insider_buy_to_ff_mcap": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "insider_cluster_30d": {
+   "anyOf": [
+    {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "ret_3m": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "reader_amount": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "regex_amounts": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   }
+  },
+  "amount_in_text": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "binding": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "related_party": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "renewal": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "amount_try": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "amount_to_revenue_annualized": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "amount_to_mcap": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "e3_denominator": {
+   "anyOf": [
+    {
+     "type": "string",
+     "enum": [
+      "annual_revenue",
+      "market_cap"
+     ]
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "e4": {
+   "type": "object",
+   "propertyNames": {
+    "type": "string"
+   },
+   "additionalProperties": {
+    "type": [
+     "number",
+     "string",
+     "boolean",
+     "null"
+    ]
+   }
+  },
+  "last_price": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "price_at": {
+   "anyOf": [
+    {
+     "type": "string",
+     "format": "date-time",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "upper_limit": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "lower_limit": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "adv20_try": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "free_float_pct": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "leakage_5d_mkt_adj": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "ret_10d_mkt_adj": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "evidence_card_id": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "evidence_strength": {
+   "anyOf": [
+    {
+     "type": "string",
+     "enum": [
+      "strong",
+      "moderate",
+      "weak",
+      "insufficient"
+     ]
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "evidence_n": {
+   "anyOf": [
+    {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "evidence_median_car_5d": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "evidence_median_car_20d": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "evidence_ids": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "retrieved_ids": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "flags": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  }
+ },
+ "required": [
+  "run_id",
+  "disclosure_index",
+  "ticker",
+  "as_of",
+  "event_type",
+  "sub_type",
+  "agent_status",
+  "agent_confidence",
+  "any_injection_flag",
+  "degraded",
+  "e1_nature",
+  "new_buyback_rows",
+  "buyback_10d_capital_pct",
+  "buyback_10d_notice_count",
+  "buyback_sale_within_20d",
+  "insider_role_class",
+  "insider_open_market",
+  "insider_net_buy_value_try",
+  "insider_buy_to_ff_mcap",
+  "insider_cluster_30d",
+  "ret_3m",
+  "reader_amount",
+  "regex_amounts",
+  "amount_in_text",
+  "binding",
+  "related_party",
+  "renewal",
+  "amount_try",
+  "amount_to_revenue_annualized",
+  "amount_to_mcap",
+  "e3_denominator",
+  "e4",
+  "last_price",
+  "price_at",
+  "upper_limit",
+  "lower_limit",
+  "adv20_try",
+  "free_float_pct",
+  "leakage_5d_mkt_adj",
+  "ret_10d_mkt_adj",
+  "evidence_card_id",
+  "evidence_strength",
+  "evidence_n",
+  "evidence_median_car_5d",
+  "evidence_median_car_20d",
+  "evidence_ids",
+  "retrieved_ids",
+  "flags"
+ ],
+ "additionalProperties": false
+}

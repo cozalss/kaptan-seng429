@@ -1,0 +1,139 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "run_id": {
+   "type": "string"
+  },
+  "disclosure_index": {
+   "type": "integer",
+   "exclusiveMinimum": 0,
+   "maximum": 9007199254740991
+  },
+  "ticker": {
+   "type": "string"
+  },
+  "company_name": {
+   "type": "string"
+  },
+  "event_type": {
+   "anyOf": [
+    {
+     "type": "string",
+     "enum": [
+      "E1",
+      "E2",
+      "E3",
+      "E4",
+      "FILTER",
+      "IGNORE"
+     ]
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "status": {
+   "type": "string",
+   "enum": [
+    "running",
+    "interrupted",
+    "completed",
+    "failed",
+    "hold_quota",
+    "skipped"
+   ]
+  },
+  "outcome": {
+   "anyOf": [
+    {
+     "type": "string",
+     "enum": [
+      "PROPOSE",
+      "NO_TRADE",
+      "HOLD",
+      "QUARANTINED",
+      "PREGATE_VETO"
+     ]
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "mode": {
+   "type": "string",
+   "enum": [
+    "paper",
+    "personal",
+    "live",
+    "backtest",
+    "replay",
+    "demo"
+   ]
+  },
+  "started_at": {
+   "type": "string",
+   "format": "date-time",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+  },
+  "finished_at": {
+   "anyOf": [
+    {
+     "type": "string",
+     "format": "date-time",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "llm_calls": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "tokens_in": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "tokens_out": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "latency_ms": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "strategy_version": {
+   "type": "string"
+  },
+  "is_fixture": {
+   "type": "boolean"
+  }
+ },
+ "required": [
+  "run_id",
+  "disclosure_index",
+  "ticker",
+  "company_name",
+  "event_type",
+  "status",
+  "outcome",
+  "mode",
+  "started_at",
+  "finished_at",
+  "llm_calls",
+  "tokens_in",
+  "tokens_out",
+  "latency_ms",
+  "strategy_version",
+  "is_fixture"
+ ],
+ "additionalProperties": false
+}

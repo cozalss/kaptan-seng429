@@ -1,0 +1,44 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "ticker": {
+   "type": "string"
+  },
+  "company_name": {
+   "type": "string"
+  },
+  "sector": {
+   "type": "string"
+  },
+  "group": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "free_float_pct": {
+   "type": "number"
+  },
+  "adv20_try": {
+   "type": "number"
+  },
+  "in_universe": {
+   "type": "boolean"
+  },
+  "watched": {
+   "type": "boolean"
+  }
+ },
+ "required": [
+  "ticker",
+  "company_name",
+  "sector",
+  "group",
+  "free_float_pct",
+  "adv20_try",
+  "in_universe",
+  "watched"
+ ],
+ "additionalProperties": false
+}

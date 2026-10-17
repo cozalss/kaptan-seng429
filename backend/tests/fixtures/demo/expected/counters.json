@@ -1,0 +1,13 @@
+{
+ "as_of": "2027-01-11T10:40:00.000Z",
+ "total": 212,
+ "noise": 61,
+ "archived": 138,
+ "processed": 13,
+ "e_candidates": 12,
+ "proposals": 5,
+ "approvals": 1,
+ "rejections": 1,
+ "llm_calls": 31,
+ "llm_tokens": 412000
+}

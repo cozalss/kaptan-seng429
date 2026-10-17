@@ -1,0 +1,21 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "anyOf": [
+  {
+   "type": "string",
+   "enum": [
+    "noise",
+    "E1",
+    "E2",
+    "E3",
+    "E4",
+    "llm",
+    "archive_only"
+   ]
+  },
+  {
+   "type": "string",
+   "pattern": "^avoid:[a-z_]+$"
+  }
+ ]
+}

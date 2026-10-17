@@ -1,0 +1,247 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "status": {
+   "type": "string",
+   "enum": [
+    "ok",
+    "abstain"
+   ]
+  },
+  "confidence": {
+   "type": "number",
+   "minimum": 0,
+   "maximum": 1
+  },
+  "injection_suspected": {
+   "type": "boolean"
+  },
+  "quotes": {
+   "minItems": 1,
+   "maxItems": 8,
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "field": {
+      "type": "string"
+     },
+     "quote": {
+      "type": "string",
+      "minLength": 1
+     }
+    },
+    "required": [
+     "field",
+     "quote"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "notes_tr": {
+   "type": "string"
+  },
+  "abstain": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "reason": {
+       "type": "string",
+       "enum": [
+        "insufficient_text",
+        "ambiguous",
+        "out_of_scope",
+        "conflicting_values",
+        "suspected_injection",
+        "attachment_missing",
+        "other"
+       ]
+      },
+      "detail_tr": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "reason",
+      "detail_tr"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "kind": {
+   "type": "string",
+   "const": "E3"
+  },
+  "counterparty_role": {
+   "type": "string",
+   "enum": [
+    "customer",
+    "supplier",
+    "partner",
+    "other",
+    "unknown"
+   ]
+  },
+  "counterparty_name": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "counterparty_disclosed": {
+   "type": "boolean"
+  },
+  "counterparty_domestic": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "counterparty_public_sector": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "subject_tr": {
+   "type": "string"
+  },
+  "amount": {
+   "anyOf": [
+    {
+     "type": "number",
+     "minimum": 0
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "currency": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "amount_raw": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "amount_try_stated": {
+   "anyOf": [
+    {
+     "type": "number",
+     "minimum": 0
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "vat": {
+   "type": "string",
+   "enum": [
+    "included",
+    "excluded",
+    "unknown"
+   ]
+  },
+  "amount_is_estimate": {
+   "type": "boolean"
+  },
+  "duration_months": {
+   "anyOf": [
+    {
+     "type": "number",
+     "minimum": 0
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "start_date": {
+   "anyOf": [
+    {
+     "type": "string",
+     "format": "date",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "binding_status": {
+   "type": "string",
+   "enum": [
+    "signed_contract",
+    "order_received",
+    "tender_award_final",
+    "tender_award_not_final",
+    "lowest_or_best_bid_only",
+    "framework_agreement",
+    "mou_or_loi",
+    "unknown"
+   ]
+  },
+  "related_party": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "is_renewal_or_extension": {
+   "type": "boolean"
+  },
+  "stated_share_of_revenue_pct": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "stated_effect": {
+   "type": [
+    "string",
+    "null"
+   ]
+  }
+ },
+ "required": [
+  "status",
+  "confidence",
+  "injection_suspected",
+  "quotes",
+  "notes_tr",
+  "abstain",
+  "kind",
+  "counterparty_role",
+  "counterparty_name",
+  "counterparty_disclosed",
+  "counterparty_domestic",
+  "counterparty_public_sector",
+  "subject_tr",
+  "amount",
+  "currency",
+  "amount_raw",
+  "amount_try_stated",
+  "vat",
+  "amount_is_estimate",
+  "duration_months",
+  "start_date",
+  "binding_status",
+  "related_party",
+  "is_renewal_or_extension",
+  "stated_share_of_revenue_pct",
+  "stated_effect"
+ ],
+ "additionalProperties": false
+}

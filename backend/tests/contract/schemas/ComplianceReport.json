@@ -1,0 +1,127 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "status": {
+   "type": "string",
+   "enum": [
+    "ok",
+    "abstain"
+   ]
+  },
+  "decision": {
+   "type": "string",
+   "enum": [
+    "pass",
+    "escalate",
+    "veto"
+   ]
+  },
+  "checks": {
+   "minItems": 6,
+   "maxItems": 10,
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "code": {
+      "type": "string",
+      "enum": [
+       "SPK_MEASURE",
+       "VBTS_MEASURE",
+       "WATCHLIST_MARKET",
+       "TRADING_HALT",
+       "INFO_PUBLIC",
+       "MARKET_ABUSE_RISK",
+       "RESTRICTED_LIST",
+       "SIGNAL_SHARING",
+       "PROMPT_INJECTION",
+       "RATIONALE_INTEGRITY"
+      ]
+     },
+     "result": {
+      "type": "string",
+      "enum": [
+       "pass",
+       "fail",
+       "escalate",
+       "unknown"
+      ]
+     },
+     "basis_ref": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "detail_tr": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "code",
+     "result",
+     "basis_ref",
+     "detail_tr"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "regulation_refs": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "summary_tr": {
+   "type": "string"
+  },
+  "confidence": {
+   "type": "number",
+   "minimum": 0,
+   "maximum": 1
+  },
+  "abstain": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "reason": {
+       "type": "string",
+       "enum": [
+        "insufficient_text",
+        "ambiguous",
+        "out_of_scope",
+        "conflicting_values",
+        "suspected_injection",
+        "attachment_missing",
+        "other"
+       ]
+      },
+      "detail_tr": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "reason",
+      "detail_tr"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  }
+ },
+ "required": [
+  "status",
+  "decision",
+  "checks",
+  "regulation_refs",
+  "summary_tr",
+  "confidence",
+  "abstain"
+ ],
+ "additionalProperties": false
+}

@@ -1,0 +1,4273 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "run": {
+   "type": "object",
+   "properties": {
+    "run_id": {
+     "type": "string"
+    },
+    "disclosure_index": {
+     "type": "integer",
+     "exclusiveMinimum": 0,
+     "maximum": 9007199254740991
+    },
+    "ticker": {
+     "type": "string"
+    },
+    "company_name": {
+     "type": "string"
+    },
+    "event_type": {
+     "anyOf": [
+      {
+       "type": "string",
+       "enum": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "FILTER",
+        "IGNORE"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "status": {
+     "type": "string",
+     "enum": [
+      "running",
+      "interrupted",
+      "completed",
+      "failed",
+      "hold_quota",
+      "skipped"
+     ]
+    },
+    "outcome": {
+     "anyOf": [
+      {
+       "type": "string",
+       "enum": [
+        "PROPOSE",
+        "NO_TRADE",
+        "HOLD",
+        "QUARANTINED",
+        "PREGATE_VETO"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "mode": {
+     "type": "string",
+     "enum": [
+      "paper",
+      "personal",
+      "live",
+      "backtest",
+      "replay",
+      "demo"
+     ]
+    },
+    "started_at": {
+     "type": "string",
+     "format": "date-time",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    "finished_at": {
+     "anyOf": [
+      {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "llm_calls": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "tokens_in": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "tokens_out": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "latency_ms": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "strategy_version": {
+     "type": "string"
+    },
+    "is_fixture": {
+     "type": "boolean"
+    }
+   },
+   "required": [
+    "run_id",
+    "disclosure_index",
+    "ticker",
+    "company_name",
+    "event_type",
+    "status",
+    "outcome",
+    "mode",
+    "started_at",
+    "finished_at",
+    "llm_calls",
+    "tokens_in",
+    "tokens_out",
+    "latency_ms",
+    "strategy_version",
+    "is_fixture"
+   ],
+   "additionalProperties": false
+  },
+  "disclosure": {
+   "type": "object",
+   "properties": {
+    "disclosure_index": {
+     "type": "integer",
+     "exclusiveMinimum": 0,
+     "maximum": 9007199254740991
+    },
+    "disclosure_oid": {
+     "type": "string"
+    },
+    "stock_codes": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[A-Z0-9]{3,6}$"
+     }
+    },
+    "related_stocks": {
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[A-Z0-9]{3,6}$"
+     }
+    },
+    "primary_ticker": {
+     "anyOf": [
+      {
+       "type": "string",
+       "pattern": "^[A-Z0-9]{3,6}$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "company_name": {
+     "type": "string"
+    },
+    "disclosure_class": {
+     "type": "string",
+     "enum": [
+      "ODA",
+      "FR",
+      "DG",
+      "DKB",
+      "DUY"
+     ]
+    },
+    "disclosure_type": {
+     "type": "string"
+    },
+    "subject": {
+     "type": "string"
+    },
+    "summary": {
+     "type": "string"
+    },
+    "reason": {
+     "type": "string",
+     "enum": [
+      "NEW",
+      "UPD",
+      "CORR",
+      "CANC"
+     ]
+    },
+    "related_index": {
+     "anyOf": [
+      {
+       "type": "integer",
+       "exclusiveMinimum": 0,
+       "maximum": 9007199254740991
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "is_late": {
+     "type": "boolean"
+    },
+    "attachment_count": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "has_multilang": {
+     "type": "boolean"
+    },
+    "is_noise": {
+     "type": "boolean"
+    },
+    "subject_route": {
+     "anyOf": [
+      {
+       "type": "string",
+       "enum": [
+        "noise",
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "llm",
+        "archive_only"
+       ]
+      },
+      {
+       "type": "string",
+       "pattern": "^avoid:[a-z_]+$"
+      }
+     ]
+    },
+    "subject_map_version": {
+     "type": "string"
+    },
+    "published_at": {
+     "type": "string",
+     "format": "date-time",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    "first_seen_at": {
+     "type": "string",
+     "format": "date-time",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    "available_at": {
+     "type": "string",
+     "format": "date-time",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    "ingest_source": {
+     "type": "string",
+     "enum": [
+      "live",
+      "backfill",
+      "reconcile",
+      "demo"
+     ]
+    },
+    "classification": {
+     "anyOf": [
+      {
+       "type": "object",
+       "properties": {
+        "event_type": {
+         "type": "string",
+         "enum": [
+          "E1",
+          "E2",
+          "E3",
+          "E4",
+          "FILTER",
+          "IGNORE"
+         ]
+        },
+        "confidence": {
+         "type": "number",
+         "minimum": 0,
+         "maximum": 1
+        },
+        "method": {
+         "type": "string",
+         "enum": [
+          "subject_map",
+          "llm"
+         ]
+        }
+       },
+       "required": [
+        "event_type",
+        "confidence",
+        "method"
+       ],
+       "additionalProperties": false
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "run_id": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "linked_news_count": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "note_count": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    }
+   },
+   "required": [
+    "disclosure_index",
+    "disclosure_oid",
+    "stock_codes",
+    "related_stocks",
+    "primary_ticker",
+    "company_name",
+    "disclosure_class",
+    "disclosure_type",
+    "subject",
+    "summary",
+    "reason",
+    "related_index",
+    "is_late",
+    "attachment_count",
+    "has_multilang",
+    "is_noise",
+    "subject_route",
+    "subject_map_version",
+    "published_at",
+    "first_seen_at",
+    "available_at",
+    "ingest_source",
+    "classification",
+    "run_id",
+    "linked_news_count",
+    "note_count"
+   ],
+   "additionalProperties": false
+  },
+  "texts": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "lang": {
+      "type": "string",
+      "enum": [
+       "tr",
+       "en"
+      ]
+     },
+     "body": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "lang",
+     "body"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "source_spans": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "start": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+     },
+     "end": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+     },
+     "field": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "start",
+     "end",
+     "field"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "route": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "route": {
+       "type": "string"
+      },
+      "sub_type_hint": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "table_version": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "route",
+      "sub_type_hint",
+      "table_version"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "pre_gate": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "passed": {
+       "type": "boolean"
+      },
+      "reasons": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     "required": [
+      "passed",
+      "reasons"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "guard": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "quarantined": {
+       "type": "boolean"
+      },
+      "injection_score": {
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
+      },
+      "regex_hits": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "chunks_scored": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "masked_names_n": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      }
+     },
+     "required": [
+      "quarantined",
+      "injection_score",
+      "regex_hits",
+      "chunks_scored",
+      "masked_names_n"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "classifier": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "status": {
+       "type": "string",
+       "enum": [
+        "ok",
+        "abstain"
+       ]
+      },
+      "event_type": {
+       "type": "string",
+       "enum": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "FILTER",
+        "IGNORE"
+       ]
+      },
+      "sub_type": {
+       "type": "string"
+      },
+      "direction": {
+       "type": "string",
+       "enum": [
+        "positive",
+        "negative",
+        "neutral",
+        "unknown"
+       ]
+      },
+      "is_correction_or_update": {
+       "type": "boolean"
+      },
+      "refers_to_prior_disclosure_date": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "injection_suspected": {
+       "type": "boolean"
+      },
+      "confidence": {
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
+      },
+      "rationale_tr": {
+       "type": "string",
+       "maxLength": 400
+      },
+      "quotes": {
+       "minItems": 1,
+       "maxItems": 3,
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "field": {
+          "type": "string"
+         },
+         "quote": {
+          "type": "string",
+          "minLength": 1
+         }
+        },
+        "required": [
+         "field",
+         "quote"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "abstain": {
+       "anyOf": [
+        {
+         "type": "object",
+         "properties": {
+          "reason": {
+           "type": "string",
+           "enum": [
+            "insufficient_text",
+            "ambiguous",
+            "out_of_scope",
+            "conflicting_values",
+            "suspected_injection",
+            "attachment_missing",
+            "other"
+           ]
+          },
+          "detail_tr": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "reason",
+          "detail_tr"
+         ],
+         "additionalProperties": false
+        },
+        {
+         "type": "null"
+        }
+       ]
+      }
+     },
+     "required": [
+      "status",
+      "event_type",
+      "sub_type",
+      "direction",
+      "is_correction_or_update",
+      "refers_to_prior_disclosure_date",
+      "injection_suspected",
+      "confidence",
+      "rationale_tr",
+      "quotes",
+      "abstain"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "reader": {
+   "anyOf": [
+    {
+     "oneOf": [
+      {
+       "type": "object",
+       "properties": {
+        "status": {
+         "type": "string",
+         "enum": [
+          "ok",
+          "abstain"
+         ]
+        },
+        "confidence": {
+         "type": "number",
+         "minimum": 0,
+         "maximum": 1
+        },
+        "injection_suspected": {
+         "type": "boolean"
+        },
+        "quotes": {
+         "minItems": 1,
+         "maxItems": 8,
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "field": {
+            "type": "string"
+           },
+           "quote": {
+            "type": "string",
+            "minLength": 1
+           }
+          },
+          "required": [
+           "field",
+           "quote"
+          ],
+          "additionalProperties": false
+         }
+        },
+        "notes_tr": {
+         "type": "string"
+        },
+        "abstain": {
+         "anyOf": [
+          {
+           "type": "object",
+           "properties": {
+            "reason": {
+             "type": "string",
+             "enum": [
+              "insufficient_text",
+              "ambiguous",
+              "out_of_scope",
+              "conflicting_values",
+              "suspected_injection",
+              "attachment_missing",
+              "other"
+             ]
+            },
+            "detail_tr": {
+             "type": "string"
+            }
+           },
+           "required": [
+            "reason",
+            "detail_tr"
+           ],
+           "additionalProperties": false
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "kind": {
+         "type": "string",
+         "const": "E1"
+        },
+        "nature": {
+         "type": "string",
+         "enum": [
+          "execution",
+          "program_announcement",
+          "sale_of_repurchased",
+          "program_completed_or_ended",
+          "other"
+         ]
+        },
+        "in_programme": {
+         "type": "boolean"
+        },
+        "board_decision_date": {
+         "anyOf": [
+          {
+           "type": "string",
+           "format": "date",
+           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "programme_max_nominal_tl": {
+         "anyOf": [
+          {
+           "type": "number",
+           "minimum": 0
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "transactions": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "trade_date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+           },
+           "nominal_tl": {
+            "type": "number",
+            "minimum": 0
+           },
+           "capital_pct": {
+            "anyOf": [
+             {
+              "type": "number",
+              "minimum": 0
+             },
+             {
+              "type": "null"
+             }
+            ]
+           },
+           "price_tl": {
+            "anyOf": [
+             {
+              "type": "number",
+              "exclusiveMinimum": 0
+             },
+             {
+              "type": "null"
+             }
+            ]
+           },
+           "price_raw": {
+            "type": "string"
+           },
+           "prior_nominal_in_program_tl": {
+            "anyOf": [
+             {
+              "type": "number",
+              "minimum": 0
+             },
+             {
+              "type": "null"
+             }
+            ]
+           }
+          },
+          "required": [
+           "trade_date",
+           "nominal_tl",
+           "capital_pct",
+           "price_tl",
+           "price_raw",
+           "prior_nominal_in_program_tl"
+          ],
+          "additionalProperties": false
+         }
+        },
+        "cumulative_nominal_tl": {
+         "anyOf": [
+          {
+           "type": "number",
+           "minimum": 0
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "cumulative_capital_pct": {
+         "anyOf": [
+          {
+           "type": "number",
+           "minimum": 0
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "venue": {
+         "type": [
+          "string",
+          "null"
+         ]
+        }
+       },
+       "required": [
+        "status",
+        "confidence",
+        "injection_suspected",
+        "quotes",
+        "notes_tr",
+        "abstain",
+        "kind",
+        "nature",
+        "in_programme",
+        "board_decision_date",
+        "programme_max_nominal_tl",
+        "transactions",
+        "cumulative_nominal_tl",
+        "cumulative_capital_pct",
+        "venue"
+       ],
+       "additionalProperties": false
+      },
+      {
+       "type": "object",
+       "properties": {
+        "status": {
+         "type": "string",
+         "enum": [
+          "ok",
+          "abstain"
+         ]
+        },
+        "confidence": {
+         "type": "number",
+         "minimum": 0,
+         "maximum": 1
+        },
+        "injection_suspected": {
+         "type": "boolean"
+        },
+        "quotes": {
+         "minItems": 1,
+         "maxItems": 8,
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "field": {
+            "type": "string"
+           },
+           "quote": {
+            "type": "string",
+            "minLength": 1
+           }
+          },
+          "required": [
+           "field",
+           "quote"
+          ],
+          "additionalProperties": false
+         }
+        },
+        "notes_tr": {
+         "type": "string"
+        },
+        "abstain": {
+         "anyOf": [
+          {
+           "type": "object",
+           "properties": {
+            "reason": {
+             "type": "string",
+             "enum": [
+              "insufficient_text",
+              "ambiguous",
+              "out_of_scope",
+              "conflicting_values",
+              "suspected_injection",
+              "attachment_missing",
+              "other"
+             ]
+            },
+            "detail_tr": {
+             "type": "string"
+            }
+           },
+           "required": [
+            "reason",
+            "detail_tr"
+           ],
+           "additionalProperties": false
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "kind": {
+         "type": "string",
+         "const": "E2"
+        },
+        "filer_kind": {
+         "type": "string",
+         "enum": [
+          "person",
+          "entity",
+          "unknown"
+         ]
+        },
+        "person_or_entity": {
+         "type": "string"
+        },
+        "role": {
+         "type": "string",
+         "enum": [
+          "board_member",
+          "executive",
+          "controlling_shareholder",
+          "related_person_of_insider",
+          "investment_fund",
+          "other_5pct_holder",
+          "unknown"
+         ]
+        },
+        "legal_basis": {
+         "type": [
+          "string",
+          "null"
+         ]
+        },
+        "direction": {
+         "type": "string",
+         "enum": [
+          "buy",
+          "sell",
+          "mixed"
+         ]
+        },
+        "trades": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "trade_date": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+           },
+           "qty": {
+            "type": "number",
+            "minimum": 0
+           },
+           "price_tl": {
+            "anyOf": [
+             {
+              "type": "number",
+              "exclusiveMinimum": 0
+             },
+             {
+              "type": "null"
+             }
+            ]
+           },
+           "value_tl": {
+            "anyOf": [
+             {
+              "type": "number",
+              "minimum": 0
+             },
+             {
+              "type": "null"
+             }
+            ]
+           }
+          },
+          "required": [
+           "trade_date",
+           "qty",
+           "price_tl",
+           "value_tl"
+          ],
+          "additionalProperties": false
+         }
+        },
+        "holding_before_pct": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "holding_after_pct": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "open_market": {
+         "type": [
+          "boolean",
+          "null"
+         ]
+        },
+        "non_market_reason": {
+         "type": [
+          "string",
+          "null"
+         ]
+        }
+       },
+       "required": [
+        "status",
+        "confidence",
+        "injection_suspected",
+        "quotes",
+        "notes_tr",
+        "abstain",
+        "kind",
+        "filer_kind",
+        "person_or_entity",
+        "role",
+        "legal_basis",
+        "direction",
+        "trades",
+        "holding_before_pct",
+        "holding_after_pct",
+        "open_market",
+        "non_market_reason"
+       ],
+       "additionalProperties": false
+      },
+      {
+       "type": "object",
+       "properties": {
+        "status": {
+         "type": "string",
+         "enum": [
+          "ok",
+          "abstain"
+         ]
+        },
+        "confidence": {
+         "type": "number",
+         "minimum": 0,
+         "maximum": 1
+        },
+        "injection_suspected": {
+         "type": "boolean"
+        },
+        "quotes": {
+         "minItems": 1,
+         "maxItems": 8,
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "field": {
+            "type": "string"
+           },
+           "quote": {
+            "type": "string",
+            "minLength": 1
+           }
+          },
+          "required": [
+           "field",
+           "quote"
+          ],
+          "additionalProperties": false
+         }
+        },
+        "notes_tr": {
+         "type": "string"
+        },
+        "abstain": {
+         "anyOf": [
+          {
+           "type": "object",
+           "properties": {
+            "reason": {
+             "type": "string",
+             "enum": [
+              "insufficient_text",
+              "ambiguous",
+              "out_of_scope",
+              "conflicting_values",
+              "suspected_injection",
+              "attachment_missing",
+              "other"
+             ]
+            },
+            "detail_tr": {
+             "type": "string"
+            }
+           },
+           "required": [
+            "reason",
+            "detail_tr"
+           ],
+           "additionalProperties": false
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "kind": {
+         "type": "string",
+         "const": "E3"
+        },
+        "counterparty_role": {
+         "type": "string",
+         "enum": [
+          "customer",
+          "supplier",
+          "partner",
+          "other",
+          "unknown"
+         ]
+        },
+        "counterparty_name": {
+         "type": [
+          "string",
+          "null"
+         ]
+        },
+        "counterparty_disclosed": {
+         "type": "boolean"
+        },
+        "counterparty_domestic": {
+         "type": [
+          "boolean",
+          "null"
+         ]
+        },
+        "counterparty_public_sector": {
+         "type": [
+          "boolean",
+          "null"
+         ]
+        },
+        "subject_tr": {
+         "type": "string"
+        },
+        "amount": {
+         "anyOf": [
+          {
+           "type": "number",
+           "minimum": 0
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "currency": {
+         "type": [
+          "string",
+          "null"
+         ]
+        },
+        "amount_raw": {
+         "type": [
+          "string",
+          "null"
+         ]
+        },
+        "amount_try_stated": {
+         "anyOf": [
+          {
+           "type": "number",
+           "minimum": 0
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "vat": {
+         "type": "string",
+         "enum": [
+          "included",
+          "excluded",
+          "unknown"
+         ]
+        },
+        "amount_is_estimate": {
+         "type": "boolean"
+        },
+        "duration_months": {
+         "anyOf": [
+          {
+           "type": "number",
+           "minimum": 0
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "start_date": {
+         "anyOf": [
+          {
+           "type": "string",
+           "format": "date",
+           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "binding_status": {
+         "type": "string",
+         "enum": [
+          "signed_contract",
+          "order_received",
+          "tender_award_final",
+          "tender_award_not_final",
+          "lowest_or_best_bid_only",
+          "framework_agreement",
+          "mou_or_loi",
+          "unknown"
+         ]
+        },
+        "related_party": {
+         "type": [
+          "boolean",
+          "null"
+         ]
+        },
+        "is_renewal_or_extension": {
+         "type": "boolean"
+        },
+        "stated_share_of_revenue_pct": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "stated_effect": {
+         "type": [
+          "string",
+          "null"
+         ]
+        }
+       },
+       "required": [
+        "status",
+        "confidence",
+        "injection_suspected",
+        "quotes",
+        "notes_tr",
+        "abstain",
+        "kind",
+        "counterparty_role",
+        "counterparty_name",
+        "counterparty_disclosed",
+        "counterparty_domestic",
+        "counterparty_public_sector",
+        "subject_tr",
+        "amount",
+        "currency",
+        "amount_raw",
+        "amount_try_stated",
+        "vat",
+        "amount_is_estimate",
+        "duration_months",
+        "start_date",
+        "binding_status",
+        "related_party",
+        "is_renewal_or_extension",
+        "stated_share_of_revenue_pct",
+        "stated_effect"
+       ],
+       "additionalProperties": false
+      },
+      {
+       "type": "object",
+       "properties": {
+        "status": {
+         "type": "string",
+         "enum": [
+          "ok",
+          "abstain"
+         ]
+        },
+        "confidence": {
+         "type": "number",
+         "minimum": 0,
+         "maximum": 1
+        },
+        "injection_suspected": {
+         "type": "boolean"
+        },
+        "quotes": {
+         "minItems": 1,
+         "maxItems": 8,
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "field": {
+            "type": "string"
+           },
+           "quote": {
+            "type": "string",
+            "minLength": 1
+           }
+          },
+          "required": [
+           "field",
+           "quote"
+          ],
+          "additionalProperties": false
+         }
+        },
+        "notes_tr": {
+         "type": "string"
+        },
+        "abstain": {
+         "anyOf": [
+          {
+           "type": "object",
+           "properties": {
+            "reason": {
+             "type": "string",
+             "enum": [
+              "insufficient_text",
+              "ambiguous",
+              "out_of_scope",
+              "conflicting_values",
+              "suspected_injection",
+              "attachment_missing",
+              "other"
+             ]
+            },
+            "detail_tr": {
+             "type": "string"
+            }
+           },
+           "required": [
+            "reason",
+            "detail_tr"
+           ],
+           "additionalProperties": false
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "kind": {
+         "type": "string",
+         "const": "E4"
+        },
+        "period": {
+         "type": "string",
+         "pattern": "^\\d{4}-(Q[1-4]|H1|9M|FY)$"
+        },
+        "report_kind": {
+         "type": "string"
+        },
+        "consolidated": {
+         "type": "boolean"
+        },
+        "tms29_applied": {
+         "type": "boolean"
+        },
+        "audit_opinion": {
+         "type": [
+          "string",
+          "null"
+         ]
+        },
+        "going_concern_emphasis": {
+         "type": "boolean"
+        },
+        "guidance_direction": {
+         "type": "string",
+         "enum": [
+          "up",
+          "down",
+          "flat",
+          "none"
+         ]
+        },
+        "guidance_statements_tr": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "one_off_items": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "management_tone": {
+         "type": "string",
+         "enum": [
+          "positive",
+          "neutral",
+          "negative",
+          "mixed"
+         ]
+        },
+        "risk_mentions_tr": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        }
+       },
+       "required": [
+        "status",
+        "confidence",
+        "injection_suspected",
+        "quotes",
+        "notes_tr",
+        "abstain",
+        "kind",
+        "period",
+        "report_kind",
+        "consolidated",
+        "tms29_applied",
+        "audit_opinion",
+        "going_concern_emphasis",
+        "guidance_direction",
+        "guidance_statements_tr",
+        "one_off_items",
+        "management_tone",
+        "risk_mentions_tr"
+       ],
+       "additionalProperties": false
+      }
+     ]
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "materiality": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "status": {
+       "type": "string",
+       "enum": [
+        "ok",
+        "abstain"
+       ]
+      },
+      "event_type": {
+       "type": "string",
+       "enum": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+       ]
+      },
+      "denominator_kind": {
+       "type": "string",
+       "enum": [
+        "annual_revenue",
+        "market_cap",
+        "paid_in_capital",
+        "free_float_mcap",
+        "none"
+       ]
+      },
+      "denominator": {
+       "anyOf": [
+        {
+         "type": "object",
+         "properties": {
+          "name": {
+           "type": "string"
+          },
+          "value": {
+           "type": "number"
+          },
+          "ref_id": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "name",
+          "value",
+          "ref_id"
+         ],
+         "additionalProperties": false
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "revenue_available_at_as_of": {
+       "type": "boolean"
+      },
+      "market_cap": {
+       "anyOf": [
+        {
+         "type": "object",
+         "properties": {
+          "name": {
+           "type": "string"
+          },
+          "value": {
+           "type": "number"
+          },
+          "ref_id": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "name",
+          "value",
+          "ref_id"
+         ],
+         "additionalProperties": false
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "fx_rates": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "name": {
+          "type": "string"
+         },
+         "value": {
+          "type": "number"
+         },
+         "ref_id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "name",
+         "value",
+         "ref_id"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "trade_day_close": {
+       "anyOf": [
+        {
+         "type": "object",
+         "properties": {
+          "name": {
+           "type": "string"
+          },
+          "value": {
+           "type": "number"
+          },
+          "ref_id": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "name",
+          "value",
+          "ref_id"
+         ],
+         "additionalProperties": false
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "secondary": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "name": {
+          "type": "string"
+         },
+         "value": {
+          "type": "number"
+         },
+         "ref_id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "name",
+         "value",
+         "ref_id"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "e4_lines": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "name": {
+          "type": "string"
+         },
+         "value": {
+          "type": "number"
+         },
+         "ref_id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "name",
+         "value",
+         "ref_id"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "financials_period_end": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "financials_stale_days": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "data_gaps": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "confidence": {
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
+      },
+      "notes_tr": {
+       "type": "string"
+      },
+      "abstain": {
+       "anyOf": [
+        {
+         "type": "object",
+         "properties": {
+          "reason": {
+           "type": "string",
+           "enum": [
+            "insufficient_text",
+            "ambiguous",
+            "out_of_scope",
+            "conflicting_values",
+            "suspected_injection",
+            "attachment_missing",
+            "other"
+           ]
+          },
+          "detail_tr": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "reason",
+          "detail_tr"
+         ],
+         "additionalProperties": false
+        },
+        {
+         "type": "null"
+        }
+       ]
+      }
+     },
+     "required": [
+      "status",
+      "event_type",
+      "denominator_kind",
+      "denominator",
+      "revenue_available_at_as_of",
+      "market_cap",
+      "fx_rates",
+      "trade_day_close",
+      "secondary",
+      "e4_lines",
+      "financials_period_end",
+      "financials_stale_days",
+      "data_gaps",
+      "confidence",
+      "notes_tr",
+      "abstain"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "evidence_card": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "selection": {
+       "type": "object",
+       "properties": {
+        "status": {
+         "type": "string",
+         "enum": [
+          "ok",
+          "abstain"
+         ]
+        },
+        "event_type": {
+         "type": "string",
+         "enum": [
+          "E1",
+          "E2",
+          "E3",
+          "E4"
+         ]
+        },
+        "search_queries": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "candidates_considered": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 9007199254740991
+        },
+        "selected": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "ref_id": {
+            "type": "string",
+            "pattern": "^evt:"
+           },
+           "relevance": {
+            "type": "string",
+            "enum": [
+             "high",
+             "medium"
+            ]
+           },
+           "why_similar_tr": {
+            "type": "string"
+           }
+          },
+          "required": [
+           "ref_id",
+           "relevance",
+           "why_similar_tr"
+          ],
+          "additionalProperties": false
+         }
+        },
+        "same_ticker_selected": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 9007199254740991
+        },
+        "exclusion_reasons": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "already_announced_before": {
+         "type": "boolean"
+        },
+        "already_announced_ref": {
+         "type": [
+          "string",
+          "null"
+         ]
+        },
+        "proposed_strength": {
+         "type": "string",
+         "enum": [
+          "strong",
+          "moderate",
+          "weak",
+          "insufficient"
+         ]
+        },
+        "summary_tr": {
+         "type": "string"
+        },
+        "confidence": {
+         "type": "number",
+         "minimum": 0,
+         "maximum": 1
+        },
+        "abstain": {
+         "anyOf": [
+          {
+           "type": "object",
+           "properties": {
+            "reason": {
+             "type": "string",
+             "enum": [
+              "insufficient_text",
+              "ambiguous",
+              "out_of_scope",
+              "conflicting_values",
+              "suspected_injection",
+              "attachment_missing",
+              "other"
+             ]
+            },
+            "detail_tr": {
+             "type": "string"
+            }
+           },
+           "required": [
+            "reason",
+            "detail_tr"
+           ],
+           "additionalProperties": false
+          },
+          {
+           "type": "null"
+          }
+         ]
+        }
+       },
+       "required": [
+        "status",
+        "event_type",
+        "search_queries",
+        "candidates_considered",
+        "selected",
+        "same_ticker_selected",
+        "exclusion_reasons",
+        "already_announced_before",
+        "already_announced_ref",
+        "proposed_strength",
+        "summary_tr",
+        "confidence",
+        "abstain"
+       ],
+       "additionalProperties": false
+      },
+      "stats": {
+       "type": "object",
+       "properties": {
+        "ref_id": {
+         "type": "string"
+        },
+        "n": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 9007199254740991
+        },
+        "n_same_ticker": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 9007199254740991
+        },
+        "median_car_5d": {
+         "type": "number"
+        },
+        "mean_car_5d": {
+         "type": "number"
+        },
+        "hit_rate_5d": {
+         "type": "number",
+         "minimum": 0,
+         "maximum": 1
+        },
+        "median_car_20d": {
+         "type": "number"
+        },
+        "mean_car_20d": {
+         "type": "number"
+        },
+        "hit_rate_20d": {
+         "type": "number",
+         "minimum": 0,
+         "maximum": 1
+        },
+        "ci95_car_20d": {
+         "type": "array",
+         "prefixItems": [
+          {
+           "type": "number"
+          },
+          {
+           "type": "number"
+          }
+         ],
+         "items": false,
+         "minItems": 2,
+         "maxItems": 2
+        },
+        "dispersion_iqr_20d": {
+         "type": "number",
+         "minimum": 0
+        }
+       },
+       "required": [
+        "ref_id",
+        "n",
+        "n_same_ticker",
+        "median_car_5d",
+        "mean_car_5d",
+        "hit_rate_5d",
+        "median_car_20d",
+        "mean_car_20d",
+        "hit_rate_20d",
+        "ci95_car_20d",
+        "dispersion_iqr_20d"
+       ],
+       "additionalProperties": false
+      },
+      "strength": {
+       "type": "string",
+       "enum": [
+        "strong",
+        "moderate",
+        "weak",
+        "insufficient"
+       ]
+      },
+      "retrieved_ids": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "card_id": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "selection",
+      "stats",
+      "strength",
+      "retrieved_ids",
+      "card_id"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "evidence_events": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "ref_id": {
+      "type": "string"
+     },
+     "ticker": {
+      "type": "string"
+     },
+     "company_name": {
+      "type": "string"
+     },
+     "published_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+     },
+     "title": {
+      "type": "string"
+     },
+     "car_1d": {
+      "type": "number"
+     },
+     "car_5d": {
+      "type": "number"
+     },
+     "car_20d": {
+      "type": "number"
+     },
+     "car_60d": {
+      "type": [
+       "number",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "ref_id",
+     "ticker",
+     "company_name",
+     "published_at",
+     "title",
+     "car_1d",
+     "car_5d",
+     "car_20d",
+     "car_60d"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "merged": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "run_id": {
+       "type": "string"
+      },
+      "disclosure_index": {
+       "type": "integer",
+       "exclusiveMinimum": 0,
+       "maximum": 9007199254740991
+      },
+      "ticker": {
+       "type": "string"
+      },
+      "as_of": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "event_type": {
+       "type": "string",
+       "enum": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "FILTER",
+        "IGNORE"
+       ]
+      },
+      "sub_type": {
+       "type": "string"
+      },
+      "agent_status": {
+       "type": "object",
+       "propertyNames": {
+        "type": "string"
+       },
+       "additionalProperties": {
+        "type": "string",
+        "enum": [
+         "ok",
+         "abstain",
+         "failed",
+         "skipped"
+        ]
+       }
+      },
+      "agent_confidence": {
+       "type": "object",
+       "propertyNames": {
+        "type": "string"
+       },
+       "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+       }
+      },
+      "any_injection_flag": {
+       "type": "boolean"
+      },
+      "degraded": {
+       "type": "boolean"
+      },
+      "e1_nature": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "new_buyback_rows": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "buyback_10d_capital_pct": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "buyback_10d_notice_count": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "buyback_sale_within_20d": {
+       "type": [
+        "boolean",
+        "null"
+       ]
+      },
+      "insider_role_class": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "insider_open_market": {
+       "type": [
+        "boolean",
+        "null"
+       ]
+      },
+      "insider_net_buy_value_try": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "insider_buy_to_ff_mcap": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "insider_cluster_30d": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "ret_3m": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "reader_amount": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "regex_amounts": {
+       "type": "array",
+       "items": {
+        "type": "number"
+       }
+      },
+      "amount_in_text": {
+       "type": [
+        "boolean",
+        "null"
+       ]
+      },
+      "binding": {
+       "type": [
+        "boolean",
+        "null"
+       ]
+      },
+      "related_party": {
+       "type": [
+        "boolean",
+        "null"
+       ]
+      },
+      "renewal": {
+       "type": [
+        "boolean",
+        "null"
+       ]
+      },
+      "amount_try": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "amount_to_revenue_annualized": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "amount_to_mcap": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "e3_denominator": {
+       "anyOf": [
+        {
+         "type": "string",
+         "enum": [
+          "annual_revenue",
+          "market_cap"
+         ]
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "e4": {
+       "type": "object",
+       "propertyNames": {
+        "type": "string"
+       },
+       "additionalProperties": {
+        "type": [
+         "number",
+         "string",
+         "boolean",
+         "null"
+        ]
+       }
+      },
+      "last_price": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "price_at": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "upper_limit": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "lower_limit": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "adv20_try": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "free_float_pct": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "leakage_5d_mkt_adj": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "ret_10d_mkt_adj": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "evidence_card_id": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "evidence_strength": {
+       "anyOf": [
+        {
+         "type": "string",
+         "enum": [
+          "strong",
+          "moderate",
+          "weak",
+          "insufficient"
+         ]
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "evidence_n": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "evidence_median_car_5d": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "evidence_median_car_20d": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "evidence_ids": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "retrieved_ids": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "flags": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     "required": [
+      "run_id",
+      "disclosure_index",
+      "ticker",
+      "as_of",
+      "event_type",
+      "sub_type",
+      "agent_status",
+      "agent_confidence",
+      "any_injection_flag",
+      "degraded",
+      "e1_nature",
+      "new_buyback_rows",
+      "buyback_10d_capital_pct",
+      "buyback_10d_notice_count",
+      "buyback_sale_within_20d",
+      "insider_role_class",
+      "insider_open_market",
+      "insider_net_buy_value_try",
+      "insider_buy_to_ff_mcap",
+      "insider_cluster_30d",
+      "ret_3m",
+      "reader_amount",
+      "regex_amounts",
+      "amount_in_text",
+      "binding",
+      "related_party",
+      "renewal",
+      "amount_try",
+      "amount_to_revenue_annualized",
+      "amount_to_mcap",
+      "e3_denominator",
+      "e4",
+      "last_price",
+      "price_at",
+      "upper_limit",
+      "lower_limit",
+      "adv20_try",
+      "free_float_pct",
+      "leakage_5d_mkt_adj",
+      "ret_10d_mkt_adj",
+      "evidence_card_id",
+      "evidence_strength",
+      "evidence_n",
+      "evidence_median_car_5d",
+      "evidence_median_car_20d",
+      "evidence_ids",
+      "retrieved_ids",
+      "flags"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "skeptic": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "status": {
+       "type": "string",
+       "enum": [
+        "ok",
+        "abstain"
+       ]
+      },
+      "flags": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "enum": [
+           "DUPLICATE_OR_CORRECTION",
+           "NOT_BINDING",
+           "RELATED_PARTY",
+           "RENEWAL_NOT_NEW",
+           "TOKEN_BUYBACK",
+           "NOT_OPEN_MARKET",
+           "FUND_NOT_INSIDER",
+           "DILUTION_OR_HYPE",
+           "MANIPULATION_MARKERS",
+           "AMOUNT_NOT_IN_TEXT",
+           "STALE_OR_WEAK_FINANCIALS",
+           "WEAK_EVIDENCE",
+           "INJECTION_SUSPECT",
+           "OTHER"
+          ]
+         },
+         "severity": {
+          "type": "string",
+          "enum": [
+           "info",
+           "reduce",
+           "veto"
+          ]
+         },
+         "detail_tr": {
+          "type": "string"
+         },
+         "supporting_ref": {
+          "type": [
+           "string",
+           "null"
+          ]
+         }
+        },
+        "required": [
+         "code",
+         "severity",
+         "detail_tr",
+         "supporting_ref"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "size_multiplier": {
+       "anyOf": [
+        {
+         "type": "number",
+         "const": 1
+        },
+        {
+         "type": "number",
+         "const": 0.75
+        },
+        {
+         "type": "number",
+         "const": 0.5
+        },
+        {
+         "type": "number",
+         "const": 0.25
+        }
+       ]
+      },
+      "veto": {
+       "type": "boolean"
+      },
+      "strongest_counterargument_tr": {
+       "type": "string"
+      },
+      "confidence": {
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
+      },
+      "abstain": {
+       "anyOf": [
+        {
+         "type": "object",
+         "properties": {
+          "reason": {
+           "type": "string",
+           "enum": [
+            "insufficient_text",
+            "ambiguous",
+            "out_of_scope",
+            "conflicting_values",
+            "suspected_injection",
+            "attachment_missing",
+            "other"
+           ]
+          },
+          "detail_tr": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "reason",
+          "detail_tr"
+         ],
+         "additionalProperties": false
+        },
+        {
+         "type": "null"
+        }
+       ]
+      }
+     },
+     "required": [
+      "status",
+      "flags",
+      "size_multiplier",
+      "veto",
+      "strongest_counterargument_tr",
+      "confidence",
+      "abstain"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "rule_decision": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "outcome": {
+       "type": "string",
+       "enum": [
+        "PROPOSE",
+        "NO_TRADE",
+        "HOLD"
+       ]
+      },
+      "reason_codes": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "rules_fired": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "rules_hash": {
+       "type": "string"
+      },
+      "trace": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "rule": {
+          "type": "string",
+          "pattern": "^(E[1-4]|LEAK|EDGE|EVIDENCE|AVOID|HOLD)\\.[a-z0-9_]+$"
+         },
+         "passed": {
+          "type": "boolean"
+         },
+         "observed": {
+          "type": [
+           "string",
+           "null"
+          ]
+         },
+         "threshold": {
+          "type": [
+           "string",
+           "null"
+          ]
+         },
+         "detail_tr": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "rule",
+         "passed",
+         "observed",
+         "threshold",
+         "detail_tr"
+        ],
+        "additionalProperties": false
+       }
+      }
+     },
+     "required": [
+      "outcome",
+      "reason_codes",
+      "rules_fired",
+      "rules_hash",
+      "trace"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "compliance": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "status": {
+       "type": "string",
+       "enum": [
+        "ok",
+        "abstain"
+       ]
+      },
+      "decision": {
+       "type": "string",
+       "enum": [
+        "pass",
+        "escalate",
+        "veto"
+       ]
+      },
+      "checks": {
+       "minItems": 6,
+       "maxItems": 10,
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "enum": [
+           "SPK_MEASURE",
+           "VBTS_MEASURE",
+           "WATCHLIST_MARKET",
+           "TRADING_HALT",
+           "INFO_PUBLIC",
+           "MARKET_ABUSE_RISK",
+           "RESTRICTED_LIST",
+           "SIGNAL_SHARING",
+           "PROMPT_INJECTION",
+           "RATIONALE_INTEGRITY"
+          ]
+         },
+         "result": {
+          "type": "string",
+          "enum": [
+           "pass",
+           "fail",
+           "escalate",
+           "unknown"
+          ]
+         },
+         "basis_ref": {
+          "type": [
+           "string",
+           "null"
+          ]
+         },
+         "detail_tr": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "code",
+         "result",
+         "basis_ref",
+         "detail_tr"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "regulation_refs": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "summary_tr": {
+       "type": "string"
+      },
+      "confidence": {
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
+      },
+      "abstain": {
+       "anyOf": [
+        {
+         "type": "object",
+         "properties": {
+          "reason": {
+           "type": "string",
+           "enum": [
+            "insufficient_text",
+            "ambiguous",
+            "out_of_scope",
+            "conflicting_values",
+            "suspected_injection",
+            "attachment_missing",
+            "other"
+           ]
+          },
+          "detail_tr": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "reason",
+          "detail_tr"
+         ],
+         "additionalProperties": false
+        },
+        {
+         "type": "null"
+        }
+       ]
+      }
+     },
+     "required": [
+      "status",
+      "decision",
+      "checks",
+      "regulation_refs",
+      "summary_tr",
+      "confidence",
+      "abstain"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "risk_checks": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "phase": {
+      "type": "string",
+      "enum": [
+       "pre_trade",
+       "at_send"
+      ]
+     },
+     "rule_code": {
+      "type": "string",
+      "enum": [
+       "R01",
+       "R02",
+       "R03",
+       "R04",
+       "R05",
+       "R06",
+       "R07",
+       "R08",
+       "R09",
+       "R10",
+       "R11",
+       "R12",
+       "R13",
+       "R14",
+       "R15",
+       "R16"
+      ]
+     },
+     "outcome": {
+      "type": "string",
+      "enum": [
+       "pass",
+       "resize",
+       "reject",
+       "hold",
+       "approval_required"
+      ]
+     },
+     "reason_code": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "detail_tr": {
+      "type": "string"
+     },
+     "observed": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "limit": {
+      "type": [
+       "string",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "phase",
+     "rule_code",
+     "outcome",
+     "reason_code",
+     "detail_tr",
+     "observed",
+     "limit"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "proposal": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "proposal_id": {
+       "type": "string"
+      },
+      "run_id": {
+       "type": "string"
+      },
+      "strategy_version": {
+       "type": "string"
+      },
+      "rules_hash": {
+       "type": "string"
+      },
+      "prompt_manifest_hash": {
+       "type": "string"
+      },
+      "disclosure_index": {
+       "type": "integer",
+       "exclusiveMinimum": 0,
+       "maximum": 9007199254740991
+      },
+      "ticker": {
+       "type": "string",
+       "pattern": "^[A-Z0-9]{3,6}$"
+      },
+      "venue": {
+       "type": "string",
+       "const": "BIST"
+      },
+      "side": {
+       "type": "string",
+       "enum": [
+        "buy",
+        "sell"
+       ]
+      },
+      "event_type": {
+       "anyOf": [
+        {
+         "type": "string",
+         "enum": [
+          "E1",
+          "E2",
+          "E3",
+          "E4"
+         ]
+        },
+        {
+         "type": "string",
+         "const": "EXIT"
+        }
+       ]
+      },
+      "rule_ids": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "entry": {
+       "type": "string",
+       "enum": [
+        "next_open_auction",
+        "intraday_limit"
+       ]
+      },
+      "limit_price": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "ref_price": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "ref_price_at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "requested_notional_try": {
+       "type": "number",
+       "minimum": 0
+      },
+      "requested_qty": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "stop_price": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "holding_days_min": {
+       "type": "integer",
+       "exclusiveMinimum": 0,
+       "maximum": 9007199254740991
+      },
+      "holding_days_max": {
+       "type": "integer",
+       "exclusiveMinimum": 0,
+       "maximum": 9007199254740991
+      },
+      "exit_rules": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "expected_edge_bps": {
+       "type": "number"
+      },
+      "est_cost_bps": {
+       "type": "number",
+       "minimum": 0
+      },
+      "multipliers": {
+       "type": "object",
+       "properties": {
+        "evidence": {
+         "type": "number"
+        },
+        "skeptic": {
+         "type": "number"
+        },
+        "leakage": {
+         "type": "number"
+        },
+        "regime": {
+         "type": "number"
+        }
+       },
+       "required": [
+        "evidence",
+        "skeptic",
+        "leakage",
+        "regime"
+       ],
+       "additionalProperties": false
+      },
+      "confidence": {
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
+      },
+      "evidence_card_id": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "evidence_ids": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "retrieved_ids": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "escalate_required": {
+       "type": "boolean"
+      },
+      "degraded": {
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "proposal_id",
+      "run_id",
+      "strategy_version",
+      "rules_hash",
+      "prompt_manifest_hash",
+      "disclosure_index",
+      "ticker",
+      "venue",
+      "side",
+      "event_type",
+      "rule_ids",
+      "entry",
+      "limit_price",
+      "ref_price",
+      "ref_price_at",
+      "requested_notional_try",
+      "requested_qty",
+      "stop_price",
+      "holding_days_min",
+      "holding_days_max",
+      "exit_rules",
+      "expected_edge_bps",
+      "est_cost_bps",
+      "multipliers",
+      "confidence",
+      "evidence_card_id",
+      "evidence_ids",
+      "retrieved_ids",
+      "escalate_required",
+      "degraded"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "approval": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "kind": {
+       "type": "string",
+       "const": "trade_approval"
+      },
+      "proposal_id": {
+       "type": "string"
+      },
+      "run_id": {
+       "type": "string"
+      },
+      "ticker": {
+       "type": "string",
+       "pattern": "^[A-Z0-9]{3,6}$"
+      },
+      "company_name": {
+       "type": "string"
+      },
+      "side": {
+       "type": "string",
+       "enum": [
+        "buy",
+        "sell"
+       ]
+      },
+      "event_type": {
+       "anyOf": [
+        {
+         "type": "string",
+         "enum": [
+          "E1",
+          "E2",
+          "E3",
+          "E4"
+         ]
+        },
+        {
+         "type": "string",
+         "const": "EXIT"
+        }
+       ]
+      },
+      "sub_type_tr": {
+       "type": "string"
+      },
+      "headline_tr": {
+       "type": "string"
+      },
+      "disclosure_index": {
+       "type": "integer",
+       "exclusiveMinimum": 0,
+       "maximum": 9007199254740991
+      },
+      "disclosure_url": {
+       "type": "string",
+       "format": "uri"
+      },
+      "final_notional_try": {
+       "type": "number",
+       "minimum": 0
+      },
+      "requested_notional_try": {
+       "type": "number",
+       "minimum": 0
+      },
+      "limit_price": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "qty": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "entry": {
+       "type": "string",
+       "enum": [
+        "next_open_auction",
+        "intraday_limit"
+       ]
+      },
+      "holding_days": {
+       "type": "array",
+       "prefixItems": [
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        },
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        }
+       ],
+       "items": false,
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "level": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "escalate"
+       ]
+      },
+      "escalation_reasons": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "enum": [
+         "COMPLIANCE_ESCALATE",
+         "DEGRADED",
+         "NEAR_MAX_POSITIONS",
+         "RESTRICTED_SELL",
+         "RESIZED"
+        ]
+       }
+      },
+      "evidence_summary": {
+       "type": "object",
+       "properties": {
+        "n": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 9007199254740991
+        },
+        "median_car_5d": {
+         "type": "number"
+        },
+        "median_car_20d": {
+         "type": "number"
+        },
+        "hit_rate_5d": {
+         "type": "number",
+         "minimum": 0,
+         "maximum": 1
+        },
+        "strength": {
+         "type": "string",
+         "enum": [
+          "strong",
+          "moderate",
+          "weak",
+          "insufficient"
+         ]
+        },
+        "card_id": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "n",
+        "median_car_5d",
+        "median_car_20d",
+        "hit_rate_5d",
+        "strength",
+        "card_id"
+       ],
+       "additionalProperties": false
+      },
+      "skeptic_flags": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "enum": [
+           "DUPLICATE_OR_CORRECTION",
+           "NOT_BINDING",
+           "RELATED_PARTY",
+           "RENEWAL_NOT_NEW",
+           "TOKEN_BUYBACK",
+           "NOT_OPEN_MARKET",
+           "FUND_NOT_INSIDER",
+           "DILUTION_OR_HYPE",
+           "MANIPULATION_MARKERS",
+           "AMOUNT_NOT_IN_TEXT",
+           "STALE_OR_WEAK_FINANCIALS",
+           "WEAK_EVIDENCE",
+           "INJECTION_SUSPECT",
+           "OTHER"
+          ]
+         },
+         "severity": {
+          "type": "string",
+          "enum": [
+           "info",
+           "reduce",
+           "veto"
+          ]
+         },
+         "detail_tr": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "code",
+         "severity",
+         "detail_tr"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "skeptic_note_tr": {
+       "type": "string"
+      },
+      "size_multiplier": {
+       "type": "number"
+      },
+      "compliance_summary_tr": {
+       "type": "string"
+      },
+      "rule_trace_summary": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "rule": {
+          "type": "string",
+          "pattern": "^(E[1-4]|LEAK|EDGE|EVIDENCE|AVOID|HOLD)\\.[a-z0-9_]+$"
+         },
+         "passed": {
+          "type": "boolean"
+         },
+         "observed": {
+          "type": [
+           "string",
+           "null"
+          ]
+         },
+         "threshold": {
+          "type": [
+           "string",
+           "null"
+          ]
+         },
+         "detail_tr": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "rule",
+         "passed",
+         "observed",
+         "threshold",
+         "detail_tr"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "degraded": {
+       "type": "boolean"
+      },
+      "prompt_manifest_hash": {
+       "type": "string"
+      },
+      "created_at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "expires_at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "status": {
+       "type": "string",
+       "enum": [
+        "pending",
+        "claimed",
+        "approved",
+        "rejected",
+        "expired",
+        "cancelled"
+       ]
+      },
+      "decided_by": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "decided_role": {
+       "anyOf": [
+        {
+         "type": "string",
+         "enum": [
+          "analyst",
+          "risk_officer",
+          "admin",
+          "auditor"
+         ]
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "decided_at": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "decision_comment": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "approved_notional_try": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "is_fixture": {
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "kind",
+      "proposal_id",
+      "run_id",
+      "ticker",
+      "company_name",
+      "side",
+      "event_type",
+      "sub_type_tr",
+      "headline_tr",
+      "disclosure_index",
+      "disclosure_url",
+      "final_notional_try",
+      "requested_notional_try",
+      "limit_price",
+      "qty",
+      "entry",
+      "holding_days",
+      "level",
+      "escalation_reasons",
+      "evidence_summary",
+      "skeptic_flags",
+      "skeptic_note_tr",
+      "size_multiplier",
+      "compliance_summary_tr",
+      "rule_trace_summary",
+      "degraded",
+      "prompt_manifest_hash",
+      "created_at",
+      "expires_at",
+      "status",
+      "decided_by",
+      "decided_role",
+      "decided_at",
+      "decision_comment",
+      "approved_notional_try",
+      "is_fixture"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "orders": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "client_order_id": {
+      "type": "string"
+     },
+     "proposal_id": {
+      "type": "string"
+     },
+     "run_id": {
+      "type": "string"
+     },
+     "ticker": {
+      "type": "string",
+      "pattern": "^[A-Z0-9]{3,6}$"
+     },
+     "company_name": {
+      "type": "string"
+     },
+     "side": {
+      "type": "string",
+      "enum": [
+       "buy",
+       "sell"
+      ]
+     },
+     "order_type": {
+      "type": "string",
+      "enum": [
+       "market",
+       "limit"
+      ]
+     },
+     "tif": {
+      "type": "string",
+      "enum": [
+       "day",
+       "opg"
+      ]
+     },
+     "qty": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991
+     },
+     "limit_price": {
+      "anyOf": [
+       {
+        "type": "number",
+        "exclusiveMinimum": 0
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "pending_open",
+       "accepted",
+       "awaiting_manual_entry",
+       "partially_filled",
+       "filled",
+       "canceled",
+       "rejected"
+      ]
+     },
+     "broker": {
+      "type": "string",
+      "enum": [
+       "simbist",
+       "order_ticket"
+      ]
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+     },
+     "fills": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "id": {
+         "type": "string"
+        },
+        "order_id": {
+         "type": "string"
+        },
+        "qty": {
+         "type": "integer",
+         "exclusiveMinimum": 0,
+         "maximum": 9007199254740991
+        },
+        "price": {
+         "type": "number",
+         "exclusiveMinimum": 0
+        },
+        "commission": {
+         "type": "number",
+         "minimum": 0
+        },
+        "bsmv": {
+         "type": "number",
+         "minimum": 0
+        },
+        "slippage_bps": {
+         "type": "number"
+        },
+        "filled_at": {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        "source": {
+         "type": "string",
+         "enum": [
+          "simbist",
+          "alpaca",
+          "manual"
+         ]
+        }
+       },
+       "required": [
+        "id",
+        "order_id",
+        "qty",
+        "price",
+        "commission",
+        "bsmv",
+        "slippage_bps",
+        "filled_at",
+        "source"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "cancel_reason": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "limit_up_open",
+         "kill_switch",
+         "day_end",
+         "ticket_unfilled",
+         "ticket_canceled",
+         "ticket_expired"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "is_fixture": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "id",
+     "client_order_id",
+     "proposal_id",
+     "run_id",
+     "ticker",
+     "company_name",
+     "side",
+     "order_type",
+     "tif",
+     "qty",
+     "limit_price",
+     "status",
+     "broker",
+     "created_at",
+     "fills",
+     "is_fixture"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "fills": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "order_id": {
+      "type": "string"
+     },
+     "qty": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991
+     },
+     "price": {
+      "type": "number",
+      "exclusiveMinimum": 0
+     },
+     "commission": {
+      "type": "number",
+      "minimum": 0
+     },
+     "bsmv": {
+      "type": "number",
+      "minimum": 0
+     },
+     "slippage_bps": {
+      "type": "number"
+     },
+     "filled_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "simbist",
+       "alpaca",
+       "manual"
+      ]
+     }
+    },
+    "required": [
+     "id",
+     "order_id",
+     "qty",
+     "price",
+     "commission",
+     "bsmv",
+     "slippage_bps",
+     "filled_at",
+     "source"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "ticket": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "ticket_no": {
+       "type": "string"
+      },
+      "order_id": {
+       "type": "string"
+      },
+      "proposal_id": {
+       "type": "string"
+      },
+      "run_id": {
+       "type": "string"
+      },
+      "rules_version": {
+       "type": "string"
+      },
+      "approved_at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "approval_deadline": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "created_at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "valid_until": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "mode_keys": {
+       "type": "object",
+       "properties": {
+        "config": {
+         "type": "boolean"
+        },
+        "env": {
+         "type": "boolean"
+        },
+        "ui": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "config",
+        "env",
+        "ui"
+       ],
+       "additionalProperties": false
+      },
+      "side": {
+       "type": "string",
+       "const": "buy"
+      },
+      "ticker": {
+       "type": "string",
+       "pattern": "^[A-Z0-9]{3,6}$"
+      },
+      "company_name": {
+       "type": "string"
+      },
+      "market": {
+       "type": "string"
+      },
+      "order_type": {
+       "type": "string",
+       "const": "limit"
+      },
+      "session_tr": {
+       "type": "string"
+      },
+      "qty": {
+       "type": "integer",
+       "exclusiveMinimum": 0,
+       "maximum": 9007199254740991
+      },
+      "limit_price": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "ref_price": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "upper_limit": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "est_notional_try": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "account_equity_try": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "event_line_tr": {
+       "type": "string"
+      },
+      "kap_line_tr": {
+       "type": "string"
+      },
+      "materiality_line_tr": {
+       "type": "string"
+      },
+      "leakage_line_tr": {
+       "type": "string"
+      },
+      "evidence_line_tr": {
+       "type": "string"
+      },
+      "cost_line_tr": {
+       "type": "string"
+      },
+      "edge_cost_line_tr": {
+       "type": "string"
+      },
+      "skeptic_line_tr": {
+       "type": "string"
+      },
+      "amount_check_line_tr": {
+       "type": "string"
+      },
+      "stop_line_tr": {
+       "type": "string"
+      },
+      "planned_exit_tr": {
+       "type": "string"
+      },
+      "gate_results": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string"
+         },
+         "passed": {
+          "type": "boolean"
+         }
+        },
+        "required": [
+         "code",
+         "passed"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "approval_level": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "escalate"
+       ]
+      },
+      "stage": {
+       "type": "string",
+       "enum": [
+        "evidence",
+        "paper",
+        "shadow",
+        "small_real"
+       ]
+      },
+      "audit_hash": {
+       "type": "string"
+      },
+      "prev_hash": {
+       "type": "string"
+      },
+      "entry": {
+       "type": "object",
+       "properties": {
+        "status": {
+         "type": "string",
+         "enum": [
+          "awaiting",
+          "entered",
+          "unfilled",
+          "canceled",
+          "expired"
+         ]
+        },
+        "filled_qty": {
+         "anyOf": [
+          {
+           "type": "integer",
+           "exclusiveMinimum": 0,
+           "maximum": 9007199254740991
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "avg_price": {
+         "anyOf": [
+          {
+           "type": "number",
+           "exclusiveMinimum": 0
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "filled_at": {
+         "anyOf": [
+          {
+           "type": "string",
+           "format": "date-time",
+           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "note": {
+         "type": [
+          "string",
+          "null"
+         ]
+        },
+        "marked_at": {
+         "anyOf": [
+          {
+           "type": "string",
+           "format": "date-time",
+           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        }
+       },
+       "required": [
+        "status",
+        "filled_qty",
+        "avg_price",
+        "filled_at",
+        "note",
+        "marked_at"
+       ],
+       "additionalProperties": false
+      },
+      "is_fixture": {
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "ticket_no",
+      "order_id",
+      "proposal_id",
+      "run_id",
+      "rules_version",
+      "approved_at",
+      "approval_deadline",
+      "created_at",
+      "valid_until",
+      "mode_keys",
+      "side",
+      "ticker",
+      "company_name",
+      "market",
+      "order_type",
+      "session_tr",
+      "qty",
+      "limit_price",
+      "ref_price",
+      "upper_limit",
+      "est_notional_try",
+      "account_equity_try",
+      "event_line_tr",
+      "kap_line_tr",
+      "materiality_line_tr",
+      "leakage_line_tr",
+      "evidence_line_tr",
+      "cost_line_tr",
+      "edge_cost_line_tr",
+      "skeptic_line_tr",
+      "amount_check_line_tr",
+      "stop_line_tr",
+      "planned_exit_tr",
+      "gate_results",
+      "approval_level",
+      "stage",
+      "audit_hash",
+      "prev_hash",
+      "entry",
+      "is_fixture"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "audit_positions": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "chain_pos": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991
+     },
+     "action": {
+      "type": "string"
+     },
+     "hash": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "chain_pos",
+     "action",
+     "hash"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "trace": {
+   "type": "object",
+   "properties": {
+    "nodes": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "node": {
+        "type": "string",
+        "enum": [
+         "route",
+         "pre_gate",
+         "guard",
+         "classifier",
+         "reader",
+         "materiality",
+         "evidence",
+         "merge",
+         "skeptic",
+         "rule_engine",
+         "compliance",
+         "risk_gate",
+         "request_approval",
+         "approval",
+         "execute",
+         "record",
+         "filter_action"
+        ]
+       },
+       "status": {
+        "type": "string",
+        "enum": [
+         "done",
+         "skipped",
+         "failed",
+         "waiting",
+         "running"
+        ]
+       },
+       "started_at": {
+        "anyOf": [
+         {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "latency_ms": {
+        "anyOf": [
+         {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "tokens_in": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+       },
+       "tokens_out": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+       },
+       "model_id": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "prompt_version": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "cached": {
+        "type": "boolean"
+       },
+       "parallel_group": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "note_tr": {
+        "type": [
+         "string",
+         "null"
+        ]
+       }
+      },
+      "required": [
+       "node",
+       "status",
+       "started_at",
+       "latency_ms",
+       "tokens_in",
+       "tokens_out",
+       "model_id",
+       "prompt_version",
+       "cached",
+       "parallel_group",
+       "note_tr"
+      ],
+      "additionalProperties": false
+     }
+    },
+    "langsmith_url": {
+     "anyOf": [
+      {
+       "type": "string",
+       "format": "uri"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   },
+   "required": [
+    "nodes",
+    "langsmith_url"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "run",
+  "disclosure",
+  "texts",
+  "source_spans",
+  "route",
+  "pre_gate",
+  "guard",
+  "classifier",
+  "reader",
+  "materiality",
+  "evidence_card",
+  "evidence_events",
+  "merged",
+  "skeptic",
+  "rule_decision",
+  "compliance",
+  "risk_checks",
+  "proposal",
+  "approval",
+  "orders",
+  "fills",
+  "ticket",
+  "audit_positions",
+  "trace"
+ ],
+ "additionalProperties": false
+}

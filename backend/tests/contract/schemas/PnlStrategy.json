@@ -1,0 +1,18 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "anyOf": [
+  {
+   "type": "string",
+   "enum": [
+    "kaptan:v1.0-fwd",
+    "kaptan:v1.1-fwd",
+    "baseline:xu100_bh",
+    "baseline:ew_universe"
+   ]
+  },
+  {
+   "type": "string",
+   "pattern": "^ablation:[a-z0-9_]+$"
+  }
+ ]
+}

@@ -1,0 +1,13 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "string",
+ "enum": [
+  "board_member",
+  "executive",
+  "controlling_shareholder",
+  "related_person_of_insider",
+  "investment_fund",
+  "other_5pct_holder",
+  "unknown"
+ ]
+}

@@ -1,0 +1,103 @@
+[
+ {
+  "disclosure_index": 1651901,
+  "disclosure_oid": "f899bd96cb2e164874d5914fe80f0fa5",
+  "stock_codes": [
+   "ORNEK"
+  ],
+  "related_stocks": [],
+  "primary_ticker": "ORNEK",
+  "company_name": "ÖRNEK ENERJİ A.Ş.",
+  "disclosure_class": "ODA",
+  "disclosure_type": "Özel Durum Açıklaması",
+  "subject": "Özel Durum Açıklaması (Genel)",
+  "summary": "Yıllık gelirin %18'i tutarında bağlayıcı sözleşme",
+  "reason": "NEW",
+  "related_index": null,
+  "is_late": false,
+  "attachment_count": 0,
+  "has_multilang": true,
+  "is_noise": false,
+  "subject_route": "llm",
+  "subject_map_version": "subject_map.v1",
+  "published_at": "2027-01-11T10:41:00.000Z",
+  "first_seen_at": "2027-01-11T10:41:21.000Z",
+  "available_at": "2027-01-11T10:41:21.000Z",
+  "ingest_source": "demo",
+  "classification": {
+   "event_type": "E3",
+   "confidence": 0.93,
+   "method": "llm"
+  },
+  "run_id": "run-demo-e3-ornek",
+  "linked_news_count": 2,
+  "note_count": 0,
+  "scenario": "e3_contract"
+ },
+ {
+  "disclosure_index": 1651902,
+  "disclosure_oid": "87ffcba171e4cfd41cc6a833a271c283",
+  "stock_codes": [
+   "DMOGD"
+  ],
+  "related_stocks": [],
+  "primary_ticker": "DMOGD",
+  "company_name": "DOĞU GIDA SANAYİ A.Ş.",
+  "disclosure_class": "ODA",
+  "disclosure_type": "Özel Durum Açıklaması",
+  "subject": "Özel Durum Açıklaması (Genel)",
+  "summary": "Planlı bakım tamamlandı (metinde gizli talimat)",
+  "reason": "NEW",
+  "related_index": null,
+  "is_late": false,
+  "attachment_count": 0,
+  "has_multilang": false,
+  "is_noise": false,
+  "subject_route": "llm",
+  "subject_map_version": "subject_map.v1",
+  "published_at": "2027-01-11T10:41:00.000Z",
+  "first_seen_at": "2027-01-11T10:41:21.000Z",
+  "available_at": "2027-01-11T10:41:21.000Z",
+  "ingest_source": "demo",
+  "classification": null,
+  "run_id": "run-demo-redteam-dmogd",
+  "linked_news_count": 0,
+  "note_count": 0,
+  "scenario": "redteam_injection"
+ },
+ {
+  "disclosure_index": 1651903,
+  "disclosure_oid": "693256fda6690966e7f945b6e5105630",
+  "stock_codes": [
+   "TMSLJ"
+  ],
+  "related_stocks": [],
+  "primary_ticker": "TMSLJ",
+  "company_name": "TOROS LOJİSTİK A.Ş.",
+  "disclosure_class": "ODA",
+  "disclosure_type": "Özel Durum Açıklaması",
+  "subject": "Pay Alım Satım Bildirimi",
+  "summary": "Yönetim kurulu üyesinden 1,85 milyon TL'lik pay alımı",
+  "reason": "NEW",
+  "related_index": null,
+  "is_late": false,
+  "attachment_count": 0,
+  "has_multilang": false,
+  "is_noise": false,
+  "subject_route": "E2",
+  "subject_map_version": "subject_map.v1",
+  "published_at": "2027-01-11T10:41:00.000Z",
+  "first_seen_at": "2027-01-11T10:41:21.000Z",
+  "available_at": "2027-01-11T10:41:21.000Z",
+  "ingest_source": "demo",
+  "classification": {
+   "event_type": "E2",
+   "confidence": 0.97,
+   "method": "subject_map"
+  },
+  "run_id": "run-demo-r04-tmslj",
+  "linked_news_count": 0,
+  "note_count": 0,
+  "scenario": "restricted_r04"
+ }
+]

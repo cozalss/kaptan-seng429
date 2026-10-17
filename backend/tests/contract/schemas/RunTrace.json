@@ -1,0 +1,137 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "nodes": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "node": {
+      "type": "string",
+      "enum": [
+       "route",
+       "pre_gate",
+       "guard",
+       "classifier",
+       "reader",
+       "materiality",
+       "evidence",
+       "merge",
+       "skeptic",
+       "rule_engine",
+       "compliance",
+       "risk_gate",
+       "request_approval",
+       "approval",
+       "execute",
+       "record",
+       "filter_action"
+      ]
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "done",
+       "skipped",
+       "failed",
+       "waiting",
+       "running"
+      ]
+     },
+     "started_at": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "latency_ms": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "tokens_in": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "tokens_out": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "model_id": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "prompt_version": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "cached": {
+      "type": "boolean"
+     },
+     "parallel_group": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "note_tr": {
+      "type": [
+       "string",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "node",
+     "status",
+     "started_at",
+     "latency_ms",
+     "tokens_in",
+     "tokens_out",
+     "model_id",
+     "prompt_version",
+     "cached",
+     "parallel_group",
+     "note_tr"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "langsmith_url": {
+   "anyOf": [
+    {
+     "type": "string",
+     "format": "uri"
+    },
+    {
+     "type": "null"
+    }
+   ]
+  }
+ },
+ "required": [
+  "nodes",
+  "langsmith_url"
+ ],
+ "additionalProperties": false
+}

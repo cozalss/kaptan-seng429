@@ -1,0 +1,36 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "arm": {
+   "type": "string",
+   "pattern": "^(B[0-3]|A[0-7])$"
+  },
+  "label_tr": {
+   "type": "string"
+  },
+  "sharpe": {
+   "type": "number"
+  },
+  "max_dd": {
+   "type": "number"
+  },
+  "total_return": {
+   "type": "number"
+  },
+  "n_trades": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  }
+ },
+ "required": [
+  "arm",
+  "label_tr",
+  "sharpe",
+  "max_dd",
+  "total_return",
+  "n_trades"
+ ],
+ "additionalProperties": false
+}

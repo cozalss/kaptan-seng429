@@ -1,0 +1,226 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "status": {
+   "type": "string",
+   "enum": [
+    "ok",
+    "abstain"
+   ]
+  },
+  "confidence": {
+   "type": "number",
+   "minimum": 0,
+   "maximum": 1
+  },
+  "injection_suspected": {
+   "type": "boolean"
+  },
+  "quotes": {
+   "minItems": 1,
+   "maxItems": 8,
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "field": {
+      "type": "string"
+     },
+     "quote": {
+      "type": "string",
+      "minLength": 1
+     }
+    },
+    "required": [
+     "field",
+     "quote"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "notes_tr": {
+   "type": "string"
+  },
+  "abstain": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "reason": {
+       "type": "string",
+       "enum": [
+        "insufficient_text",
+        "ambiguous",
+        "out_of_scope",
+        "conflicting_values",
+        "suspected_injection",
+        "attachment_missing",
+        "other"
+       ]
+      },
+      "detail_tr": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "reason",
+      "detail_tr"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "kind": {
+   "type": "string",
+   "const": "E1"
+  },
+  "nature": {
+   "type": "string",
+   "enum": [
+    "execution",
+    "program_announcement",
+    "sale_of_repurchased",
+    "program_completed_or_ended",
+    "other"
+   ]
+  },
+  "in_programme": {
+   "type": "boolean"
+  },
+  "board_decision_date": {
+   "anyOf": [
+    {
+     "type": "string",
+     "format": "date",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "programme_max_nominal_tl": {
+   "anyOf": [
+    {
+     "type": "number",
+     "minimum": 0
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "transactions": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "trade_date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+     },
+     "nominal_tl": {
+      "type": "number",
+      "minimum": 0
+     },
+     "capital_pct": {
+      "anyOf": [
+       {
+        "type": "number",
+        "minimum": 0
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "price_tl": {
+      "anyOf": [
+       {
+        "type": "number",
+        "exclusiveMinimum": 0
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "price_raw": {
+      "type": "string"
+     },
+     "prior_nominal_in_program_tl": {
+      "anyOf": [
+       {
+        "type": "number",
+        "minimum": 0
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "trade_date",
+     "nominal_tl",
+     "capital_pct",
+     "price_tl",
+     "price_raw",
+     "prior_nominal_in_program_tl"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "cumulative_nominal_tl": {
+   "anyOf": [
+    {
+     "type": "number",
+     "minimum": 0
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "cumulative_capital_pct": {
+   "anyOf": [
+    {
+     "type": "number",
+     "minimum": 0
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "venue": {
+   "type": [
+    "string",
+    "null"
+   ]
+  }
+ },
+ "required": [
+  "status",
+  "confidence",
+  "injection_suspected",
+  "quotes",
+  "notes_tr",
+  "abstain",
+  "kind",
+  "nature",
+  "in_programme",
+  "board_decision_date",
+  "programme_max_nominal_tl",
+  "transactions",
+  "cumulative_nominal_tl",
+  "cumulative_capital_pct",
+  "venue"
+ ],
+ "additionalProperties": false
+}

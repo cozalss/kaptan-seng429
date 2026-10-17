@@ -1,0 +1,34 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "decision": {
+   "type": "string",
+   "enum": [
+    "approve",
+    "reject"
+   ]
+  },
+  "approved_notional_try": {
+   "anyOf": [
+    {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "comment": {
+   "type": "string",
+   "maxLength": 500
+  }
+ },
+ "required": [
+  "decision",
+  "approved_notional_try",
+  "comment"
+ ],
+ "additionalProperties": false
+}

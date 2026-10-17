@@ -1,0 +1,98 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "questions": {
+   "type": "number",
+   "const": 50
+  },
+  "faithfulness": {
+   "type": "number"
+  },
+  "context_precision": {
+   "type": "number"
+  },
+  "context_recall": {
+   "type": "number"
+  },
+  "recall_at_10": {
+   "type": "number"
+  },
+  "mrr": {
+   "type": "number"
+  },
+  "time_violations": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "stores": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "store": {
+      "type": "string",
+      "enum": [
+       "pgvector",
+       "chroma"
+      ]
+     },
+     "faithfulness": {
+      "type": "number"
+     },
+     "recall_at_10": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "store",
+     "faithfulness",
+     "recall_at_10"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "trend": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "d": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+     },
+     "faithfulness": {
+      "type": "number"
+     },
+     "context_precision": {
+      "type": "number"
+     },
+     "context_recall": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "d",
+     "faithfulness",
+     "context_precision",
+     "context_recall"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "questions",
+  "faithfulness",
+  "context_precision",
+  "context_recall",
+  "recall_at_10",
+  "mrr",
+  "time_violations",
+  "stores",
+  "trend"
+ ],
+ "additionalProperties": false
+}

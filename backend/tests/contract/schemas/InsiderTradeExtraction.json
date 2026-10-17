@@ -1,0 +1,209 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "status": {
+   "type": "string",
+   "enum": [
+    "ok",
+    "abstain"
+   ]
+  },
+  "confidence": {
+   "type": "number",
+   "minimum": 0,
+   "maximum": 1
+  },
+  "injection_suspected": {
+   "type": "boolean"
+  },
+  "quotes": {
+   "minItems": 1,
+   "maxItems": 8,
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "field": {
+      "type": "string"
+     },
+     "quote": {
+      "type": "string",
+      "minLength": 1
+     }
+    },
+    "required": [
+     "field",
+     "quote"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "notes_tr": {
+   "type": "string"
+  },
+  "abstain": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "reason": {
+       "type": "string",
+       "enum": [
+        "insufficient_text",
+        "ambiguous",
+        "out_of_scope",
+        "conflicting_values",
+        "suspected_injection",
+        "attachment_missing",
+        "other"
+       ]
+      },
+      "detail_tr": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "reason",
+      "detail_tr"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "kind": {
+   "type": "string",
+   "const": "E2"
+  },
+  "filer_kind": {
+   "type": "string",
+   "enum": [
+    "person",
+    "entity",
+    "unknown"
+   ]
+  },
+  "person_or_entity": {
+   "type": "string"
+  },
+  "role": {
+   "type": "string",
+   "enum": [
+    "board_member",
+    "executive",
+    "controlling_shareholder",
+    "related_person_of_insider",
+    "investment_fund",
+    "other_5pct_holder",
+    "unknown"
+   ]
+  },
+  "legal_basis": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "direction": {
+   "type": "string",
+   "enum": [
+    "buy",
+    "sell",
+    "mixed"
+   ]
+  },
+  "trades": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "trade_date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+     },
+     "qty": {
+      "type": "number",
+      "minimum": 0
+     },
+     "price_tl": {
+      "anyOf": [
+       {
+        "type": "number",
+        "exclusiveMinimum": 0
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "value_tl": {
+      "anyOf": [
+       {
+        "type": "number",
+        "minimum": 0
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "trade_date",
+     "qty",
+     "price_tl",
+     "value_tl"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "holding_before_pct": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "holding_after_pct": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "open_market": {
+   "type": [
+    "boolean",
+    "null"
+   ]
+  },
+  "non_market_reason": {
+   "type": [
+    "string",
+    "null"
+   ]
+  }
+ },
+ "required": [
+  "status",
+  "confidence",
+  "injection_suspected",
+  "quotes",
+  "notes_tr",
+  "abstain",
+  "kind",
+  "filer_kind",
+  "person_or_entity",
+  "role",
+  "legal_basis",
+  "direction",
+  "trades",
+  "holding_before_pct",
+  "holding_after_pct",
+  "open_market",
+  "non_market_reason"
+ ],
+ "additionalProperties": false
+}

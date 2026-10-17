@@ -1,0 +1,73 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "ref_id": {
+   "type": "string"
+  },
+  "n": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "n_same_ticker": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "median_car_5d": {
+   "type": "number"
+  },
+  "mean_car_5d": {
+   "type": "number"
+  },
+  "hit_rate_5d": {
+   "type": "number",
+   "minimum": 0,
+   "maximum": 1
+  },
+  "median_car_20d": {
+   "type": "number"
+  },
+  "mean_car_20d": {
+   "type": "number"
+  },
+  "hit_rate_20d": {
+   "type": "number",
+   "minimum": 0,
+   "maximum": 1
+  },
+  "ci95_car_20d": {
+   "type": "array",
+   "prefixItems": [
+    {
+     "type": "number"
+    },
+    {
+     "type": "number"
+    }
+   ],
+   "items": false,
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "dispersion_iqr_20d": {
+   "type": "number",
+   "minimum": 0
+  }
+ },
+ "required": [
+  "ref_id",
+  "n",
+  "n_same_ticker",
+  "median_car_5d",
+  "mean_car_5d",
+  "hit_rate_5d",
+  "median_car_20d",
+  "mean_car_20d",
+  "hit_rate_20d",
+  "ci95_car_20d",
+  "dispersion_iqr_20d"
+ ],
+ "additionalProperties": false
+}

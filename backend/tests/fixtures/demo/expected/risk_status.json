@@ -1,0 +1,32 @@
+{
+ "kill_switch": "off",
+ "kill_reason": null,
+ "kill_at": null,
+ "kill_by": null,
+ "halted_today": false,
+ "daily_pnl_pct": 0.0021,
+ "drawdown_pct": -0.01132,
+ "peak_equity": 1030274,
+ "equity": 1018615,
+ "regime": "normal",
+ "live_armed": false,
+ "quota": [
+  {
+   "provider": "Gemini Flash-Lite",
+   "used": 118,
+   "limit": 500
+  },
+  {
+   "provider": "Groq gpt-oss",
+   "used": 61,
+   "limit": 1000
+  },
+  {
+   "provider": "Prompt Guard 2",
+   "used": 140,
+   "limit": 14400
+  }
+ ],
+ "reset": null,
+ "as_of": "2027-01-11T10:40:00.000Z"
+}

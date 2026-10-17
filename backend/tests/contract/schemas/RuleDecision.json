@@ -1,0 +1,75 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "outcome": {
+   "type": "string",
+   "enum": [
+    "PROPOSE",
+    "NO_TRADE",
+    "HOLD"
+   ]
+  },
+  "reason_codes": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "rules_fired": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "rules_hash": {
+   "type": "string"
+  },
+  "trace": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "rule": {
+      "type": "string",
+      "pattern": "^(E[1-4]|LEAK|EDGE|EVIDENCE|AVOID|HOLD)\\.[a-z0-9_]+$"
+     },
+     "passed": {
+      "type": "boolean"
+     },
+     "observed": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "threshold": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "detail_tr": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "rule",
+     "passed",
+     "observed",
+     "threshold",
+     "detail_tr"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "outcome",
+  "reason_codes",
+  "rules_fired",
+  "rules_hash",
+  "trace"
+ ],
+ "additionalProperties": false
+}

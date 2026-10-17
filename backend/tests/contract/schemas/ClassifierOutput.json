@@ -1,0 +1,131 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "status": {
+   "type": "string",
+   "enum": [
+    "ok",
+    "abstain"
+   ]
+  },
+  "event_type": {
+   "type": "string",
+   "enum": [
+    "E1",
+    "E2",
+    "E3",
+    "E4",
+    "FILTER",
+    "IGNORE"
+   ]
+  },
+  "sub_type": {
+   "type": "string"
+  },
+  "direction": {
+   "type": "string",
+   "enum": [
+    "positive",
+    "negative",
+    "neutral",
+    "unknown"
+   ]
+  },
+  "is_correction_or_update": {
+   "type": "boolean"
+  },
+  "refers_to_prior_disclosure_date": {
+   "anyOf": [
+    {
+     "type": "string",
+     "format": "date",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "injection_suspected": {
+   "type": "boolean"
+  },
+  "confidence": {
+   "type": "number",
+   "minimum": 0,
+   "maximum": 1
+  },
+  "rationale_tr": {
+   "type": "string",
+   "maxLength": 400
+  },
+  "quotes": {
+   "minItems": 1,
+   "maxItems": 3,
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "field": {
+      "type": "string"
+     },
+     "quote": {
+      "type": "string",
+      "minLength": 1
+     }
+    },
+    "required": [
+     "field",
+     "quote"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "abstain": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "reason": {
+       "type": "string",
+       "enum": [
+        "insufficient_text",
+        "ambiguous",
+        "out_of_scope",
+        "conflicting_values",
+        "suspected_injection",
+        "attachment_missing",
+        "other"
+       ]
+      },
+      "detail_tr": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "reason",
+      "detail_tr"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  }
+ },
+ "required": [
+  "status",
+  "event_type",
+  "sub_type",
+  "direction",
+  "is_correction_or_update",
+  "refers_to_prior_disclosure_date",
+  "injection_suspected",
+  "confidence",
+  "rationale_tr",
+  "quotes",
+  "abstain"
+ ],
+ "additionalProperties": false
+}

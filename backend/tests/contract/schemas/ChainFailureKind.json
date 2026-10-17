@@ -1,0 +1,11 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "string",
+ "enum": [
+  "gap_or_duplicate",
+  "prev_hash_mismatch",
+  "fields_changed_canonical_stale",
+  "hash_mismatch",
+  "anchor_mismatch"
+ ]
+}

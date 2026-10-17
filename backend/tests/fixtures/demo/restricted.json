@@ -1,0 +1,26 @@
+[
+ {
+  "id": "rs-1",
+  "ticker": "TMSLJ",
+  "kind": "vbts_brut_takas",
+  "source_ref": "VBTS tedbir listesi",
+  "added_at": "2027-01-07T15:20:00.000Z",
+  "added_by": "system:restrictions_sync"
+ },
+ {
+  "id": "rs-2",
+  "ticker": "KRGTK",
+  "kind": "team_insider",
+  "source_ref": "Kendi beyanım: yakın bir tanıdığım çalışıyor",
+  "added_at": "2026-10-20T09:00:00.000Z",
+  "added_by": "user:uye-1"
+ },
+ {
+  "id": "rs-3",
+  "ticker": "FRZMB",
+  "kind": "spk_tedbir",
+  "source_ref": "SPK tedbir kararı",
+  "added_at": "2027-01-04T16:05:00.000Z",
+  "added_by": "system:restrictions_sync"
+ }
+]

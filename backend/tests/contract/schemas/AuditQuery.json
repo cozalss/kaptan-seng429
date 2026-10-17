@@ -1,0 +1,32 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "entity": {
+   "type": "string"
+  },
+  "actor": {
+   "type": "string"
+  },
+  "action": {
+   "type": "string"
+  },
+  "from": {
+   "type": "string"
+  },
+  "run_id": {
+   "type": "string"
+  },
+  "page": {
+   "type": "integer",
+   "exclusiveMinimum": 0,
+   "maximum": 9007199254740991
+  },
+  "page_size": {
+   "type": "integer",
+   "exclusiveMinimum": 0,
+   "maximum": 500
+  }
+ },
+ "additionalProperties": false
+}

@@ -1,0 +1,88 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "agent": {
+   "type": "string",
+   "enum": [
+    "classifier",
+    "reader",
+    "materiality",
+    "evidence",
+    "skeptic",
+    "compliance"
+   ]
+  },
+  "prompt_id": {
+   "type": "string"
+  },
+  "prompt_version": {
+   "type": "string"
+  },
+  "prompt_sha256": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$"
+  },
+  "model_id": {
+   "type": "string"
+  },
+  "degraded": {
+   "type": "boolean"
+  },
+  "input_sha256": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$"
+  },
+  "output_sha256": {
+   "type": "string",
+   "pattern": "^[0-9a-f]{64}$"
+  },
+  "tokens_in": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "tokens_out": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "latency_ms": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "cached": {
+   "type": "boolean"
+  },
+  "repair_attempted": {
+   "type": "boolean"
+  },
+  "quote_check": {
+   "type": "string",
+   "enum": [
+    "pass",
+    "partial",
+    "fail",
+    "n/a"
+   ]
+  }
+ },
+ "required": [
+  "agent",
+  "prompt_id",
+  "prompt_version",
+  "prompt_sha256",
+  "model_id",
+  "degraded",
+  "input_sha256",
+  "output_sha256",
+  "tokens_in",
+  "tokens_out",
+  "latency_ms",
+  "cached",
+  "repair_attempted",
+  "quote_check"
+ ],
+ "additionalProperties": false
+}

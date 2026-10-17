@@ -1,0 +1,2354 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "oneOf": [
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "approval.requested"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "kind": {
+       "type": "string",
+       "const": "trade_approval"
+      },
+      "proposal_id": {
+       "type": "string"
+      },
+      "run_id": {
+       "type": "string"
+      },
+      "ticker": {
+       "type": "string",
+       "pattern": "^[A-Z0-9]{3,6}$"
+      },
+      "company_name": {
+       "type": "string"
+      },
+      "side": {
+       "type": "string",
+       "enum": [
+        "buy",
+        "sell"
+       ]
+      },
+      "event_type": {
+       "anyOf": [
+        {
+         "type": "string",
+         "enum": [
+          "E1",
+          "E2",
+          "E3",
+          "E4"
+         ]
+        },
+        {
+         "type": "string",
+         "const": "EXIT"
+        }
+       ]
+      },
+      "sub_type_tr": {
+       "type": "string"
+      },
+      "headline_tr": {
+       "type": "string"
+      },
+      "disclosure_index": {
+       "type": "integer",
+       "exclusiveMinimum": 0,
+       "maximum": 9007199254740991
+      },
+      "disclosure_url": {
+       "type": "string",
+       "format": "uri"
+      },
+      "final_notional_try": {
+       "type": "number",
+       "minimum": 0
+      },
+      "requested_notional_try": {
+       "type": "number",
+       "minimum": 0
+      },
+      "limit_price": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "qty": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "entry": {
+       "type": "string",
+       "enum": [
+        "next_open_auction",
+        "intraday_limit"
+       ]
+      },
+      "holding_days": {
+       "type": "array",
+       "prefixItems": [
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        },
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        }
+       ],
+       "items": false,
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "level": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "escalate"
+       ]
+      },
+      "escalation_reasons": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "enum": [
+         "COMPLIANCE_ESCALATE",
+         "DEGRADED",
+         "NEAR_MAX_POSITIONS",
+         "RESTRICTED_SELL",
+         "RESIZED"
+        ]
+       }
+      },
+      "evidence_summary": {
+       "type": "object",
+       "properties": {
+        "n": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 9007199254740991
+        },
+        "median_car_5d": {
+         "type": "number"
+        },
+        "median_car_20d": {
+         "type": "number"
+        },
+        "hit_rate_5d": {
+         "type": "number",
+         "minimum": 0,
+         "maximum": 1
+        },
+        "strength": {
+         "type": "string",
+         "enum": [
+          "strong",
+          "moderate",
+          "weak",
+          "insufficient"
+         ]
+        },
+        "card_id": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "n",
+        "median_car_5d",
+        "median_car_20d",
+        "hit_rate_5d",
+        "strength",
+        "card_id"
+       ],
+       "additionalProperties": false
+      },
+      "skeptic_flags": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "enum": [
+           "DUPLICATE_OR_CORRECTION",
+           "NOT_BINDING",
+           "RELATED_PARTY",
+           "RENEWAL_NOT_NEW",
+           "TOKEN_BUYBACK",
+           "NOT_OPEN_MARKET",
+           "FUND_NOT_INSIDER",
+           "DILUTION_OR_HYPE",
+           "MANIPULATION_MARKERS",
+           "AMOUNT_NOT_IN_TEXT",
+           "STALE_OR_WEAK_FINANCIALS",
+           "WEAK_EVIDENCE",
+           "INJECTION_SUSPECT",
+           "OTHER"
+          ]
+         },
+         "severity": {
+          "type": "string",
+          "enum": [
+           "info",
+           "reduce",
+           "veto"
+          ]
+         },
+         "detail_tr": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "code",
+         "severity",
+         "detail_tr"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "skeptic_note_tr": {
+       "type": "string"
+      },
+      "size_multiplier": {
+       "type": "number"
+      },
+      "compliance_summary_tr": {
+       "type": "string"
+      },
+      "rule_trace_summary": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "rule": {
+          "type": "string",
+          "pattern": "^(E[1-4]|LEAK|EDGE|EVIDENCE|AVOID|HOLD)\\.[a-z0-9_]+$"
+         },
+         "passed": {
+          "type": "boolean"
+         },
+         "observed": {
+          "type": [
+           "string",
+           "null"
+          ]
+         },
+         "threshold": {
+          "type": [
+           "string",
+           "null"
+          ]
+         },
+         "detail_tr": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "rule",
+         "passed",
+         "observed",
+         "threshold",
+         "detail_tr"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "degraded": {
+       "type": "boolean"
+      },
+      "prompt_manifest_hash": {
+       "type": "string"
+      },
+      "created_at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "expires_at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "status": {
+       "type": "string",
+       "enum": [
+        "pending",
+        "claimed",
+        "approved",
+        "rejected",
+        "expired",
+        "cancelled"
+       ]
+      },
+      "decided_by": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "decided_role": {
+       "anyOf": [
+        {
+         "type": "string",
+         "enum": [
+          "analyst",
+          "risk_officer",
+          "admin",
+          "auditor"
+         ]
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "decided_at": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "decision_comment": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "approved_notional_try": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "is_fixture": {
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "kind",
+      "proposal_id",
+      "run_id",
+      "ticker",
+      "company_name",
+      "side",
+      "event_type",
+      "sub_type_tr",
+      "headline_tr",
+      "disclosure_index",
+      "disclosure_url",
+      "final_notional_try",
+      "requested_notional_try",
+      "limit_price",
+      "qty",
+      "entry",
+      "holding_days",
+      "level",
+      "escalation_reasons",
+      "evidence_summary",
+      "skeptic_flags",
+      "skeptic_note_tr",
+      "size_multiplier",
+      "compliance_summary_tr",
+      "rule_trace_summary",
+      "degraded",
+      "prompt_manifest_hash",
+      "created_at",
+      "expires_at",
+      "status",
+      "decided_by",
+      "decided_role",
+      "decided_at",
+      "decision_comment",
+      "approved_notional_try",
+      "is_fixture"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "approval.decided"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "kind": {
+       "type": "string",
+       "const": "trade_approval"
+      },
+      "proposal_id": {
+       "type": "string"
+      },
+      "run_id": {
+       "type": "string"
+      },
+      "ticker": {
+       "type": "string",
+       "pattern": "^[A-Z0-9]{3,6}$"
+      },
+      "company_name": {
+       "type": "string"
+      },
+      "side": {
+       "type": "string",
+       "enum": [
+        "buy",
+        "sell"
+       ]
+      },
+      "event_type": {
+       "anyOf": [
+        {
+         "type": "string",
+         "enum": [
+          "E1",
+          "E2",
+          "E3",
+          "E4"
+         ]
+        },
+        {
+         "type": "string",
+         "const": "EXIT"
+        }
+       ]
+      },
+      "sub_type_tr": {
+       "type": "string"
+      },
+      "headline_tr": {
+       "type": "string"
+      },
+      "disclosure_index": {
+       "type": "integer",
+       "exclusiveMinimum": 0,
+       "maximum": 9007199254740991
+      },
+      "disclosure_url": {
+       "type": "string",
+       "format": "uri"
+      },
+      "final_notional_try": {
+       "type": "number",
+       "minimum": 0
+      },
+      "requested_notional_try": {
+       "type": "number",
+       "minimum": 0
+      },
+      "limit_price": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "qty": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "entry": {
+       "type": "string",
+       "enum": [
+        "next_open_auction",
+        "intraday_limit"
+       ]
+      },
+      "holding_days": {
+       "type": "array",
+       "prefixItems": [
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        },
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        }
+       ],
+       "items": false,
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "level": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "escalate"
+       ]
+      },
+      "escalation_reasons": {
+       "type": "array",
+       "items": {
+        "type": "string",
+        "enum": [
+         "COMPLIANCE_ESCALATE",
+         "DEGRADED",
+         "NEAR_MAX_POSITIONS",
+         "RESTRICTED_SELL",
+         "RESIZED"
+        ]
+       }
+      },
+      "evidence_summary": {
+       "type": "object",
+       "properties": {
+        "n": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 9007199254740991
+        },
+        "median_car_5d": {
+         "type": "number"
+        },
+        "median_car_20d": {
+         "type": "number"
+        },
+        "hit_rate_5d": {
+         "type": "number",
+         "minimum": 0,
+         "maximum": 1
+        },
+        "strength": {
+         "type": "string",
+         "enum": [
+          "strong",
+          "moderate",
+          "weak",
+          "insufficient"
+         ]
+        },
+        "card_id": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "n",
+        "median_car_5d",
+        "median_car_20d",
+        "hit_rate_5d",
+        "strength",
+        "card_id"
+       ],
+       "additionalProperties": false
+      },
+      "skeptic_flags": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "enum": [
+           "DUPLICATE_OR_CORRECTION",
+           "NOT_BINDING",
+           "RELATED_PARTY",
+           "RENEWAL_NOT_NEW",
+           "TOKEN_BUYBACK",
+           "NOT_OPEN_MARKET",
+           "FUND_NOT_INSIDER",
+           "DILUTION_OR_HYPE",
+           "MANIPULATION_MARKERS",
+           "AMOUNT_NOT_IN_TEXT",
+           "STALE_OR_WEAK_FINANCIALS",
+           "WEAK_EVIDENCE",
+           "INJECTION_SUSPECT",
+           "OTHER"
+          ]
+         },
+         "severity": {
+          "type": "string",
+          "enum": [
+           "info",
+           "reduce",
+           "veto"
+          ]
+         },
+         "detail_tr": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "code",
+         "severity",
+         "detail_tr"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "skeptic_note_tr": {
+       "type": "string"
+      },
+      "size_multiplier": {
+       "type": "number"
+      },
+      "compliance_summary_tr": {
+       "type": "string"
+      },
+      "rule_trace_summary": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "rule": {
+          "type": "string",
+          "pattern": "^(E[1-4]|LEAK|EDGE|EVIDENCE|AVOID|HOLD)\\.[a-z0-9_]+$"
+         },
+         "passed": {
+          "type": "boolean"
+         },
+         "observed": {
+          "type": [
+           "string",
+           "null"
+          ]
+         },
+         "threshold": {
+          "type": [
+           "string",
+           "null"
+          ]
+         },
+         "detail_tr": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "rule",
+         "passed",
+         "observed",
+         "threshold",
+         "detail_tr"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "degraded": {
+       "type": "boolean"
+      },
+      "prompt_manifest_hash": {
+       "type": "string"
+      },
+      "created_at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "expires_at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "status": {
+       "type": "string",
+       "enum": [
+        "pending",
+        "claimed",
+        "approved",
+        "rejected",
+        "expired",
+        "cancelled"
+       ]
+      },
+      "decided_by": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "decided_role": {
+       "anyOf": [
+        {
+         "type": "string",
+         "enum": [
+          "analyst",
+          "risk_officer",
+          "admin",
+          "auditor"
+         ]
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "decided_at": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "decision_comment": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "approved_notional_try": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "is_fixture": {
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "kind",
+      "proposal_id",
+      "run_id",
+      "ticker",
+      "company_name",
+      "side",
+      "event_type",
+      "sub_type_tr",
+      "headline_tr",
+      "disclosure_index",
+      "disclosure_url",
+      "final_notional_try",
+      "requested_notional_try",
+      "limit_price",
+      "qty",
+      "entry",
+      "holding_days",
+      "level",
+      "escalation_reasons",
+      "evidence_summary",
+      "skeptic_flags",
+      "skeptic_note_tr",
+      "size_multiplier",
+      "compliance_summary_tr",
+      "rule_trace_summary",
+      "degraded",
+      "prompt_manifest_hash",
+      "created_at",
+      "expires_at",
+      "status",
+      "decided_by",
+      "decided_role",
+      "decided_at",
+      "decision_comment",
+      "approved_notional_try",
+      "is_fixture"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "order"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "id": {
+       "type": "string"
+      },
+      "client_order_id": {
+       "type": "string"
+      },
+      "proposal_id": {
+       "type": "string"
+      },
+      "run_id": {
+       "type": "string"
+      },
+      "ticker": {
+       "type": "string",
+       "pattern": "^[A-Z0-9]{3,6}$"
+      },
+      "company_name": {
+       "type": "string"
+      },
+      "side": {
+       "type": "string",
+       "enum": [
+        "buy",
+        "sell"
+       ]
+      },
+      "order_type": {
+       "type": "string",
+       "enum": [
+        "market",
+        "limit"
+       ]
+      },
+      "tif": {
+       "type": "string",
+       "enum": [
+        "day",
+        "opg"
+       ]
+      },
+      "qty": {
+       "type": "integer",
+       "exclusiveMinimum": 0,
+       "maximum": 9007199254740991
+      },
+      "limit_price": {
+       "anyOf": [
+        {
+         "type": "number",
+         "exclusiveMinimum": 0
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "status": {
+       "type": "string",
+       "enum": [
+        "pending_open",
+        "accepted",
+        "awaiting_manual_entry",
+        "partially_filled",
+        "filled",
+        "canceled",
+        "rejected"
+       ]
+      },
+      "broker": {
+       "type": "string",
+       "enum": [
+        "simbist",
+        "order_ticket"
+       ]
+      },
+      "created_at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "fills": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "id": {
+          "type": "string"
+         },
+         "order_id": {
+          "type": "string"
+         },
+         "qty": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+         },
+         "price": {
+          "type": "number",
+          "exclusiveMinimum": 0
+         },
+         "commission": {
+          "type": "number",
+          "minimum": 0
+         },
+         "bsmv": {
+          "type": "number",
+          "minimum": 0
+         },
+         "slippage_bps": {
+          "type": "number"
+         },
+         "filled_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+         },
+         "source": {
+          "type": "string",
+          "enum": [
+           "simbist",
+           "alpaca",
+           "manual"
+          ]
+         }
+        },
+        "required": [
+         "id",
+         "order_id",
+         "qty",
+         "price",
+         "commission",
+         "bsmv",
+         "slippage_bps",
+         "filled_at",
+         "source"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "cancel_reason": {
+       "anyOf": [
+        {
+         "type": "string",
+         "enum": [
+          "limit_up_open",
+          "kill_switch",
+          "day_end",
+          "ticket_unfilled",
+          "ticket_canceled",
+          "ticket_expired"
+         ]
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "is_fixture": {
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "id",
+      "client_order_id",
+      "proposal_id",
+      "run_id",
+      "ticker",
+      "company_name",
+      "side",
+      "order_type",
+      "tif",
+      "qty",
+      "limit_price",
+      "status",
+      "broker",
+      "created_at",
+      "fills",
+      "is_fixture"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "fill"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "id": {
+       "type": "string"
+      },
+      "order_id": {
+       "type": "string"
+      },
+      "qty": {
+       "type": "integer",
+       "exclusiveMinimum": 0,
+       "maximum": 9007199254740991
+      },
+      "price": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "commission": {
+       "type": "number",
+       "minimum": 0
+      },
+      "bsmv": {
+       "type": "number",
+       "minimum": 0
+      },
+      "slippage_bps": {
+       "type": "number"
+      },
+      "filled_at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "source": {
+       "type": "string",
+       "enum": [
+        "simbist",
+        "alpaca",
+        "manual"
+       ]
+      },
+      "ticker": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "id",
+      "order_id",
+      "qty",
+      "price",
+      "commission",
+      "bsmv",
+      "slippage_bps",
+      "filled_at",
+      "source",
+      "ticker"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "kill_switch"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "kill_switch": {
+       "type": "string",
+       "enum": [
+        "off",
+        "on"
+       ]
+      },
+      "kill_reason": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "kill_at": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "kill_by": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "halted_today": {
+       "type": "boolean"
+      },
+      "daily_pnl_pct": {
+       "type": "number"
+      },
+      "drawdown_pct": {
+       "type": "number",
+       "maximum": 0
+      },
+      "peak_equity": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "equity": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "regime": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "crisis"
+       ]
+      },
+      "live_armed": {
+       "type": "boolean"
+      },
+      "quota": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "provider": {
+          "type": "string"
+         },
+         "used": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+         },
+         "limit": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+         }
+        },
+        "required": [
+         "provider",
+         "used",
+         "limit"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "reset": {
+       "anyOf": [
+        {
+         "type": "object",
+         "properties": {
+          "started": {
+           "anyOf": [
+            {
+             "type": "object",
+             "properties": {
+              "uid": {
+               "type": "string"
+              },
+              "name": {
+               "type": "string"
+              },
+              "role": {
+               "type": "string",
+               "enum": [
+                "analyst",
+                "risk_officer",
+                "admin",
+                "auditor"
+               ]
+              },
+              "at": {
+               "type": "string",
+               "format": "date-time",
+               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              "reason": {
+               "type": [
+                "string",
+                "null"
+               ]
+              }
+             },
+             "required": [
+              "uid",
+              "name",
+              "role",
+              "at",
+              "reason"
+             ],
+             "additionalProperties": false
+            },
+            {
+             "type": "null"
+            }
+           ]
+          }
+         },
+         "required": [
+          "started"
+         ],
+         "additionalProperties": false
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "as_of": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      }
+     },
+     "required": [
+      "kill_switch",
+      "kill_reason",
+      "kill_at",
+      "kill_by",
+      "halted_today",
+      "daily_pnl_pct",
+      "drawdown_pct",
+      "peak_equity",
+      "equity",
+      "regime",
+      "live_armed",
+      "quota",
+      "reset",
+      "as_of"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "halt"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "kill_switch": {
+       "type": "string",
+       "enum": [
+        "off",
+        "on"
+       ]
+      },
+      "kill_reason": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "kill_at": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "kill_by": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "halted_today": {
+       "type": "boolean"
+      },
+      "daily_pnl_pct": {
+       "type": "number"
+      },
+      "drawdown_pct": {
+       "type": "number",
+       "maximum": 0
+      },
+      "peak_equity": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "equity": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "regime": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "crisis"
+       ]
+      },
+      "live_armed": {
+       "type": "boolean"
+      },
+      "quota": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "provider": {
+          "type": "string"
+         },
+         "used": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+         },
+         "limit": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+         }
+        },
+        "required": [
+         "provider",
+         "used",
+         "limit"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "reset": {
+       "anyOf": [
+        {
+         "type": "object",
+         "properties": {
+          "started": {
+           "anyOf": [
+            {
+             "type": "object",
+             "properties": {
+              "uid": {
+               "type": "string"
+              },
+              "name": {
+               "type": "string"
+              },
+              "role": {
+               "type": "string",
+               "enum": [
+                "analyst",
+                "risk_officer",
+                "admin",
+                "auditor"
+               ]
+              },
+              "at": {
+               "type": "string",
+               "format": "date-time",
+               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              "reason": {
+               "type": [
+                "string",
+                "null"
+               ]
+              }
+             },
+             "required": [
+              "uid",
+              "name",
+              "role",
+              "at",
+              "reason"
+             ],
+             "additionalProperties": false
+            },
+            {
+             "type": "null"
+            }
+           ]
+          }
+         },
+         "required": [
+          "started"
+         ],
+         "additionalProperties": false
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "as_of": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      }
+     },
+     "required": [
+      "kill_switch",
+      "kill_reason",
+      "kill_at",
+      "kill_by",
+      "halted_today",
+      "daily_pnl_pct",
+      "drawdown_pct",
+      "peak_equity",
+      "equity",
+      "regime",
+      "live_armed",
+      "quota",
+      "reset",
+      "as_of"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "limits.changed"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "active": {
+       "type": "object",
+       "properties": {
+        "version": {
+         "type": "integer",
+         "exclusiveMinimum": 0,
+         "maximum": 9007199254740991
+        },
+        "status": {
+         "type": "string",
+         "enum": [
+          "proposed",
+          "active",
+          "superseded",
+          "rejected"
+         ]
+        },
+        "reason": {
+         "type": "string",
+         "minLength": 1
+        },
+        "created_at": {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        "effective_from": {
+         "anyOf": [
+          {
+           "type": "string",
+           "format": "date-time",
+           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "values": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "key": {
+            "type": "string",
+            "enum": [
+             "risk_per_trade_pct",
+             "max_position_pct",
+             "max_concurrent_positions",
+             "target_concurrent_positions",
+             "max_adv_share",
+             "price_band_pct",
+             "daily_loss_halt_pct",
+             "kill_drawdown_pct",
+             "min_edge_cost_ratio",
+             "crisis_exposure_mult",
+             "leak_ret5d_threshold",
+             "max_sector_pct",
+             "max_group_pct"
+            ]
+           },
+           "value": {
+            "type": "number"
+           }
+          },
+          "required": [
+           "key",
+           "value"
+          ],
+          "additionalProperties": false
+         }
+        },
+        "proposed_by": {
+         "type": "object",
+         "properties": {
+          "uid": {
+           "type": "string"
+          },
+          "name": {
+           "type": "string"
+          },
+          "role": {
+           "type": "string",
+           "enum": [
+            "analyst",
+            "risk_officer",
+            "admin",
+            "auditor"
+           ]
+          },
+          "at": {
+           "type": "string",
+           "format": "date-time",
+           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "reason": {
+           "type": [
+            "string",
+            "null"
+           ]
+          }
+         },
+         "required": [
+          "uid",
+          "name",
+          "role",
+          "at",
+          "reason"
+         ],
+         "additionalProperties": false
+        },
+        "decided_by": {
+         "anyOf": [
+          {
+           "type": "object",
+           "properties": {
+            "uid": {
+             "type": "string"
+            },
+            "name": {
+             "type": "string"
+            },
+            "role": {
+             "type": "string",
+             "enum": [
+              "analyst",
+              "risk_officer",
+              "admin",
+              "auditor"
+             ]
+            },
+            "at": {
+             "type": "string",
+             "format": "date-time",
+             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            },
+            "reason": {
+             "type": [
+              "string",
+              "null"
+             ]
+            }
+           },
+           "required": [
+            "uid",
+            "name",
+            "role",
+            "at",
+            "reason"
+           ],
+           "additionalProperties": false
+          },
+          {
+           "type": "null"
+          }
+         ]
+        }
+       },
+       "required": [
+        "version",
+        "status",
+        "reason",
+        "created_at",
+        "effective_from",
+        "values",
+        "proposed_by",
+        "decided_by"
+       ],
+       "additionalProperties": false
+      },
+      "pending": {
+       "anyOf": [
+        {
+         "type": "object",
+         "properties": {
+          "version": {
+           "type": "integer",
+           "exclusiveMinimum": 0,
+           "maximum": 9007199254740991
+          },
+          "status": {
+           "type": "string",
+           "enum": [
+            "proposed",
+            "active",
+            "superseded",
+            "rejected"
+           ]
+          },
+          "reason": {
+           "type": "string",
+           "minLength": 1
+          },
+          "created_at": {
+           "type": "string",
+           "format": "date-time",
+           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "effective_from": {
+           "anyOf": [
+            {
+             "type": "string",
+             "format": "date-time",
+             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            },
+            {
+             "type": "null"
+            }
+           ]
+          },
+          "values": {
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "key": {
+              "type": "string",
+              "enum": [
+               "risk_per_trade_pct",
+               "max_position_pct",
+               "max_concurrent_positions",
+               "target_concurrent_positions",
+               "max_adv_share",
+               "price_band_pct",
+               "daily_loss_halt_pct",
+               "kill_drawdown_pct",
+               "min_edge_cost_ratio",
+               "crisis_exposure_mult",
+               "leak_ret5d_threshold",
+               "max_sector_pct",
+               "max_group_pct"
+              ]
+             },
+             "value": {
+              "type": "number"
+             }
+            },
+            "required": [
+             "key",
+             "value"
+            ],
+            "additionalProperties": false
+           }
+          },
+          "proposed_by": {
+           "type": "object",
+           "properties": {
+            "uid": {
+             "type": "string"
+            },
+            "name": {
+             "type": "string"
+            },
+            "role": {
+             "type": "string",
+             "enum": [
+              "analyst",
+              "risk_officer",
+              "admin",
+              "auditor"
+             ]
+            },
+            "at": {
+             "type": "string",
+             "format": "date-time",
+             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            },
+            "reason": {
+             "type": [
+              "string",
+              "null"
+             ]
+            }
+           },
+           "required": [
+            "uid",
+            "name",
+            "role",
+            "at",
+            "reason"
+           ],
+           "additionalProperties": false
+          },
+          "decided_by": {
+           "anyOf": [
+            {
+             "type": "object",
+             "properties": {
+              "uid": {
+               "type": "string"
+              },
+              "name": {
+               "type": "string"
+              },
+              "role": {
+               "type": "string",
+               "enum": [
+                "analyst",
+                "risk_officer",
+                "admin",
+                "auditor"
+               ]
+              },
+              "at": {
+               "type": "string",
+               "format": "date-time",
+               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              "reason": {
+               "type": [
+                "string",
+                "null"
+               ]
+              }
+             },
+             "required": [
+              "uid",
+              "name",
+              "role",
+              "at",
+              "reason"
+             ],
+             "additionalProperties": false
+            },
+            {
+             "type": "null"
+            }
+           ]
+          }
+         },
+         "required": [
+          "version",
+          "status",
+          "reason",
+          "created_at",
+          "effective_from",
+          "values",
+          "proposed_by",
+          "decided_by"
+         ],
+         "additionalProperties": false
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "history": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "version": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+         },
+         "status": {
+          "type": "string",
+          "enum": [
+           "proposed",
+           "active",
+           "superseded",
+           "rejected"
+          ]
+         },
+         "reason": {
+          "type": "string",
+          "minLength": 1
+         },
+         "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+         },
+         "effective_from": {
+          "anyOf": [
+           {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+           },
+           {
+            "type": "null"
+           }
+          ]
+         },
+         "values": {
+          "type": "array",
+          "items": {
+           "type": "object",
+           "properties": {
+            "key": {
+             "type": "string",
+             "enum": [
+              "risk_per_trade_pct",
+              "max_position_pct",
+              "max_concurrent_positions",
+              "target_concurrent_positions",
+              "max_adv_share",
+              "price_band_pct",
+              "daily_loss_halt_pct",
+              "kill_drawdown_pct",
+              "min_edge_cost_ratio",
+              "crisis_exposure_mult",
+              "leak_ret5d_threshold",
+              "max_sector_pct",
+              "max_group_pct"
+             ]
+            },
+            "value": {
+             "type": "number"
+            }
+           },
+           "required": [
+            "key",
+            "value"
+           ],
+           "additionalProperties": false
+          }
+         },
+         "proposed_by": {
+          "type": "object",
+          "properties": {
+           "uid": {
+            "type": "string"
+           },
+           "name": {
+            "type": "string"
+           },
+           "role": {
+            "type": "string",
+            "enum": [
+             "analyst",
+             "risk_officer",
+             "admin",
+             "auditor"
+            ]
+           },
+           "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+           },
+           "reason": {
+            "type": [
+             "string",
+             "null"
+            ]
+           }
+          },
+          "required": [
+           "uid",
+           "name",
+           "role",
+           "at",
+           "reason"
+          ],
+          "additionalProperties": false
+         },
+         "decided_by": {
+          "anyOf": [
+           {
+            "type": "object",
+            "properties": {
+             "uid": {
+              "type": "string"
+             },
+             "name": {
+              "type": "string"
+             },
+             "role": {
+              "type": "string",
+              "enum": [
+               "analyst",
+               "risk_officer",
+               "admin",
+               "auditor"
+              ]
+             },
+             "at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+             },
+             "reason": {
+              "type": [
+               "string",
+               "null"
+              ]
+             }
+            },
+            "required": [
+             "uid",
+             "name",
+             "role",
+             "at",
+             "reason"
+            ],
+            "additionalProperties": false
+           },
+           {
+            "type": "null"
+           }
+          ]
+         }
+        },
+        "required": [
+         "version",
+         "status",
+         "reason",
+         "created_at",
+         "effective_from",
+         "values",
+         "proposed_by",
+         "decided_by"
+        ],
+        "additionalProperties": false
+       }
+      }
+     },
+     "required": [
+      "active",
+      "pending",
+      "history"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "ticket"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "ticket_no": {
+       "type": "string"
+      },
+      "order_id": {
+       "type": "string"
+      },
+      "proposal_id": {
+       "type": "string"
+      },
+      "run_id": {
+       "type": "string"
+      },
+      "rules_version": {
+       "type": "string"
+      },
+      "approved_at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "approval_deadline": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "created_at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "valid_until": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "mode_keys": {
+       "type": "object",
+       "properties": {
+        "config": {
+         "type": "boolean"
+        },
+        "env": {
+         "type": "boolean"
+        },
+        "ui": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "config",
+        "env",
+        "ui"
+       ],
+       "additionalProperties": false
+      },
+      "side": {
+       "type": "string",
+       "const": "buy"
+      },
+      "ticker": {
+       "type": "string",
+       "pattern": "^[A-Z0-9]{3,6}$"
+      },
+      "company_name": {
+       "type": "string"
+      },
+      "market": {
+       "type": "string"
+      },
+      "order_type": {
+       "type": "string",
+       "const": "limit"
+      },
+      "session_tr": {
+       "type": "string"
+      },
+      "qty": {
+       "type": "integer",
+       "exclusiveMinimum": 0,
+       "maximum": 9007199254740991
+      },
+      "limit_price": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "ref_price": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "upper_limit": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "est_notional_try": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "account_equity_try": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "event_line_tr": {
+       "type": "string"
+      },
+      "kap_line_tr": {
+       "type": "string"
+      },
+      "materiality_line_tr": {
+       "type": "string"
+      },
+      "leakage_line_tr": {
+       "type": "string"
+      },
+      "evidence_line_tr": {
+       "type": "string"
+      },
+      "cost_line_tr": {
+       "type": "string"
+      },
+      "edge_cost_line_tr": {
+       "type": "string"
+      },
+      "skeptic_line_tr": {
+       "type": "string"
+      },
+      "amount_check_line_tr": {
+       "type": "string"
+      },
+      "stop_line_tr": {
+       "type": "string"
+      },
+      "planned_exit_tr": {
+       "type": "string"
+      },
+      "gate_results": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string"
+         },
+         "passed": {
+          "type": "boolean"
+         }
+        },
+        "required": [
+         "code",
+         "passed"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "approval_level": {
+       "type": "string",
+       "enum": [
+        "normal",
+        "escalate"
+       ]
+      },
+      "stage": {
+       "type": "string",
+       "enum": [
+        "evidence",
+        "paper",
+        "shadow",
+        "small_real"
+       ]
+      },
+      "audit_hash": {
+       "type": "string"
+      },
+      "prev_hash": {
+       "type": "string"
+      },
+      "entry": {
+       "type": "object",
+       "properties": {
+        "status": {
+         "type": "string",
+         "enum": [
+          "awaiting",
+          "entered",
+          "unfilled",
+          "canceled",
+          "expired"
+         ]
+        },
+        "filled_qty": {
+         "anyOf": [
+          {
+           "type": "integer",
+           "exclusiveMinimum": 0,
+           "maximum": 9007199254740991
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "avg_price": {
+         "anyOf": [
+          {
+           "type": "number",
+           "exclusiveMinimum": 0
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "filled_at": {
+         "anyOf": [
+          {
+           "type": "string",
+           "format": "date-time",
+           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "note": {
+         "type": [
+          "string",
+          "null"
+         ]
+        },
+        "marked_at": {
+         "anyOf": [
+          {
+           "type": "string",
+           "format": "date-time",
+           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        }
+       },
+       "required": [
+        "status",
+        "filled_qty",
+        "avg_price",
+        "filled_at",
+        "note",
+        "marked_at"
+       ],
+       "additionalProperties": false
+      },
+      "is_fixture": {
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "ticket_no",
+      "order_id",
+      "proposal_id",
+      "run_id",
+      "rules_version",
+      "approved_at",
+      "approval_deadline",
+      "created_at",
+      "valid_until",
+      "mode_keys",
+      "side",
+      "ticker",
+      "company_name",
+      "market",
+      "order_type",
+      "session_tr",
+      "qty",
+      "limit_price",
+      "ref_price",
+      "upper_limit",
+      "est_notional_try",
+      "account_equity_try",
+      "event_line_tr",
+      "kap_line_tr",
+      "materiality_line_tr",
+      "leakage_line_tr",
+      "evidence_line_tr",
+      "cost_line_tr",
+      "edge_cost_line_tr",
+      "skeptic_line_tr",
+      "amount_check_line_tr",
+      "stop_line_tr",
+      "planned_exit_tr",
+      "gate_results",
+      "approval_level",
+      "stage",
+      "audit_hash",
+      "prev_hash",
+      "entry",
+      "is_fixture"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "crew"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "agent": {
+       "type": "string",
+       "enum": [
+        "classifier",
+        "reader",
+        "materiality",
+        "evidence",
+        "skeptic",
+        "compliance",
+        "rule_engine",
+        "risk_gate"
+       ]
+      },
+      "activity": {
+       "type": "string",
+       "enum": [
+        "working",
+        "waiting",
+        "idle",
+        "hold",
+        "degraded"
+       ]
+      },
+      "run_id": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "ticker": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
+      "at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      }
+     },
+     "required": [
+      "agent",
+      "activity",
+      "run_id",
+      "ticker",
+      "at"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "kill_switch": "off",
+ "kill_reason": null,
+ "kill_at": null,
+ "kill_by": null,
+ "halted_today": false,
+ "daily_pnl_pct": 0.0021,
+ "drawdown_pct": -0.01132,
+ "reset_started": null
+}

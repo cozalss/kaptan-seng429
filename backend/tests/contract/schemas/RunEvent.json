@@ -1,0 +1,213 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "oneOf": [
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "node"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "node": {
+       "type": "string",
+       "enum": [
+        "route",
+        "pre_gate",
+        "guard",
+        "classifier",
+        "reader",
+        "materiality",
+        "evidence",
+        "merge",
+        "skeptic",
+        "rule_engine",
+        "compliance",
+        "risk_gate",
+        "request_approval",
+        "approval",
+        "execute",
+        "record",
+        "filter_action"
+       ]
+      },
+      "phase": {
+       "type": "string",
+       "enum": [
+        "start",
+        "end"
+       ]
+      },
+      "at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      "latency_ms": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "tokens_in": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "tokens_out": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "minimum": -9007199254740991,
+         "maximum": 9007199254740991
+        },
+        {
+         "type": "null"
+        }
+       ]
+      }
+     },
+     "required": [
+      "node",
+      "phase",
+      "at",
+      "latency_ms",
+      "tokens_in",
+      "tokens_out"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "progress"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "pct": {
+       "type": "number",
+       "minimum": 0,
+       "maximum": 100
+      },
+      "note_tr": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "pct",
+      "note_tr"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "interrupt"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "proposal_id": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "proposal_id"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "done"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "status": {
+       "type": "string",
+       "enum": [
+        "running",
+        "interrupted",
+        "completed",
+        "failed",
+        "hold_quota",
+        "skipped"
+       ]
+      },
+      "outcome": {
+       "anyOf": [
+        {
+         "type": "string",
+         "enum": [
+          "PROPOSE",
+          "NO_TRADE",
+          "HOLD",
+          "QUARANTINED",
+          "PREGATE_VETO"
+         ]
+        },
+        {
+         "type": "null"
+        }
+       ]
+      }
+     },
+     "required": [
+      "status",
+      "outcome"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  }
+ ]
+}

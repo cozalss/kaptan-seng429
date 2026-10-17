@@ -1,0 +1,20 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "string",
+ "enum": [
+  "DUPLICATE_OR_CORRECTION",
+  "NOT_BINDING",
+  "RELATED_PARTY",
+  "RENEWAL_NOT_NEW",
+  "TOKEN_BUYBACK",
+  "NOT_OPEN_MARKET",
+  "FUND_NOT_INSIDER",
+  "DILUTION_OR_HYPE",
+  "MANIPULATION_MARKERS",
+  "AMOUNT_NOT_IN_TEXT",
+  "STALE_OR_WEAK_FINANCIALS",
+  "WEAK_EVIDENCE",
+  "INJECTION_SUSPECT",
+  "OTHER"
+ ]
+}

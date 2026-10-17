@@ -1,0 +1,13 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "string",
+ "enum": [
+  "insufficient_text",
+  "ambiguous",
+  "out_of_scope",
+  "conflicting_values",
+  "suspected_injection",
+  "attachment_missing",
+  "other"
+ ]
+}

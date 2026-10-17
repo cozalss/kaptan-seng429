@@ -1,0 +1,16 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "string",
+ "enum": [
+  "SPK_MEASURE",
+  "VBTS_MEASURE",
+  "WATCHLIST_MARKET",
+  "TRADING_HALT",
+  "INFO_PUBLIC",
+  "MARKET_ABUSE_RISK",
+  "RESTRICTED_LIST",
+  "SIGNAL_SHARING",
+  "PROMPT_INJECTION",
+  "RATIONALE_INTEGRITY"
+ ]
+}

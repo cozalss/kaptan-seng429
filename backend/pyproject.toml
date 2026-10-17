@@ -1,0 +1,93 @@
+[project]
+name = "kaptan"
+version = "0.1.0"
+description = "KAPtan backend: FastAPI + Postgres/pgvector + Redis (M1: the panel runs on the real backend)."
+authors = [{ name = "cozalss" }]
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "alembic>=1.20.0",
+    "fastapi>=0.143.3",
+    "psycopg[binary,pool]>=3.3.6",
+    "pwdlib[argon2]>=0.3.1",
+    "pydantic>=2.14.1",
+    "pydantic-settings>=2.16.0",
+    "pyjwt>=2.15.1",
+    "redis>=8.1.0",
+    "sqlalchemy>=2.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[project.scripts]
+kaptan-api = "kaptan.api.__main__:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "asgi-lifespan>=2.1.0",
+    "httpx>=0.28.1",
+    "jsonschema>=4.26.0",
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.1",
+]
+
+# ── lint / types ────────────────────────────────────────────────────────
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+src = ["src", "tests", "scripts"]
+extend-exclude = ["migrations/versions/*.py.tmpl"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "ASYNC", "RUF", "SIM", "PTH", "N"]
+ignore = [
+    "S101",   # assert in tests
+    "RUF001", # Turkish text: ambiguous unicode is intended
+    "RUF002",
+    "RUF003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S603", "S607"]
+"scripts/**" = ["S603", "S607"]
+"migrations/**" = ["E501"]
+# Seed SQL: table/column names are constants; every value is a bound parameter.
+"src/kaptan/demo/seed.py" = ["S608"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "src"
+packages = ["kaptan"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["kaptan.api.routers.*"]
+disallow_untyped_decorators = false
+
+# ── tests ───────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+addopts = "-q --strict-markers --cov=kaptan --cov-report=term-missing:skip-covered"
+markers = [
+    "integration: needs the compose Postgres (skipped when it is unreachable)",
+    "node: needs node + the panel's node_modules (skipped when missing)",
+]
+
+[tool.coverage.run]
+source = ["kaptan"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "raise NotImplementedError"]

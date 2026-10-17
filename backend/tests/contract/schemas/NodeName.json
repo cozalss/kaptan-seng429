@@ -1,0 +1,23 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "string",
+ "enum": [
+  "route",
+  "pre_gate",
+  "guard",
+  "classifier",
+  "reader",
+  "materiality",
+  "evidence",
+  "merge",
+  "skeptic",
+  "rule_engine",
+  "compliance",
+  "risk_gate",
+  "request_approval",
+  "approval",
+  "execute",
+  "record",
+  "filter_action"
+ ]
+}

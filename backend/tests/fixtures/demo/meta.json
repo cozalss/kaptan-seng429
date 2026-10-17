@@ -1,0 +1,72 @@
+{
+ "fixed_real_ms": 1900000000000,
+ "demo_day": "2027-01-11",
+ "clock_anchor": "2027-01-11T10:40:00.000Z",
+ "day_index_base": 1651200,
+ "day_total": 318,
+ "day_by_anchor": {
+  "total": 212,
+  "noise": 61,
+  "archived": 138,
+  "processed": 13
+ },
+ "audit_base_length": 4812,
+ "audit_tamper_pos": 3907,
+ "demo": {
+  "e3_index": 1651901,
+  "e3_run": "run-demo-e3-ornek",
+  "e3_proposal": "prop-demo-e3-ornek",
+  "inj_index": 1651902,
+  "inj_run": "run-demo-redteam-dmogd",
+  "r04_index": 1651903,
+  "r04_run": "run-demo-r04-tmslj",
+  "ticket": "T-2027-0111-003",
+  "ticket_order": "ord-demo-ticket-ornek"
+ },
+ "demo_run_ms": 7500,
+ "loss_daily": [
+  -0.004,
+  -0.0075,
+  -0.0112,
+  -0.021,
+  -0.03,
+  -0.0392
+ ],
+ "loss_step_ms": 1400,
+ "opening_daily_pnl": 0.0021,
+ "paper_equity_try": 1016480,
+ "personal_account_try": 350000,
+ "live_strategy": "kaptan:v1.1-fwd",
+ "rules_hash": "0f4f8a28ee520c6f",
+ "prompt_manifest_hash": "5c8e4bbba05e1e91",
+ "current_stage": "paper",
+ "counters_base": {
+  "llm_calls": 31,
+  "llm_tokens_floor": 412000
+ },
+ "quota_base": [
+  {
+   "provider": "Gemini Flash-Lite",
+   "used": 118,
+   "per_injection": 4,
+   "limit": 500
+  },
+  {
+   "provider": "Groq gpt-oss",
+   "used": 61,
+   "per_injection": 2,
+   "limit": 1000
+  },
+  {
+   "provider": "Prompt Guard 2",
+   "used": 140,
+   "per_injection": 1,
+   "limit": 14400
+  }
+ ],
+ "live_equity_at_anchor": {
+  "equity": 1018615,
+  "peak": 1030274,
+  "drawdown": -0.01132
+ }
+}

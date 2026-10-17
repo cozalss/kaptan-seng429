@@ -1,0 +1,47 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "id": {
+   "type": "string",
+   "enum": [
+    "evidence",
+    "paper",
+    "shadow",
+    "small_real"
+   ]
+  },
+  "n": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 3
+  },
+  "label_tr": {
+   "type": "string"
+  },
+  "window_tr": {
+   "type": "string"
+  },
+  "summary_tr": {
+   "type": "string"
+  },
+  "status": {
+   "type": "string",
+   "enum": [
+    "done",
+    "current",
+    "next",
+    "locked"
+   ]
+  }
+ },
+ "required": [
+  "id",
+  "n",
+  "label_tr",
+  "window_tr",
+  "summary_tr",
+  "status"
+ ],
+ "additionalProperties": false
+}

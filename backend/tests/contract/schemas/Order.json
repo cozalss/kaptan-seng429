@@ -1,0 +1,185 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "id": {
+   "type": "string"
+  },
+  "client_order_id": {
+   "type": "string"
+  },
+  "proposal_id": {
+   "type": "string"
+  },
+  "run_id": {
+   "type": "string"
+  },
+  "ticker": {
+   "type": "string",
+   "pattern": "^[A-Z0-9]{3,6}$"
+  },
+  "company_name": {
+   "type": "string"
+  },
+  "side": {
+   "type": "string",
+   "enum": [
+    "buy",
+    "sell"
+   ]
+  },
+  "order_type": {
+   "type": "string",
+   "enum": [
+    "market",
+    "limit"
+   ]
+  },
+  "tif": {
+   "type": "string",
+   "enum": [
+    "day",
+    "opg"
+   ]
+  },
+  "qty": {
+   "type": "integer",
+   "exclusiveMinimum": 0,
+   "maximum": 9007199254740991
+  },
+  "limit_price": {
+   "anyOf": [
+    {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "status": {
+   "type": "string",
+   "enum": [
+    "pending_open",
+    "accepted",
+    "awaiting_manual_entry",
+    "partially_filled",
+    "filled",
+    "canceled",
+    "rejected"
+   ]
+  },
+  "broker": {
+   "type": "string",
+   "enum": [
+    "simbist",
+    "order_ticket"
+   ]
+  },
+  "created_at": {
+   "type": "string",
+   "format": "date-time",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+  },
+  "fills": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "order_id": {
+      "type": "string"
+     },
+     "qty": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991
+     },
+     "price": {
+      "type": "number",
+      "exclusiveMinimum": 0
+     },
+     "commission": {
+      "type": "number",
+      "minimum": 0
+     },
+     "bsmv": {
+      "type": "number",
+      "minimum": 0
+     },
+     "slippage_bps": {
+      "type": "number"
+     },
+     "filled_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "simbist",
+       "alpaca",
+       "manual"
+      ]
+     }
+    },
+    "required": [
+     "id",
+     "order_id",
+     "qty",
+     "price",
+     "commission",
+     "bsmv",
+     "slippage_bps",
+     "filled_at",
+     "source"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "cancel_reason": {
+   "anyOf": [
+    {
+     "type": "string",
+     "enum": [
+      "limit_up_open",
+      "kill_switch",
+      "day_end",
+      "ticket_unfilled",
+      "ticket_canceled",
+      "ticket_expired"
+     ]
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "is_fixture": {
+   "type": "boolean"
+  }
+ },
+ "required": [
+  "id",
+  "client_order_id",
+  "proposal_id",
+  "run_id",
+  "ticker",
+  "company_name",
+  "side",
+  "order_type",
+  "tif",
+  "qty",
+  "limit_price",
+  "status",
+  "broker",
+  "created_at",
+  "fills",
+  "is_fixture"
+ ],
+ "additionalProperties": false
+}

@@ -1,0 +1,118 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "execution_mode": {
+   "type": "string",
+   "enum": [
+    "paper",
+    "personal",
+    "live"
+   ]
+  },
+  "strategy_versions": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "frozen_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+     },
+     "scope_tr": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "frozen_at",
+     "scope_tr"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "rules_version": {
+   "type": "string"
+  },
+  "rules_hash": {
+   "type": "string"
+  },
+  "prompt_manifest_hash": {
+   "type": "string"
+  },
+  "config_hash": {
+   "type": "string"
+  },
+  "models": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "role_tr": {
+      "type": "string"
+     },
+     "model_id": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "role_tr",
+     "model_id"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "fallback_chain": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "provider": {
+      "type": "string"
+     },
+     "model_id": {
+      "type": "string"
+     },
+     "note_tr": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "provider",
+     "model_id",
+     "note_tr"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "kap_poll_seconds": {
+   "type": "integer",
+   "exclusiveMinimum": 0,
+   "maximum": 9007199254740991
+  },
+  "approval_deadline_tr": {
+   "type": "string"
+  },
+  "demo_mode": {
+   "type": "boolean"
+  }
+ },
+ "required": [
+  "execution_mode",
+  "strategy_versions",
+  "rules_version",
+  "rules_hash",
+  "prompt_manifest_hash",
+  "config_hash",
+  "models",
+  "fallback_chain",
+  "kap_poll_seconds",
+  "approval_deadline_tr",
+  "demo_mode"
+ ],
+ "additionalProperties": false
+}

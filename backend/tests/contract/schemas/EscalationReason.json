@@ -1,0 +1,11 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "string",
+ "enum": [
+  "COMPLIANCE_ESCALATE",
+  "DEGRADED",
+  "NEAR_MAX_POSITIONS",
+  "RESTRICTED_SELL",
+  "RESIZED"
+ ]
+}

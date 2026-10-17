@@ -1,0 +1,50 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "id": {
+   "type": "string"
+  },
+  "label_tr": {
+   "type": "string"
+  },
+  "current_tr": {
+   "type": "string"
+  },
+  "target_tr": {
+   "type": "string"
+  },
+  "progress": {
+   "anyOf": [
+    {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "met": {
+   "type": "boolean"
+  },
+  "source": {
+   "type": "string",
+   "enum": [
+    "kanonik",
+    "kisisel"
+   ]
+  }
+ },
+ "required": [
+  "id",
+  "label_tr",
+  "current_tr",
+  "target_tr",
+  "progress",
+  "met",
+  "source"
+ ],
+ "additionalProperties": false
+}

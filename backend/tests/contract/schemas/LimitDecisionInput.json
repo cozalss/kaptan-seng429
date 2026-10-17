@@ -1,0 +1,23 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "decision": {
+   "type": "string",
+   "enum": [
+    "approve",
+    "reject"
+   ]
+  },
+  "comment": {
+   "default": "",
+   "type": "string",
+   "maxLength": 500
+  }
+ },
+ "required": [
+  "decision",
+  "comment"
+ ],
+ "additionalProperties": false
+}

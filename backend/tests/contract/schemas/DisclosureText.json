@@ -1,0 +1,21 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "lang": {
+   "type": "string",
+   "enum": [
+    "tr",
+    "en"
+   ]
+  },
+  "body": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "lang",
+  "body"
+ ],
+ "additionalProperties": false
+}

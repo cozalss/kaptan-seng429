@@ -1,0 +1,444 @@
+[
+ {
+  "kind": "trade_approval",
+  "proposal_id": "prop-day-e2-krgmd",
+  "run_id": "run-day-e2-krgmd",
+  "ticker": "KRGMD",
+  "company_name": "KORU MADENCİLİK A.Ş.",
+  "side": "buy",
+  "event_type": "E2",
+  "sub_type_tr": "Ana ortak alımı",
+  "headline_tr": "Ana ortaktan 5,1 milyon TL'lik alım",
+  "disclosure_index": 1651241,
+  "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651241",
+  "final_notional_try": 22386,
+  "requested_notional_try": 44000,
+  "limit_price": 58.91,
+  "qty": 380,
+  "entry": "intraday_limit",
+  "holding_days": [
+   20,
+   60
+  ],
+  "level": "normal",
+  "escalation_reasons": [],
+  "evidence_summary": {
+   "n": 9,
+   "median_car_5d": 0.005,
+   "median_car_20d": 0.009,
+   "hit_rate_5d": 0.56,
+   "strength": "moderate",
+   "card_id": "card-run-day-e2-krgmd"
+  },
+  "skeptic_flags": [
+   {
+    "code": "MANIPULATION_MARKERS",
+    "severity": "reduce",
+    "detail_tr": "Son 5 seansta +%6,1 ve hacim 3 katı."
+   }
+  ],
+  "skeptic_note_tr": "Alım öncesi olağan dışı hacim; ×0,5.",
+  "size_multiplier": 0.5,
+  "compliance_summary_tr": "Tedbir yok, injection yok.",
+  "rule_trace_summary": [
+   {
+    "rule": "E2.open_market",
+    "passed": true,
+    "observed": "borsada",
+    "threshold": "piyasadan",
+    "detail_tr": "Borsada alım."
+   },
+   {
+    "rule": "LEAK.ret5d",
+    "passed": true,
+    "observed": "+%6,1",
+    "threshold": "< %8",
+    "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+   },
+   {
+    "rule": "EDGE.edge_cost",
+    "passed": true,
+    "observed": "2,0×",
+    "threshold": "≥ 2,0×",
+    "detail_tr": "Beklenen avantaj maliyetin en az iki katı."
+   },
+   {
+    "rule": "EVIDENCE.n_min",
+    "passed": true,
+    "observed": "9",
+    "threshold": "≥ 5",
+    "detail_tr": "Yeterli sayıda benzer olay var."
+   }
+  ],
+  "degraded": false,
+  "prompt_manifest_hash": "5c8e4bbba05e1e91",
+  "created_at": "2027-01-11T05:17:57.905Z",
+  "expires_at": "2027-01-12T06:50:00.000Z",
+  "status": "rejected",
+  "decided_by": "uye-3",
+  "decided_role": "risk_officer",
+  "decided_at": "2027-01-11T07:20:00.000Z",
+  "decision_comment": "Hacim anormal; manipülasyon şüphesi taşıyan bir harekete girmek istemiyorum.",
+  "approved_notional_try": null,
+  "is_fixture": false
+ },
+ {
+  "kind": "trade_approval",
+  "proposal_id": "prop-day-e4-tmspz",
+  "run_id": "run-day-e4-tmspz",
+  "ticker": "TMSPZ",
+  "company_name": "TOROS PERAKENDE A.Ş.",
+  "side": "buy",
+  "event_type": "E4",
+  "sub_type_tr": "Finansal sonuç",
+  "headline_tr": "2026 yıllık sonuçları: beklenti üstü kâr (SUE 1,4)",
+  "disclosure_index": 1651233,
+  "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651233",
+  "final_notional_try": 43495,
+  "requested_notional_try": 57000,
+  "limit_price": 77.67,
+  "qty": 560,
+  "entry": "next_open_auction",
+  "holding_days": [
+   5,
+   10
+  ],
+  "level": "escalate",
+  "escalation_reasons": [
+   "COMPLIANCE_ESCALATE"
+  ],
+  "evidence_summary": {
+   "n": 12,
+   "median_car_5d": 0.009,
+   "median_car_20d": 0.01,
+   "hit_rate_5d": 0.58,
+   "strength": "moderate",
+   "card_id": "card-run-day-e4-tmspz"
+  },
+  "skeptic_flags": [
+   {
+    "code": "STALE_OR_WEAK_FINANCIALS",
+    "severity": "reduce",
+    "detail_tr": "Kârın bir kısmı tek seferlik arsa satışından."
+   }
+  ],
+  "skeptic_note_tr": "Kârın bir bölümü tek seferlik; çekirdek iyileşme daha zayıf.",
+  "size_multiplier": 0.75,
+  "compliance_summary_tr": "Tedbir yok; bir kontrol insan incelemesi istiyor.",
+  "rule_trace_summary": [
+   {
+    "rule": "E4.sue",
+    "passed": true,
+    "observed": "1,4",
+    "threshold": "≥ 1,0",
+    "detail_tr": "Beklenmeyen kâr standart sapmanın 1,4 katı."
+   },
+   {
+    "rule": "E4.cfo_quality",
+    "passed": true,
+    "observed": "iyi",
+    "threshold": "nakit akışı destekliyor",
+    "detail_tr": "Faaliyet nakit akışı kârı destekliyor."
+   },
+   {
+    "rule": "E4.ret10d",
+    "passed": true,
+    "observed": "+%5,0",
+    "threshold": "< %12",
+    "detail_tr": "Son 10 seansta aşırı yükseliş yok."
+   },
+   {
+    "rule": "LEAK.ret5d",
+    "passed": true,
+    "observed": "+%3,4",
+    "threshold": "< %8",
+    "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+   },
+   {
+    "rule": "EDGE.edge_cost",
+    "passed": true,
+    "observed": "2,2×",
+    "threshold": "≥ 2,0×",
+    "detail_tr": "Beklenen avantaj maliyetin en az iki katı."
+   },
+   {
+    "rule": "EVIDENCE.n_min",
+    "passed": true,
+    "observed": "12",
+    "threshold": "≥ 5",
+    "detail_tr": "Yeterli sayıda benzer olay var."
+   }
+  ],
+  "degraded": false,
+  "prompt_manifest_hash": "5c8e4bbba05e1e91",
+  "created_at": "2027-01-11T05:02:54.509Z",
+  "expires_at": "2027-01-12T06:50:00.000Z",
+  "status": "pending",
+  "decided_by": null,
+  "decided_role": null,
+  "decided_at": null,
+  "decision_comment": null,
+  "approved_notional_try": null,
+  "is_fixture": false
+ },
+ {
+  "kind": "trade_approval",
+  "proposal_id": "prop-day-e1-tmsmk",
+  "run_id": "run-day-e1-tmsmk",
+  "ticker": "TMSMK",
+  "company_name": "TOROS MAKİNE A.Ş.",
+  "side": "buy",
+  "event_type": "E1",
+  "sub_type_tr": "Pay geri alım işlemi",
+  "headline_tr": "Geri alımlar sermayenin %0,34'üne ulaştı",
+  "disclosure_index": 1651222,
+  "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651222",
+  "final_notional_try": 50495,
+  "requested_notional_try": 50500,
+  "limit_price": 90.17,
+  "qty": 560,
+  "entry": "next_open_auction",
+  "holding_days": [
+   20,
+   40
+  ],
+  "level": "normal",
+  "escalation_reasons": [],
+  "evidence_summary": {
+   "n": 64,
+   "median_car_5d": 0.007,
+   "median_car_20d": 0.011,
+   "hit_rate_5d": 0.58,
+   "strength": "strong",
+   "card_id": "card-run-day-e1-tmsmk"
+  },
+  "skeptic_flags": [],
+  "skeptic_note_tr": "Ek risk bulunmadı.",
+  "size_multiplier": 1,
+  "compliance_summary_tr": "Tedbir yok, injection yok.",
+  "rule_trace_summary": [
+   {
+    "rule": "E1.capital_10d",
+    "passed": true,
+    "observed": "%0,34",
+    "threshold": "≥ %0,25",
+    "detail_tr": "Eşik üstünde."
+   },
+   {
+    "rule": "E1.execution",
+    "passed": true,
+    "observed": "gerçekleşen alım",
+    "threshold": "duyuru değil",
+    "detail_tr": "Gerçekleşen alım."
+   },
+   {
+    "rule": "LEAK.ret5d",
+    "passed": true,
+    "observed": "+%1,4",
+    "threshold": "< %8",
+    "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+   },
+   {
+    "rule": "EDGE.edge_cost",
+    "passed": true,
+    "observed": "2,7×",
+    "threshold": "≥ 2,0×",
+    "detail_tr": "Beklenen avantaj maliyetin en az iki katı."
+   },
+   {
+    "rule": "EVIDENCE.n_min",
+    "passed": true,
+    "observed": "64",
+    "threshold": "≥ 5",
+    "detail_tr": "Yeterli sayıda benzer olay var."
+   }
+  ],
+  "degraded": false,
+  "prompt_manifest_hash": "5c8e4bbba05e1e91",
+  "created_at": "2027-01-11T04:42:12.339Z",
+  "expires_at": "2027-01-12T06:50:00.000Z",
+  "status": "approved",
+  "decided_by": "uye-3",
+  "decided_role": "risk_officer",
+  "decided_at": "2027-01-11T06:12:00.000Z",
+  "decision_comment": "Kanıt güçlü, sızıntı yok. Onay.",
+  "approved_notional_try": null,
+  "is_fixture": false
+ },
+ {
+  "kind": "trade_approval",
+  "proposal_id": "prop-day-e2-orncm",
+  "run_id": "run-day-e2-orncm",
+  "ticker": "ORNCM",
+  "company_name": "ÖRNEK ÇİMENTO A.Ş.",
+  "side": "buy",
+  "event_type": "E2",
+  "sub_type_tr": "Yönetici pay alımı",
+  "headline_tr": "Yönetim kurulu üyesinden borsada 2,4 milyon TL'lik alım",
+  "disclosure_index": 1651219,
+  "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651219",
+  "final_notional_try": 48111,
+  "requested_notional_try": 64000,
+  "limit_price": 114.55,
+  "qty": 420,
+  "entry": "next_open_auction",
+  "holding_days": [
+   20,
+   60
+  ],
+  "level": "escalate",
+  "escalation_reasons": [
+   "NEAR_MAX_POSITIONS"
+  ],
+  "evidence_summary": {
+   "n": 31,
+   "median_car_5d": 0.008,
+   "median_car_20d": 0.017,
+   "hit_rate_5d": 0.61,
+   "strength": "strong",
+   "card_id": "card-run-day-e2-orncm"
+  },
+  "skeptic_flags": [
+   {
+    "code": "WEAK_EVIDENCE",
+    "severity": "reduce",
+    "detail_tr": "Kümelenme yok: son 30 günde tek alıcı."
+   }
+  ],
+  "skeptic_note_tr": "Tek yöneticinin tek alımı; kümelenme yok. Büyüklük ×0,75.",
+  "size_multiplier": 0.75,
+  "compliance_summary_tr": "Tedbir yok, injection yok.",
+  "rule_trace_summary": [
+   {
+    "rule": "E2.open_market",
+    "passed": true,
+    "observed": "borsada alım",
+    "threshold": "piyasadan",
+    "detail_tr": "Alım borsada yapılmış."
+   },
+   {
+    "rule": "E2.insider_role",
+    "passed": true,
+    "observed": "YK üyesi",
+    "threshold": "yönetici / ana ortak",
+    "detail_tr": "Alıcı yönetim kurulu üyesi."
+   },
+   {
+    "rule": "LEAK.ret5d",
+    "passed": true,
+    "observed": "+%1,2",
+    "threshold": "< %8",
+    "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+   },
+   {
+    "rule": "EDGE.edge_cost",
+    "passed": true,
+    "observed": "2,3×",
+    "threshold": "≥ 2,0×",
+    "detail_tr": "Beklenen avantaj maliyetin en az iki katı."
+   },
+   {
+    "rule": "EVIDENCE.n_min",
+    "passed": true,
+    "observed": "31",
+    "threshold": "≥ 5",
+    "detail_tr": "Yeterli sayıda benzer olay var."
+   }
+  ],
+  "degraded": false,
+  "prompt_manifest_hash": "5c8e4bbba05e1e91",
+  "created_at": "2027-01-11T04:36:33.566Z",
+  "expires_at": "2027-01-12T06:50:00.000Z",
+  "status": "pending",
+  "decided_by": null,
+  "decided_role": null,
+  "decided_at": null,
+  "decision_comment": null,
+  "approved_notional_try": null,
+  "is_fixture": false
+ },
+ {
+  "kind": "trade_approval",
+  "proposal_id": "prop-day-e1-krgcl",
+  "run_id": "run-day-e1-krgcl",
+  "ticker": "KRGCL",
+  "company_name": "KORU ÇELİK A.Ş.",
+  "side": "buy",
+  "event_type": "E1",
+  "sub_type_tr": "Pay geri alım işlemi",
+  "headline_tr": "Son 10 seansta sermayenin %0,31'i oranında geri alım",
+  "disclosure_index": 1651207,
+  "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651207",
+  "final_notional_try": 50542,
+  "requested_notional_try": 50500,
+  "limit_price": 34.15,
+  "qty": 1480,
+  "entry": "next_open_auction",
+  "holding_days": [
+   20,
+   40
+  ],
+  "level": "normal",
+  "escalation_reasons": [],
+  "evidence_summary": {
+   "n": 64,
+   "median_car_5d": 0.007,
+   "median_car_20d": 0.011,
+   "hit_rate_5d": 0.58,
+   "strength": "strong",
+   "card_id": "card-run-day-e1-krgcl"
+  },
+  "skeptic_flags": [],
+  "skeptic_note_tr": "Program 3. ayında; ana ortak satışı yok; geri alım dalgası alt grubunda izlenmeli.",
+  "size_multiplier": 1,
+  "compliance_summary_tr": "Tedbir yok, injection yok.",
+  "rule_trace_summary": [
+   {
+    "rule": "E1.capital_10d",
+    "passed": true,
+    "observed": "%0,31",
+    "threshold": "≥ %0,25",
+    "detail_tr": "Son 10 seansta sermayenin %0,31'i geri alındı."
+   },
+   {
+    "rule": "E1.execution",
+    "passed": true,
+    "observed": "gerçekleşen alım",
+    "threshold": "duyuru değil",
+    "detail_tr": "Gerçekleşen alım bildirimi."
+   },
+   {
+    "rule": "LEAK.ret5d",
+    "passed": true,
+    "observed": "+%1,9",
+    "threshold": "< %8",
+    "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+   },
+   {
+    "rule": "EDGE.edge_cost",
+    "passed": true,
+    "observed": "2,8×",
+    "threshold": "≥ 2,0×",
+    "detail_tr": "Beklenen avantaj maliyetin en az iki katı."
+   },
+   {
+    "rule": "EVIDENCE.n_min",
+    "passed": true,
+    "observed": "64",
+    "threshold": "≥ 5",
+    "detail_tr": "Yeterli sayıda benzer olay var."
+   }
+  ],
+  "degraded": false,
+  "prompt_manifest_hash": "5c8e4bbba05e1e91",
+  "created_at": "2027-01-11T04:13:58.471Z",
+  "expires_at": "2027-01-12T06:50:00.000Z",
+  "status": "pending",
+  "decided_by": null,
+  "decided_role": null,
+  "decided_at": null,
+  "decision_comment": null,
+  "approved_notional_try": null,
+  "is_fixture": false
+ }
+]

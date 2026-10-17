@@ -1,0 +1,32 @@
+[
+ {
+  "uid": "uye-1",
+  "name": "Üye 1",
+  "role": "admin",
+  "duty_tr": "Veri ve RAG · takım lideri"
+ },
+ {
+  "uid": "uye-2",
+  "name": "Üye 2",
+  "role": "analyst",
+  "duty_tr": "Ajanlar"
+ },
+ {
+  "uid": "uye-3",
+  "name": "Üye 3",
+  "role": "risk_officer",
+  "duty_tr": "Strateji, risk ve yürütme"
+ },
+ {
+  "uid": "uye-4",
+  "name": "Üye 4",
+  "role": "analyst",
+  "duty_tr": "Arayüz ve değerlendirme"
+ },
+ {
+  "uid": "denetci",
+  "name": "Denetçi",
+  "role": "auditor",
+  "duty_tr": "Jüri · salt okunur"
+ }
+]

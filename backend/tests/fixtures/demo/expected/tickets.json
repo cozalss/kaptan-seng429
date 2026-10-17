@@ -1,0 +1,356 @@
+[
+ {
+  "ticket_no": "T-2027-0111-020",
+  "order_id": "ord-fis-day-e1-tmsmk",
+  "proposal_id": "prop-day-e1-tmsmk",
+  "run_id": "run-day-e1-tmsmk",
+  "rules_version": "rules-v1.0 / fwd",
+  "approved_at": "2027-01-11T06:12:00.000Z",
+  "approval_deadline": "2027-01-12T06:50:00.000Z",
+  "created_at": "2027-01-11T06:12:20.000Z",
+  "valid_until": "2027-01-11T07:10:00.000Z",
+  "mode_keys": {
+   "config": false,
+   "env": false,
+   "ui": false
+  },
+  "side": "buy",
+  "ticker": "TMSMK",
+  "company_name": "TOROS MAKİNE A.Ş.",
+  "market": "Ana Pazar",
+  "order_type": "limit",
+  "session_tr": "AÇILIŞ SEANSI (09:40–09:55) · GÜNLÜK",
+  "qty": 192,
+  "limit_price": 90.17,
+  "ref_price": 88.4,
+  "upper_limit": 99.19,
+  "est_notional_try": 17313,
+  "account_equity_try": 350000,
+  "event_line_tr": "E1 — Pay geri alım işlemi",
+  "kap_line_tr": "idx 1651222 · Geri alımlar sermayenin %0,34'üne ulaştı",
+  "materiality_line_tr": "Eşik üstünde.",
+  "leakage_line_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı.",
+  "evidence_line_tr": "Benzer 64 olay · medyan 5 günlük anormal getiri %0,7 · isabet %58 (örnek değer)",
+  "cost_line_tr": "Gidiş-dönüş maliyet %0,33 (komisyon + yarı-spread + etki + manuel kayma)",
+  "edge_cost_line_tr": "Avantaj / maliyet = %0,9 / %0,33 = 2,7× (eşik 2,0)",
+  "skeptic_line_tr": "“Ek risk bulunmadı.”",
+  "amount_check_line_tr": "Okuyucu tutarı metindeki regex tutarıyla eşleşti (R14) ✓",
+  "stop_line_tr": "Kapanış bazlı stop 80,89 TL TL",
+  "planned_exit_tr": "20. seans kapanışı (en çok 40 seans)",
+  "gate_results": [
+   {
+    "code": "R01",
+    "passed": true
+   },
+   {
+    "code": "R02",
+    "passed": true
+   },
+   {
+    "code": "R03",
+    "passed": true
+   },
+   {
+    "code": "R04",
+    "passed": true
+   },
+   {
+    "code": "R13",
+    "passed": true
+   },
+   {
+    "code": "R11",
+    "passed": true
+   },
+   {
+    "code": "R14",
+    "passed": true
+   },
+   {
+    "code": "R05",
+    "passed": true
+   },
+   {
+    "code": "R06",
+    "passed": true
+   },
+   {
+    "code": "R09",
+    "passed": true
+   },
+   {
+    "code": "R12",
+    "passed": true
+   },
+   {
+    "code": "R07",
+    "passed": true
+   },
+   {
+    "code": "R08",
+    "passed": true
+   },
+   {
+    "code": "R10",
+    "passed": true
+   },
+   {
+    "code": "R15",
+    "passed": true
+   },
+   {
+    "code": "R16",
+    "passed": true
+   }
+  ],
+  "approval_level": "normal",
+  "stage": "paper",
+  "audit_hash": "23bfb5906fe7fc2d60f8ba0bf5eca19f1e0e814bbfed266f05a5007db9ab8bf5",
+  "prev_hash": "e04c84a595f43a38d683b3270ddf46d84446198701f1ba53e2a16b9e2f40700b",
+  "entry": {
+   "status": "expired",
+   "filled_qty": null,
+   "avg_price": null,
+   "filled_at": null,
+   "note": null,
+   "marked_at": null
+  },
+  "is_fixture": false
+ },
+ {
+  "ticket_no": "T-2027-0111-029",
+  "order_id": "ord-fis-hist-107",
+  "proposal_id": "prop-hist-107",
+  "run_id": "run-hist-107",
+  "rules_version": "rules-v1.0 / fwd",
+  "approved_at": "2027-01-11T05:38:00.000Z",
+  "approval_deadline": "2027-01-11T06:50:00.000Z",
+  "created_at": "2027-01-11T05:38:20.000Z",
+  "valid_until": "2027-01-11T07:10:00.000Z",
+  "mode_keys": {
+   "config": false,
+   "env": false,
+   "ui": false
+  },
+  "side": "buy",
+  "ticker": "MSLIL",
+  "company_name": "MİSAL İLAÇ A.Ş.",
+  "market": "Ana Pazar",
+  "order_type": "limit",
+  "session_tr": "AÇILIŞ SEANSI (09:40–09:55) · GÜNLÜK",
+  "qty": 275,
+  "limit_price": 59.18,
+  "ref_price": 58.02,
+  "upper_limit": 65.1,
+  "est_notional_try": 16275,
+  "account_equity_try": 350000,
+  "event_line_tr": "E2 — Yönetici pay alımı",
+  "kap_line_tr": "idx 1640107 · Yönetici borsadan pay aldı",
+  "materiality_line_tr": "Kural sağlandı.",
+  "leakage_line_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı.",
+  "evidence_line_tr": "Benzer 40 olay · medyan 5 günlük anormal getiri %0,8 · isabet %60 (örnek değer)",
+  "cost_line_tr": "Gidiş-dönüş maliyet %0,33 (komisyon + yarı-spread + etki + manuel kayma)",
+  "edge_cost_line_tr": "Avantaj / maliyet = %0,85 / %0,33 = 2,6× (eşik 2,0)",
+  "skeptic_line_tr": "“Ek risk bulunmadı.”",
+  "amount_check_line_tr": "Okuyucu tutarı metindeki regex tutarıyla eşleşti (R14) ✓",
+  "stop_line_tr": "Kapanış bazlı stop 52,80 TL TL",
+  "planned_exit_tr": "20. seans kapanışı (en çok 60 seans)",
+  "gate_results": [
+   {
+    "code": "R01",
+    "passed": true
+   },
+   {
+    "code": "R02",
+    "passed": true
+   },
+   {
+    "code": "R03",
+    "passed": true
+   },
+   {
+    "code": "R04",
+    "passed": true
+   },
+   {
+    "code": "R13",
+    "passed": true
+   },
+   {
+    "code": "R11",
+    "passed": true
+   },
+   {
+    "code": "R14",
+    "passed": true
+   },
+   {
+    "code": "R05",
+    "passed": true
+   },
+   {
+    "code": "R06",
+    "passed": true
+   },
+   {
+    "code": "R09",
+    "passed": true
+   },
+   {
+    "code": "R12",
+    "passed": true
+   },
+   {
+    "code": "R07",
+    "passed": true
+   },
+   {
+    "code": "R08",
+    "passed": true
+   },
+   {
+    "code": "R10",
+    "passed": true
+   },
+   {
+    "code": "R15",
+    "passed": true
+   },
+   {
+    "code": "R16",
+    "passed": true
+   }
+  ],
+  "approval_level": "normal",
+  "stage": "paper",
+  "audit_hash": "69b52f3b64f728ad725dff5519a97bfa10e18eba272aac1abdc693e90a5e8cda",
+  "prev_hash": "2fc6696df9c6903c62a230ae069d715e7b36e48b3847e724ce247acf3bde589a",
+  "entry": {
+   "status": "expired",
+   "filled_qty": null,
+   "avg_price": null,
+   "filled_at": null,
+   "note": null,
+   "marked_at": null
+  },
+  "is_fixture": false
+ },
+ {
+  "ticket_no": "T-2027-0111-028",
+  "order_id": "ord-fis-hist-106",
+  "proposal_id": "prop-hist-106",
+  "run_id": "run-hist-106",
+  "rules_version": "rules-v1.0 / fwd",
+  "approved_at": "2027-01-11T05:31:00.000Z",
+  "approval_deadline": "2027-01-11T06:50:00.000Z",
+  "created_at": "2027-01-11T05:31:20.000Z",
+  "valid_until": "2027-01-11T07:10:00.000Z",
+  "mode_keys": {
+   "config": false,
+   "env": false,
+   "ui": false
+  },
+  "side": "buy",
+  "ticker": "DMOEN",
+  "company_name": "DOĞU ENERJİ ÜRETİM A.Ş.",
+  "market": "Ana Pazar",
+  "order_type": "limit",
+  "session_tr": "AÇILIŞ SEANSI (09:40–09:55) · GÜNLÜK",
+  "qty": 482,
+  "limit_price": 36.62,
+  "ref_price": 35.9,
+  "upper_limit": 40.28,
+  "est_notional_try": 17651,
+  "account_equity_try": 350000,
+  "event_line_tr": "E1 — Pay geri alım işlemi",
+  "kap_line_tr": "idx 1640106 · Geri alım eşiği aşıldı",
+  "materiality_line_tr": "Kural sağlandı.",
+  "leakage_line_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı.",
+  "evidence_line_tr": "Benzer 40 olay · medyan 5 günlük anormal getiri %0,8 · isabet %60 (örnek değer)",
+  "cost_line_tr": "Gidiş-dönüş maliyet %0,33 (komisyon + yarı-spread + etki + manuel kayma)",
+  "edge_cost_line_tr": "Avantaj / maliyet = %0,85 / %0,33 = 2,6× (eşik 2,0)",
+  "skeptic_line_tr": "“Ek risk bulunmadı.”",
+  "amount_check_line_tr": "Okuyucu tutarı metindeki regex tutarıyla eşleşti (R14) ✓",
+  "stop_line_tr": "Kapanış bazlı stop 32,67 TL TL",
+  "planned_exit_tr": "20. seans kapanışı (en çok 40 seans)",
+  "gate_results": [
+   {
+    "code": "R01",
+    "passed": true
+   },
+   {
+    "code": "R02",
+    "passed": true
+   },
+   {
+    "code": "R03",
+    "passed": true
+   },
+   {
+    "code": "R04",
+    "passed": true
+   },
+   {
+    "code": "R13",
+    "passed": true
+   },
+   {
+    "code": "R11",
+    "passed": true
+   },
+   {
+    "code": "R14",
+    "passed": true
+   },
+   {
+    "code": "R05",
+    "passed": true
+   },
+   {
+    "code": "R06",
+    "passed": true
+   },
+   {
+    "code": "R09",
+    "passed": true
+   },
+   {
+    "code": "R12",
+    "passed": true
+   },
+   {
+    "code": "R07",
+    "passed": true
+   },
+   {
+    "code": "R08",
+    "passed": true
+   },
+   {
+    "code": "R10",
+    "passed": true
+   },
+   {
+    "code": "R15",
+    "passed": true
+   },
+   {
+    "code": "R16",
+    "passed": true
+   }
+  ],
+  "approval_level": "normal",
+  "stage": "paper",
+  "audit_hash": "b80602ea95c64940b6776b03505c877536e96a8f59b2ff09a03dee5adba3c481",
+  "prev_hash": "3f48a007230f40977fa515f2109b0bcd36cec06db4760637d8a906a263e1812d",
+  "entry": {
+   "status": "expired",
+   "filled_qty": null,
+   "avg_price": null,
+   "filled_at": null,
+   "note": null,
+   "marked_at": null
+  },
+  "is_fixture": false
+ }
+]

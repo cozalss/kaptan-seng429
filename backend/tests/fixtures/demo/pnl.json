@@ -1,0 +1,1662 @@
+[
+ {
+  "d": "2026-11-23",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 995977,
+  "daily_return": -0.00402,
+  "peak_equity": 1000000,
+  "drawdown": -0.00402,
+  "n_positions": 1,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-24",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 992071,
+  "daily_return": -0.00392,
+  "peak_equity": 1000000,
+  "drawdown": -0.00793,
+  "n_positions": 1,
+  "n_trades": 1
+ },
+ {
+  "d": "2026-11-25",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 984891,
+  "daily_return": -0.00724,
+  "peak_equity": 1000000,
+  "drawdown": -0.01511,
+  "n_positions": 1,
+  "n_trades": 1
+ },
+ {
+  "d": "2026-11-26",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 984380,
+  "daily_return": -0.00052,
+  "peak_equity": 1000000,
+  "drawdown": -0.01562,
+  "n_positions": 1,
+  "n_trades": 2
+ },
+ {
+  "d": "2026-11-27",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 979894,
+  "daily_return": -0.00456,
+  "peak_equity": 1000000,
+  "drawdown": -0.02011,
+  "n_positions": 1,
+  "n_trades": 2
+ },
+ {
+  "d": "2026-11-30",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 983936,
+  "daily_return": 0.00412,
+  "peak_equity": 1000000,
+  "drawdown": -0.01606,
+  "n_positions": 2,
+  "n_trades": 2
+ },
+ {
+  "d": "2026-12-01",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 982987,
+  "daily_return": -0.00096,
+  "peak_equity": 1000000,
+  "drawdown": -0.01701,
+  "n_positions": 2,
+  "n_trades": 3
+ },
+ {
+  "d": "2026-12-02",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 987781,
+  "daily_return": 0.00488,
+  "peak_equity": 1000000,
+  "drawdown": -0.01222,
+  "n_positions": 2,
+  "n_trades": 3
+ },
+ {
+  "d": "2026-12-03",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 988590,
+  "daily_return": 0.00082,
+  "peak_equity": 1000000,
+  "drawdown": -0.01141,
+  "n_positions": 2,
+  "n_trades": 4
+ },
+ {
+  "d": "2026-12-04",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 986680,
+  "daily_return": -0.00193,
+  "peak_equity": 1000000,
+  "drawdown": -0.01332,
+  "n_positions": 2,
+  "n_trades": 4
+ },
+ {
+  "d": "2026-12-07",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 991988,
+  "daily_return": 0.00538,
+  "peak_equity": 1000000,
+  "drawdown": -0.00801,
+  "n_positions": 3,
+  "n_trades": 5
+ },
+ {
+  "d": "2026-12-08",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 987965,
+  "daily_return": -0.00406,
+  "peak_equity": 1000000,
+  "drawdown": -0.01204,
+  "n_positions": 3,
+  "n_trades": 5
+ },
+ {
+  "d": "2026-12-09",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 991781,
+  "daily_return": 0.00386,
+  "peak_equity": 1000000,
+  "drawdown": -0.00822,
+  "n_positions": 3,
+  "n_trades": 5
+ },
+ {
+  "d": "2026-12-10",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 993983,
+  "daily_return": 0.00222,
+  "peak_equity": 1000000,
+  "drawdown": -0.00602,
+  "n_positions": 3,
+  "n_trades": 6
+ },
+ {
+  "d": "2026-12-11",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 992481,
+  "daily_return": -0.00151,
+  "peak_equity": 1000000,
+  "drawdown": -0.00752,
+  "n_positions": 3,
+  "n_trades": 6
+ },
+ {
+  "d": "2026-12-14",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 996891,
+  "daily_return": 0.00444,
+  "peak_equity": 1000000,
+  "drawdown": -0.00311,
+  "n_positions": 4,
+  "n_trades": 7
+ },
+ {
+  "d": "2026-12-15",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1005351,
+  "daily_return": 0.00849,
+  "peak_equity": 1005351,
+  "drawdown": 0,
+  "n_positions": 4,
+  "n_trades": 7
+ },
+ {
+  "d": "2026-12-16",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1008880,
+  "daily_return": 0.00351,
+  "peak_equity": 1008880,
+  "drawdown": 0,
+  "n_positions": 4,
+  "n_trades": 7
+ },
+ {
+  "d": "2026-12-17",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1005917,
+  "daily_return": -0.00294,
+  "peak_equity": 1008880,
+  "drawdown": -0.00294,
+  "n_positions": 4,
+  "n_trades": 8
+ },
+ {
+  "d": "2026-12-18",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1002172,
+  "daily_return": -0.00372,
+  "peak_equity": 1008880,
+  "drawdown": -0.00665,
+  "n_positions": 4,
+  "n_trades": 8
+ },
+ {
+  "d": "2026-12-21",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1008759,
+  "daily_return": 0.00657,
+  "peak_equity": 1008880,
+  "drawdown": -0.00012,
+  "n_positions": 5,
+  "n_trades": 9
+ },
+ {
+  "d": "2026-12-22",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1013733,
+  "daily_return": 0.00493,
+  "peak_equity": 1013733,
+  "drawdown": 0,
+  "n_positions": 5,
+  "n_trades": 9
+ },
+ {
+  "d": "2026-12-23",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1019355,
+  "daily_return": 0.00555,
+  "peak_equity": 1019355,
+  "drawdown": 0,
+  "n_positions": 5,
+  "n_trades": 9
+ },
+ {
+  "d": "2026-12-24",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1021599,
+  "daily_return": 0.0022,
+  "peak_equity": 1021599,
+  "drawdown": 0,
+  "n_positions": 5,
+  "n_trades": 10
+ },
+ {
+  "d": "2026-12-25",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1017657,
+  "daily_return": -0.00386,
+  "peak_equity": 1021599,
+  "drawdown": -0.00386,
+  "n_positions": 5,
+  "n_trades": 10
+ },
+ {
+  "d": "2026-12-28",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1015366,
+  "daily_return": -0.00225,
+  "peak_equity": 1021599,
+  "drawdown": -0.0061,
+  "n_positions": 6,
+  "n_trades": 11
+ },
+ {
+  "d": "2026-12-29",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1022799,
+  "daily_return": 0.00732,
+  "peak_equity": 1022799,
+  "drawdown": 0,
+  "n_positions": 6,
+  "n_trades": 11
+ },
+ {
+  "d": "2026-12-30",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1030274,
+  "daily_return": 0.00731,
+  "peak_equity": 1030274,
+  "drawdown": 0,
+  "n_positions": 6,
+  "n_trades": 12
+ },
+ {
+  "d": "2026-12-31",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1028294,
+  "daily_return": -0.00192,
+  "peak_equity": 1030274,
+  "drawdown": -0.00192,
+  "n_positions": 6,
+  "n_trades": 12
+ },
+ {
+  "d": "2027-01-04",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1017848,
+  "daily_return": -0.01016,
+  "peak_equity": 1030274,
+  "drawdown": -0.01206,
+  "n_positions": 6,
+  "n_trades": 12
+ },
+ {
+  "d": "2027-01-05",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1016101,
+  "daily_return": -0.00172,
+  "peak_equity": 1030274,
+  "drawdown": -0.01376,
+  "n_positions": 6,
+  "n_trades": 13
+ },
+ {
+  "d": "2027-01-06",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1017220,
+  "daily_return": 0.0011,
+  "peak_equity": 1030274,
+  "drawdown": -0.01267,
+  "n_positions": 6,
+  "n_trades": 13
+ },
+ {
+  "d": "2027-01-07",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1018760,
+  "daily_return": 0.00151,
+  "peak_equity": 1030274,
+  "drawdown": -0.01118,
+  "n_positions": 6,
+  "n_trades": 14
+ },
+ {
+  "d": "2027-01-08",
+  "strategy": "kaptan:v1.1-fwd",
+  "equity": 1016480,
+  "daily_return": -0.00224,
+  "peak_equity": 1030274,
+  "drawdown": -0.01339,
+  "n_positions": 6,
+  "n_trades": 14
+ },
+ {
+  "d": "2026-11-09",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1006085,
+  "daily_return": 0.00608,
+  "peak_equity": 1006085,
+  "drawdown": 0,
+  "n_positions": 1,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-10",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1008995,
+  "daily_return": 0.00289,
+  "peak_equity": 1008995,
+  "drawdown": 0,
+  "n_positions": 1,
+  "n_trades": 1
+ },
+ {
+  "d": "2026-11-11",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1002579,
+  "daily_return": -0.00636,
+  "peak_equity": 1008995,
+  "drawdown": -0.00636,
+  "n_positions": 1,
+  "n_trades": 1
+ },
+ {
+  "d": "2026-11-12",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1006014,
+  "daily_return": 0.00343,
+  "peak_equity": 1008995,
+  "drawdown": -0.00295,
+  "n_positions": 1,
+  "n_trades": 2
+ },
+ {
+  "d": "2026-11-13",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1007539,
+  "daily_return": 0.00152,
+  "peak_equity": 1008995,
+  "drawdown": -0.00144,
+  "n_positions": 1,
+  "n_trades": 2
+ },
+ {
+  "d": "2026-11-16",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1016876,
+  "daily_return": 0.00927,
+  "peak_equity": 1016876,
+  "drawdown": 0,
+  "n_positions": 2,
+  "n_trades": 3
+ },
+ {
+  "d": "2026-11-17",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1012156,
+  "daily_return": -0.00464,
+  "peak_equity": 1016876,
+  "drawdown": -0.00464,
+  "n_positions": 2,
+  "n_trades": 3
+ },
+ {
+  "d": "2026-11-18",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1017979,
+  "daily_return": 0.00575,
+  "peak_equity": 1017979,
+  "drawdown": 0,
+  "n_positions": 2,
+  "n_trades": 3
+ },
+ {
+  "d": "2026-11-19",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1019729,
+  "daily_return": 0.00172,
+  "peak_equity": 1019729,
+  "drawdown": 0,
+  "n_positions": 2,
+  "n_trades": 4
+ },
+ {
+  "d": "2026-11-20",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1027531,
+  "daily_return": 0.00765,
+  "peak_equity": 1027531,
+  "drawdown": 0,
+  "n_positions": 2,
+  "n_trades": 4
+ },
+ {
+  "d": "2026-11-23",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1025405,
+  "daily_return": -0.00207,
+  "peak_equity": 1027531,
+  "drawdown": -0.00207,
+  "n_positions": 3,
+  "n_trades": 5
+ },
+ {
+  "d": "2026-11-24",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1017909,
+  "daily_return": -0.00731,
+  "peak_equity": 1027531,
+  "drawdown": -0.00936,
+  "n_positions": 3,
+  "n_trades": 5
+ },
+ {
+  "d": "2026-11-25",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1015039,
+  "daily_return": -0.00282,
+  "peak_equity": 1027531,
+  "drawdown": -0.01216,
+  "n_positions": 3,
+  "n_trades": 6
+ },
+ {
+  "d": "2026-11-26",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1008993,
+  "daily_return": -0.00596,
+  "peak_equity": 1027531,
+  "drawdown": -0.01804,
+  "n_positions": 3,
+  "n_trades": 6
+ },
+ {
+  "d": "2026-11-27",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1007071,
+  "daily_return": -0.0019,
+  "peak_equity": 1027531,
+  "drawdown": -0.01991,
+  "n_positions": 3,
+  "n_trades": 6
+ },
+ {
+  "d": "2026-11-30",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1008523,
+  "daily_return": 0.00144,
+  "peak_equity": 1027531,
+  "drawdown": -0.0185,
+  "n_positions": 4,
+  "n_trades": 7
+ },
+ {
+  "d": "2026-12-01",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1010941,
+  "daily_return": 0.0024,
+  "peak_equity": 1027531,
+  "drawdown": -0.01615,
+  "n_positions": 4,
+  "n_trades": 7
+ },
+ {
+  "d": "2026-12-02",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1012477,
+  "daily_return": 0.00152,
+  "peak_equity": 1027531,
+  "drawdown": -0.01465,
+  "n_positions": 4,
+  "n_trades": 8
+ },
+ {
+  "d": "2026-12-03",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1002038,
+  "daily_return": -0.01031,
+  "peak_equity": 1027531,
+  "drawdown": -0.02481,
+  "n_positions": 4,
+  "n_trades": 8
+ },
+ {
+  "d": "2026-12-04",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 997657,
+  "daily_return": -0.00437,
+  "peak_equity": 1027531,
+  "drawdown": -0.02907,
+  "n_positions": 4,
+  "n_trades": 9
+ },
+ {
+  "d": "2026-12-07",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1003453,
+  "daily_return": 0.00581,
+  "peak_equity": 1027531,
+  "drawdown": -0.02343,
+  "n_positions": 5,
+  "n_trades": 9
+ },
+ {
+  "d": "2026-12-08",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1009099,
+  "daily_return": 0.00563,
+  "peak_equity": 1027531,
+  "drawdown": -0.01794,
+  "n_positions": 5,
+  "n_trades": 10
+ },
+ {
+  "d": "2026-12-09",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1010141,
+  "daily_return": 0.00103,
+  "peak_equity": 1027531,
+  "drawdown": -0.01692,
+  "n_positions": 5,
+  "n_trades": 10
+ },
+ {
+  "d": "2026-12-10",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1016225,
+  "daily_return": 0.00602,
+  "peak_equity": 1027531,
+  "drawdown": -0.011,
+  "n_positions": 5,
+  "n_trades": 10
+ },
+ {
+  "d": "2026-12-11",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1022180,
+  "daily_return": 0.00586,
+  "peak_equity": 1027531,
+  "drawdown": -0.00521,
+  "n_positions": 5,
+  "n_trades": 11
+ },
+ {
+  "d": "2026-12-14",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1030389,
+  "daily_return": 0.00803,
+  "peak_equity": 1030389,
+  "drawdown": 0,
+  "n_positions": 6,
+  "n_trades": 11
+ },
+ {
+  "d": "2026-12-15",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1028367,
+  "daily_return": -0.00196,
+  "peak_equity": 1030389,
+  "drawdown": -0.00196,
+  "n_positions": 6,
+  "n_trades": 12
+ },
+ {
+  "d": "2026-12-16",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1030990,
+  "daily_return": 0.00255,
+  "peak_equity": 1030990,
+  "drawdown": 0,
+  "n_positions": 6,
+  "n_trades": 12
+ },
+ {
+  "d": "2026-12-17",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1024846,
+  "daily_return": -0.00596,
+  "peak_equity": 1030990,
+  "drawdown": -0.00596,
+  "n_positions": 6,
+  "n_trades": 13
+ },
+ {
+  "d": "2026-12-18",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1024869,
+  "daily_return": 0.00002,
+  "peak_equity": 1030990,
+  "drawdown": -0.00594,
+  "n_positions": 6,
+  "n_trades": 13
+ },
+ {
+  "d": "2026-12-21",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1022406,
+  "daily_return": -0.0024,
+  "peak_equity": 1030990,
+  "drawdown": -0.00833,
+  "n_positions": 6,
+  "n_trades": 13
+ },
+ {
+  "d": "2026-12-22",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1026423,
+  "daily_return": 0.00393,
+  "peak_equity": 1030990,
+  "drawdown": -0.00443,
+  "n_positions": 6,
+  "n_trades": 14
+ },
+ {
+  "d": "2026-12-23",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1014498,
+  "daily_return": -0.01162,
+  "peak_equity": 1030990,
+  "drawdown": -0.016,
+  "n_positions": 6,
+  "n_trades": 14
+ },
+ {
+  "d": "2026-12-24",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1018057,
+  "daily_return": 0.00351,
+  "peak_equity": 1030990,
+  "drawdown": -0.01254,
+  "n_positions": 6,
+  "n_trades": 15
+ },
+ {
+  "d": "2026-12-25",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1006741,
+  "daily_return": -0.01112,
+  "peak_equity": 1030990,
+  "drawdown": -0.02352,
+  "n_positions": 6,
+  "n_trades": 15
+ },
+ {
+  "d": "2026-12-28",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1017786,
+  "daily_return": 0.01097,
+  "peak_equity": 1030990,
+  "drawdown": -0.01281,
+  "n_positions": 6,
+  "n_trades": 16
+ },
+ {
+  "d": "2026-12-29",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1018923,
+  "daily_return": 0.00112,
+  "peak_equity": 1030990,
+  "drawdown": -0.0117,
+  "n_positions": 6,
+  "n_trades": 16
+ },
+ {
+  "d": "2026-12-30",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1024055,
+  "daily_return": 0.00504,
+  "peak_equity": 1030990,
+  "drawdown": -0.00673,
+  "n_positions": 6,
+  "n_trades": 16
+ },
+ {
+  "d": "2026-12-31",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1009483,
+  "daily_return": -0.01423,
+  "peak_equity": 1030990,
+  "drawdown": -0.02086,
+  "n_positions": 6,
+  "n_trades": 17
+ },
+ {
+  "d": "2027-01-04",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1009488,
+  "daily_return": 0,
+  "peak_equity": 1030990,
+  "drawdown": -0.02086,
+  "n_positions": 6,
+  "n_trades": 17
+ },
+ {
+  "d": "2027-01-05",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1009100,
+  "daily_return": -0.00038,
+  "peak_equity": 1030990,
+  "drawdown": -0.02123,
+  "n_positions": 6,
+  "n_trades": 18
+ },
+ {
+  "d": "2027-01-06",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1016627,
+  "daily_return": 0.00746,
+  "peak_equity": 1030990,
+  "drawdown": -0.01393,
+  "n_positions": 6,
+  "n_trades": 18
+ },
+ {
+  "d": "2027-01-07",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1011068,
+  "daily_return": -0.00547,
+  "peak_equity": 1030990,
+  "drawdown": -0.01932,
+  "n_positions": 6,
+  "n_trades": 19
+ },
+ {
+  "d": "2027-01-08",
+  "strategy": "kaptan:v1.0-fwd",
+  "equity": 1009900,
+  "daily_return": -0.00116,
+  "peak_equity": 1030990,
+  "drawdown": -0.02046,
+  "n_positions": 6,
+  "n_trades": 19
+ },
+ {
+  "d": "2026-11-09",
+  "strategy": "baseline:xu100_bh",
+  "equity": 997066,
+  "daily_return": -0.00293,
+  "peak_equity": 1000000,
+  "drawdown": -0.00293,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-10",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1007413,
+  "daily_return": 0.01038,
+  "peak_equity": 1007413,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-11",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1001970,
+  "daily_return": -0.0054,
+  "peak_equity": 1007413,
+  "drawdown": -0.0054,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-12",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1000153,
+  "daily_return": -0.00181,
+  "peak_equity": 1007413,
+  "drawdown": -0.00721,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-13",
+  "strategy": "baseline:xu100_bh",
+  "equity": 992214,
+  "daily_return": -0.00794,
+  "peak_equity": 1007413,
+  "drawdown": -0.01509,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-16",
+  "strategy": "baseline:xu100_bh",
+  "equity": 997725,
+  "daily_return": 0.00555,
+  "peak_equity": 1007413,
+  "drawdown": -0.00962,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-17",
+  "strategy": "baseline:xu100_bh",
+  "equity": 997897,
+  "daily_return": 0.00017,
+  "peak_equity": 1007413,
+  "drawdown": -0.00945,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-18",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1007908,
+  "daily_return": 0.01003,
+  "peak_equity": 1007908,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-19",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1004227,
+  "daily_return": -0.00365,
+  "peak_equity": 1007908,
+  "drawdown": -0.00365,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-20",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1006245,
+  "daily_return": 0.00201,
+  "peak_equity": 1007908,
+  "drawdown": -0.00165,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-23",
+  "strategy": "baseline:xu100_bh",
+  "equity": 989959,
+  "daily_return": -0.01618,
+  "peak_equity": 1007908,
+  "drawdown": -0.01781,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-24",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1006572,
+  "daily_return": 0.01678,
+  "peak_equity": 1007908,
+  "drawdown": -0.00133,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-25",
+  "strategy": "baseline:xu100_bh",
+  "equity": 999571,
+  "daily_return": -0.00696,
+  "peak_equity": 1007908,
+  "drawdown": -0.00827,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-26",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1003749,
+  "daily_return": 0.00418,
+  "peak_equity": 1007908,
+  "drawdown": -0.00413,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-27",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1023797,
+  "daily_return": 0.01997,
+  "peak_equity": 1023797,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-30",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1056315,
+  "daily_return": 0.03176,
+  "peak_equity": 1056315,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-01",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1042862,
+  "daily_return": -0.01274,
+  "peak_equity": 1056315,
+  "drawdown": -0.01274,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-02",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1037006,
+  "daily_return": -0.00562,
+  "peak_equity": 1056315,
+  "drawdown": -0.01828,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-03",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1030793,
+  "daily_return": -0.00599,
+  "peak_equity": 1056315,
+  "drawdown": -0.02416,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-04",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1039066,
+  "daily_return": 0.00803,
+  "peak_equity": 1056315,
+  "drawdown": -0.01633,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-07",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1047140,
+  "daily_return": 0.00777,
+  "peak_equity": 1056315,
+  "drawdown": -0.00869,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-08",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1068120,
+  "daily_return": 0.02004,
+  "peak_equity": 1068120,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-09",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1065375,
+  "daily_return": -0.00257,
+  "peak_equity": 1068120,
+  "drawdown": -0.00257,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-10",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1048071,
+  "daily_return": -0.01624,
+  "peak_equity": 1068120,
+  "drawdown": -0.01877,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-11",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1047818,
+  "daily_return": -0.00024,
+  "peak_equity": 1068120,
+  "drawdown": -0.01901,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-14",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1043343,
+  "daily_return": -0.00427,
+  "peak_equity": 1068120,
+  "drawdown": -0.0232,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-15",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1049237,
+  "daily_return": 0.00565,
+  "peak_equity": 1068120,
+  "drawdown": -0.01768,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-16",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1054931,
+  "daily_return": 0.00543,
+  "peak_equity": 1068120,
+  "drawdown": -0.01235,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-17",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1060206,
+  "daily_return": 0.005,
+  "peak_equity": 1068120,
+  "drawdown": -0.00741,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-18",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1061360,
+  "daily_return": 0.00109,
+  "peak_equity": 1068120,
+  "drawdown": -0.00633,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-21",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1077950,
+  "daily_return": 0.01563,
+  "peak_equity": 1077950,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-22",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1066421,
+  "daily_return": -0.0107,
+  "peak_equity": 1077950,
+  "drawdown": -0.0107,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-23",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1081078,
+  "daily_return": 0.01374,
+  "peak_equity": 1081078,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-24",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1079733,
+  "daily_return": -0.00124,
+  "peak_equity": 1081078,
+  "drawdown": -0.00124,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-25",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1055975,
+  "daily_return": -0.022,
+  "peak_equity": 1081078,
+  "drawdown": -0.02322,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-28",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1047695,
+  "daily_return": -0.00784,
+  "peak_equity": 1081078,
+  "drawdown": -0.03088,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-29",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1040485,
+  "daily_return": -0.00688,
+  "peak_equity": 1081078,
+  "drawdown": -0.03755,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-30",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1017499,
+  "daily_return": -0.02209,
+  "peak_equity": 1081078,
+  "drawdown": -0.05881,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-31",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1019748,
+  "daily_return": 0.00221,
+  "peak_equity": 1081078,
+  "drawdown": -0.05673,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2027-01-04",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1014133,
+  "daily_return": -0.00551,
+  "peak_equity": 1081078,
+  "drawdown": -0.06192,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2027-01-05",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1040093,
+  "daily_return": 0.0256,
+  "peak_equity": 1081078,
+  "drawdown": -0.03791,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2027-01-06",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1037825,
+  "daily_return": -0.00218,
+  "peak_equity": 1081078,
+  "drawdown": -0.04001,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2027-01-07",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1034591,
+  "daily_return": -0.00312,
+  "peak_equity": 1081078,
+  "drawdown": -0.043,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2027-01-08",
+  "strategy": "baseline:xu100_bh",
+  "equity": 1021700,
+  "daily_return": -0.01246,
+  "peak_equity": 1081078,
+  "drawdown": -0.05492,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-09",
+  "strategy": "baseline:ew_universe",
+  "equity": 1000983,
+  "daily_return": 0.00098,
+  "peak_equity": 1000983,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-10",
+  "strategy": "baseline:ew_universe",
+  "equity": 994521,
+  "daily_return": -0.00646,
+  "peak_equity": 1000983,
+  "drawdown": -0.00646,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-11",
+  "strategy": "baseline:ew_universe",
+  "equity": 991983,
+  "daily_return": -0.00255,
+  "peak_equity": 1000983,
+  "drawdown": -0.00899,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-12",
+  "strategy": "baseline:ew_universe",
+  "equity": 1004069,
+  "daily_return": 0.01218,
+  "peak_equity": 1004069,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-13",
+  "strategy": "baseline:ew_universe",
+  "equity": 1010344,
+  "daily_return": 0.00625,
+  "peak_equity": 1010344,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-16",
+  "strategy": "baseline:ew_universe",
+  "equity": 1013328,
+  "daily_return": 0.00295,
+  "peak_equity": 1013328,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-17",
+  "strategy": "baseline:ew_universe",
+  "equity": 1020288,
+  "daily_return": 0.00687,
+  "peak_equity": 1020288,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-18",
+  "strategy": "baseline:ew_universe",
+  "equity": 1028849,
+  "daily_return": 0.00839,
+  "peak_equity": 1028849,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-19",
+  "strategy": "baseline:ew_universe",
+  "equity": 1026538,
+  "daily_return": -0.00225,
+  "peak_equity": 1028849,
+  "drawdown": -0.00225,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-20",
+  "strategy": "baseline:ew_universe",
+  "equity": 1027829,
+  "daily_return": 0.00126,
+  "peak_equity": 1028849,
+  "drawdown": -0.00099,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-23",
+  "strategy": "baseline:ew_universe",
+  "equity": 1026291,
+  "daily_return": -0.0015,
+  "peak_equity": 1028849,
+  "drawdown": -0.00249,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-24",
+  "strategy": "baseline:ew_universe",
+  "equity": 1024936,
+  "daily_return": -0.00132,
+  "peak_equity": 1028849,
+  "drawdown": -0.0038,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-25",
+  "strategy": "baseline:ew_universe",
+  "equity": 1023196,
+  "daily_return": -0.0017,
+  "peak_equity": 1028849,
+  "drawdown": -0.00549,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-26",
+  "strategy": "baseline:ew_universe",
+  "equity": 1020958,
+  "daily_return": -0.00219,
+  "peak_equity": 1028849,
+  "drawdown": -0.00767,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-27",
+  "strategy": "baseline:ew_universe",
+  "equity": 1004833,
+  "daily_return": -0.01579,
+  "peak_equity": 1028849,
+  "drawdown": -0.02334,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-11-30",
+  "strategy": "baseline:ew_universe",
+  "equity": 1018448,
+  "daily_return": 0.01355,
+  "peak_equity": 1028849,
+  "drawdown": -0.01011,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-01",
+  "strategy": "baseline:ew_universe",
+  "equity": 1030633,
+  "daily_return": 0.01196,
+  "peak_equity": 1030633,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-02",
+  "strategy": "baseline:ew_universe",
+  "equity": 1034475,
+  "daily_return": 0.00373,
+  "peak_equity": 1034475,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-03",
+  "strategy": "baseline:ew_universe",
+  "equity": 1046162,
+  "daily_return": 0.0113,
+  "peak_equity": 1046162,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-04",
+  "strategy": "baseline:ew_universe",
+  "equity": 1056334,
+  "daily_return": 0.00972,
+  "peak_equity": 1056334,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-07",
+  "strategy": "baseline:ew_universe",
+  "equity": 1062517,
+  "daily_return": 0.00585,
+  "peak_equity": 1062517,
+  "drawdown": 0,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-08",
+  "strategy": "baseline:ew_universe",
+  "equity": 1041274,
+  "daily_return": -0.01999,
+  "peak_equity": 1062517,
+  "drawdown": -0.01999,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-09",
+  "strategy": "baseline:ew_universe",
+  "equity": 1042463,
+  "daily_return": 0.00114,
+  "peak_equity": 1062517,
+  "drawdown": -0.01887,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-10",
+  "strategy": "baseline:ew_universe",
+  "equity": 1043142,
+  "daily_return": 0.00065,
+  "peak_equity": 1062517,
+  "drawdown": -0.01824,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-11",
+  "strategy": "baseline:ew_universe",
+  "equity": 1037275,
+  "daily_return": -0.00562,
+  "peak_equity": 1062517,
+  "drawdown": -0.02376,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-14",
+  "strategy": "baseline:ew_universe",
+  "equity": 1050972,
+  "daily_return": 0.0132,
+  "peak_equity": 1062517,
+  "drawdown": -0.01087,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-15",
+  "strategy": "baseline:ew_universe",
+  "equity": 1045513,
+  "daily_return": -0.00519,
+  "peak_equity": 1062517,
+  "drawdown": -0.016,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-16",
+  "strategy": "baseline:ew_universe",
+  "equity": 1025041,
+  "daily_return": -0.01958,
+  "peak_equity": 1062517,
+  "drawdown": -0.03527,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-17",
+  "strategy": "baseline:ew_universe",
+  "equity": 1026248,
+  "daily_return": 0.00118,
+  "peak_equity": 1062517,
+  "drawdown": -0.03413,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-18",
+  "strategy": "baseline:ew_universe",
+  "equity": 1029058,
+  "daily_return": 0.00274,
+  "peak_equity": 1062517,
+  "drawdown": -0.03149,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-21",
+  "strategy": "baseline:ew_universe",
+  "equity": 1018085,
+  "daily_return": -0.01066,
+  "peak_equity": 1062517,
+  "drawdown": -0.04182,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-22",
+  "strategy": "baseline:ew_universe",
+  "equity": 1025710,
+  "daily_return": 0.00749,
+  "peak_equity": 1062517,
+  "drawdown": -0.03464,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-23",
+  "strategy": "baseline:ew_universe",
+  "equity": 1027900,
+  "daily_return": 0.00214,
+  "peak_equity": 1062517,
+  "drawdown": -0.03258,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-24",
+  "strategy": "baseline:ew_universe",
+  "equity": 1025638,
+  "daily_return": -0.0022,
+  "peak_equity": 1062517,
+  "drawdown": -0.03471,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-25",
+  "strategy": "baseline:ew_universe",
+  "equity": 1018010,
+  "daily_return": -0.00744,
+  "peak_equity": 1062517,
+  "drawdown": -0.04189,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-28",
+  "strategy": "baseline:ew_universe",
+  "equity": 1021626,
+  "daily_return": 0.00355,
+  "peak_equity": 1062517,
+  "drawdown": -0.03849,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-29",
+  "strategy": "baseline:ew_universe",
+  "equity": 1033305,
+  "daily_return": 0.01143,
+  "peak_equity": 1062517,
+  "drawdown": -0.02749,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-30",
+  "strategy": "baseline:ew_universe",
+  "equity": 1025772,
+  "daily_return": -0.00729,
+  "peak_equity": 1062517,
+  "drawdown": -0.03458,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2026-12-31",
+  "strategy": "baseline:ew_universe",
+  "equity": 1026364,
+  "daily_return": 0.00058,
+  "peak_equity": 1062517,
+  "drawdown": -0.03403,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2027-01-04",
+  "strategy": "baseline:ew_universe",
+  "equity": 1022419,
+  "daily_return": -0.00384,
+  "peak_equity": 1062517,
+  "drawdown": -0.03774,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2027-01-05",
+  "strategy": "baseline:ew_universe",
+  "equity": 1029961,
+  "daily_return": 0.00738,
+  "peak_equity": 1062517,
+  "drawdown": -0.03064,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2027-01-06",
+  "strategy": "baseline:ew_universe",
+  "equity": 1034959,
+  "daily_return": 0.00485,
+  "peak_equity": 1062517,
+  "drawdown": -0.02594,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2027-01-07",
+  "strategy": "baseline:ew_universe",
+  "equity": 1023598,
+  "daily_return": -0.01098,
+  "peak_equity": 1062517,
+  "drawdown": -0.03663,
+  "n_positions": 0,
+  "n_trades": 0
+ },
+ {
+  "d": "2027-01-08",
+  "strategy": "baseline:ew_universe",
+  "equity": 1012300,
+  "daily_return": -0.01104,
+  "peak_equity": 1062517,
+  "drawdown": -0.04726,
+  "n_positions": 0,
+  "n_trades": 0
+ }
+]

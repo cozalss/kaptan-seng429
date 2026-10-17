@@ -1,0 +1,38 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "key": {
+   "type": "string",
+   "enum": [
+    "risk_per_trade_pct",
+    "max_position_pct",
+    "max_concurrent_positions",
+    "target_concurrent_positions",
+    "max_adv_share",
+    "price_band_pct",
+    "daily_loss_halt_pct",
+    "kill_drawdown_pct",
+    "min_edge_cost_ratio",
+    "crisis_exposure_mult",
+    "leak_ret5d_threshold",
+    "max_sector_pct",
+    "max_group_pct"
+   ]
+  },
+  "value": {
+   "type": "number"
+  },
+  "reason": {
+   "type": "string",
+   "minLength": 10,
+   "maxLength": 500
+  }
+ },
+ "required": [
+  "key",
+  "value",
+  "reason"
+ ],
+ "additionalProperties": false
+}

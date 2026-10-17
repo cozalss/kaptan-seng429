@@ -1,0 +1,38 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "quarantined": {
+   "type": "boolean"
+  },
+  "injection_score": {
+   "type": "number",
+   "minimum": 0,
+   "maximum": 1
+  },
+  "regex_hits": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "chunks_scored": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "masked_names_n": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  }
+ },
+ "required": [
+  "quarantined",
+  "injection_score",
+  "regex_hits",
+  "chunks_scored",
+  "masked_names_n"
+ ],
+ "additionalProperties": false
+}

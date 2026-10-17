@@ -1,0 +1,14 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "string",
+ "enum": [
+  "spk_tedbir",
+  "vbts_brut_takas",
+  "vbts_aciga_satis",
+  "vbts_kredili_islem",
+  "vbts_tek_fiyat",
+  "trading_halt",
+  "team_insider",
+  "other"
+ ]
+}

@@ -1,0 +1,73 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "oneOf": [
+  {
+   "type": "object",
+   "properties": {
+    "mark": {
+     "type": "string",
+     "const": "entered"
+    },
+    "filled_qty": {
+     "type": "integer",
+     "exclusiveMinimum": 0,
+     "maximum": 9007199254740991
+    },
+    "avg_price": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "filled_at": {
+     "type": "string",
+     "format": "date-time",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    "note": {
+     "type": "string",
+     "maxLength": 500
+    }
+   },
+   "required": [
+    "mark",
+    "filled_qty",
+    "avg_price",
+    "filled_at"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "mark": {
+     "type": "string",
+     "const": "unfilled"
+    },
+    "note": {
+     "type": "string",
+     "maxLength": 500
+    }
+   },
+   "required": [
+    "mark"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "mark": {
+     "type": "string",
+     "const": "canceled"
+    },
+    "note": {
+     "type": "string",
+     "maxLength": 500
+    }
+   },
+   "required": [
+    "mark"
+   ],
+   "additionalProperties": false
+  }
+ ]
+}
