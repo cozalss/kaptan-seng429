@@ -25,7 +25,39 @@ curl -s -X POST http://127.0.0.1:8000/api/v1/auth/login -H "Content-Type: applic
 curl -s http://127.0.0.1:8000/api/v1/health
 ```
 
-Panel: `NEXT_PUBLIC_API_MODE=http KAPTAN_API_ORIGIN=http://127.0.0.1:8000 npm run dev` in `kaptan-panel/`.
+## Run the whole system locally (Bütün sistemi yerelde çalıştır)
+
+Docker Desktop, uv, Python 3.11, Node 24. Two terminals; the commands are the same in Git Bash and
+PowerShell except the env line of the API.
+
+```bash
+# 1) backend/ — once: .env, containers, schema, demo day
+cp .env.example .env                                   # fill in passwords / JWT_SECRET (dev: KAPTAN_ENV=dev)
+docker compose -f docker-compose.yml up -d
+uv sync
+uv run alembic upgrade head                            # 0001 … 0009
+uv run python scripts/seed_demo.py                     # "audit verify: ok=True checked=4812"
+
+# 2) backend/ — the API on :8000 (demo day, recorded LLM answers, no KAP/price network)
+DEMO_MODE=true LLM_MODE=replay KAP_LIVE=false PRICES_LIVE=false uv run python -m kaptan.api --port 8000
+#   PowerShell: $env:DEMO_MODE="true"; $env:LLM_MODE="replay"; $env:KAP_LIVE="false"; $env:PRICES_LIVE="false"
+#               uv run python -m kaptan.api --port 8000
+
+# 3) kaptan-panel/ — the panel on :3100 in http mode (/api/v1 is rewritten to 127.0.0.1:8000)
+npm ci
+npm run dev:api                                        # http://localhost:3100/login · passphrase kaptan2026 (dev)
+```
+
+The panel's e2e suite against this backend: `npm run e2e:api` in `kaptan-panel/`. It starts the API
+(with `LOGIN_RATE_PER_MINUTE=600`: the suite signs in ~60 times in a few minutes; the default is 5/min)
+and `dev:api` unless they already answer on :8000 / :3100, and resets the demo day (`POST /demo/reset`
+as admin) before the suite and before every test that changes state. If you run your own API for it,
+start it with `LOGIN_RATE_PER_MINUTE=600` too. A fresh demo day by hand: `uv run python scripts/seed_demo.py`
+or ⚙ Ayarlar → Senaryolar → "Verileri sıfırla" (Yönetici). The mock suite (`npm run e2e`) needs no backend.
+
+SSE through the Next rewrite: streams are not buffered or compressed (`Cache-Control: no-cache,
+no-transform`, `X-Accel-Buffering: no`, a keep-alive comment every 15 s). `events/bus.py` reads Redis
+with `XREAD BLOCK` in 1 s slices because redis-py 8 has a 5 s socket timeout.
 
 ## Checks
 

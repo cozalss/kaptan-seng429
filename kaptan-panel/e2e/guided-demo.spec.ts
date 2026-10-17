@@ -1,10 +1,12 @@
 import { expect, test, type Locator } from "@playwright/test";
+import { resetBackendDemo } from "./backend";
 import { login, openSettings, trackErrors } from "./helpers";
 
 /**
  * The guided tour walks all six acts with → and the bar's backups; roles switch by themselves.
  */
 test.beforeEach(async ({ page }) => {
+  await resetBackendDemo(); // http mode: a fresh demo day, as clearing localStorage gives the mock
   await page.goto("/login");
   await page.evaluate(() => {
     window.localStorage.clear();
@@ -60,7 +62,9 @@ test("Rehberli tur: 15 adım", async ({ page }) => {
   await next("Yönetici yeniden başlatmayı başlatır (1/2)");
   await role(bar, "Yönetici");
   await bar.getByRole("button", { name: "Yedek: başlat (1/2)" }).click();
-  await expect(page.getByTestId("reset-stamp-1")).toContainText("Yönetici", { timeout: 10_000 });
+  // The signed stamp, not the step's "Yönetici başlatır" label: against the API the backup answers
+  // after a round trip, and moving on before it lands would send it under the next role.
+  await expect(page.getByTestId("reset-stamp-1")).toContainText("İmzalandı: Üye 1 · Yönetici", { timeout: 15_000 });
   await next("Risk Sorumlusu onaylar (2/2)");
   await role(bar, "Risk Sorumlusu");
   await bar.getByRole("button", { name: "Yedek: onayla (2/2)" }).click();

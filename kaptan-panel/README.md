@@ -13,10 +13,9 @@ Next.js 16 · React 19 · Tailwind 4 · zod · Vitest · Playwright.
   ekranda yürür ("Zincir sağlam." ya da "Kayıt #3.907'de zincir kırık.").
 - **⚙ Ayarlar** (`/ayarlar`): sınırlar (cümleler, iki imzalı değişiklik, sürümler), ekip ve "Kim ne yapabilir?",
   senaryolar (**Rehberli tur**, senaryo ekleme, kurcalama testi, sıfırla), çıkış.
-- **Giriş** (`/login`): tek giriş, dört kapı — Analist, Risk Sorumlusu, Yönetici, Denetçi. Her kapı o rolün kendi
-  ekranını açar (`/login/analist`, `/login/risk`, `/login/yonetici`, `/login/denetci`): rengi, çizimi, "Bu rolle neler
-  yaparsın" ve parola; oturum o rolle başlar. Kapıdan ekrana geçiş View Transitions ile (destekleyen tarayıcıda, azaltılmış
-  harekette kapalı). `?next=` kapıdan geçer.
+- **Giriş** (`/login`): tek ekran — "Hesap" listesinden dört ekip hesabından biri (Analist · Üye 2, Risk Sorumlusu ·
+  Üye 3, Yönetici · Üye 1, Denetçi) ve parola; oturum o hesabın rolüyle başlar. `/login/analist`, `/login/risk`,
+  `/login/yonetici`, `/login/denetci` aynı ekranı o hesap seçili açar. `?next=` girişten geçer.
 - **Roller**: üst çubukta "Kimin gözüyle bakıyorsun?" — Analist (okur, not ekler) · Risk Sorumlusu (onaylar ya da
   reddeder; durdurur) · Yönetici (kullanıcılar, ayarlar, senaryolar) · Denetçi (her şeyi görür, hiçbir şeyi değiştiremez).
   Yetkisiz düğme kapalı durur ve nedenini söyler: "Bunu Risk Sorumlusu yapar."
@@ -28,7 +27,7 @@ Next.js 16 · React 19 · Tailwind 4 · zod · Vitest · Playwright.
 
 ```bash
 npm ci
-npm run dev        # http://localhost:3100 → / tanıtım sayfası, /login dört kapı
+npm run dev        # http://localhost:3100 → / tanıtım sayfası, /login giriş (dört hesap)
 ```
 
 Mock modunda parola sayfada yazar: `kaptan2026`. Demo saati 11.01.2027 13:40'tan başlar.
@@ -42,13 +41,15 @@ kendisi değiştirir, her adımda sunucuya tek cümle; elle basılan adımlarda 
 
 | Komut | Ne yapar |
 |---|---|
-| `npm run dev` | Geliştirme sunucusu, port 3100 |
+| `npm run dev` | Geliştirme sunucusu, port 3100 (mock) |
+| `npm run dev:api` | Aynısı http modunda, `127.0.0.1:8000`'deki FastAPI'ye karşı (env'i `scripts/api-mode.mjs` verir; PowerShell ve Git Bash'te aynı) |
 | `npm run build` / `npm start` | Üretim derlemesi / sunucusu (3100) |
 | `npm run typecheck` | `tsc --noEmit` (strict) |
 | `npm run lint` | ESLint (Next core-web-vitals + TypeScript) |
 | `npm test` | Vitest birim + bileşen testleri |
 | `npm run coverage` | Kapsam raporu; eşik satır/ifade/fonksiyon %80, dal %75 |
 | `npm run e2e` | Playwright e2e (Microsoft Edge kanalı); açık dev sunucusunu kullanır. `E2E_BASE_URL=http://localhost:3100` ile açık bir sunucuya yönlendirilir |
+| `npm run e2e:api` | Aynı Playwright paketi gerçek backend'e karşı: API'yi (`DEMO_MODE=true`, `LLM_MODE=replay`) ve `dev:api`'yi açar ya da açık olanları kullanır; başta ve durum değiştiren her testten önce demo gününü sıfırlar (`POST /demo/reset`). 3100'de mock dev sunucusu açık kalmasın |
 | `npx playwright test e2e/a11y.spec.ts` | Bütün ekranlar + giriş, 390 ve 1440 px'de axe-core WCAG 2.1 A/AA |
 | `npm run check` | typecheck + lint + coverage + build |
 
@@ -61,9 +62,15 @@ kendisi değiştirir, her adımda sunucuya tek cümle; elle basılan adımlarda 
 | `KAPTAN_API_ORIGIN` | ör. `https://api.example` | Yalnızca http modunda |
 | `NEXT_PUBLIC_DEMO_MODE` | `true` | http modunda demo enjeksiyonunu açar (backend `DEMO_MODE` ile birlikte) |
 
-`NEXT_PUBLIC_*` değişkenleri derleme anında gömülür: modu değiştirmek yeniden derleme ister.
+`NEXT_PUBLIC_*` değişkenleri derleme anında gömülür: modu değiştirmek yeniden derleme ister (dev sunucusunu
+yeniden başlat).
 
-Mock saat **11.01.2027 Pazartesi 13:40 (İstanbul)** ile başlar ve gerçek zamanla ilerler. Durum `localStorage`'da tutulur; ⚙ → Ayarlar → "Verileri sıfırla" (Yönetici) temizler. Seçilen rol oturum çerezindedir; giriş, girilen kapının rolüyle başlar.
+**Backend'e karşı çalıştırmak:** backend'i [`../backend/README.md`](../backend/README.md) "Bütün sistemi yerelde
+çalıştır" bölümündeki gibi aç (compose, migrasyon, demo tohumu, `python -m kaptan.api`), sonra burada `npm run dev:api`.
+http modunda panelin saati sunucunun saatidir (demo modunda 11.01.2027), parola ipucu sayfada yazmaz (`kaptan2026`
+yalnız dev backend'inin varsayılanıdır). Sözleşme ve giriş ayrıntıları: [API.md](API.md) §1–2.
+
+Mock saat **11.01.2027 Pazartesi 13:40 (İstanbul)** ile başlar ve gerçek zamanla ilerler. Durum `localStorage`'da tutulur; ⚙ → Ayarlar → "Verileri sıfırla" (Yönetici) temizler. Seçilen rol oturum çerezindedir; giriş, seçilen hesabın rolüyle başlar.
 
 ## Vercel
 

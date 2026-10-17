@@ -286,9 +286,21 @@ npm ci
 npm run dev
 ```
 
-Yalnız panel üzerinde çalışırken `SKIP_LANDING=1 npm run dev` tanıtım sayfasını derlemeyi atlar. Gerçek bir
-backend'e bağlamak için `NEXT_PUBLIC_API_MODE=http` ve `KAPTAN_API_ORIGIN` yeter; ayrıntılar
-[`kaptan-panel/README.md`](kaptan-panel/README.md) ve [`kaptan-panel/API.md`](kaptan-panel/API.md) içinde.
+Yalnız panel üzerinde çalışırken `SKIP_LANDING=1 npm run dev` tanıtım sayfasını derlemeyi atlar.
+
+```bash
+# Bütün sistem (panel + FastAPI backend, demo günü): Docker Desktop, uv ve Python 3.11 gerekir
+cd backend
+cp .env.example .env                                   # parolaları / JWT_SECRET'ı doldur
+docker compose -f docker-compose.yml up -d             # Postgres :5432, Redis :6379
+uv sync && uv run alembic upgrade head && uv run python scripts/seed_demo.py
+DEMO_MODE=true uv run python -m kaptan.api --port 8000 # PowerShell: $env:DEMO_MODE="true"; uv run …
+cd ../kaptan-panel
+npm run dev:api                                        # http://localhost:3100, /api/v1 → 127.0.0.1:8000
+```
+
+Ayrıntılar: [`backend/README.md`](backend/README.md) ("Bütün sistemi yerelde çalıştır"),
+[`kaptan-panel/README.md`](kaptan-panel/README.md) ve [`kaptan-panel/API.md`](kaptan-panel/API.md).
 
 ## Testler
 
@@ -296,7 +308,9 @@ backend'e bağlamak için `NEXT_PUBLIC_API_MODE=http` ve `KAPTAN_API_ORIGIN` yet
 |---|---|---|
 | Birim ve bileşen testleri | `kaptan-panel` | `npm test` |
 | Kapsam (satır, ifade, fonksiyon %80; dal %75) | `kaptan-panel` | `npm run coverage` |
-| Uçtan uca akışlar (Playwright, Microsoft Edge kanalı) | `kaptan-panel` | `npm run e2e` |
+| Uçtan uca akışlar (Playwright, Microsoft Edge kanalı), mock | `kaptan-panel` | `npm run e2e` |
+| Aynı akışlar gerçek backend'e karşı (API'yi ve paneli kendisi açar, demo gününü sıfırlar) | `kaptan-panel` | `npm run e2e:api` |
+| Backend: birim + sözleşme + entegrasyon, lint, tip | `backend` | `uv run pytest`, `uv run ruff check .`, `uv run mypy` |
 | Erişilebilirlik (axe-core, WCAG 2.1 A/AA, 390 ve 1440 px) | `kaptan-panel` | `npx playwright test e2e/a11y.spec.ts` |
 | Hepsi: tip denetimi, lint, kapsam, derleme | `kaptan-panel` | `npm run check` |
 | Birim testleri | `kaptan-landing` | `npm test` |

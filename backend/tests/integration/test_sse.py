@@ -107,6 +107,21 @@ async def test_frames_keep_alive_skip_malformed_and_stop_on_disconnect(redis: ai
         await asyncio.wait_for(anext(gen), timeout=2)
 
 
+async def test_a_quiet_stream_outlives_the_redis_socket_timeout(migrated: Settings) -> None:
+    """Regression (wave 3): XREAD BLOCK = keep-alive (15 s) > redis-py's 5 s socket timeout cut every
+    quiet SSE stream after 5 s (ERR_INCOMPLETE_CHUNKED_ENCODING in the panel). The BLOCK is sliced."""
+    short = aioredis.from_url(migrated.redis_url.get_secret_value(), decode_responses=True, socket_timeout=2)
+    try:
+        gen = bus.frames(short, _run_stream(), last_event_id=None, is_disconnected=_never, keepalive_s=4)
+        assert await anext(gen) == ": ok\n\n"
+        # 4 s of silence = two socket timeouts; the keep-alive must still arrive (unsliced: TimeoutError).
+        assert await asyncio.wait_for(anext(gen), timeout=8) == ": keep-alive\n\n"
+        await gen.aclose()
+    finally:
+        await short.aclose()
+    assert bus.XREAD_BLOCK_MS < 5000
+
+
 async def test_run_streams_are_capped_and_expire(redis: aioredis.Redis) -> None:
     stream = _run_stream()
     await publish(redis, stream, "progress", {"pct": 5, "note_tr": "x"})

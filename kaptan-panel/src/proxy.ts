@@ -32,6 +32,8 @@ function redirectToLogin(request: NextRequest, next: string) {
 }
 
 export const config = {
-  // Everything except Next internals, the mock session API, and static files (the landing's and the crew portraits).
-  matcher: ["/((?!_next/static|_next/image|api/mock|icon.svg|favicon.ico|favicon.svg|index.html|assets/|images/|fonts/|crew/|.*\.(?:png|jpg|jpeg|webp|avif|svg|woff2|txt)$).*)"],
+  // Everything except Next internals, the mock session API, the backend API (http mode: /api/v1/* is
+  // rewritten to FastAPI, which owns its own auth; redirecting it to /login would break sign-in), and static
+  // files (the landing's and the crew portraits).
+  matcher: ["/((?!_next/static|_next/image|api/mock|api/v1/|icon.svg|favicon.ico|favicon.svg|index.html|assets/|images/|fonts/|crew/|.*\.(?:png|jpg|jpeg|webp|avif|svg|woff2|txt)$).*)"],
 };

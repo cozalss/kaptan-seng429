@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { resetBackendDemo } from "./backend";
 import { go, login, openSettings, trackErrors } from "./helpers";
 
 /** Login → Bugün → each screen, at desktop and phone width, with a clean console. */
 test.beforeEach(async ({ page }) => {
+  await resetBackendDemo(); // http mode: a fresh demo day, as clearing localStorage gives the mock
   await page.goto("/login");
   await page.evaluate(() => window.localStorage.clear());
 });

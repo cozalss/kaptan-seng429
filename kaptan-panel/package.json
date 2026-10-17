@@ -9,6 +9,7 @@
   "scripts": {
     "predev": "node scripts/sync-landing.mjs",
     "dev": "next dev -p 3100",
+    "dev:api": "node scripts/sync-landing.mjs && node scripts/api-mode.mjs next dev -p 3100",
     "prebuild": "node scripts/sync-landing.mjs",
     "build": "next build",
     "start": "next start -p 3100",
@@ -18,6 +19,7 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "e2e": "playwright test",
+    "e2e:api": "node scripts/api-mode.mjs playwright test",
     "check": "npm run typecheck && npm run lint && npm run coverage && npm run build"
   },
   "dependencies": {

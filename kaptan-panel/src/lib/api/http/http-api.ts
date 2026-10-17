@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ApprovalCard, AuditPage, ChainVerifyResult, DayCounters, Explain, LimitsView, Me, OrderTicket, PnlPoint, Position, ProposalNote, RiskStatus, TeamMember } from "@/lib/domain";
 import type { Role } from "@/lib/domain/user";
+import { noteServerTime } from "@/lib/clock";
 import { ApiError, type KaptanApi } from "../types";
 
 /**
@@ -15,7 +16,7 @@ export function setAccessToken(token: string | null): void {
   accessToken = token;
 }
 
-async function refresh(): Promise<boolean> {
+async function refreshOnce(): Promise<boolean> {
   const res = await fetch(`${BASE}/auth/refresh`, { method: "POST", credentials: "include", headers: { "X-KAPtan-CSRF": "1" } });
   if (!res.ok) return false;
   const body = z.object({ access_token: z.string() }).safeParse(await res.json());
@@ -24,9 +25,28 @@ async function refresh(): Promise<boolean> {
   return true;
 }
 
+/**
+ * Single flight: the refresh token rotates on every use and a reused one revokes the whole
+ * family (API.md §2), so parallel 401s (a reload fires several requests, StrictMode twice) must
+ * share one /auth/refresh instead of racing each other into a sign-out.
+ */
+let refreshing: Promise<boolean> | null = null;
+function refresh(): Promise<boolean> {
+  refreshing ??= refreshOnce()
+    .catch(() => false)
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+}
+
 async function request<T extends z.ZodType>(schema: T, path: string, init: RequestInit = {}, retried = false): Promise<z.infer<T>> {
+  // After a reload the access token is gone (memory only): get one from the refresh cookie first
+  // instead of collecting a 401 per request. If that fails, the request goes out and gets its 401.
+  if (accessToken === null && !retried) retried = !(await refresh());
   const headers = new Headers(init.headers);
-  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+  const sentToken = accessToken;
+  if (sentToken) headers.set("Authorization", `Bearer ${sentToken}`);
   if (init.body) headers.set("Content-Type", "application/json");
   let res: Response;
   try {
@@ -34,7 +54,11 @@ async function request<T extends z.ZodType>(schema: T, path: string, init: Reque
   } catch {
     throw new ApiError(0, "network", "Sunucuya ulaşılamadı. Bağlantınızı kontrol edin.");
   }
-  if (res.status === 401 && !retried && (await refresh())) return request(schema, path, init, true);
+  if (res.status === 401 && !retried) {
+    // Another request already refreshed while this one was in flight: just retry with the new token.
+    const renewed = accessToken !== null && accessToken !== sentToken;
+    if (renewed || (await refresh())) return request(schema, path, init, true);
+  }
   if (!res.ok) {
     const detail = await res.json().catch(() => null);
     const msg = typeof detail?.detail === "string" ? detail.detail : null;
@@ -63,6 +87,12 @@ const qs = (o: Record<string, string | number | undefined>) => {
   const s = p.toString();
   return s ? `?${s}` : "";
 };
+/** Counters and risk status carry the server's "now" (the demo clock in DEMO_MODE): keep the UI clock on it. */
+function withServerTime<T extends { as_of: string }>(body: T): T {
+  noteServerTime(body.as_of);
+  return body;
+}
+
 const Void = z.undefined().or(z.null()).transform(() => undefined);
 
 export function createHttpApi(): KaptanApi {
@@ -76,7 +106,7 @@ export function createHttpApi(): KaptanApi {
       return body.user;
     },
     users: () => request(z.array(TeamMember), "/admin/users"),
-    counters: () => request(DayCounters, "/disclosures/counters"),
+    counters: () => request(DayCounters, "/disclosures/counters").then(withServerTime),
     listApprovals: (status = "pending") => request(z.array(ApprovalCard), `/approvals${qs({ status })}`),
     decideApproval: (pid, d) => request(ApprovalCard, `/approvals/${id(pid)}/decision`, post(d)),
     explain: (runId) => request(Explain, `/runs/${id(runId)}/explain`),
@@ -86,7 +116,7 @@ export function createHttpApi(): KaptanApi {
     markTicket: (no, input) => request(OrderTicket, `/tickets/${id(no)}/mark`, post(input)),
     positions: () => request(z.array(Position), "/portfolio/positions"),
     pnl: (from, to) => request(z.array(PnlPoint), `/portfolio/pnl${qs({ from, to })}`),
-    riskStatus: () => request(RiskStatus, "/risk/status"),
+    riskStatus: () => request(RiskStatus, "/risk/status").then(withServerTime),
     killSwitch: (reason) => request(RiskStatus, "/risk/kill-switch", post({ reason })),
     startKillReset: (input) => request(RiskStatus, "/risk/kill-switch/reset/request", post(input)),
     confirmKillReset: (input) => request(RiskStatus, "/risk/kill-switch/reset/confirm", post(input)),

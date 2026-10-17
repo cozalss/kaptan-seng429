@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { resetBackendDemo } from "./backend";
 import { go, login, openSettings, pickRole, trackErrors } from "./helpers";
 
 /**
@@ -8,6 +9,7 @@ import { go, login, openSettings, pickRole, trackErrors } from "./helpers";
  * Risk confirms.
  */
 test.beforeEach(async ({ page }) => {
+  await resetBackendDemo(); // http mode: a fresh demo day, as clearing localStorage gives the mock
   await page.goto("/login");
   await page.evaluate(() => {
     window.localStorage.clear();

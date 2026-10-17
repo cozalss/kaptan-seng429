@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { IS_API } from "./backend";
 import { accountRadio, login, PASSPHRASE, trackErrors, type RoleLabel } from "./helpers";
 
 /** One sign-in screen, four team accounts: the chosen account decides the session's role. */
@@ -27,7 +28,8 @@ test("each account shows its role and person; Risk Sorumlusu is chosen first", a
     await expect(accountRadio(page, a.label)).toHaveAccessibleName(new RegExp(`^${a.label} ${a.person.source}`));
   }
   await expect(accountRadio(page, "Risk Sorumlusu")).toBeChecked();
-  await expect(page.getByText(PASSPHRASE, { exact: true })).toBeVisible();
+  // The passphrase hint is a mock-only courtesy; against the API the passphrase is never on the page.
+  await expect(page.getByText(PASSPHRASE, { exact: true })).toHaveCount(IS_API ? 0 : 1);
 });
 
 test("/login/<rol> opens the same screen with that account chosen", async ({ page }) => {
@@ -61,9 +63,11 @@ test("an unknown account is not found, and ?next= is carried through sign-in", a
   await expect(page.getByRole("button", { name: /^Rol: Denetçi\./ })).toBeVisible();
 });
 
-test("the mock API refuses an unknown role at sign-in", async ({ page }) => {
-  const r = await page.request.post("/api/mock/session", { data: { passphrase: PASSPHRASE, role: "kral" } });
+test("the API refuses an unknown role at sign-in", async ({ page }) => {
+  // Mock: the in-panel session route. http: POST /api/v1/auth/login through the Next rewrite.
+  const url = IS_API ? "/api/v1/auth/login" : "/api/mock/session";
+  const r = await page.request.post(url, { data: { passphrase: PASSPHRASE, role: "kral" } });
   expect(r.status()).toBe(400);
-  const ok = await page.request.post("/api/mock/session", { data: { passphrase: PASSPHRASE, role: "analyst" } });
+  const ok = await page.request.post(url, { data: { passphrase: PASSPHRASE, role: "analyst" } });
   expect((await ok.json()).user.role).toBe("analyst");
 });

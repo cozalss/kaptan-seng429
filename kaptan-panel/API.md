@@ -13,7 +13,22 @@ NEXT_PUBLIC_DEMO_MODE=true                # isteğe bağlı: Ayarlar'daki demo b
 ```
 
 Tarayıcı her zaman `/api/v1/...` çağırır; `next.config.ts` bunu `KAPTAN_API_ORIGIN/api/v1/...`'e yeniden yazar,
-böylece çerez birinci taraf kalır. Yanıt şemaya uymazsa panel `502 schema` gösterir.
+böylece çerez birinci taraf kalır. `src/proxy.ts` (oturum yönlendirmesi) `/api/v1/*`'e dokunmaz: kimliği API denetler.
+SSE akışları da aynı yeniden yazmadan geçer (tamponlanmaz, sıkıştırılmaz; backend `Cache-Control: no-transform` ve
+15 sn'de bir yorum satırı gönderir). Yanıt şemaya uymazsa panel `502 schema` gösterir. Panelin saati http modunda
+sunucunun saatine uyar (`/disclosures/counters` ve `/risk/status` yanıtlarındaki `as_of`): backend `DEMO_MODE`'da bu
+demo saatidir (11.01.2027 …).
+
+Tek komutla (env elle verilmez; PowerShell ve Git Bash'te aynı, `scripts/api-mode.mjs`):
+
+```bash
+npm run dev:api     # http modu, KAPTAN_API_ORIGIN=http://127.0.0.1:8000, NEXT_PUBLIC_DEMO_MODE=true
+npm run e2e:api     # Playwright paketi http modunda: API'yi (DEMO_MODE, LLM_MODE=replay) ve paneli açar,
+                    # açık olanları kullanır; paketten ve durum değiştiren her testten önce POST /demo/reset
+npm run dev         # mock (varsayılan, backend gerekmez) · npm run e2e: mock'a karşı aynı paket
+```
+
+Backend'in kurulumu ve demo günü: [`../backend/README.md`](../backend/README.md) ("Bütün sistemi yerelde çalıştır").
 
 ## 2. Kimlik: tek giriş, dört rol
 
@@ -29,7 +44,7 @@ ekipten bir kişiye bağlıdır (`TEAM`, `src/lib/domain/user.ts`): aynı kişi 
 
 | Yöntem | Yol | İstek | Yanıt |
 |---|---|---|---|
-| POST | `/auth/login` | `{"passphrase":"…","role"?:"analyst\|risk_officer\|admin\|auditor"}` | `200 {"access_token":"<jwt>","user":Me}` + `Set-Cookie: __Host-kaptan_rt=…; HttpOnly; Secure; SameSite=Strict; Path=/`. İlk rol: aşağıdaki "Kapıdan istenen rol" |
+| POST | `/auth/login` | `{"passphrase":"…","role"?:"analyst\|risk_officer\|admin\|auditor"}` | `200 {"access_token":"<jwt>","user":Me}` + `Set-Cookie: __Host-kaptan_rt=…; HttpOnly; Secure; SameSite=Strict; Path=/`. İlk rol: aşağıdaki "Hesap seçerek giriş" |
 | POST | `/auth/role` | `{"role":"analyst\|risk_officer\|admin\|auditor"}` | `200 {"access_token":"<jwt>","user":Me}` (yeni rol; refresh ailesi rolü hatırlar) |
 | POST | `/auth/refresh` | başlık `X-KAPtan-CSRF: 1`, çerez | `200 {"access_token":"<jwt>"}` |
 | POST | `/auth/logout` | çerez | `204` |
@@ -37,11 +52,24 @@ ekipten bir kişiye bağlıdır (`TEAM`, `src/lib/domain/user.ts`): aynı kişi 
 
 Access JWT yalnızca bellekte; `401` → bir kez `/auth/refresh`, olmazsa `/login`. Yanlış parola: `401`.
 
-**Kapıdan istenen rol.** `/login` dört kapı gösterir; her kapı kendi giriş ekranıdır (`/login/analist`, `/login/risk`,
-`/login/yonetici`, `/login/denetci`). Panel `POST /auth/login` gövdesine kapının rolünü `role` olarak ekler. Bu bir
-**istek**tir, yetki değil: rolü backend belirler (ör. kullanıcıya açık değilse yok sayar ya da `risk_officer` verir) ve
-panel yanıttaki `user.role`'ü kullanır. Bilinmeyen bir rol değeri `400` alır. `role` yoksa ilk rol `risk_officer`.
-Mock modunda `/api/mock/session` aynı gövdeyi alır ve oturumu doğrudan o rolle açar.
+**Hesap seçerek giriş.** `/login` tek bir ekrandır: "Hesap" radyo grubunda dört ekip hesabı (Analist · Üye 2, Risk
+Sorumlusu · Üye 3, Yönetici · Üye 1, Denetçi · Denetçi; varsayılan Risk Sorumlusu) ve tek parola alanı. Panel
+`POST /auth/login` gövdesine seçilen hesabın rolünü `role` olarak ekler (`{"passphrase":"…","role":"admin"}`).
+`/login/analist`, `/login/risk`, `/login/yonetici`, `/login/denetci` aynı ekranı o hesap seçili açar; bilinmeyen bir
+yol (`/login/kral`) 404'tür. `role` bir **istek**tir: rolü backend belirler ve panel yanıttaki `user.role`'ü kullanır.
+Bilinmeyen bir rol değeri `400` alır; `role` yoksa ilk rol `risk_officer`. Yanlış parola `401` → "Parola doğrulanamadı."
+Giriş hız sınırı IP başına dakikada `LOGIN_RATE_PER_MINUTE` (varsayılan 5; `npm run e2e:api`'nin açtığı test
+backend'i 600) → `429`. Mock modunda `/api/mock/session` aynı gövdeyi alır ve oturumu doğrudan o rolle açar; parola
+ipucu yalnız mock modunda sayfada yazar.
+
+**Hesap değiştirme** (üst çubuktaki hesap menüsü, rehberli tur): `POST /auth/role` yeni bir access JWT verir ve refresh
+ailesinin rolünü günceller; sayfa yenilenince `/auth/refresh` aynı rolle döner.
+
+**Refresh.** Access JWT yalnızca bellekte. Sayfa açılışında (bellek boş) istemci önce `/auth/refresh` çağırır; bir
+`401`'de bir kez yeniler, olmazsa `/login`. Refresh token her kullanımda döner ve tekrar kullanılan token bütün aileyi
+iptal eder; bu yüzden istemci eşzamanlı yenilemeleri **tek istekte** birleştirir (`http-api.ts`). Dev'de http
+üzerinden: tarayıcı `localhost`/`127.0.0.1`'i güvenli bağlam sayar, `Secure` + `__Host-` çerez rewrite üzerinden
+çalışır. SSE bileti (`/sse/ticket`) Bearer'sız, yalnız bu çerezle de alınır.
 
 ## 3. Uç noktalar
 

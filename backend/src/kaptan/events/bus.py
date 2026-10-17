@@ -34,6 +34,9 @@ STREAM_MAXLEN: Final = 1000
 RUN_STREAM_TTL_S: Final = 24 * 60 * 60
 KEEPALIVE_S: Final = 15.0
 READ_COUNT: Final = 100
+#: One XREAD BLOCK slice. It must stay well under the Redis client's socket timeout (redis-py 8
+#: defaults to 5 s): a longer BLOCK raised TimeoutError and cut every quiet stream after 5 s.
+XREAD_BLOCK_MS: Final = 1000
 
 STREAM_ID = re.compile(r"^\d{1,20}-\d{1,20}$")
 RUN_ID = re.compile(r"^[A-Za-z0-9._-]{1,100}$")
@@ -126,13 +129,15 @@ async def frames(
     """SSE text for a stream: replay after `last_event_id` (if given), then live events via XREAD BLOCK.
 
     A comment frame opens the stream (proxies flush headers) and repeats every `keepalive_s` without
-    events. Stops when `is_disconnected()` says so; cancellation (client gone) ends the XREAD too.
+    events. XREAD blocks in short slices (`XREAD_BLOCK_MS`), so a quiet stream never outlives the
+    Redis socket timeout and a disconnect is noticed within a second. Stops when `is_disconnected()`
+    says so; cancellation (client gone) ends the XREAD too.
     """
     key = stream_key(stream)
     cursor = last_event_id if last_event_id and is_stream_id(last_event_id) else await latest_id(redis, key)
     yield comment_frame("ok")
     last_beat = clock()
-    block_ms = max(1, int(keepalive_s * 1000))
+    block_ms = max(1, min(XREAD_BLOCK_MS, int(keepalive_s * 1000)))
     while not await is_disconnected():
         reply: Any = await redis.xread({key: cursor}, count=READ_COUNT, block=block_ms)
         for _key, entries in reply or []:

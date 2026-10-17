@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { IS_API } from "./backend";
 
 /** The mock deployment's passphrase (shown as a small hint on /login on purpose). */
 export const PASSPHRASE = "kaptan2026";
@@ -32,9 +33,15 @@ export async function login(page: Page, label: RoleLabel = "Risk Sorumlusu") {
   await expect(page).toHaveURL(/\/bugun$/);
 }
 
-/** Sign in without the form (sets the session cookie on the page's context). */
+/**
+ * Sign in without the form (sets the session cookie on the page's context): the mock session
+ * route, or in http mode POST /api/v1/auth/login through the Next rewrite (the refresh cookie
+ * lands on the panel's origin, as for a browser).
+ */
 export async function loginApi(page: Page) {
-  const r = await page.request.post("/api/mock/session", { data: { passphrase: PASSPHRASE } });
+  const r = IS_API
+    ? await page.request.post("/api/v1/auth/login", { data: { passphrase: PASSPHRASE } })
+    : await page.request.post("/api/mock/session", { data: { passphrase: PASSPHRASE } });
   expect(r.ok()).toBe(true);
 }
 
@@ -64,4 +71,7 @@ export async function pickRole(page: Page, label: RoleLabel) {
   await accountMenu(page).click();
   await page.getByRole("menuitemradio", { name: new RegExp(`^${label} ·`) }).click();
   await expect(page.getByRole("button", { name: new RegExp(`^Rol: ${label}\\.`) })).toBeVisible();
+  // Let the menu finish closing: a click on the trigger during its exit animation is swallowed
+  // (seen in http mode, where the switch answers while the menu is still closing).
+  await expect(page.getByRole("menu")).toHaveCount(0);
 }

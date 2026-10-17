@@ -19,7 +19,9 @@ const SHORT: Readonly<Record<Role, string>> = { analyst: "Analist", risk_officer
  */
 export function TeamSection() {
   const { role, can: mayI } = useRole();
-  const users = useApiQuery((api) => api.users(), []);
+  const mayView = mayI("users.view");
+  // Only roles that may see the team ask for it (GET /admin/users is 403 for the others, API.md §3).
+  const users = useApiQuery((api) => (mayView ? api.users() : Promise.resolve([])), [mayView]);
 
   return (
     <section aria-labelledby="ekip-baslik" id="ekip" className="space-y-6">
@@ -27,7 +29,7 @@ export function TeamSection() {
         <SectionTitle id="ekip-baslik" title="Ekip ve roller" className="px-4 pt-4 pb-3 sm:px-6 sm:pt-5">
           Dört rol; her biri yalnızca kendi işini yapar, hiçbir karar tek kişiye kalmaz.
         </SectionTitle>
-        {mayI("users.view") ? (
+        {mayView ? (
           users.data ? (
             <table aria-label="Kullanıcılar" className="w-full border-collapse text-left">
               <thead>
