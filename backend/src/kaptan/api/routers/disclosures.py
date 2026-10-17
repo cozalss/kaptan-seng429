@@ -2,10 +2,8 @@
 
     GET /disclosures/counters -> DayCounters   (all roles)
 
-Counters for "today" (demo clock, Istanbul day): visible disclosures (pre-anchor + released live
-rows + injected demo rows), noise, archived, processed (run_id not null), e_candidates, proposals,
-approvals, rejections, llm_calls / llm_tokens (core.day_counters). Parity: the panel mock's
-selectors.counters(). SSE `counters` on the feed stream after every change (package D).
+Counters for "today" (demo clock, Istanbul day): kaptan.disclosures.counters.day_counters(), the port
+of the panel mock's selectors.counters(). SSE `counters` (feed) via publish_counters() after changes.
 """
 
 from __future__ import annotations
@@ -14,14 +12,14 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from kaptan.api.deps import CurrentUser
-from kaptan.api.errors import not_implemented
+from kaptan.api.deps import ClockDep, CurrentUser
 from kaptan.db import Conn
+from kaptan.disclosures.counters import day_counters
 from kaptan.domain.schemas import DayCounters
 
 router = APIRouter(tags=["disclosures"])
 
 
 @router.get("/disclosures/counters", response_model=DayCounters)
-async def counters(user: CurrentUser, conn: Conn) -> Any:
-    raise not_implemented("GET /disclosures/counters")
+async def counters(user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
+    return await day_counters(conn, clock.now())

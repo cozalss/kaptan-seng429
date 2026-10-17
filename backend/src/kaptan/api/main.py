@@ -34,6 +34,7 @@ from kaptan.api.routers import (
 )
 from kaptan.clock import Clock
 from kaptan.db import create_pool
+from kaptan.demo import control as demo_control
 from kaptan.settings import Settings, get_settings
 
 API_PREFIX: Final = "/api/v1"
@@ -79,9 +80,11 @@ def _lifespan(settings: Settings) -> Any:
         app.state.clock = Clock(demo=settings.demo_mode)
         if settings.demo_mode:
             app.state.clock.started_at = await load_demo_started_at(app)
+        demo_control.on_startup(app, settings)  # demo timers + live ticker (package C)
         try:
             yield
         finally:
+            await demo_control.on_shutdown(app)
             await app.state.redis.aclose()
             await app.state.pool.close()
 

@@ -15,26 +15,33 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Body, Depends, Request
 
-from kaptan.api.deps import Actor, CurrentUser, require
-from kaptan.api.errors import not_implemented
+from kaptan.api.deps import Actor, ClockDep, CurrentUser, require
+from kaptan.approvals import service
+from kaptan.approvals.reads import list_tickets as read_tickets
 from kaptan.db import Conn
 from kaptan.domain.schemas import OrderTicket, TicketMarkInput
+from kaptan.events.publish import publish
 
 router = APIRouter(tags=["tickets"])
 
 
 @router.get("/tickets", response_model=list[OrderTicket])
-async def list_tickets(user: CurrentUser, conn: Conn) -> Any:
-    raise not_implemented("GET /tickets")
+async def list_tickets(user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
+    return await read_tickets(conn, now=clock.now())
 
 
 @router.post("/tickets/{ticket_no}/mark", response_model=OrderTicket)
 async def mark_ticket(
+    request: Request,
     ticket_no: str,
     body: Annotated[TicketMarkInput, Body()],
     actor: Annotated[Actor, Depends(require("ticket.mark"))],
     conn: Conn,
+    clock: ClockDep,
 ) -> Any:
-    raise not_implemented("POST /tickets/{ticket_no}/mark")
+    outcome = await service.mark_ticket(conn, ticket_no, body, actor, now=clock.now())
+    for event, data in outcome.events:  # after commit
+        await publish(request.app, "desk", event, data)
+    return outcome.body

@@ -22,35 +22,62 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
-from kaptan.api.deps import Actor, CurrentUser, require
-from kaptan.api.errors import not_implemented
+from kaptan.api.deps import Actor, ClockDep, CurrentUser, require
 from kaptan.db import Conn
 from kaptan.domain.schemas import KillResetInput, KillSwitchInput, RiskStatus
+from kaptan.events.publish import publish
+from kaptan.risk import kill_switch as ks
+from kaptan.risk.status import risk_status
 
 router = APIRouter(tags=["risk"])
 
 
+async def _status_after_write(request: Request, conn: Conn, clock: ClockDep) -> dict[str, Any]:
+    """The new RiskStatus (read after the commit), published on SSE desk `kill_switch`."""
+    status = await risk_status(conn, clock.now())
+    await conn.commit()
+    await publish(request.app, "desk", "kill_switch", status)
+    return status
+
+
 @router.get("/risk/status", response_model=RiskStatus)
-async def status(user: CurrentUser, conn: Conn) -> Any:
-    raise not_implemented("GET /risk/status")
+async def status(user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
+    return await risk_status(conn, clock.now())
 
 
 @router.post("/risk/kill-switch", response_model=RiskStatus)
-async def kill_switch(body: KillSwitchInput, actor: Annotated[Actor, Depends(require("kill.stop"))], conn: Conn) -> Any:
-    raise not_implemented("POST /risk/kill-switch")
+async def kill_switch(
+    body: KillSwitchInput,
+    actor: Annotated[Actor, Depends(require("kill.stop"))],
+    conn: Conn,
+    clock: ClockDep,
+    request: Request,
+) -> Any:
+    await ks.engage(conn, by=actor.audit_actor, reason=body.reason, role=actor.role, now=clock.now())
+    return await _status_after_write(request, conn, clock)
 
 
 @router.post("/risk/kill-switch/reset/request", response_model=RiskStatus)
 async def reset_request(
-    body: KillResetInput, actor: Annotated[Actor, Depends(require("kill.reset_start"))], conn: Conn
+    body: KillResetInput,
+    actor: Annotated[Actor, Depends(require("kill.reset_start"))],
+    conn: Conn,
+    clock: ClockDep,
+    request: Request,
 ) -> Any:
-    raise not_implemented("POST /risk/kill-switch/reset/request")
+    await ks.start_reset(conn, uid=actor.uid, name=actor.name, role=actor.role, reason=body.reason, now=clock.now())
+    return await _status_after_write(request, conn, clock)
 
 
 @router.post("/risk/kill-switch/reset/confirm", response_model=RiskStatus)
 async def reset_confirm(
-    body: KillResetInput, actor: Annotated[Actor, Depends(require("kill.reset_confirm"))], conn: Conn
+    body: KillResetInput,
+    actor: Annotated[Actor, Depends(require("kill.reset_confirm"))],
+    conn: Conn,
+    clock: ClockDep,
+    request: Request,
 ) -> Any:
-    raise not_implemented("POST /risk/kill-switch/reset/confirm")
+    await ks.confirm_reset(conn, uid=actor.uid, role=actor.role, reason=body.reason, now=clock.now())
+    return await _status_after_write(request, conn, clock)

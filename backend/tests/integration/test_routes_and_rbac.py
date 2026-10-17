@@ -112,7 +112,40 @@ async def test_forbidden_roles_get_the_plain_reason(
     assert res.json() == {"detail": denied_reason(action, role), "code": "forbidden"}  # type: ignore[arg-type]
 
 
-@pytest.mark.parametrize(("method", "path", "body", "_action", "role"), ENDPOINTS)
+#: Paths whose package is done (they no longer answer 501); each package adds its own.
+IMPLEMENTED: set[str] = {
+    "/sse/ticket",
+    # package A
+    "/approvals?status=all",
+    "/approvals/prop-day-e1-krgcl/decision",
+    "/approvals/prop-day-e1-krgcl/notes",
+    "/runs/run-day-e1-krgcl/explain",
+    "/tickets",
+    "/tickets/T-2027-0111-020/mark",
+    # package B
+    "/portfolio/positions",
+    "/portfolio/pnl?from=2026-12-01&to=2027-01-08",
+    "/risk/status",
+    "/risk/kill-switch",
+    "/risk/kill-switch/reset/request",
+    "/risk/kill-switch/reset/confirm",
+    "/limits",
+    "/limits/proposals",
+    "/limits/proposals/2/decision",
+    # package C
+    "/disclosures/counters",
+    "/audit?scope=all&limit=10",
+    "/audit/verify",
+    "/admin/users",
+    "/demo/inject",
+    "/demo/tamper",
+    "/demo/reset",
+}
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "body", "_action", "role"), [e for e in ENDPOINTS if e[1] not in IMPLEMENTED]
+)
 async def test_allowed_roles_reach_the_stub(
     client: httpx.AsyncClient, method: str, path: str, body: Any, _action: str | None, role: str
 ) -> None:

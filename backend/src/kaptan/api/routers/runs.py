@@ -15,14 +15,18 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from kaptan.api.deps import CurrentUser
-from kaptan.api.errors import not_implemented
+from kaptan.api.deps import ClockDep, CurrentUser
+from kaptan.api.errors import ApiError
 from kaptan.db import Conn
 from kaptan.domain.schemas import Explain
+from kaptan.runs.explain import explain_for
 
 router = APIRouter(tags=["runs"])
 
 
 @router.get("/runs/{run_id}/explain", response_model=Explain)
-async def explain(run_id: str, user: CurrentUser, conn: Conn) -> Any:
-    raise not_implemented("GET /runs/{run_id}/explain")
+async def explain(run_id: str, user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
+    doc = await explain_for(conn, run_id, now=clock.now(), wall=clock.real_now())
+    if doc is None:
+        raise ApiError(404, "not_found", "Koşu bulunamadı.")
+    return doc

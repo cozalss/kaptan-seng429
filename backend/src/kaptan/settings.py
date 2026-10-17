@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     passphrase_hash: SecretStr | None = None
 
     demo_mode: bool = False
+    #: DEMO_MODE: release the day's post-13:40 disclosures every 7–12 s (package C ticker).
+    demo_live_ticker: bool = True
     llm_mode: Literal["replay", "live"] = "replay"
 
     cookie_secure: bool = True

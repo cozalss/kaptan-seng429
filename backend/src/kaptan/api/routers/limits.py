@@ -18,26 +18,40 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Depends, Path, Request
 
-from kaptan.api.deps import Actor, CurrentUser, require
-from kaptan.api.errors import not_implemented
+from kaptan.api.deps import Actor, ClockDep, CurrentUser, require
 from kaptan.db import Conn
 from kaptan.domain.schemas import LimitDecisionInput, LimitProposalInput, LimitsView
+from kaptan.events.publish import publish
+from kaptan.risk import limits as svc
 
 router = APIRouter(tags=["limits"])
 
 
+async def _view_after_write(request: Request, conn: Conn) -> dict[str, Any]:
+    """The new LimitsView (read after the commit), published on SSE desk `limits.changed`."""
+    view = await svc.limits_view(conn)
+    await conn.commit()
+    await publish(request.app, "desk", "limits.changed", view)
+    return view
+
+
 @router.get("/limits", response_model=LimitsView)
 async def limits(user: CurrentUser, conn: Conn) -> Any:
-    raise not_implemented("GET /limits")
+    return await svc.limits_view(conn)
 
 
 @router.post("/limits/proposals", response_model=LimitsView)
 async def propose(
-    body: LimitProposalInput, actor: Annotated[Actor, Depends(require("limits.propose"))], conn: Conn
+    body: LimitProposalInput,
+    actor: Annotated[Actor, Depends(require("limits.propose"))],
+    conn: Conn,
+    clock: ClockDep,
+    request: Request,
 ) -> Any:
-    raise not_implemented("POST /limits/proposals")
+    await svc.propose(conn, body, uid=actor.uid, name=actor.name, role=actor.role, now=clock.now())
+    return await _view_after_write(request, conn)
 
 
 @router.post("/limits/proposals/{version}/decision", response_model=LimitsView)
@@ -46,5 +60,8 @@ async def decide(
     body: LimitDecisionInput,
     actor: Annotated[Actor, Depends(require("limits.decide"))],
     conn: Conn,
+    clock: ClockDep,
+    request: Request,
 ) -> Any:
-    raise not_implemented("POST /limits/proposals/{version}/decision")
+    await svc.decide(conn, version, body, uid=actor.uid, name=actor.name, role=actor.role, now=clock.now())
+    return await _view_after_write(request, conn)

@@ -52,6 +52,7 @@ def test_settings() -> Settings:
             "jwt_secret": SecretStr(TEST_JWT_SECRET),
             "passphrase_hash": None,
             "demo_mode": True,
+            "demo_live_ticker": False,  # tests drive the ticker explicitly (package C)
             "cookie_secure": True,
             "allowed_origins": ["http://localhost:3100"],
             "db_pool_min": 1,
