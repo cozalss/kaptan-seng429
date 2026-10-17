@@ -4,7 +4,6 @@ import { __setMockDb, MockDb } from "@/lib/api/mock/db";
 import { engageKillSwitch, stopAllTimers, stopLiveTicker } from "@/lib/api/mock/scenarios";
 import { buildExplain } from "@/mocks/explain-builder";
 import { DEMO_E3_SPEC } from "@/mocks/runs-demo";
-import { Toaster } from "@/components/ui/toast";
 import { renderWithDesk } from "../harness.test-utils";
 import { nav } from "../nav.test-utils";
 import { AppShell } from "./app-shell";
@@ -13,6 +12,8 @@ import { TopBar } from "./top-bar";
 import { logout } from "./session-actions";
 
 vi.mock("next/navigation", async () => (await import("../nav.test-utils")).mockNavigation());
+
+const OFFICER = { uid: "uye-3", name: "Üye 3", role: "risk_officer" } as const;
 
 afterEach(() => {
   stopAllTimers();
@@ -28,9 +29,22 @@ describe("top bar", () => {
     renderWithDesk(<TopBar />);
     const main = screen.getByRole("navigation", { name: "Ana gezinme" });
     expect(within(main).getAllByRole("link").map((a) => a.textContent)).toEqual(["Bugün", "Portföy", "Denetim"]);
-    expect(screen.getAllByRole("button", { name: /Rol: Risk Sorumlusu/ }).length).toBeGreaterThan(0);
+    // One role picker and one ⚙ menu at every width: the phone row holds the same controls.
+    expect(screen.getAllByRole("button", { name: /Rol: Risk Sorumlusu/ })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Ayarlar ve çıkış" })).toHaveLength(1);
+    expect(screen.getByText("Kimin gözüyle bakıyorsun?")).toBeInTheDocument();
     expect(within(main).getByRole("link", { name: "Bugün" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "KAPtan — Bugün" })).toHaveAttribute("href", "/bugun");
+  });
+
+  it("underlines ⚙ Ayarlar while you are on Ayarlar", () => {
+    nav.pathname = "/ayarlar";
+    renderWithDesk(<TopBar />);
+    const trigger = screen.getByRole("button", { name: "Ayarlar ve çıkış" });
+    expect(trigger).toHaveTextContent("Ayarlar");
+    expect(trigger.querySelector("span.scale-x-100")).not.toBeNull();
+    const main = screen.getByRole("navigation", { name: "Ana gezinme" });
+    expect(within(main).queryByRole("link", { current: "page" })).toBeNull();
   });
 
   it("opens Ayarlar and signs out from the ⚙ menu", async () => {
@@ -50,33 +64,34 @@ describe("top bar", () => {
 });
 
 describe("banners", () => {
-  it("says nothing when all is normal, and north red once stopped", async () => {
+  it("says nothing when all is normal, and alerts in north red once stopped", async () => {
     const { db } = renderWithDesk(<RiskBanner />);
-    await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
+    // The live region is always there (so its first words are read out), but empty.
+    const region = screen.getByTestId("risk-banner");
+    expect(region).toHaveAttribute("role", "status");
+    await waitFor(() => expect(region).toBeEmptyDOMElement());
     act(() => engageKillSwitch(db, "user:uye-3", "Elle durdurdum"));
-    expect(await screen.findByRole("status")).toHaveTextContent("Durduruldu.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Durduruldu.");
+    expect(screen.getByRole("link", { name: "Portföy" })).toHaveAttribute("href", "/portfoy");
   });
 
   it("shows the daily pause", async () => {
     const db = new MockDb(null);
     db.update((s) => ({ ...s, risk: { ...s.risk, halted_today: true, daily_pnl_pct: -0.0112 } }));
     renderWithDesk(<RiskBanner />, db);
-    expect(await screen.findByRole("status")).toHaveTextContent("Bugün yeni emir yok.");
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Bugün yeni emir yok."));
   });
 });
 
 describe("app shell", () => {
-  it("frames a screen with the ribbon, top bar, disclaimer, and a slip for proposals arriving elsewhere", async () => {
+  it("frames a screen with the top bar, disclaimer, and a slip for proposals arriving elsewhere", async () => {
     const db = new MockDb(null);
     __setMockDb(db);
     nav.pathname = "/portfoy";
     render(
-      <>
-        <AppShell user={{ uid: "uye-3", name: "Üye 3", role: "risk_officer" }}>
-          <p>ekran</p>
-        </AppShell>
-        <Toaster />
-      </>,
+      <AppShell user={OFFICER}>
+        <p>ekran</p>
+      </AppShell>,
     );
     expect(screen.getByRole("main")).toHaveTextContent("ekran");
     expect(screen.getByText(/yatırım tavsiyesi değildir/)).toBeInTheDocument();
@@ -85,7 +100,41 @@ describe("app shell", () => {
       db.bus.emit("desk", "approval.requested", buildExplain(DEMO_E3_SPEC).approval);
     });
     expect(await screen.findByText("Yeni öneri: ÖRNEK ENERJİ A.Ş.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bildirimi kapat" })).toBeInTheDocument();
     await userEvent.setup({ delay: null }).click(screen.getByRole("button", { name: "İncele" }));
     expect(nav.push).toHaveBeenCalledWith("/oneri/prop-demo-e3-ornek");
+  });
+});
+
+describe("route focus", () => {
+  it("leaves focus alone on the first render, then moves it to the new screen's sentence", async () => {
+    __setMockDb(new MockDb(null));
+    nav.pathname = "/bugun";
+    const { rerender } = render(
+      <AppShell user={OFFICER}>
+        <h1 tabIndex={-1} data-route-focus="">
+          Bugün
+        </h1>
+      </AppShell>,
+    );
+    expect(screen.getByRole("heading", { name: "Bugün" })).not.toHaveFocus();
+    nav.pathname = "/portfoy";
+    rerender(
+      <AppShell user={OFFICER}>
+        <h1 tabIndex={-1} data-route-focus="">
+          Portföy
+        </h1>
+      </AppShell>,
+    );
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Portföy" })).toHaveFocus());
+  });
+
+  it("falls back to <main> when a screen marks no sentence", async () => {
+    __setMockDb(new MockDb(null));
+    nav.pathname = "/bugun";
+    const { rerender } = render(<AppShell user={OFFICER}>a</AppShell>);
+    nav.pathname = "/denetim";
+    rerender(<AppShell user={OFFICER}>b</AppShell>);
+    await waitFor(() => expect(screen.getByRole("main")).toHaveFocus());
   });
 });

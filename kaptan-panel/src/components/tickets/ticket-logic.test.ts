@@ -13,6 +13,7 @@ import {
   parseClock,
   parsePrice,
   parseQty,
+  slipsToEnter,
   ticketCopyText,
   ticketPhase,
   validFrom,
@@ -47,6 +48,14 @@ describe("validity window (12 §2, R16)", () => {
     expect(isMarkable(withEntry(T, "expired"))).toBe(true);
     expect(isMarkable(withEntry(T, "entered"))).toBe(false);
   });
+
+  it("slips to enter are markable and inside their window, and none before the clock is known", () => {
+    const tickets = [T, withEntry(T, "entered", "F-2")];
+    expect(slipsToEnter(tickets, at("14:00")).map((t) => t.ticket_no)).toEqual([T.ticket_no]);
+    expect(slipsToEnter(tickets, at("14:16", 20))).toEqual([]);
+    expect(slipsToEnter(tickets, null)).toEqual([]);
+    expect(slipsToEnter(undefined, at("14:00"))).toEqual([]);
+  });
 });
 
 describe("reading the slip", () => {
@@ -58,6 +67,7 @@ describe("reading the slip", () => {
   it("copies the fields you type into the broker app, nothing else", () => {
     const text = ticketCopyText(T);
     expect(text).toContain("AL ORNEK · LİMİT 48,40 TL · 620 lot");
+    expect(text).not.toContain("\u00a0");
     expect(text).toContain("T-2027-0111-003");
     expect(text).toContain("13:46–14:16");
     expect(text).not.toContain(T.audit_hash);

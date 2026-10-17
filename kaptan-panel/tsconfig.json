@@ -18,7 +18,7 @@
     "incremental": true,
     "types": ["vitest/globals", "@testing-library/jest-dom"],
     "plugins": [{ "name": "next" }],
-    "paths": { "@/*": ["./src/*"] }
+    "paths": { "@/lib/api/client": ["./src/lib/api/client.mock.ts"], "@/*": ["./src/*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts", "**/*.mts"],
   "exclude": ["node_modules", ".next", "playwright-report", "test-results"]

@@ -145,7 +145,7 @@ export function createEnterprise(ctx: MockCtx): Enterprise {
     async auditList(query = {}) {
       ctx.me();
       const q = parse(AuditListQuery, query);
-      const chain = sel.auditChain(db.snapshot);
+      const chain = db.auditChain();
       const today = istDay(now());
       const rows = chain
         .filter((e) => q.scope === "all" || istDay(e.occurred_at) === today)
@@ -156,7 +156,7 @@ export function createEnterprise(ctx: MockCtx): Enterprise {
 
     async verifyAudit() {
       ctx.require("audit.verify");
-      const result = verifyChain(sel.auditChain(db.snapshot), now());
+      const result = verifyChain(db.auditChain(), now());
       // Verifying has no side effects on the chain itself; the walk is remembered, not recorded.
       db.update((s) => ({ ...s, verifiedAt: result.verified_at }));
       return ok(result, 400);

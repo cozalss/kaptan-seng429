@@ -2,9 +2,10 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { createHttpApi } from "@/lib/api/http/http-api";
+import { createClient } from "@/lib/api/client";
 import type { SessionUser } from "@/lib/auth/session-context";
 import { SkeletonLines } from "@/components/ui/primitives";
+import { Toaster } from "@/components/ui/toast";
 import { AppShell } from "./app-shell";
 
 /**
@@ -17,7 +18,8 @@ export function HttpSessionBoot({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let alive = true;
-    createHttpApi()
+    // Only rendered in http mode, where @/lib/api/client is the http client (no actor needed).
+    createClient({ getActor: () => null })
       .me()
       .then((me) => {
         if (alive) setUser({ uid: me.id, name: me.display_name, role: me.role });
@@ -32,6 +34,7 @@ export function HttpSessionBoot({ children }: { children: ReactNode }) {
     return (
       <div className="mx-auto max-w-md p-10">
         <SkeletonLines lines={4} />
+        <Toaster />
       </div>
     );
   }

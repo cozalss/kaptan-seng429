@@ -1,0 +1,25 @@
+/* Rehberli tur: the bar is laid over the foot of the page once, rising its own height and
+   settling (ink is set down; it never springs). Reduced motion: it simply appears. */
+@keyframes tour-rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+.tour-rise {
+  animation: tour-rise var(--dur-slow) var(--ease-out-expo) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tour-rise {
+    animation: fade-in 150ms ease-out both !important;
+  }
+}
+
+/* While the tour runs, slips (toasts) are laid above the bar, never over its buttons. */
+body:has([data-testid="guided-demo"]) [data-sonner-toaster][data-y-position="bottom"] {
+  bottom: 268px !important;
+}
+@media (min-width: 640px) {
+  body:has([data-testid="guided-demo"]) [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: 204px !important;
+  }
+}

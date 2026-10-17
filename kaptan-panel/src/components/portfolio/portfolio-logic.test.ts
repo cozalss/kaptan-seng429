@@ -1,7 +1,8 @@
 import type { PnlPoint, Position } from "@/lib/domain";
 import { holdingProgress, istanbulDate, positionReturn, sessionsBetween } from "./risk-math";
-import { exitLine } from "./holdings";
-import { equitySeries, linePath } from "./equity-line";
+import { exitLine, onDateTr, signedLine } from "./holdings";
+import { equitySeries, H, linePath, nearestIndex, seriesChange, STOP_DRAWDOWN, yDomain } from "./equity-math";
+import { askCopy, stopDialogLead, stopEffects, stopSectionLine } from "./stop-copy";
 
 const pos = (over: Partial<Position> = {}): Position => ({
   ticker: "ORNEK",
@@ -82,5 +83,89 @@ describe("equity line", () => {
     expect(p.last?.y).toBeCloseTo(6);
     expect(linePath([{ d: "a", equity: 1 }]).last).toBeNull();
     expect(linePath([{ d: "a", equity: 1 }, { d: "b", equity: 1 }]).line).toContain("L");
+  });
+});
+
+describe("equity line scale and change", () => {
+  it("widens a quiet range to at least ±2% of the mean, and keeps a wide one", () => {
+    const quiet = yDomain([1_000_000, 1_001_000]);
+    expect(quiet.lo).toBeCloseTo(1_000_500 * 0.98);
+    expect(quiet.hi).toBeCloseTo(1_000_500 * 1.02);
+    expect(yDomain([90, 110])).toEqual({ lo: 90, hi: 110 });
+    expect(yDomain([0, 0])).toEqual({ lo: -1, hi: 1 });
+  });
+  it("draws a quiet week near the middle, not as a cliff", () => {
+    const p = linePath([
+      { d: "a", equity: 1_000_000 },
+      { d: "b", equity: 1_001_000 },
+    ]);
+    expect(p.last?.y).toBeGreaterThan(H / 2 - 10);
+    expect(p.last?.y).toBeLessThan(H / 2);
+  });
+  it("keeps the peak and the −5% stop level inside the drawing, peak above stop", () => {
+    const p = linePath(
+      [
+        { d: "a", equity: 1_000_000 },
+        { d: "b", equity: 1_010_000 },
+      ],
+      1_030_000,
+    );
+    expect(p.peakY).not.toBeNull();
+    expect(p.stopY).not.toBeNull();
+    expect(p.peakY!).toBeLessThan(p.stopY!);
+    expect(p.peakY!).toBeGreaterThan(0);
+    expect(p.stopY!).toBeLessThan(H);
+    expect(STOP_DRAWDOWN).toBe(0.05);
+    expect(linePath([{ d: "a", equity: 1 }, { d: "b", equity: 2 }]).peakY).toBeNull();
+  });
+  it("snaps a pointer position to the nearest session", () => {
+    expect(nearestIndex(0, 10)).toBe(0);
+    expect(nearestIndex(1, 10)).toBe(9);
+    expect(nearestIndex(0.5, 11)).toBe(5);
+    expect(nearestIndex(-0.2, 10)).toBe(0);
+    expect(nearestIndex(0.5, 1)).toBe(0);
+  });
+  it("counts the sessions and the change from the first point to today", () => {
+    expect(seriesChange([{ d: "a", equity: 100 }])).toBeNull();
+    const c = seriesChange([
+      { d: "a", equity: 100 },
+      { d: "b", equity: 99 },
+      { d: "c", equity: 102 },
+    ]);
+    expect(c?.sessions).toBe(2);
+    expect(c?.ratio).toBeCloseTo(0.02);
+  });
+});
+
+describe("signed on", () => {
+  it("reads the month aloud for its suffix", () => {
+    expect(onDateTr("2027-01-11T08:00:00Z")).toBe("11 Ocak’ta");
+    expect(onDateTr("2026-11-23T08:00:00Z")).toBe("23 Kasım’da");
+    expect(onDateTr("2026-09-03T08:00:00Z")).toBe("3 Eylül’de");
+    expect(onDateTr("2026-02-03T08:00:00Z")).toBe("3 Şubat’ta");
+  });
+  it("says bugün for today", () => {
+    expect(signedLine("2027-01-11T08:00:00Z", "2027-01-11")).toBe("bugün imzalandı");
+    expect(signedLine("2027-01-08T08:00:00Z", "2027-01-11")).toBe("8 Ocak’ta imzalandı");
+  });
+});
+
+describe("Durdur words", () => {
+  it("lists what Durdur does, naming waiting proposals only when there are some", () => {
+    expect(stopEffects(2)[0]).toBe("Bekleyen 2 öneri düşer; yeni öneri gelmez.");
+    expect(stopEffects(0)[0]).toBe("Yeni öneri gelmez.");
+    expect(stopEffects(0)).toContain("Elindekiler satılmaz; kendi çıkış günlerinde kapanır.");
+  });
+  it("names the waiting proposals only when there are some", () => {
+    expect(stopSectionLine(2)).toContain("durdurur: bekleyen 2 öneri düşer, yeni öneri gelmez");
+    expect(stopSectionLine(0)).toContain("durdurur: yeni öneri gelmez");
+    expect(stopSectionLine(0)).toContain("Yeniden açmak iki kişi ister.");
+    expect(stopDialogLead(3)).toBe("Bekleyen 3 öneri düşer, yeni öneri gelmez. Geri açmak iki kişi ister: Yönetici başlatır, Risk Sorumlusu onaylar.");
+    expect(stopDialogLead(0).startsWith("Yeni öneri gelmez.")).toBe(true);
+  });
+  it("keeps the button words the tests and the guide rely on", () => {
+    expect(askCopy("stop", 1).submit).toBe("Durdur");
+    expect(askCopy("start", 1).title).toBe("Yeniden başlatmayı başlat");
+    expect(askCopy("confirm", 1).title).toBe("Onayla ve yeniden başlat");
   });
 });

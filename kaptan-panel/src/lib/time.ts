@@ -57,3 +57,48 @@ export function approvalExpiry(createdIso: string): string {
   const istanbulDate = new Date(Date.parse(createdIso) + ISTANBUL_OFFSET_H * 3600_000).toISOString().slice(0, 10);
   return istanbulIso(nextTradingDay(istanbulDate), "09:50");
 }
+
+const MINUTE_MS = 60_000;
+
+/**
+ * A countdown in full words, never "sa"/"dk": "45 dakika", "1 saat 5 dakika", "20 saat",
+ * "2 gün 3 saat". Under a minute: "1 dakikadan az"; at or past zero: "süresi doldu".
+ */
+export function fmtCountdown(ms: number): string {
+  if (ms <= 0) return "süresi doldu";
+  const totalMin = Math.floor(ms / MINUTE_MS);
+  if (totalMin < 1) return "1 dakikadan az";
+  const days = Math.floor(totalMin / 1440);
+  const hours = Math.floor((totalMin % 1440) / 60);
+  const minutes = totalMin % 60;
+  const parts: ReadonlyArray<readonly [number, string]> =
+    days > 0
+      ? [
+          [days, "gün"],
+          [hours, "saat"],
+        ]
+      : [
+          [hours, "saat"],
+          [minutes, "dakika"],
+        ];
+  return parts
+    .filter(([n]) => n > 0)
+    .map(([n, unit]) => `${n} ${unit}`)
+    .join(" ");
+}
+
+/** The Istanbul calendar date (YYYY-MM-DD) of a UTC ISO time. */
+function istanbulDate(iso: string): string {
+  return new Date(Date.parse(iso) + ISTANBUL_OFFSET_H * 3600_000).toISOString().slice(0, 10);
+}
+
+const SHORT_DATE = new Intl.DateTimeFormat("tr-TR", { timeZone: "Europe/Istanbul", day: "numeric", month: "short" });
+
+/** "bugün", "yarın", or a short date ("14 Eki") for `iso`, seen from `nowIso`, in Istanbul time. */
+export function dayWordTr(iso: string, nowIso: string): string {
+  const day = istanbulDate(iso);
+  const today = istanbulDate(nowIso);
+  if (day === today) return "bugün";
+  if (day === addDays(today, 1)) return "yarın";
+  return SHORT_DATE.format(new Date(iso));
+}

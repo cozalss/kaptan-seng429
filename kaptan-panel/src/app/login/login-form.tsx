@@ -1,60 +1,79 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { LoginInput, ROLE_LABEL, type Role } from "@/lib/domain/user";
+import { ROLE_LABEL, type Role } from "@/lib/domain/role-meta";
 import { DEMO_PASSPHRASE } from "@/lib/auth/passphrase";
 import { HOME, safeNext } from "@/lib/nav";
 import { IS_MOCK } from "@/lib/api/config";
-import { httpLogin } from "@/lib/api/http/http-api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+
+/** The same words the login schema (LoginInput in domain/user.ts) uses, without loading zod here. */
+const MSG_REQUIRED = "Parola gerekli";
+const MSG_TOO_LONG = "Parola çok uzun";
+const MAX_PASSPHRASE = 200;
+const ERROR_ID = "login-error";
 
 /**
  * Sign-in behind one role's door: one passphrase, no accounts. The session starts as `role`
  * (mock); in http mode the role is a request and the API decides. A wrong passphrase gives one
- * generic message and a short shake (none under reduced motion). Mock mode prints the
- * passphrase and can fill it in one click. The button wears the door's tone (`--tone`).
+ * generic message, puts the cursor back in the field and gives it a short shake (none under
+ * reduced motion). Mock mode prints the passphrase and can fill it in one click. The button
+ * wears the door's tone (`--tone`).
  */
 export function LoginForm({ next, role }: { next: string | null; role: Role }) {
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [passphrase, setPassphrase] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [errorKey, setErrorKey] = useState(0);
   const [pending, start] = useTransition();
+
+  /** Restart the shake on the same element: drop the class, force a reflow, add it back. */
+  const shake = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.classList.remove("login-shake");
+    void el.offsetWidth;
+    el.classList.add("login-shake");
+  };
 
   const fail = (msg: string) => {
     setError(msg);
-    setErrorKey((k) => k + 1);
+    shake();
+    inputRef.current?.focus();
   };
 
-  const submit = (e?: React.FormEvent, value?: string) => {
-    e?.preventDefault();
-    const parsed = LoginInput.safeParse({ passphrase: value ?? passphrase });
-    if (!parsed.success) {
-      fail(parsed.error.issues[0]?.message ?? "Parolayı kontrol et.");
+  const signIn = async (value: string) => {
+    if (IS_MOCK) {
+      const res = await fetch("/api/mock/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(next ? { passphrase: value, role, next } : { passphrase: value, role }),
+      });
+      if (!res.ok) {
+        fail(res.status === 401 ? "Parola doğrulanamadı." : "Giriş şu an yapılamıyor.");
+        return;
+      }
+      const body = (await res.json()) as { redirect: string };
+      router.replace(body.redirect);
+      router.refresh();
       return;
     }
+    const { httpLogin } = await import("@/lib/api/http/http-api");
+    await httpLogin(value, role);
+    router.replace(safeNext(next) ?? HOME);
+  };
+
+  const submit = (e?: React.FormEvent, v?: string) => {
+    e?.preventDefault();
+    const value = (v ?? passphrase).trim();
+    if (!value) return fail(MSG_REQUIRED);
+    if (value.length > MAX_PASSPHRASE) return fail(MSG_TOO_LONG);
     setError(null);
     start(async () => {
       try {
-        if (IS_MOCK) {
-          const res = await fetch("/api/mock/session", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(next ? { ...parsed.data, role, next } : { ...parsed.data, role }),
-          });
-          if (!res.ok) {
-            fail(res.status === 401 ? "Parola doğrulanamadı." : "Giriş şu an yapılamıyor.");
-            return;
-          }
-          const body = (await res.json()) as { redirect: string };
-          router.replace(body.redirect);
-          router.refresh();
-          return;
-        }
-        await httpLogin(parsed.data.passphrase, role);
-        router.replace(safeNext(next) ?? HOME);
+        await signIn(value);
       } catch {
         fail("Parola doğrulanamadı.");
       }
@@ -62,14 +81,16 @@ export function LoginForm({ next, role }: { next: string | null; role: Role }) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4" noValidate aria-describedby={error ? "login-error" : undefined}>
-      <label htmlFor="parola" className="block text-[14px] text-ink-soft">
+    <form onSubmit={submit} className="space-y-4" noValidate>
+      <label htmlFor="parola" className="label block text-ink-soft">
         Parola
       </label>
       <input
-        key={errorKey}
+        ref={inputRef}
         id="parola"
         aria-invalid={Boolean(error)}
+        aria-describedby={error ? ERROR_ID : undefined}
+        aria-errormessage={error ? ERROR_ID : undefined}
         type="password"
         autoComplete="current-password"
         autoCapitalize="none"
@@ -79,13 +100,13 @@ export function LoginForm({ next, role }: { next: string | null; role: Role }) {
         onChange={(e) => setPassphrase(e.target.value)}
         className={cn(
           "h-13 w-full border-[1.5px] border-ink bg-panel px-3.5 text-[16px] text-ink",
-          "transition-shadow duration-[var(--dur-quick)] ease-[var(--ease-ink)] focus-visible:shadow-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand",
+          "transition-[box-shadow,border-color] duration-[var(--dur-quick)] ease-[var(--ease-ink)]",
+          "focus-visible:border-brand focus-visible:shadow-[3px_3px_0_var(--brand)] focus-visible:outline-none",
           "aria-[invalid=true]:border-north",
-          errorKey > 0 && "login-shake",
         )}
       />
       {error ? (
-        <p id="login-error" role="alert" className="text-[14px] font-medium text-north">
+        <p id={ERROR_ID} role="alert" className="text-ui font-medium text-north">
           {error}
         </p>
       ) : null}
@@ -100,7 +121,7 @@ export function LoginForm({ next, role }: { next: string | null; role: Role }) {
         <span aria-hidden>→</span>
       </Button>
       {IS_MOCK ? (
-        <p className="pt-2 text-[14px] text-muted">
+        <p className="pt-2 text-ui text-muted">
           Parola: <span className="code text-ink">{DEMO_PASSPHRASE}</span> ·{" "}
           <button
             type="button"

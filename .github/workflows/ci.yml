@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Node 24: vitest 5 needs >= 22.12 and the landing's jsdom 30 needs >= 22.22.2 / 24.15,
+# so the panel's `engines.node >= 20.9` alone is not enough to run the tests.
+env:
+  NODE_VERSION: "24"
+
+jobs:
+  panel:
+    name: Panel (typecheck, lint, unit tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: kaptan-panel
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: kaptan-panel/package-lock.json
+      # No `npm run build` here: `prebuild` also builds ../kaptan-landing (scripts/sync-landing.mjs).
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npx vitest run
+
+  landing:
+    name: Landing (unit tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: kaptan-landing
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: kaptan-landing/package-lock.json
+      - run: npm ci
+      - run: npm test

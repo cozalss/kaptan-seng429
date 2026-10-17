@@ -1,0 +1,63 @@
+import { act, screen, within } from "@testing-library/react";
+import { __setMockDb, MockDb } from "@/lib/api/mock/db";
+import { engageKillSwitch, stopAllTimers, stopLiveTicker } from "@/lib/api/mock/scenarios";
+import { buildExplain } from "@/mocks/explain-builder";
+import { DEMO_E3_SPEC } from "@/mocks/runs-demo";
+import { renderWithDesk } from "../harness.test-utils";
+import { nav } from "../nav.test-utils";
+import { TodayScreen } from "./today-screen";
+
+vi.mock("next/navigation", async () => (await import("../nav.test-utils")).mockNavigation());
+
+afterEach(() => {
+  stopAllTimers();
+  stopLiveTicker();
+  __setMockDb(null);
+  nav.pathname = "/bugun";
+});
+
+describe("Bugün", () => {
+  it("says how many proposals wait and lists them as cards", async () => {
+    renderWithDesk(<TodayScreen />);
+    expect(await screen.findByRole("heading", { level: 1, name: "Bugün 3 öneri var." })).toBeInTheDocument();
+    const list = screen.getByRole("list", { name: "Bekleyen öneriler" });
+    const cards = within(list).getAllByRole("article");
+    expect(cards).toHaveLength(3);
+    expect(cards[0]).toHaveTextContent(/\d+ lot al · tanesi en fazla .* · (bugün|yarın|\d+ \S+) 09:50’ye kadar/);
+    expect(screen.queryByText(/sa var/)).toBeNull();
+    // Each open row says where it stands in the two signatures; the second is the Risk Sorumlusu's.
+    expect(cards[0]).toHaveTextContent("İmzalar: kurallar imzaladı;1/2 · ikinci imza senin");
+    // Karar saati: the soonest deadline and how long is left.
+    expect(screen.getByText("Karar saati")).toBeInTheDocument();
+    expect(await screen.findByText(/^\d+ (saat|dakika).* kaldı · bu saate dek imzalanmayan öneri düşer\.$/)).toBeInTheDocument();
+    expect(await screen.findByText(/^Tayfa bugün \d+ bildirim okudu; \d+’\S+ kurallar hemen eledi, \d+’\S+ inceledi ve \d+ öneri çıkardı: /)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Portföyün:/ })).toHaveAttribute("href", "/portfoy");
+    expect(screen.getAllByRole("link", { name: /^İncele/ })[0]).toHaveAttribute("href", expect.stringMatching(/^\/oneri\/prop-day-/));
+  });
+
+  it("shows nothing under Seni bekleyenler for a Denetçi", async () => {
+    renderWithDesk(<TodayScreen />, new MockDb(null), "auditor");
+    await screen.findByRole("heading", { level: 1, name: "Bugün 3 öneri var." });
+    expect(screen.queryByRole("heading", { name: "Seni bekleyenler" })).toBeNull();
+  });
+
+  it("inks in a proposal that arrives live", async () => {
+    const { db } = renderWithDesk(<TodayScreen />);
+    await screen.findByRole("heading", { level: 1, name: "Bugün 3 öneri var." });
+    const card = buildExplain(DEMO_E3_SPEC).approval;
+    act(() => {
+      db.bus.emit("desk", "approval.requested", card);
+    });
+    const arrived = await screen.findByRole("article", { name: "ÖRNEK ENERJİ" });
+    expect(within(arrived).getByText("yeni")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Bugün 4 öneri var.");
+  });
+
+  it("says plainly when you have stopped everything", async () => {
+    const db = new MockDb(null);
+    engageKillSwitch(db, "user:uye-3", "test durdurması");
+    renderWithDesk(<TodayScreen />, db);
+    expect(await screen.findByRole("heading", { level: 1, name: "Her şey durduruldu — yeni öneri gelmez." })).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Bekleyen öneriler" })).toBeNull();
+  });
+});

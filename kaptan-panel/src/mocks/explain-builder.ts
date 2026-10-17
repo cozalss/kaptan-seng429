@@ -137,25 +137,46 @@ function materialityOf(spec: RunSpec): MaterialityOutput | null {
   };
 }
 
+/**
+ * Exactly `up` of the returns end above zero: when the noisy draw has too many risers, the
+ * smallest rises are turned into equally small falls (and the other way round). Pure; this is
+ * what keeps "Benzer 12 olayın 7’sinde" true to the strip under it.
+ */
+export function withRisers(returns: readonly number[], up: number): number[] {
+  const order = returns.map((v, i) => ({ v, i })).sort((a, b) => b.v - a.v);
+  const risers = new Set(order.slice(0, up).map((x) => x.i));
+  return returns.map((v, i) => {
+    const size = Math.max(Math.abs(v), 0.001);
+    return risers.has(i) ? size : -size;
+  });
+}
+
 function evidenceOf(spec: RunSpec): { card: EvidenceCard | null; events: EvidenceEvent[] } {
   if (!spec.evidence || !spec.event) return { card: null, events: [] };
   const ev = spec.evidence;
   const rng = createRng(spec.disclosure_index);
   const ids = Array.from({ length: ev.n }, (_, i) => `evt:${spec.event}-${2019 + (i % 7)}-${String(100 + i * 7).padStart(4, "0")}`);
   const pool = ["ORNCM", "DMOEN", "KRGCL", "MSLCM", "TMSMK", "FRZEN", "DMOKM", "MSLEL"];
-  const events: EvidenceEvent[] = ids.slice(0, Math.min(20, ev.n)).map((ref_id, i) => {
+  // Every selected event is on the strip, and the share that rose is the card's hit rate.
+  const drawn = ids.map((ref_id, i) => {
     const t = pool[i % pool.length] ?? "ORNCM";
     const car5 = round(ev.mean5 + rng.normal(0, 0.028), 4);
+    return { ref_id, t, i, car5, car1Noise: rng.normal(0, 0.006), car20: round(ev.mean20 + rng.normal(0, 0.05), 4), car60: round(ev.mean20 * 1.4 + rng.normal(0, 0.08), 4) };
+  });
+  const risers = Math.round(ev.hit5 * ev.n);
+  const car5s = withRisers(drawn.map((d) => d.car5), risers);
+  const events: EvidenceEvent[] = drawn.map((d, k) => {
+    const car5 = round(car5s[k] ?? d.car5, 4);
     return {
-      ref_id,
-      ticker: t,
-      company_name: issuer(t).name,
-      published_at: new Date(Date.UTC(2019 + (i % 7), (i * 5) % 12, 3 + (i % 25), 12)).toISOString(),
-      title: `${issuer(t).name} — ${spec.sub_type_tr} (geçmiş olay)`,
-      car_1d: round(car5 * 0.4 + rng.normal(0, 0.006), 4),
+      ref_id: d.ref_id,
+      ticker: d.t,
+      company_name: issuer(d.t).name,
+      published_at: new Date(Date.UTC(2019 + (d.i % 7), (d.i * 5) % 12, 3 + (d.i % 25), 12)).toISOString(),
+      title: `${issuer(d.t).name} — ${spec.sub_type_tr} (geçmiş olay)`,
+      car_1d: round(car5 * 0.4 + d.car1Noise, 4),
       car_5d: car5,
-      car_20d: round(ev.mean20 + rng.normal(0, 0.05), 4),
-      car_60d: i % 4 === 0 ? null : round(ev.mean20 * 1.4 + rng.normal(0, 0.08), 4),
+      car_20d: d.car20,
+      car_60d: d.i % 4 === 0 ? null : d.car60,
     };
   });
   const strength = strengthForN(ev.n);
@@ -185,7 +206,7 @@ function evidenceOf(spec: RunSpec): { card: EvidenceCard | null; events: Evidenc
       n_same_ticker: ev.nSameTicker,
       median_car_5d: ev.median5,
       mean_car_5d: ev.mean5,
-      hit_rate_5d: ev.hit5,
+      hit_rate_5d: round(risers / ev.n, 2),
       median_car_20d: ev.median20,
       mean_car_20d: ev.mean20,
       hit_rate_20d: ev.hit20,
@@ -212,6 +233,14 @@ function skepticOf(spec: RunSpec): SkepticOutput | null {
   };
 }
 
+/** What Uyum wants a person to look at, in one plain sentence per kind of event. */
+const ESCALATE_REASON: Readonly<Record<string, string>> = {
+  E1: "Geri alımı yapan aracı kurumun adı metinde yok; kaydın doğruluğuna bir insan baksın.",
+  E2: "Alımı yapan yöneticinin adı metinde gizlenmiş; kim olduğunu bir insan doğrulasın.",
+  E3: "Sözleşmenin karşı tarafı metinde adıyla geçmiyor; ilişkili taraf olup olmadığına bir insan baksın.",
+  E4: "Kârın bir kısmı tek seferlik arsa satışından geliyor; yönetimin “kalıcı iyileşme” dili buna tam uymuyor.",
+};
+
 function complianceOf(spec: RunSpec): ComplianceReport | null {
   if (!spec.compliance) return null;
   const injection = spec.kind === "quarantine";
@@ -237,7 +266,7 @@ function complianceOf(spec: RunSpec): ComplianceReport | null {
         detail_tr: injection
           ? "Gerekçe dış talimata dayanıyor."
           : spec.compliance === "escalate"
-            ? "Yönetim yönlendirmesi belirsiz; insan incelemesi önerilir."
+            ? (ESCALATE_REASON[spec.event ?? ""] ?? "Gerekçenin bir kısmı belirsiz; bir insan baksın.")
             : "Gerekçe alıntılarla destekleniyor.",
       },
       { code: "MARKET_ABUSE_RISK", result: "pass", basis_ref: "rag:spkn-106-107", detail_tr: "Piyasa bozucu eylem işareti yok." },
@@ -246,7 +275,7 @@ function complianceOf(spec: RunSpec): ComplianceReport | null {
     summary_tr: injection
       ? "RET: bildirim metninde modele yönelik talimat içeriği var."
       : spec.compliance === "escalate"
-        ? "Tedbir yok; bir kontrol insan incelemesi istiyor (escalate)."
+        ? "Tedbir yok; bir kontrol insan incelemesi istiyor."
         : "Tedbir yok, injection yok; uyum açısından engel yok.",
     confidence: 0.9,
     abstain: null,

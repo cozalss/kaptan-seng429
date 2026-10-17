@@ -24,7 +24,7 @@ describe("format · the rest of the tr-TR helpers", () => {
   it("formats decimals, prices, compact counts and basis points", () => {
     expect(fmtDec(48.3215)).toBe("48,32");
     expect(fmtDec(0.5, 1)).toBe("0,5");
-    expect(fmtPrice(48.32)).toBe("48,32 TL");
+    expect(fmtPrice(48.32)).toBe("48,32 TL");
     expect(fmtCompact(1_200_000)).toMatch(/1,2/);
     expect(fmtBps(37.6)).toBe("38 bp");
   });

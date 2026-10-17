@@ -37,7 +37,7 @@ export async function go(page: Page, label: "Bugün" | "Portföy" | "Denetim", u
   await expect(page).toHaveURL(url);
 }
 
-/** Open Ayarlar from the ⚙ menu (client-side). */
+/** Open Ayarlar from the ⚙ menu (client-side). The top bar renders it once, at every width. */
 export async function openSettings(page: Page) {
   await page.getByRole("button", { name: "Ayarlar ve çıkış" }).click();
   await page.getByRole("menuitem", { name: "Ayarlar" }).click();

@@ -1,26 +1,37 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { DropdownMenu as M } from "radix-ui";
 import type { OrderTicket } from "@/lib/domain";
-import { useApi } from "@/lib/api/react";
-import { errorMessage } from "@/lib/api/types";
-import { currentTimeMs, useNow } from "@/lib/clock";
+import { useNow } from "@/lib/clock";
 import { fmtDuration, fmtInt, fmtPrice, fmtTime } from "@/lib/format";
 import { ROUTES } from "@/lib/nav";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Denied } from "@/components/roles/denied";
-import { useRole } from "@/components/roles/use-role";
-import { Input } from "@/components/ui/field";
-import { buildMarkInput, ENTRY_LABEL, hasMarkErrors, initialDraft, isMarkable, markErrors, ticketCopyText, ticketPhase, validFrom, type MarkDraft, type MarkKind } from "@/components/tickets/ticket-logic";
+import { dative, locative, titleTr } from "@/components/story/turkish";
+import { shortName } from "@/components/story/plain";
+import { ENTRY_LABEL, isMarkable, ticketPhase, validFrom } from "@/components/tickets/ticket-logic";
+import { SlipActions } from "./slip-actions";
+import "./oneri.css";
 
 /**
- * The emir fişi as a printed slip: the fields you type into your broker app, the validity
- * clock, Kopyala and Girdim. "Dolmadı" and "İptal" wait behind the small "…" menu.
+ * The emir fişi as a printed paper slip: what you type into your broker app in ruled boxes
+ * (Lot · Limit · Seans), the validity clock with a rule that runs down, then a tear-off stub
+ * with Girdim, Kopyala and "…" (Dolmadı, İptal). İmza anı: right after a signature given here,
+ * the slip is laid on top of the decision sheet (`laid`); never on mount or reload.
  */
-export function OrderSlip({ ticket, onMarked, compact = false }: { ticket: OrderTicket; onMarked?: (t: OrderTicket) => void; compact?: boolean }) {
+export function OrderSlip({
+  ticket,
+  onMarked,
+  compact = false,
+  laid = false,
+  className,
+}: {
+  ticket: OrderTicket;
+  onMarked?: (t: OrderTicket) => void;
+  compact?: boolean;
+  laid?: boolean;
+  className?: string;
+}) {
   const [current, setCurrent] = useState(ticket);
   const [prevProp, setPrevProp] = useState(ticket);
   if (prevProp !== ticket) {
@@ -28,10 +39,14 @@ export function OrderSlip({ ticket, onMarked, compact = false }: { ticket: Order
     // A late echo of the unmarked ticket must never undo a mark made here.
     if (!(isMarkable(ticket) && !isMarkable(current))) setCurrent(ticket);
   }
+  const [justMarked, setJustMarked] = useState(false);
+  // Bumped on every successful Kopyala: re-keys the boxes so their wash flashes again.
+  const [copies, setCopies] = useState(0);
   const t = current;
   const marked = !isMarkable(t);
   const done = (next: OrderTicket) => {
     setCurrent(next);
+    setJustMarked(true);
     onMarked?.(next);
   };
 
@@ -40,60 +55,78 @@ export function OrderSlip({ ticket, onMarked, compact = false }: { ticket: Order
       data-ticket-slip={t.ticket_no}
       aria-label={`Emir fişi ${t.ticket_no}`}
       role="group"
-      className="paper-grain relative border-[1.5px] border-ink bg-panel shadow-ink"
+      className={cn("paper-grain relative border-[1.5px] border-ink bg-panel shadow-ink", laid && "oneri-slip-lay", className)}
     >
-      <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-rule-soft px-5 py-3 sm:px-6">
-        <span className="text-[12px] font-medium tracking-[0.08em] text-ink uppercase">Emir fişi</span>
-        <span className="code text-[12px] text-muted">{t.ticket_no}</span>
+      <div className="flex items-baseline justify-between gap-3 px-5 pt-4 sm:px-6">
+        <span className="label">Emir fişi</span>
+        <span className="code text-meta text-muted">{t.ticket_no}</span>
       </div>
-      <div className="space-y-4 px-5 py-5 sm:px-6">
-        <p className="flex items-baseline gap-3 text-ink">
-          <span className="bg-ink px-2 py-0.5 text-[14px] font-medium tracking-[0.08em] text-on-dark">AL</span>
-          <span className="code text-[26px] leading-none tracking-normal">{t.ticker}</span>
+      <div className="space-y-4 px-5 pt-3 pb-5 sm:px-6">
+        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-ink">
+          <span className="bg-ink px-2 py-0.5 text-[14px] leading-5 font-semibold tracking-[0.1em] text-on-dark">AL</span>
+          <span className="code text-[28px] leading-none tracking-normal">{t.ticker}</span>
+          <span className="text-dense text-muted">{titleTr(shortName(t.company_name))}</span>
         </p>
-        <dl className={cn("grid gap-x-6 gap-y-3 text-[15px]", compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4")}>
-          <Field label="Lot" value={fmtInt(t.qty)} />
-          <Field label="Limit" value={fmtPrice(t.limit_price)} />
-          <Field label="Seans" value={t.session_tr} wide={!compact} />
+        <dl key={copies} className={cn("grid border-[1.5px] border-ink", compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-[1fr_1.2fr_2fr]")}>
+          <Box label="Lot" value={fmtInt(t.qty)} flash={copies > 0} />
+          <Box label="Limit" value={fmtPrice(t.limit_price)} flash={copies > 0} className="border-l border-rule-ui" />
+          <Box
+            label="Seans"
+            value={t.session_tr}
+            flash={copies > 0}
+            className={cn("col-span-2 border-t border-rule-ui", !compact && "sm:col-span-1 sm:border-t-0 sm:border-l")}
+            small
+          />
         </dl>
-        {marked ? <Marked ticket={t} /> : <Validity ticket={t} />}
+        {marked ? <Marked ticket={t} pressed={justMarked} /> : <Validity ticket={t} />}
       </div>
-      {marked ? null : <SlipActions ticket={t} onMarked={done} />}
+      {marked ? null : <SlipActions ticket={t} onMarked={done} onCopied={() => setCopies((n) => n + 1)} />}
     </div>
   );
 }
 
-function Field({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
+/** One ruled box on the slip: a small label, the value in tabular figures. */
+function Box({ label, value, flash, small = false, className }: { label: string; value: string; flash: boolean; small?: boolean; className?: string }) {
   return (
-    <div className={cn("min-w-0", wide && "sm:col-span-2")}>
-      <dt className="text-[12px] text-muted">{label}</dt>
-      <dd className="mt-0.5 font-medium text-ink tabular-nums">{value}</dd>
+    <div className={cn("min-w-0 px-3 pt-2 pb-2.5", flash && "oneri-copied", className)}>
+      <dt className="text-meta text-muted">{label}</dt>
+      <dd className={cn("mt-0.5 text-ink tabular-nums", small ? "text-ui leading-7" : "text-[22px] leading-7 font-medium tracking-[-0.01em]")}>{value}</dd>
     </div>
   );
 }
 
+/** How long the slip may still be entered: a sentence and a rule that runs down over the 30 minutes. */
 function Validity({ ticket }: { ticket: OrderTicket }) {
   const now = useNow(1_000);
-  if (now === null) return <p className="text-[14px] text-muted">…</p>;
+  if (now === null) return <p className="h-[30px] text-[14px] text-muted">…</p>;
   const phase = ticketPhase(ticket, now);
+  const from = Date.parse(validFrom(ticket));
+  const until = Date.parse(ticket.valid_until);
+  const left = phase === "valid" ? Math.max(0, Math.min(1, (until - now) / Math.max(1, until - from))) : phase === "upcoming" ? 1 : 0;
   const text =
     phase === "upcoming"
-      ? `Geçerlilik ${fmtTime(validFrom(ticket))}’de başlar`
+      ? `Geçerlilik ${locative(fmtTime(validFrom(ticket)))} başlar`
       : phase === "expired"
         ? "Süresi doldu — artık girme. Ne olduğunu yine de işaretle."
-        : `Geçerli · ${fmtDuration(Date.parse(ticket.valid_until) - now)} kaldı`;
+        : `Geçerli · ${fmtDuration(until - now)} kaldı`;
   return (
-    <p className={cn("text-[14px] tabular-nums", phase === "valid" ? "text-ink" : "text-muted")} aria-live="off">
-      {text}
-    </p>
+    <div className="space-y-2">
+      <p className={cn("text-[14px] tabular-nums", phase === "valid" ? "text-ink" : "text-muted")} aria-live="off">
+        {text}
+        {phase === "valid" ? <span className="text-muted"> · {dative(fmtTime(ticket.valid_until))} kadar</span> : null}
+      </p>
+      <div aria-hidden className="h-[3px] bg-hairline">
+        <div className={cn("h-full origin-left", phase === "valid" ? "bg-ink" : "bg-rule-soft")} style={{ transform: `scaleX(${left})` }} />
+      </div>
+    </div>
   );
 }
 
-function Marked({ ticket }: { ticket: OrderTicket }) {
+function Marked({ ticket, pressed }: { ticket: OrderTicket; pressed: boolean }) {
   const e = ticket.entry;
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-3">
-      <p className="animate-stamp-in inline-block -rotate-2 border-2 border-ink px-2.5 py-1 text-[14px] font-medium tracking-[0.06em] text-ink uppercase [--stamp-rot:-2deg]">
+      <p className={cn(pressed && "animate-stamp-in", "inline-block -rotate-2 border-2 border-ink px-2.5 py-1 text-[14px] font-medium tracking-[0.06em] text-ink uppercase [--stamp-rot:-2deg]")}>
         {ENTRY_LABEL[e.status]}
         {e.status === "entered" && e.filled_qty && e.avg_price ? ` · ${fmtInt(e.filled_qty)} lot @ ${fmtPrice(e.avg_price)}` : ""}
       </p>
@@ -102,120 +135,6 @@ function Marked({ ticket }: { ticket: OrderTicket }) {
           Portföyünde →
         </Link>
       ) : null}
-    </div>
-  );
-}
-
-function SlipActions({ ticket, onMarked }: { ticket: OrderTicket; onMarked: (t: OrderTicket) => void }) {
-  const api = useApi();
-  const { can } = useRole();
-  const mayMark = can("ticket.mark");
-  const [copied, setCopied] = useState<"idle" | "done" | "fail">("idle");
-  const [draft, setDraft] = useState<MarkDraft | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => (timer.current ? clearTimeout(timer.current) : undefined), []);
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(ticketCopyText(ticket));
-      setCopied("done");
-    } catch {
-      setCopied("fail");
-    }
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setCopied("idle"), 2_400);
-  };
-
-  const mark = async (d: MarkDraft) => {
-    if (d.kind === "entered" && hasMarkErrors(markErrors(d, ticket))) {
-      setError(Object.values(markErrors(d, ticket)).find(Boolean) ?? null);
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      onMarked(await api.markTicket(ticket.ticket_no, buildMarkInput(d, ticket)));
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  };
-  const quick = (kind: MarkKind) => void mark(initialDraft(kind, ticket, currentTimeMs()));
-
-  return (
-    <div className="border-t border-dashed border-rule-soft px-5 py-4 sm:px-6">
-      {draft ? (
-        <form
-          className="space-y-3"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void mark(draft);
-          }}
-        >
-          <p className="text-[15px] text-ink">Kaç lot, hangi fiyattan doldu?</p>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="space-y-1">
-              <span className="text-[12px] text-muted">Lot</span>
-              <Input inputMode="numeric" value={draft.qty} onChange={(e) => setDraft({ ...draft, qty: e.target.value })} className="tabular-nums" autoFocus />
-            </label>
-            <label className="space-y-1">
-              <span className="text-[12px] text-muted">Ortalama fiyat (TL)</span>
-              <Input inputMode="decimal" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} className="tabular-nums" />
-            </label>
-          </div>
-          {error ? (
-            <p role="alert" className="text-[14px] text-north">
-              {error}
-            </p>
-          ) : null}
-          <div className="flex items-center gap-3">
-            <Button type="submit" variant="primary" disabled={busy}>
-              {busy ? "Kaydediliyor…" : "Kaydet"}
-            </Button>
-            <Button variant="ghost" onClick={() => setDraft(null)} disabled={busy}>
-              Vazgeç
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <>
-          <div className="flex items-center gap-3">
-            <Button variant="primary" size="lg" disabled={!mayMark} onClick={() => setDraft(initialDraft("entered", ticket, currentTimeMs()))}>
-              Girdim
-            </Button>
-            <Button variant="secondary" size="lg" onClick={() => void copy()}>
-              {copied === "done" ? "Kopyalandı ✓" : "Kopyala"}
-            </Button>
-            <M.Root modal={false}>
-              <M.Trigger aria-label="Başka bir sonuç" disabled={busy || !mayMark} className="ml-auto grid size-12 place-items-center text-[20px] leading-none text-ink-soft hover:bg-wash-tint hover:text-ink">
-                <span aria-hidden>…</span>
-              </M.Trigger>
-              <M.Portal>
-                <M.Content align="end" sideOffset={4} className="z-50 min-w-[180px] border-[1.5px] border-ink bg-panel py-1 shadow-ink">
-                  <M.Item onSelect={() => quick("unfilled")} className="cursor-pointer px-4 py-2.5 text-[15px] outline-none data-[highlighted]:bg-wash-tint">
-                    Dolmadı
-                  </M.Item>
-                  <M.Item onSelect={() => quick("canceled")} className="cursor-pointer px-4 py-2.5 text-[15px] outline-none data-[highlighted]:bg-wash-tint">
-                    Girmedim (iptal)
-                  </M.Item>
-                </M.Content>
-              </M.Portal>
-            </M.Root>
-          </div>
-          <p className="mt-2.5 text-[13px] text-muted" aria-live="polite">
-            {copied === "fail" ? "Panoya kopyalanamadı; alanları elle yaz." : "Kopyala: sembol, yön, lot, limit, seans — aracı kurum uygulamana yapıştırmak için."}
-          </p>
-          <Denied action="ticket.mark" className="mt-2.5" />
-          {error ? (
-            <p role="alert" className="mt-2 text-[14px] text-north">
-              {error}
-            </p>
-          ) : null}
-        </>
-      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import type { Role } from "@/lib/domain/user";
 import { DEMO_E3_PROPOSAL, type DemoScenario } from "@/mocks/ids";
 
 /**
- * The guided demo (11-demo-senaryosu §2): six acts, each a few steps. A step names the screen,
+ * The guided tour (11-demo-senaryosu §2): six acts, each a few steps. A step names the screen,
  * the role whose eyes we look through (switched automatically), what happens on arrival and
  * one line for the presenter. Manual steps are pressed in the screen; the bar offers a backup.
  */
@@ -94,7 +94,7 @@ export const DEMO_STEPS: readonly DemoStep[] = [
     route: "/denetim",
     role: null,
     actions: [{ kind: "inject", scenario: "restricted_r04", when: "after" }],
-    note: "SPK tedbiri olan hisse: kurallar yapay zekâya sormadan reddeder (R04). Pazarlık yok.",
+    note: "SPK tedbiri olan hisse: kurallar yapay zekâya sormadan reddeder. Pazarlık yok.",
   },
   {
     id: "4a",
@@ -133,7 +133,7 @@ export const DEMO_STEPS: readonly DemoStep[] = [
       { kind: "tamper", on: false, when: "before" },
       { kind: "verify", when: "after" },
     ],
-    note: "Her kayıt bir öncekinin özetini taşır. Baştan sona yürüyoruz: hiçbir kayıt sonradan değişmemiş.",
+    note: "Her kayıt bir öncekinin parmak izini taşır. Baştan sona yürüyoruz: hiçbir kayıt sonradan değişmemiş.",
   },
   {
     id: "4e",
@@ -174,7 +174,7 @@ export const DEMO_STEPS: readonly DemoStep[] = [
     title: "Denetçi gözüyle: sonuçlar",
     route: "/portfoy",
     role: "auditor",
-    note: "Paper sonuçları örnek değerdir; ana kanıt slayttaki holdout testi. Denetçi her şeyi görür, hiçbir düğme ona açık değildir.",
+    note: "Buradaki sonuçlar örnek değerdir; asıl kanıt slayttaki geriye dönük test. Denetçi her şeyi görür, hiçbir düğme ona açık değildir.",
   },
   {
     id: "6",
@@ -182,7 +182,7 @@ export const DEMO_STEPS: readonly DemoStep[] = [
     title: "Emir fişi: son butona insan basar",
     route: E3,
     role: "risk_officer",
-    note: "Aynı kod kişisel modda emir fişi hazırlar; fiş aracı kuruma elle girilir. “Son butona yine ben basıyorum.”",
+    note: "İmzadan sonra panel bir emir fişi hazırlar; fiş aracı kuruma elle girilir. “Son butona yine ben basıyorum.”",
   },
 ];
 

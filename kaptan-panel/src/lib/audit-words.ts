@@ -1,13 +1,15 @@
 import type { AuditEntry } from "@/lib/domain";
 import { memberByUid, ROLE_LABEL } from "@/lib/domain/user";
 import { actorParts } from "@/lib/actors";
+import { findIssuer } from "@/mocks/issuers";
+import { titleTr } from "@/components/story/turkish";
 
 /**
- * One audit record as one plain Turkish sentence ("Risk Sorumlusu ORNEK önerisini imzaladı.").
+ * One audit record as one plain Turkish sentence ("Risk Sorumlusu Örnek Enerji önerisini imzaladı.").
  * Shared by the Denetim timeline and the mock's search, so what you read is what you can find.
  */
 const SCENARIO_TR: Readonly<Record<string, string>> = {
-  e3_contract: "yeni iş (E3)",
+  e3_contract: "yeni iş",
   redteam_injection: "gizli talimat",
   restricted_r04: "tedbirli hisse",
   loss_simulation: "zarar simülasyonu",
@@ -23,10 +25,34 @@ function subject(actor: string): string {
   return m ? ROLE_LABEL[m.role] : actorParts(actor).name;
 }
 
+const NO_COMPANY = "bir şirket";
+const stripLegal = (name: string) => name.replace(/\s+A\.Ş\.?$/u, "");
+
+/**
+ * The company a record is about, as a reader would say it: the payload's name, or the
+ * ticker resolved through the issuer list, title-cased ("Örnek Enerji"). A ticker nobody
+ * knows stays a code (`code: true`) so the screen can set it as one.
+ */
+export function auditCompany(e: AuditEntry): { text: string; code: boolean } {
+  const company = str(e.payload.company);
+  if (company) return { text: titleTr(stripLegal(company)), code: false };
+  const ticker = str(e.payload.ticker);
+  if (!ticker) return { text: NO_COMPANY, code: false };
+  const known = findIssuer(ticker);
+  return known ? { text: titleTr(stripLegal(known.name)), code: false } : { text: ticker, code: true };
+}
+
 type Phrase = (e: AuditEntry, who: string, what: string) => string;
 
+function filled(e: AuditEntry, what: string): string {
+  const qty = str(e.payload.qty);
+  const buy = qty ? `${qty} lot alış` : "alış";
+  const line = what === NO_COMPANY ? buy : `${what} için ${buy}`;
+  return `${line.charAt(0).toLocaleUpperCase("tr-TR")}${line.slice(1)} gerçekleşti (KAPtan hesabı).`;
+}
+
 const PHRASES: Readonly<Record<string, Phrase>> = {
-  "disclosure.ingested": (_e, _w, what) => `Tayfa ${what} bildirimini okudu.`,
+  "disclosure.ingested": (_e, _w, what) => `KAP okuyucu ${what} bildirimini getirdi.`,
   "classification.done": () => "Sınıflandırıcı bir bildirimin türünü belirledi.",
   "pregate.decided": () => "Ön eleme bir bildirimi süzdü.",
   "agent.output": (_e, who) => `${who} notunu yazdı.`,
@@ -36,7 +62,7 @@ const PHRASES: Readonly<Record<string, Phrase>> = {
   "compliance.rejected": (_e, _w, what) => `Uyum ${what} bildirimindeki gizli talimatı yakaladı; öneri çıkmadı.`,
   "proposal.created": (_e, _w, what) => `Tayfa ${what} için öneri hazırladı.`,
   "approval.decided": (e, who, what) => (e.payload.decision === "reject" || e.payload.decision === "rejected" ? `${who} ${what} önerisini reddetti.` : `${who} ${what} önerisini imzaladı.`),
-  "order.filled": (e) => `Paper emir doldu${str(e.payload.qty) ? `: ${str(e.payload.qty)} lot` : ""}.`,
+  "order.filled": (e, _w, what) => filled(e, what),
   "ticket.issued": (_e, _w, what) => `${what} için emir fişi yazıldı.`,
   "ticket.entered": (_e, who) => `${who} emir fişini aracı kuruma girdi.`,
   "ticket.unfilled": (_e, who) => `${who} emir fişini “dolmadı” diye işaretledi.`,
@@ -56,7 +82,7 @@ const PHRASES: Readonly<Record<string, Phrase>> = {
 
 export function auditSentence(e: AuditEntry): string {
   const who = subject(e.actor);
-  const what = (str(e.payload.company) ?? str(e.payload.ticker) ?? "bir şirket").replace(/\s+A\.Ş\.?$/u, "");
+  const what = auditCompany(e).text;
   const phrase = PHRASES[e.action];
   return phrase ? phrase(e, who, what) : `${who}: ${e.action}`;
 }
@@ -70,6 +96,9 @@ export function trLower(text: string): string {
 export function auditMatches(e: AuditEntry, q: string): boolean {
   const needle = trLower(q.trim());
   if (!needle) return true;
+  // "#3907" or "#3.907": the record at that place in the chain.
+  const pos = /^#\s*([\d.]+)$/.exec(needle);
+  if (pos) return e.chain_pos === Number((pos[1] ?? "").replace(/\./g, ""));
   const who = actorParts(e.actor);
   const hay = trLower([auditSentence(e), who.name, who.kind, e.action, e.entity_id, JSON.stringify(e.payload)].join(" "));
   return hay.includes(needle);

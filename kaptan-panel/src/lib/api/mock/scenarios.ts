@@ -172,7 +172,7 @@ export function executeApproved(db: MockDb, proposalId: string): void {
       source: "simbist" as const,
     };
     db.update((s) => ({ ...s, orders: s.orders.map((o) => (o.id === id ? { ...o, status: "filled", fills: [fill] } : o)) }));
-    db.audit("system:simbist", "order.filled", "order", id, { qty, price }, card.run_id);
+    db.audit("system:simbist", "order.filled", "order", id, { ticker: card.ticker, company: card.company_name, qty, price }, card.run_id);
     db.bus.emit("desk", "fill", { ...fill, ticker: card.ticker });
   });
 }

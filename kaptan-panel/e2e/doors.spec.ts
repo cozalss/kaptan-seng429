@@ -2,11 +2,11 @@ import { expect, test } from "@playwright/test";
 import { login, PASSPHRASE, trackErrors, type RoleLabel } from "./helpers";
 
 /** One entrance, four doors: each door opens its own screen and starts the session as that role. */
-const DOORS: ReadonlyArray<{ label: RoleLabel; slug: string; line: RegExp }> = [
-  { label: "Analist", slug: "analist", line: /not düşersin/ },
-  { label: "Risk Sorumlusu", slug: "risk", line: /Son imzayı sen atarsın\./ },
-  { label: "Yönetici", slug: "yonetici", line: /Masayı sen kurarsın\./ },
-  { label: "Denetçi", slug: "denetci", line: /hiçbir şeye dokunmazsın/ },
+const DOORS: ReadonlyArray<{ label: RoleLabel; slug: string; verb: string; line: RegExp }> = [
+  { label: "Analist", slug: "analist", verb: "OKUR", line: /not düşersin/ },
+  { label: "Risk Sorumlusu", slug: "risk", verb: "İMZALAR", line: /Son imzayı sen atarsın\./ },
+  { label: "Yönetici", slug: "yonetici", verb: "KURAR", line: /Ekibi, sınırları ve senaryoları sen yönetirsin\./ },
+  { label: "Denetçi", slug: "denetci", verb: "GÖZETLER", line: /hiçbir şeye dokunmazsın/ },
 ];
 
 for (const d of DOORS) {
@@ -20,6 +20,17 @@ for (const d of DOORS) {
     expect(errors).toEqual([]);
   });
 }
+
+test("each door names the role's verb and describes its link with the door's sentence", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page.getByText("İlk kez mi? Risk Sorumlusu kapısından gir; son imzayı o atar.", { exact: false })).toBeVisible();
+  const doors = page.getByRole("list", { name: "Roller" });
+  for (const d of DOORS) {
+    const door = doors.getByRole("listitem").filter({ has: page.getByRole("link", { name: d.label, exact: true }) });
+    await expect(door.getByText(d.verb, { exact: true })).toBeVisible();
+    await expect(door.getByRole("link", { name: d.label, exact: true })).toHaveAccessibleDescription(d.line);
+  }
+});
 
 test("a door's screen says what the role does and links back to the other doors", async ({ page }) => {
   for (const d of DOORS) {

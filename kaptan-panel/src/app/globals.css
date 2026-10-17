@@ -2,11 +2,26 @@
 
 /* ──────────────────────────────────────────────────────────────────────────
    KAPtan Paneli — design tokens.
-   Same book as the landing (kaptan-landing/DESIGN.md §2): rice paper, sumi ink,
-   an indigo wash. North red is spent only on the kill switch, vetoes/rejections
-   and critical states; kaptan navy only on the wordmark, focus and selection.
-   Square corners, 1.5px ink lines, hard offset shadows (never blur).
+   A ship's log on rice paper (kaptan-landing/DESIGN.md §2): sumi ink, square 1.5px lines,
+   Bodoni for words, tabular Inter for every figure. Every device means one thing:
+   - a hard offset shadow = "set on top or stamped" (overlays, stamps, the emir fişi, the
+     one primary button); plain content sits flat, divided by hairlines and ruled lists;
+   - north red = Durdur, veto and a broken chain, nothing else;
+   - a role's tone ink marks only that role's acts; kaptan navy only the wordmark, focus
+     and selection.
    ────────────────────────────────────────────────────────────────────────── */
+
+/* The role tone is a registered colour so a role switch can cross-fade it. A registered
+   property always has a value, so var(--tone, …) fallbacks never apply: the initial value is
+   the indigo wash (#2b4261, = --wash), which is what untoned places such as the /login sea
+   used as their fallback. */
+@property --tone {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #2b4261;
+}
+
+/* Panel yalnız açık temadır (kâğıt ve mürekkep); karanlık tema yok. */
 :root {
   color-scheme: light only;
 
@@ -15,15 +30,18 @@
   --panel: #fbfaf6; /* a brighter sheet laid on the page */
   --sunk: #ebe8e1; /* recessed paper: table heads, wells, code */
   --ink: #121318; /* type, ink lines, hard shadows (16.9:1 on paper) */
+  --ink-lift: #2a2b31; /* the primary button under the pointer: ink, lifted a shade */
   --ink-soft: #3b3c42; /* secondary type (10.1:1 on paper) */
-  --muted: #666663; /* meta lines (4.9:1 on paper, 5.3:1 on panel) */
+  --muted: #5e5e5b; /* meta lines (5.7:1 on paper, 6.1:1 on panel) */
   --wash: #2b4261; /* indigo wash: active nav, hover fill, info */
   --wash-tint: rgb(43 66 97 / 0.08);
   --wash-tint-strong: rgb(43 66 97 / 0.16);
+  --rule-ui: rgb(18 19 24 / 0.55); /* borders of controls (≥ 3:1 on paper) */
   --rule-soft: rgb(18 19 24 / 0.28);
   --hairline: rgb(18 19 24 / 0.14);
   --scrim: rgb(243 241 236 / 0.72);
-  --north: #b3261e; /* kill switch, veto, reject, critical (6.1:1 on paper) */
+  --north: #b3261e; /* Durdur, veto, broken chain (6.1:1 on paper) */
+  --north-deep: #9b1f18; /* north red under the pointer */
   --north-tint: rgb(179 38 30 / 0.08);
   --ochre: #c9972c; /* the daily −1% "YENİ EMİR DURDU" band only (ink on ochre 7.4:1) */
   --ochre-tint: rgb(201 151 44 / 0.16);
@@ -31,8 +49,7 @@
   --on-dark: #fbfaf6;
 
   /* Role tones — one ink per door (/login/<rol>) and the top-bar role chip. Dark enough to be
-     type on paper and to carry on-dark type (all ≥ 6.4:1 both ways). The panel is light-only
-     (color-scheme above, same as the landing), so there is no dark set to keep in step. */
+     type on paper and to carry on-dark type (all ≥ 6.4:1 both ways). */
   --role-analyst: #1d5c58; /* verdigris: the reader (6.8:1 on paper) */
   --role-risk: #7e4a10; /* umber: the signature's ink (6.5:1) */
   --role-admin: #5a3368; /* plum: the one who sets the desk (8.8:1) */
@@ -43,11 +60,13 @@
   --shadow-ink: 3px 3px 0 var(--ink);
   --shadow-ink-lg: 6px 6px 0 var(--ink);
 
-  /* Layout */
+  /* Layout: the gap between chapters of a screen, and between its parts. */
   --ribbon-h: 24px;
+  --space-chapter: 40px;
+  --space-part: 72px;
 
-  /* Motion — one hand: ink is set down quickly and settles, nothing bounces.
-     instant = press/hover feedback · quick = toggles, chips, focus · base = panels, drawers,
+  /* Motion — one hand: ink is set down quickly and settles, nothing loops or bounces.
+     instant = press/hover feedback · quick = toggles, chips, focus · base = panels, menus,
      page ink-in · slow = stamps and the one moment a screen is about. */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-ink: cubic-bezier(0.2, 0, 0, 1);
@@ -62,32 +81,51 @@
   --color-panel: var(--panel);
   --color-sunk: var(--sunk);
   --color-ink: var(--ink);
+  --color-ink-lift: var(--ink-lift);
   --color-ink-soft: var(--ink-soft);
   --color-muted: var(--muted);
   --color-wash: var(--wash);
   --color-wash-tint: var(--wash-tint);
   --color-wash-tint-strong: var(--wash-tint-strong);
+  --color-rule-ui: var(--rule-ui);
   --color-rule-soft: var(--rule-soft);
   --color-hairline: var(--hairline);
   --color-scrim: var(--scrim);
   --color-north: var(--north);
+  --color-north-deep: var(--north-deep);
   --color-north-tint: var(--north-tint);
   --color-ochre: var(--ochre);
   --color-ochre-tint: var(--ochre-tint);
   --color-brand: var(--brand);
   --color-on-dark: var(--on-dark);
 
+  /* Bodoni display cut (opsz 96) for 38px and up; the text cut (opsz 28) for 24–32px lines. */
   --font-display: var(--font-bodoni), "Didot", "Bodoni 72", Georgia, serif;
-  --font-wordmark: var(--font-wordmark-face), "Didot", Georgia, serif;
+  --font-display-text: var(--font-bodoni-text), Georgia, serif;
   --font-sans: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
 
+  /* Type scale. 12px is the floor: nothing in the panel is set smaller.
+     11–12 → meta · 13 → dense · 14–16 → ui · 17 → body · 19–22 → lead · 24–32 → title (text
+     cut) · 38–44 → display · 52–56 → display-lg · 64–68 → hero. */
   --text-meta: 12px;
   --text-meta--line-height: 16px;
   --text-dense: 13px;
   --text-dense--line-height: 18px;
-  --text-ui: 14px;
-  --text-ui--line-height: 20px;
+  --text-ui: 15px;
+  --text-ui--line-height: 22px;
+  --text-body: 17px;
+  --text-body--line-height: 26px;
+  --text-lead: 20px;
+  --text-lead--line-height: 28px;
+  --text-title: 28px;
+  --text-title--line-height: 34px;
+  --text-display: 38px;
+  --text-display--line-height: 40px;
+  --text-display-lg: 52px;
+  --text-display-lg--line-height: 54px;
+  --text-hero: 68px;
+  --text-hero--line-height: 68px;
 
   --shadow-ink: var(--shadow-ink);
   --shadow-ink-lg: var(--shadow-ink-lg);
@@ -102,15 +140,16 @@
     color: var(--ink);
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
+    /* Bodoni and Inter ship one cut each per weight: never fake bold or italic. */
+    font-synthesis: none;
   }
   body {
     background: var(--paper);
     color: var(--ink);
     font-family: var(--font-sans);
-    font-size: 14px;
-    line-height: 20px;
+    font-size: var(--text-ui);
+    line-height: var(--text-ui--line-height);
     letter-spacing: -0.005em;
-    font-feature-settings: "cv11", "ss03";
     min-height: 100dvh;
   }
   ::selection {
@@ -140,6 +179,25 @@
     text-transform: uppercase;
     line-height: 0.92;
     letter-spacing: -0.012em;
+  }
+  /* The small spaced capitals that name a part of a screen ("NE OLDU?"). */
+  .label {
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-feature-settings: "case";
+    color: var(--ink);
+  }
+  /* A figure inside a Bodoni line: tabular Inter, a touch smaller so it sits on the line and
+     never turns into a hairline (story/num.tsx: <Num>, withNums). */
+  .num {
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum", "case";
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    font-size: 0.86em;
   }
   /* The one justified mono use: codes (E1–E4, R01–R16, hashes, tickers). */
   .code {
@@ -189,30 +247,35 @@
   }
 }
 
-/* Ink-in: the printing verb. Content is set down from the left, never faded from nowhere. */
-@keyframes ink-in {
+/* ── Motion ─────────────────────────────────────────────────────────────── */
+@keyframes fade-in {
   from {
-    clip-path: inset(0 100% 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
+    opacity: 0;
   }
 }
-/* A new row is washed once, lightly enough that muted meta text keeps AA contrast. */
-@keyframes row-arrive {
-  from {
-    background-color: var(--wash-tint);
-  }
+@keyframes fade-out {
   to {
-    background-color: transparent;
+    opacity: 0;
   }
 }
-@keyframes drawer-in {
+/* A sheet laid on the page: rises 8px and settles; never springs. */
+@keyframes dialog-in {
   from {
-    transform: translateX(100%);
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
   }
+}
+/* A menu drops from its trigger. */
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+/* Skeletons wait 280ms before they show, so a quick load never flashes grey bars. */
+@keyframes skeleton-show {
   to {
-    transform: translateX(0);
+    opacity: 1;
   }
 }
 @keyframes skeleton-sweep {
@@ -223,13 +286,52 @@
     background-position: -100% 0;
   }
 }
-@keyframes pulse-dot {
-  0%,
-  100% {
+/* Ink-in: the printing verb. Content is set down from the left, never faded from nowhere.
+   The end inset is negative so hard shadows and focus rings are not clipped. */
+@keyframes ink-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(-12px -12px -12px 0);
+  }
+}
+/* İmza anı, part 1: the emir fişi prints top to bottom (shadow included). */
+@keyframes slip-print {
+  from {
+    clip-path: inset(0 -8px 100% -8px);
+  }
+  to {
+    clip-path: inset(0 -8px -8px -8px);
+  }
+}
+/* İmza anı, part 2: the umber seal is pressed once, at a slight angle. */
+@keyframes seal-press {
+  0% {
+    opacity: 0;
+    transform: rotate(-4deg) scale(1.3);
+  }
+  30% {
     opacity: 1;
   }
-  50% {
-    opacity: 0.35;
+  100% {
+    opacity: 1;
+    transform: rotate(-4deg) scale(1);
+  }
+}
+/* A ruled line drawn once (set stroke-dasharray/offset on the element). */
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+/* A banner opens its own height (grid rows 0fr → 1fr), no measuring. */
+@keyframes banner-open {
+  from {
+    grid-template-rows: 0fr;
+  }
+  to {
+    grid-template-rows: 1fr;
   }
 }
 /* The approval stamp: pressed onto the card (a slight over-scale settling in), never spun. */
@@ -254,42 +356,14 @@
     transform: none;
   }
 }
-.animate-page-in {
-  animation: page-in var(--dur-base) var(--ease-ink) both;
-}
-.animate-stamp-in {
-  animation: stamp-in 420ms var(--ease-out-expo) both;
-}
-.animate-ink-in {
-  animation: ink-in 600ms var(--ease-out-expo) both;
-}
-.animate-row-arrive {
-  animation: row-arrive 2.4s ease-out both;
-}
-.animate-pulse-dot {
-  animation: pulse-dot 2s ease-in-out infinite;
-}
-
-/* A proposal arriving on Bugün: set down from just above, its sheet washed once. */
+/* A proposal arriving on Bugün: set down from just above, once. */
 @keyframes card-arrive {
-  0% {
+  from {
     opacity: 0;
-    transform: translateY(-10px);
-    box-shadow: 0 0 0 var(--ink);
-  }
-  60% {
-    opacity: 1;
-    transform: none;
-    box-shadow: 6px 6px 0 var(--wash);
-  }
-  100% {
-    box-shadow: 0 0 0 var(--wash);
+    transform: translateY(-6px);
   }
 }
-.animate-card-arrive {
-  animation: card-arrive 1.1s var(--ease-out-expo) both;
-}
-/* Your station on the Öneri path breathes until you decide. */
+/* Your station on the Öneri path breathes three times, then rests. */
 @keyframes breathe {
   0%,
   100% {
@@ -301,25 +375,57 @@
     transform: scale(1);
   }
 }
+
+.animate-fade-in {
+  animation: fade-in 200ms var(--ease-out-expo) both;
+}
+.animate-page-in {
+  animation: page-in 180ms var(--ease-ink) both;
+}
+.animate-stamp-in {
+  animation: stamp-in 320ms var(--ease-out-expo) both;
+}
+.animate-ink-in {
+  animation: ink-in var(--dur-slow) var(--ease-out-expo) both;
+}
+.animate-slip-print {
+  animation: slip-print 520ms var(--ease-out-expo) both;
+}
+.animate-seal-press {
+  animation: seal-press 340ms var(--ease-out-expo) 420ms both;
+}
+.animate-card-arrive {
+  animation: card-arrive 360ms var(--ease-out-expo) both;
+}
 .animate-breathe {
-  animation: breathe 2.6s ease-in-out infinite;
+  animation: breathe 2.6s ease-in-out 600ms 3 both;
 }
 
+/* Reduced motion: nothing moves; what used to arrive simply fades in, quickly. Colour and
+   shadow changes stay (they are feedback, not motion). */
 @media (prefers-reduced-motion: reduce) {
-  .animate-stamp-in,
-  .animate-ink-in,
-  .animate-page-in,
-  .animate-card-arrive,
-  .animate-breathe {
-    animation: none;
-  }
-
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-property: color, background-color, border-color, opacity, box-shadow !important;
+    transition-duration: 120ms !important;
     scroll-behavior: auto !important;
+  }
+  .animate-page-in,
+  .animate-card-arrive,
+  .animate-ink-in,
+  .animate-stamp-in,
+  .animate-slip-print,
+  .animate-seal-press {
+    animation: fade-in 150ms ease-out both !important;
+  }
+  .animate-breathe {
+    animation: none !important;
+  }
+  [data-sonner-toast] {
+    transition: none !important;
   }
 }

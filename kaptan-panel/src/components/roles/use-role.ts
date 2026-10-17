@@ -5,8 +5,11 @@ import { can, type Action } from "@/lib/auth/permissions";
 import { useSession, useSetSessionUser } from "@/lib/auth/session-context";
 import { useApi } from "@/lib/api/react";
 import { errorMessage } from "@/lib/api/types";
-import { ROLE_LABEL, type Role } from "@/lib/domain/user";
+import { ROLE_LABEL, type Role } from "@/lib/domain/role-meta";
 import { notify } from "@/components/ui/toast";
+
+/** A role switch is confirmed in place (the chip changes); its slip only needs a glance. */
+const SWITCH_TOAST_MS = 2_500;
 
 /** The role you look through, what it may do, and a way to switch (kept in the session). */
 export function useRole() {
@@ -22,7 +25,7 @@ export function useRole() {
       try {
         const me = await api.setRole(role);
         setUser({ uid: me.id, name: me.display_name, role: me.role });
-        if (!opts.quiet) notify.info(`Artık ${ROLE_LABEL[me.role]} gözüyle bakıyorsun.`);
+        if (!opts.quiet) notify.info(`Artık ${ROLE_LABEL[me.role]} gözüyle bakıyorsun.`, undefined, { duration: SWITCH_TOAST_MS });
         return true;
       } catch (e) {
         notify.error("Rol değiştirilemedi", errorMessage(e));

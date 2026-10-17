@@ -1,6 +1,6 @@
 import type { AuditEntry } from "@/lib/domain";
 import { LIMITS_V1 } from "@/lib/domain";
-import { auditMatches, auditSentence, trLower } from "@/lib/audit-words";
+import { auditCompany, auditMatches, auditSentence, trLower } from "@/lib/audit-words";
 import { actorParts } from "@/lib/actors";
 import { walkProgress, walkTarget } from "@/components/audit/chain-walk";
 import { changedKey, fromInput, inputUnit, limitSentence, PLAIN_LIMITS, toInput, valueOf } from "@/components/settings/limits-logic";
@@ -31,8 +31,8 @@ const entry = (over: Partial<AuditEntry>): AuditEntry => ({
 
 describe("audit sentences", () => {
   it("says who did what in plain Turkish", () => {
-    expect(auditSentence(entry({ payload: { ticker: "ORNEK", company: "ÖRNEK ENERJİ A.Ş." } }))).toBe("Tayfa ÖRNEK ENERJİ bildirimini okudu.");
-    expect(auditSentence(entry({ actor: "user:uye-3", action: "approval.decided", payload: { ticker: "ORNEK", decision: "approve" } }))).toBe("Risk Sorumlusu ORNEK önerisini imzaladı.");
+    expect(auditSentence(entry({ payload: { ticker: "ORNEK", company: "ÖRNEK ENERJİ A.Ş." } }))).toBe("KAP okuyucu Örnek Enerji bildirimini getirdi.");
+    expect(auditSentence(entry({ actor: "user:uye-3", action: "approval.decided", payload: { ticker: "ORNEK", decision: "approve" } }))).toBe("Risk Sorumlusu Örnek Enerji önerisini imzaladı.");
     expect(auditSentence(entry({ actor: "user:uye-3", action: "approval.decided", payload: { decision: "rejected" } }))).toBe("Risk Sorumlusu bir şirket önerisini reddetti.");
     expect(auditSentence(entry({ actor: "system:risk_monitor", action: "kill_switch.on" }))).toMatch(/Risk izleyici zirveden/);
     expect(auditSentence(entry({ actor: "user:uye-1", action: "kill_switch.on" }))).toBe("Yönetici her şeyi durdurdu.");
@@ -45,7 +45,12 @@ describe("audit sentences", () => {
     expect(auditSentence(entry({ actor: "user:uye-1", action: "demo.injected", payload: { scenario: "loss_simulation" } }))).toBe("Senaryo eklendi: zarar simülasyonu.");
     expect(auditSentence(entry({ actor: "system:nightly_verify", action: "audit.verified" }))).toMatch(/Gece doğrulaması/);
     expect(auditSentence(entry({ actor: "user:uye-2", action: "audit.verified" }))).toBe("Analist defteri doğruladı.");
-    expect(auditSentence(entry({ action: "order.filled", payload: { qty: 620 } }))).toBe("Paper emir doldu: 620 lot.");
+    expect(auditSentence(entry({ actor: "system:simbist", action: "order.filled", payload: { ticker: "ORNEK", company: "ÖRNEK ENERJİ A.Ş.", qty: 560 } }))).toBe("Örnek Enerji için 560 lot alış gerçekleşti (KAPtan hesabı).");
+    expect(auditSentence(entry({ action: "order.filled", payload: { qty: 620 } }))).toBe("620 lot alış gerçekleşti (KAPtan hesabı).");
+    // A ticker the issuer list does not know stays a code.
+    expect(auditCompany(entry({ payload: { ticker: "ZZZZ" } }))).toEqual({ text: "ZZZZ", code: true });
+    expect(auditCompany(entry({ payload: { ticker: "DMOEN" } }))).toEqual({ text: "Doğu Enerji Üretim", code: false });
+    expect(auditSentence(entry({ actor: "agent:request_approval", action: "proposal.created", payload: { ticker: "TMSPZ" } }))).toBe("Tayfa Toros Perakende için öneri hazırladı.");
     expect(auditSentence(entry({ actor: "user:uye-2", action: "garip.olay" }))).toBe("Analist: garip.olay");
   });
   it("covers every action the mock writes", () => {
@@ -75,8 +80,15 @@ describe("audit sentences", () => {
     expect(auditMatches(e, "ornek")).toBe(true);
     expect(auditMatches(e, "  ")).toBe(true);
     expect(auditMatches(e, "kurcala")).toBe(false);
+    // "#3907" and "#3.907" find the record at that place in the chain, and only it.
+    const at3907 = entry({ chain_pos: 3_907 });
+    expect(auditMatches(at3907, "#3907")).toBe(true);
+    expect(auditMatches(at3907, "#3.907")).toBe(true);
+    expect(auditMatches(at3907, "#390")).toBe(false);
+    expect(auditMatches(entry({ chain_pos: 39_070 }), "#3907")).toBe(false);
     expect(trLower("IŞIK")).toBe("ışık");
-    expect(actorParts("system:simbist")).toEqual({ name: "Paper borsa (SimBIST)", kind: "Sistem" });
+    expect(actorParts("system:simbist")).toEqual({ name: "KAPtan hesabı borsası (SimBIST)", kind: "Sistem" });
+    expect(actorParts("agent:request_approval")).toEqual({ name: "Öneri yazıcı", kind: "Tayfa" });
   });
 });
 

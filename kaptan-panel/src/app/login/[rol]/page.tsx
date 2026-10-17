@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { safeNext } from "@/lib/nav";
-import { ROLE_LABEL } from "@/lib/domain/user";
+import { ROLE_LABEL } from "@/lib/domain/role-meta";
 import { doorPeople, loginHref, ROLE_DOOR, ROLE_SLUG, roleFromSlug } from "@/lib/auth/role-doors";
 import { DISCLAIMER_TR } from "@/components/brand/disclaimer";
 import { RoleEmblem } from "@/components/roles/role-emblem";
@@ -46,36 +46,36 @@ export default async function RoleLoginPage({ params, searchParams }: Props) {
             />
             <div aria-hidden className="absolute inset-x-[-1.5px] bottom-0 h-[1.5px] bg-ink" />
           </div>
-          <p className="pb-1 text-[12px] font-medium tracking-[0.16em] text-[var(--tone)] uppercase lg:hidden">
+          <p className="label pb-1 text-[var(--tone)] lg:hidden">
             {people}
           </p>
         </div>
 
         <div className="min-w-0 animate-page-in">
-          <p className="hidden text-[12px] font-medium tracking-[0.16em] text-[var(--tone)] uppercase lg:block">
+          <p className="label hidden text-[var(--tone)] lg:block">
             {role === "auditor" ? people : `Bu koltukta · ${people}`}
           </p>
           <h1
-            className="mt-0 w-fit font-display text-[44px] leading-[1.02] text-ink sm:text-[56px] lg:mt-3 lg:text-[68px]"
+            className="mt-0 w-fit font-display text-display text-ink sm:text-display-lg lg:mt-3 lg:text-hero"
             style={{ viewTransitionName: `name-${slug}` }}
           >
             {ROLE_LABEL[role]}
           </h1>
-          <p className="mt-3 font-display text-[22px] leading-[1.25] text-[var(--tone)] sm:text-[26px]">{door.line}</p>
+          <p className="mt-3 font-display-text text-lead text-[var(--tone)] sm:text-title">{door.line}</p>
 
-          <h2 className="mt-7 text-[12px] font-medium tracking-[0.14em] text-ink-soft uppercase">Bu rolle neler yaparsın</h2>
+          <h2 className="label mt-7 text-ink-soft">Bu rolle neler yaparsın</h2>
           <ul className="mt-3 space-y-2 border-l-[1.5px] border-[var(--tone)] pl-4">
             {door.does.map((line) => (
-              <li key={line} className="text-[15.5px] leading-[23px] text-ink">
+              <li key={line} className="text-ui text-ink sm:text-body">
                 {line}
               </li>
             ))}
           </ul>
 
-          <div className="mt-8 max-w-[440px] border-[1.5px] border-ink bg-panel p-4 shadow-[6px_6px_0_var(--tone)] sm:p-6">
+          <div className="mt-8 max-w-[440px] border-[1.5px] border-t-[4px] border-ink border-t-[var(--tone)] bg-panel p-4 sm:p-6">
             <LoginForm next={safe} role={role} />
           </div>
-          <p className="mt-8 max-w-[60ch] text-[12px] leading-[18px] text-ink-soft">{DISCLAIMER_TR}</p>
+          <p className="mt-8 max-w-[60ch] text-meta leading-[18px] text-ink-soft">{DISCLAIMER_TR}</p>
         </div>
       </main>
     </LoginFrame>

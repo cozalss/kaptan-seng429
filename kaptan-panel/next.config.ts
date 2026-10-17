@@ -20,6 +20,13 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   devIndicators: false,
+  // One API client per build: `@/lib/api/client` is the mock or the http client, never both
+  // (tsconfig.json paths and vitest.config.mts point the type checker and tests at the mock).
+  turbopack: {
+    resolveAlias: {
+      "@/lib/api/client": API_MODE === "http" ? "./src/lib/api/client.http.ts" : "./src/lib/api/client.mock.ts",
+    },
+  },
   async headers() {
     return [
       { source: "/:path*", headers: SECURITY_HEADERS },

@@ -10,6 +10,7 @@ test.beforeEach(async ({ page }) => {
 for (const size of [
   { name: "desktop", width: 1440, height: 900 },
   { name: "phone", width: 390, height: 844 },
+  { name: "small phone", width: 320, height: 640 },
 ]) {
   test(`every screen opens (${size.name})`, async ({ page }) => {
     await page.setViewportSize({ width: size.width, height: size.height });

@@ -3,14 +3,19 @@ import { buildExplain } from "@/mocks/explain-builder";
 import { DEMO_E3_SPEC } from "@/mocks/runs-demo";
 import { DAY_SPECS } from "@/mocks/runs-day";
 import {
+  cardFooterLine,
   crewDayLine,
+  crewLead,
   crewLines,
-  deadlineLine,
+  decisionMetaLine,
+  disclosureQuote,
   holdLine,
   materialityLine,
   plainEvent,
   plainHistory,
   plainWhy,
+  proposalLine,
+  riskSentence,
   riskView,
   shortName,
   suggestionLine,
@@ -78,26 +83,39 @@ describe("why, history and the suggestion", () => {
     expect(plainWhy({ ...e3.card, rule_trace_summary: [] })).not.toContain("eşiği");
     expect(plainWhy({ ...e3.card, event_type: "EXIT", rule_trace_summary: [] })).toBe("Bu olay türü kurallarımızdan birine uyuyor.");
   });
-  it("tells the history as a share of similar events", () => {
-    expect(plainHistory(e3.card.evidence_summary)).toBe("Benzer 23 olayın %61’inde hisse 5 gün içinde yükseldi (ortanca +%1,1).");
+  it("tells the history as a count of similar events, read off the events", () => {
+    expect(plainHistory(e3.card.evidence_summary)).toBe("Benzer 23 olayın 14’ünde hisse 5 gün içinde yükseldi.");
+    expect(plainHistory(e4.card.evidence_summary, e4.explain.evidence_events)).toBe("Benzer 12 olayın 7’sinde hisse 5 gün içinde yükseldi.");
+    const sixUp = Array.from({ length: 12 }, (_, i) => ({ car_5d: i < 6 ? 0.01 : -0.01 }));
+    expect(plainHistory(e4.card.evidence_summary, sixUp)).toBe("Benzer 12 olayın 6’sında hisse 5 gün içinde yükseldi.");
+    expect(plainHistory({ ...e4.card.evidence_summary, hit_rate_5d: 0 })).toBe("Benzer 12 olayın hiçbirinde hisse 5 gün içinde yükselmedi.");
     expect(plainHistory({ ...e3.card.evidence_summary, n: 0 })).toBe("Geçmişte buna benzer olay bulunamadı.");
   });
   it("prints lots, limit and holding period", () => {
-    expect(suggestionLine({ qty: 1240, limit_price: 48.4 })).toBe("1.240 lot · en fazla 48,40 TL");
+    expect(suggestionLine({ qty: 1240, limit_price: 48.4 })).toBe("1.240 lot al · tanesi en fazla 48,40\u00a0TL");
     expect(holdLine(e3.card)).toBe("5 gün tut");
     expect(holdLine(e1.card)).toBe("20–40 gün tut");
+    expect(proposalLine(e4.card)).toBe("Öneri: 560 lot al, tanesi en fazla 77,67\u00a0TL — toplam ≈ 43.495\u00a0TL. 5–10 gün tut.");
   });
-  it("counts down to the 09:50 deadline", () => {
+  it("says until when a card can be signed, and how much of the portfolio it is", () => {
     const exp = "2027-01-12T06:50:00.000Z";
-    expect(deadlineLine(exp, null)).toBe("Karar için son saat 09:50.");
-    expect(deadlineLine(exp, Date.parse(exp) - 20.5 * 3_600_000)).toBe("Karar için 09:50’ye 20 sa var.");
-    expect(deadlineLine(exp, Date.parse(exp) - 90_000)).toBe("Karar için 09:50’ye 2 dk var.");
-    expect(deadlineLine(exp, Date.parse(exp))).toBe("Karar süresi 09:50’de doldu.");
+    const card = { qty: 560, limit_price: 77.67, expires_at: exp, final_notional_try: 43_495 };
+    const dayBefore = Date.parse(exp) - 20.5 * 3_600_000;
+    expect(cardFooterLine(card, new Date(dayBefore).toISOString())).toBe("560 lot al · tanesi en fazla 77,67\u00a0TL · yarın 09:50’ye kadar");
+    expect(cardFooterLine(card, null)).toBe("560 lot al · tanesi en fazla 77,67\u00a0TL · 09:50’ye kadar");
+    expect(decisionMetaLine(card, 1_016_480, dayBefore)).toBe("Portföyün %4,3’ü · karar için son saat yarın 09:50 (20 saat 30 dakika kaldı)");
+    expect(decisionMetaLine(card, null, null)).toBe("Karar için son saat 09:50");
+    expect(decisionMetaLine(card, null, Date.parse(exp))).toBe("Karar süresi 09:50’de doldu");
   });
   it("sizes the risk at the stop", () => {
     const r = riskView({ qty: 100, limit_price: 50 }, 45);
     expect(r).toMatchObject({ stopPrice: 45, maxLoss: 500 });
     expect(r?.stopPct).toBeCloseTo(-0.1);
+    const tmspz = riskView(e4.card, e4.explain.proposal?.stop_price);
+    if (!tmspz) throw new Error("no stop");
+    expect(riskSentence(tmspz, null)).toBe("Fiyat 70,06\u00a0TL’ye düşerse satman gerekir; o noktada kaybın en fazla ≈ 4.262\u00a0TL olur.");
+    expect(riskSentence(tmspz, { pct: 0.005, equity: 1_018_600 })).toMatch(/Bu, işlem başına sınırın \(sermayenin %0,5’i ≈ 5.093\u00a0TL\) altında\.$/);
+    expect(riskSentence(tmspz, { pct: 0.004, equity: 1_000_000 })).toMatch(/\) üstünde\.$/);
     expect(riskView({ qty: 100, limit_price: 50 }, null)).toBeNull();
     expect(riskView({ qty: 100, limit_price: 50 }, 55)).toBeNull();
   });
@@ -111,12 +129,26 @@ describe("today", () => {
   });
   it("tells what the crew did", () => {
     expect(crewDayLine(null)).toBeNull();
-    expect(crewDayLine({ total: 0, processed: 0, proposals: 0 })).toBe("Tayfa bugün henüz bildirim okumadı.");
-    expect(crewDayLine({ total: 212, processed: 13, proposals: 5 })).toBe("Tayfa bugün 212 bildirim okudu, 13 tanesini inceledi, 5 öneri çıkardı.");
+    const zero = { total: 0, processed: 0, proposals: 0, approvals: 0, rejections: 0 };
+    expect(crewDayLine(zero)).toBe("Tayfa bugün henüz bildirim okumadı.");
+    expect(crewDayLine({ total: 212, processed: 13, proposals: 5, approvals: 1, rejections: 1 })).toBe(
+      "Tayfa bugün 212 bildirim okudu; 199’unu kurallar hemen eledi, 13’ünü inceledi ve 5 öneri çıkardı: 3’ü seni bekliyor, 1’i imzalandı, 1’i reddedildi.",
+    );
+    expect(crewDayLine({ ...zero, total: 40, processed: 2 })).toBe("Tayfa bugün 40 bildirim okudu; 38’ini kurallar hemen eledi ve 2’sini inceledi.");
+    expect(crewDayLine({ ...zero, total: 20, processed: 20, proposals: 2 })).toBe("Tayfa bugün 20 bildirim okudu; 20’sini inceledi ve 2 öneri çıkardı: 2’si seni bekliyor.");
   });
   it("drops the legal suffix from company names", () => {
     expect(shortName("ÖRNEK ENERJİ A.Ş.")).toBe("ÖRNEK ENERJİ");
     expect(shortName("KURGU")).toBe("KURGU");
+  });
+});
+
+describe("the disclosure quote", () => {
+  it("picks the first sentence with a figure, else paragraph 2, else nothing", () => {
+    expect(disclosureQuote("BAŞLIK\n\nGenel bir giriş cümlesi. Tutar 3.720.000 TL oldu.\n\nSon.")).toBe("Tutar 3.720.000 TL oldu.");
+    expect(disclosureQuote("BAŞLIK\n\nRakamsız bir cümle. İkinci cümle.")).toBe("Rakamsız bir cümle.");
+    expect(disclosureQuote("Yalnızca başlık")).toBeNull();
+    expect(disclosureQuote(undefined)).toBeNull();
   });
 });
 
@@ -126,13 +158,25 @@ describe("the crew, one line each", () => {
     expect(lines.map((l) => l.agent)).toEqual(["classifier", "reader", "materiality", "evidence", "skeptic", "compliance", "rule_engine", "risk_gate"]);
     const text = Object.fromEntries(lines.map((l) => [l.agent, l.text]));
     expect(text.classifier).toBe("Bunu “bağlayıcı hizmet sözleşmesi” olarak tanıdı (%93 emin).");
-    expect(text.reader).toContain("432.000.000 TL");
+    expect(text.reader).toContain("432.000.000\u00a0TL");
     expect(text.materiality).toBe("Tutarı şirketin yıllık geliriyle tarttı: gelirin %18’i.");
     expect(text.evidence).toBe("Geçmişte 23 benzer olay buldu, sonuçlarına bakmadan seçti.");
     expect(text.skeptic).toMatch(/fiyatlanmış olabilir\. Tutarı yarıya indirdi\.$/);
     expect(text.compliance).toBe("Tedbir yok, metinde gizli talimat yok.");
-    expect(text.rule_engine).toMatch(/kural geçti; E3 şartı sağlandı\.$/);
+    expect(text.rule_engine).toMatch(/kural geçti; yeni iş şartı sağlandı\.$/);
     expect(text.risk_gate).toMatch(/risk kontrolü geçti\. Tutarı .* ile sınırladı\.$/);
+    expect(lines.filter((l) => l.changed).map((l) => l.agent)).toEqual(["skeptic", "risk_gate"]);
+  });
+  it("leads with who changed the amount", () => {
+    const lines = crewLines(e4.card, e4.explain);
+    expect(crewLead(lines, e4.card)).toBe("8 üye çalıştı; 2’si tutarı değiştirdi: Şüpheci dörtte bir azalttı, Risk Kapısı 43.495\u00a0TL ile sınırladı.");
+    const calm = { ...e1.card, final_notional_try: e1.card.requested_notional_try };
+    expect(crewLead(crewLines(calm, null), calm)).toBe("8 üye çalıştı; hiçbiri tutarı değiştirmedi.");
+  });
+  it("names the point Uyum wants a person to look at", () => {
+    const text = Object.fromEntries(crewLines(e4.card, e4.explain).map((l) => [l.agent, l.text]));
+    expect(text.compliance).toBe("Tedbir yok. Senin bakmanı istediği nokta: kârın bir kısmı tek seferlik arsa satışından geliyor; yönetimin “kalıcı iyileşme” dili buna tam uymuyor.");
+    expect(text.rule_engine).toBe("6/6 kural geçti; kâr sürprizi şartı sağlandı.");
   });
   it("still speaks before the run details arrive", () => {
     const text = Object.fromEntries(crewLines(e4.card, null).map((l) => [l.agent, l.text]));

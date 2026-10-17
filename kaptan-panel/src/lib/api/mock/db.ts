@@ -1,8 +1,9 @@
 import type { ChainFields } from "@/lib/audit-chain";
+import type { AuditEntry } from "@/lib/domain";
 import type { Role } from "@/lib/domain/user";
 import { EventBus } from "@/lib/sse/bus";
 import { initialState, loadState, saveState, type MockState } from "./state";
-import { nowMs } from "./selectors";
+import { auditChain, nowMs } from "./selectors";
 
 /**
  * The mock "database": one MockState plus the event bus. Every write goes through
@@ -19,6 +20,8 @@ export class MockDb {
   private state: MockState;
   readonly bus = new EventBus();
   private readonly storage: Storage | null;
+  /** The last chain built and what it was built from (appends + tamper flag). */
+  private chain: { appends: MockState["auditAppends"]; tamperOn: boolean; entries: readonly AuditEntry[] } | null = null;
 
   constructor(storage: Storage | null, realNow: number = Date.now()) {
     this.storage = storage;
@@ -37,6 +40,20 @@ export class MockDb {
     this.state = fn(this.state);
     saveState(this.storage, this.state);
     return this.state;
+  }
+
+  /**
+   * The audit chain, built lazily and only again when an entry was appended or the tamper
+   * test flipped. Only the ledger list, verify, tamper and append paths read it; every other
+   * screen never pays for 4.812 hashes.
+   */
+  auditChain(): readonly AuditEntry[] {
+    const { auditAppends, tamperOn } = this.state;
+    const memo = this.chain;
+    if (memo && memo.appends === auditAppends && memo.tamperOn === tamperOn) return memo.entries;
+    const entries = auditChain(this.state);
+    this.chain = { appends: auditAppends, tamperOn, entries };
+    return entries;
   }
 
   /** Re-read from storage (another tab may have written it). */

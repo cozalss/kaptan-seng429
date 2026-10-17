@@ -19,7 +19,7 @@ test("E3 → Onayla → Girdim → Portföy", async ({ page }) => {
   // The Yönetici injects E3 from Ayarlar, then watch it arrive on Bugün.
   await pickRole(page, "Yönetici");
   await openSettings(page);
-  await page.getByRole("button", { name: "Senaryo ekle: Yeni iş (E3)" }).click();
+  await page.getByRole("button", { name: /^Senaryo ekle: Yeni iş/ }).click();
   await expect(page.getByText(/Eklendi\. Öneri birkaç saniye içinde/)).toBeVisible();
   await page.getByRole("link", { name: "Bugün’e git →" }).click();
   const card = page.getByRole("article", { name: "ÖRNEK ENERJİ" });
@@ -31,9 +31,13 @@ test("E3 → Onayla → Girdim → Portföy", async ({ page }) => {
   await card.getByRole("link", { name: /^İncele/ }).click();
   await expect(page).toHaveURL(/\/oneri\/prop-demo-e3-ornek$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Yıllık gelirinin %18’i kadar yeni iş aldı.");
-  await expect(page.getByText(/Benzer 23 olayın %61’inde hisse 5 gün içinde yükseldi/)).toBeVisible();
+  await expect(page.getByText("Benzer 23 olayın 14’ünde hisse 5 gün içinde yükseldi.")).toBeVisible();
   await expect(page.getByText(/Tutarı yarıya indirdi\./)).toBeVisible();
+  await expect(page.getByText(/^8 üye çalıştı; 2’si tutarı değiştirdi: Şüpheci yarıya indirdi, Risk Kapısı .* ile sınırladı\.$/)).toBeVisible();
+  await page.getByRole("link", { name: "Karara git" }).click();
+  await expect(page.getByRole("heading", { name: "Öneri", exact: true })).toBeInViewport();
   await page.getByRole("button", { name: "Onayla", exact: true }).click();
+  await expect(page.getByRole("heading", { name: /^İmzalandı · \d\d:\d\d$/ })).toBeFocused();
 
   // Emir fişi → Girdim.
   const slip = page.getByRole("group", { name: /^Emir fişi/ });
@@ -47,7 +51,8 @@ test("E3 → Onayla → Girdim → Portföy", async ({ page }) => {
   await slip.getByRole("link", { name: "Portföyünde →" }).click();
   await expect(page).toHaveURL(/\/portfoy$/);
   const mine = page.getByRole("list", { name: "Elindekiler" }).getByRole("listitem").filter({ hasText: "hesabında" });
-  await expect(mine.filter({ hasText: "ÖRNEK ENERJİ" })).toBeVisible();
+  // Portföy prints names in title case ("Örnek Enerji"); accept either spelling.
+  await expect(mine.filter({ hasText: /Örnek Enerji|ÖRNEK ENERJİ/ })).toBeVisible();
 
   expect(errors).toEqual([]);
 });

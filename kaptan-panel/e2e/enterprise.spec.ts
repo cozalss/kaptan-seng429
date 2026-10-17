@@ -24,7 +24,7 @@ test("roles, two signatures, the ledger, limits and the two-person restart", asy
   // Yönetici adds the E3 scenario.
   await pickRole(page, "Yönetici");
   await openSettings(page);
-  await page.getByRole("button", { name: "Senaryo ekle: Yeni iş (E3)" }).click();
+  await page.getByRole("button", { name: "Senaryo ekle: Yeni iş" }).click();
   await page.getByRole("link", { name: "Bugün’e git →" }).click();
   const card = page.getByRole("article", { name: "ÖRNEK ENERJİ" });
   await expect(card).toBeVisible({ timeout: 20_000 });
@@ -35,7 +35,7 @@ test("roles, two signatures, the ledger, limits and the two-person restart", asy
   await expect(page).toHaveURL(/\/oneri\/prop-demo-e3-ornek$/);
   await expect(page.getByRole("button", { name: "Onayla", exact: true })).toBeDisabled();
   await expect(page.getByTestId("denied-proposal.decide")).toContainText("Bunu Risk Sorumlusu yapar.");
-  await expect(page.getByTestId("human-signature")).toContainText("Risk Sorumlusu imzalar");
+  await expect(page.getByTestId("human-signature")).toContainText("Bekliyor: 2. imza — Risk Sorumlusu");
   await page.getByPlaceholder("Kısa bir not…").fill("Sözleşme bağlayıcı; şüpheci notu makul.");
   await page.getByRole("button", { name: "Not ekle" }).click();
   await expect(page.getByRole("list", { name: "Öneri notları" })).toContainText("Üye 2 · Analist");
@@ -44,14 +44,14 @@ test("roles, two signatures, the ledger, limits and the two-person restart", asy
   await page.getByRole("button", { name: "Risk Sorumlusu gözüyle bak →" }).click();
   await expect(page.getByRole("button", { name: "Onayla", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: "Onayla", exact: true }).click();
-  await expect(page.getByTestId("human-signature")).toContainText(/Risk Sorumlusu imzaladı.*Üye 3/);
+  await expect(page.getByTestId("human-signature")).toContainText(/Tamamlandı: 2\. imza — Risk Sorumlusu.*Üye 3/);
   await expect(page.getByRole("group", { name: /^Emir fişi/ })).toBeVisible({ timeout: 10_000 });
 
   // The ledger shows it and verifies.
   await go(page, "Denetim", /\/denetim$/);
-  await expect(page.getByRole("list", { name: "Denetim kayıtları" })).toContainText("Risk Sorumlusu ÖRNEK ENERJİ önerisini imzaladı.");
+  await expect(page.getByRole("list", { name: "Denetim kayıtları" })).toContainText("Risk Sorumlusu Örnek Enerji önerisini imzaladı.");
   await page.getByRole("button", { name: "Defteri doğrula" }).click();
-  await expect(page.getByText("Zincir sağlam.")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("walk-result").getByText("Zincir sağlam.", { exact: true })).toBeVisible({ timeout: 15_000 });
 
   // Yönetici tampers; the walk stops at #3.907.
   await pickRole(page, "Yönetici");
@@ -60,7 +60,10 @@ test("roles, two signatures, the ledger, limits and the two-person restart", asy
   await expect(page.getByTestId("tamper")).toContainText("Şu an: kayıt değişik");
   await go(page, "Denetim", /\/denetim$/);
   await page.getByRole("button", { name: "Defteri doğrula" }).click();
-  await expect(page.getByText("Kayıt #3.907’de zincir kırık.")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("walk-result")).toContainText("Kayıt #3.907’de zincir kırık.", { timeout: 15_000 });
+  // The verdict shows the broken record and takes you to it in the ledger.
+  await page.getByRole("button", { name: "Defterde göster →" }).click();
+  await expect(page.locator("#kayit-3907")).toBeFocused();
   await openSettings(page);
   await page.getByTestId("tamper").getByRole("button", { name: "Kurcalamayı geri al" }).click();
   await expect(page.getByTestId("tamper")).toContainText("Şu an: defter temiz");

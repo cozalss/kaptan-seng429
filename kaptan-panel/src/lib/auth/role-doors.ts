@@ -1,4 +1,4 @@
-import { ROLES, TEAM, type Role } from "@/lib/domain/user";
+import { ROLES, TEAM, type Role } from "@/lib/domain/role-meta";
 import { ROUTES } from "@/lib/nav";
 
 /**
@@ -29,6 +29,8 @@ export function loginHref(role: Role | null, next?: string | null): string {
 }
 
 export interface RoleDoor {
+  /** The role's verb, the small capitals above its name on the door ("İMZALAR"). */
+  verb: string;
   /** One plain sentence on the door. */
   line: string;
   /** "Bu rolle neler yaparsın" — two or three short lines on the role's screen. */
@@ -37,18 +39,22 @@ export interface RoleDoor {
 
 export const ROLE_DOOR: Readonly<Record<Role, RoleDoor>> = {
   analyst: {
+    verb: "OKUR",
     line: "Okursun, not düşersin; kararı başkası verir.",
     does: ["Tayfanın önerilerini baştan sona okursun.", "Önerilere kısa notlar eklersin.", "İmza atmazsın; sözün notta kalır."],
   },
   risk_officer: {
+    verb: "İMZALAR",
     line: "Son imzayı sen atarsın.",
     does: ["Öneriyi imzalar ya da reddedersin.", "Gerekirse her şeyi tek tuşla durdurursun.", "Sınır değişikliklerine son onayı verirsin."],
   },
   admin: {
-    line: "Masayı sen kurarsın.",
+    verb: "KURAR",
+    line: "Ekibi, sınırları ve senaryoları sen yönetirsin.",
     does: ["Ekibi ve ayarları yönetirsin.", "Sınır değişikliği önerirsin; onayı Risk Sorumlusu verir.", "Senaryo ekler, rehberli turu başlatırsın."],
   },
   auditor: {
+    verb: "GÖZETLER",
     line: "Her şeyi görürsün, hiçbir şeye dokunmazsın.",
     does: ["Her ekranı ve her kaydı görürsün.", "Defterin bozulmadığını doğrularsın.", "Hiçbir düğme sana açık değil: jüri koltuğu."],
   },

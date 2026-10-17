@@ -4,6 +4,9 @@
  */
 const TZ = "Europe/Istanbul";
 
+/** No-break space: "48,32 TL" never breaks between the figure and its unit. */
+export const NBSP = "\u00a0";
+
 const intFmt = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 });
 const dec2 = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const compactFmt = new Intl.NumberFormat("tr-TR", { notation: "compact", maximumFractionDigits: 1 });
@@ -17,14 +20,14 @@ export function fmtDec(n: number, digits = 2): string {
   return new Intl.NumberFormat("tr-TR", { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n);
 }
 
-/** 48,32 TL */
+/** 48,32 TL (no-break space before the unit) */
 export function fmtPrice(n: number): string {
-  return `${dec2.format(n)} TL`;
+  return `${dec2.format(n)}${NBSP}TL`;
 }
 
 /** 59.917 TL (no decimals for notional amounts). */
 export function fmtTry(n: number): string {
-  return `${intFmt.format(Math.round(n))} TL`;
+  return `${intFmt.format(Math.round(n))}${NBSP}TL`;
 }
 
 /** 0,4M · 1,2 mn style compact counts. */

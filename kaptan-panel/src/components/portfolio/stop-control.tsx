@@ -1,68 +1,50 @@
 "use client";
 
-import { useState } from "react";
-import type { RiskStatus, Signature } from "@/lib/domain";
-import { ROLE_LABEL } from "@/lib/domain/user";
-import { actorName } from "@/lib/actors";
+import { useRef, useState } from "react";
+import type { RiskStatus } from "@/lib/domain";
 import { useApi } from "@/lib/api/react";
 import { errorMessage } from "@/lib/api/types";
-import { fmtTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/field";
-import { Dialog, DialogContent } from "@/components/ui/overlay";
 import { Denied } from "@/components/roles/denied";
 import { useRole } from "@/components/roles/use-role";
 import { useDesk } from "@/components/shell/desk-state";
-
-/** Every written reason needs at least this many characters (the API's own rule). */
-export const NOTE_MIN = 10;
-
-type Ask = "stop" | "start" | "confirm" | null;
-
-const ASK_COPY: Readonly<Record<Exclude<Ask, null>, { title: string; lead: string; label: string; submit: string }>> = {
-  stop: {
-    title: "Her şeyi durdur",
-    lead: "Yeni öneri gelmez, bekleyen emirler iptal olur. Geri açmak iki kişi ister.",
-    label: "Neden durduruyorsun?",
-    submit: "Durdur",
-  },
-  start: {
-    title: "Yeniden başlatmayı başlat",
-    lead: "Bu birinci imza (1/2). Sistem, Risk Sorumlusu onaylayınca açılır.",
-    label: "Neden yeniden başlatılmalı?",
-    submit: "Başlat (1/2)",
-  },
-  confirm: {
-    title: "Onayla ve yeniden başlat",
-    lead: "Bu ikinci imza (2/2). Onaylarsan tayfa yeniden çalışır.",
-    label: "Kısa notun",
-    submit: "Onayla (2/2)",
-  },
-};
+import { NoteDialog } from "./note-dialog";
+import { askCopy, stopEffects, type Ask } from "./stop-copy";
+import { Stopped } from "./stopped";
 
 /**
  * Durdur — the kill switch. The Risk Sorumlusu or the Yönetici can stop everything with one
  * reason. Starting again takes two people (_KANONIK "Reset = Admin + Risk Officer"): the
- * Yönetici starts it, the Risk Sorumlusu confirms it — shown as two stamps.
+ * Yönetici starts it, the Risk Sorumlusu confirms it — shown as two stamps. After each step
+ * taken here, focus lands on the new state, so a screen reader hears what changed.
  */
 export function StopControl({ risk }: { risk: RiskStatus }) {
   const api = useApi();
-  const { refresh } = useDesk();
+  const { refresh, pending } = useDesk();
   const { can } = useRole();
-  const [ask, setAsk] = useState<Ask>(null);
+  const [ask, setAsk] = useState<Ask | null>(null);
+  // The dialog keeps its words while it fades out after `ask` is cleared.
+  const [shown, setShown] = useState<Ask>("stop");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [justChanged, setJustChanged] = useState<Ask | null>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+  const focusAfterClose = useRef(false);
 
   const submit = async (note: string) => {
+    if (ask === null) return;
     setBusy(true);
     setError(null);
     try {
       if (ask === "stop") await api.killSwitch(note);
       else if (ask === "start") await api.startKillReset({ reason: note });
       else await api.confirmKillReset({ reason: note });
-      setAsk(null);
+      // The new state is on the page before the dialog closes, so focus has a place to land.
       await refresh();
+      focusAfterClose.current = true;
+      setJustChanged(ask);
+      setAsk(null);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -72,162 +54,76 @@ export function StopControl({ risk }: { risk: RiskStatus }) {
 
   const open = (a: Ask) => {
     setError(null);
+    setShown(a);
     setAsk(a);
   };
 
+  const canStop = can("kill.stop");
+  const reopened = justChanged === "confirm";
+  const stopped = risk.kill_switch === "on";
   return (
-    <section aria-labelledby="durdur" className="space-y-4">
-      <h2 id="durdur" className="text-[13px] font-medium tracking-[0.04em] text-ink uppercase">
-        Durdur
-      </h2>
-      {risk.kill_switch === "off" ? (
-        <>
-          <p className="max-w-[560px] text-[17px] leading-[27px] text-ink-soft">
-            Bir şey ters giderse Risk Sorumlusu ya da Yönetici her şeyi durdurur: yeni öneri gelmez, bekleyen emirler iptal olur. Elindekiler satılmaz, kendi kurallarıyla kapanır.
-          </p>
-          <Button variant="danger-outline" size="lg" disabled={!can("kill.stop")} onClick={() => open("stop")}>
-            Durdur
-          </Button>
+    <section aria-labelledby="durdur" className={cn("border-t-[1.5px] pt-5", stopped ? "border-north" : "border-ink")}>
+      <div className="mb-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h2 id="durdur" className="label">
+          Durdur
+        </h2>
+        <p className="text-meta text-muted">Durdurmak tek kişi · yeniden açmak iki kişi</p>
+      </div>
+      {!stopped ? (
+        <div className="space-y-6">
+          {/* After the second signature the confirmation takes the title's place for this visit. */}
+          <div ref={statusRef} role="status" tabIndex={-1} className="space-y-2 outline-none">
+            {reopened ? (
+              <>
+                <p className="animate-ink-in font-display text-display leading-none text-ink">Yeniden açıldı.</p>
+                <p className="text-ui text-ink-soft">İki imza tamam; tayfa yeniden çalışıyor.</p>
+              </>
+            ) : (
+              <p className="font-display-text text-title text-balance text-ink">Bir şey ters giderse her şey tek gerekçeyle durur.</p>
+            )}
+          </div>
+          <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:gap-10">
+            <ul aria-label="Durdurunca ne olur?" className="space-y-2 text-ui text-ink-soft">
+              {[...stopEffects(pending.length), "Yeniden açmak iki kişi ister: Yönetici başlatır, Risk Sorumlusu onaylar."].map((line) => (
+                <li key={line} className="grid grid-cols-[14px_minmax(0,1fr)] gap-2">
+                  <span aria-hidden className="mt-[11px] h-px bg-rule-soft" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+            <Button
+              variant="danger-outline"
+              size="lg"
+              disabled={!canStop}
+              locked={!canStop}
+              onClick={() => open("stop")}
+              className="h-14 w-full px-9 text-body sm:w-auto"
+            >
+              {canStop ? <span aria-hidden className="size-2.5 bg-current" /> : null}
+              Durdur
+            </Button>
+          </div>
           <Denied action="kill.stop" />
-        </>
+        </div>
       ) : (
-        <Stopped risk={risk} onStart={() => open("start")} onConfirm={() => open("confirm")} />
+        <Stopped risk={risk} onStart={() => open("start")} onConfirm={() => open("confirm")} justChanged={justChanged} statusRef={statusRef} />
       )}
 
       <NoteDialog
         open={ask !== null}
         onClose={() => (!busy ? setAsk(null) : undefined)}
-        copy={ASK_COPY[ask ?? "stop"]}
-        danger={ask === "stop"}
+        copy={askCopy(shown, pending.length)}
+        danger={shown === "stop"}
         busy={busy}
         error={error}
         onSubmit={(n) => void submit(n)}
+        onCloseAutoFocus={(e) => {
+          if (!focusAfterClose.current) return;
+          focusAfterClose.current = false;
+          e.preventDefault();
+          statusRef.current?.focus();
+        }}
       />
     </section>
-  );
-}
-
-function Stopped({ risk, onStart, onConfirm }: { risk: RiskStatus; onStart: () => void; onConfirm: () => void }) {
-  const { can } = useRole();
-  const started = risk.reset?.started ?? null;
-  return (
-    <div className="space-y-6" data-testid="stop-state">
-      <div className="space-y-2">
-        <p className="font-display text-[38px] leading-none text-north">Durduruldu.</p>
-        <p className="text-[15px] text-muted">
-          {actorName(risk.kill_by)}
-          {risk.kill_at ? ` · ${fmtTime(risk.kill_at)}` : ""}
-          {risk.kill_reason ? ` — “${risk.kill_reason}”` : ""}
-        </p>
-      </div>
-      <p className="max-w-[560px] text-[17px] leading-[27px] text-ink-soft">
-        Yeniden başlatmak iki kişi ister: Yönetici başlatır, Risk Sorumlusu onaylar. Tek kişi sistemi geri açamaz.
-      </p>
-      <ol aria-label="Yeniden başlatma imzaları" className="grid gap-3 sm:grid-cols-2">
-        <ResetStamp n="1" role="Yönetici başlatır" sig={started} />
-        <ResetStamp n="2" role="Risk Sorumlusu onaylar" sig={null} waiting={started !== null} />
-      </ol>
-      {started === null ? (
-        <div className="space-y-2.5">
-          <Button variant="secondary" size="lg" disabled={!can("kill.reset_start")} onClick={onStart}>
-            Yeniden başlatmayı başlat
-          </Button>
-          <Denied action="kill.reset_start" />
-        </div>
-      ) : (
-        <div className="space-y-2.5">
-          <Button variant="primary" size="lg" disabled={!can("kill.reset_confirm")} onClick={onConfirm}>
-            Onayla ve yeniden başlat
-          </Button>
-          <Denied action="kill.reset_confirm" />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ResetStamp({ n, role, sig, waiting = false }: { n: string; role: string; sig: Signature | null; waiting?: boolean }) {
-  return (
-    <li
-      data-testid={`reset-stamp-${n}`}
-      className={cn("flex items-start gap-3 border-[1.5px] px-3.5 py-3", sig ? "border-ink bg-panel shadow-ink" : "border-dashed border-rule-soft")}
-    >
-      <span
-        aria-hidden
-        className={cn(
-          "mt-[1px] grid size-6 shrink-0 place-items-center rounded-full border-[1.5px] text-[12px] font-medium",
-          sig ? "border-ink bg-ink text-on-dark" : "border-wash text-wash",
-        )}
-      >
-        {sig ? "✓" : n}
-      </span>
-      <span className="min-w-0">
-        <span className="block text-[15px] font-medium text-ink">
-          {role} <span className="font-normal text-muted">· {n}/2</span>
-        </span>
-        <span className="mt-0.5 block text-[13px] leading-[18px] text-muted">
-          {sig ? `${sig.name} · ${ROLE_LABEL[sig.role]} · ${fmtTime(sig.at)}` : waiting ? "imza bekleniyor" : "henüz yok"}
-        </span>
-        {sig?.reason ? <span className="mt-1 block text-[14px] leading-[20px] text-ink-soft">“{sig.reason}”</span> : null}
-      </span>
-    </li>
-  );
-}
-
-function NoteDialog({
-  open,
-  onClose,
-  copy,
-  danger,
-  busy,
-  error,
-  onSubmit,
-}: {
-  open: boolean;
-  onClose: () => void;
-  copy: { title: string; lead: string; label: string; submit: string };
-  danger: boolean;
-  busy: boolean;
-  error: string | null;
-  onSubmit: (note: string) => void;
-}) {
-  const [note, setNote] = useState("");
-  const [wasOpen, setWasOpen] = useState(open);
-  if (wasOpen !== open) {
-    setWasOpen(open);
-    if (open) setNote("");
-  }
-  const short = note.trim().length < NOTE_MIN;
-  return (
-    <Dialog open={open} onOpenChange={(o) => (!o ? onClose() : undefined)}>
-      <DialogContent title={copy.title} description={copy.lead} size="sm" tone={danger ? "critical" : "default"}>
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!short) onSubmit(note.trim());
-          }}
-        >
-          <label className="block space-y-1.5">
-            <span className="text-[14px] text-ink-soft">{copy.label}</span>
-            <Textarea rows={2} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} autoFocus />
-            <span className="block text-[12px] text-muted">En az {NOTE_MIN} harf; denetim defterine yazılır.</span>
-          </label>
-          {error ? (
-            <p role="alert" className="text-[14px] text-north">
-              {error}
-            </p>
-          ) : null}
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={onClose} disabled={busy}>
-              Vazgeç
-            </Button>
-            <Button type="submit" variant={danger ? "danger" : "primary"} disabled={short || busy}>
-              {busy ? "Kaydediliyor…" : copy.submit}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }

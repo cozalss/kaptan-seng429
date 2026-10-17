@@ -9,14 +9,22 @@ import { cn } from "@/lib/utils";
  */
 export function Details({ card, explain }: { card: ApprovalCard; explain: Explain }) {
   return (
-    <details className="group border-t border-hairline pt-4">
-      <summary className="flex cursor-pointer list-none items-center gap-2 text-[14px] text-muted select-none hover:text-ink [&::-webkit-details-marker]:hidden">
-        Tüm ayrıntılar
-        <span aria-hidden className="transition-transform duration-[var(--dur-base)] group-open:rotate-180">
-          ▾
+    <details className="group border-t-[1.5px] border-ink">
+      <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-3 select-none [&::-webkit-details-marker]:hidden">
+        <span className="space-y-0.5">
+          <span className="block text-ui font-medium text-ink group-hover:underline group-hover:decoration-rule-soft group-hover:underline-offset-4">Tüm ayrıntılar</span>
+          <span className="block text-dense text-muted tabular-nums">
+            {card.rule_trace_summary.length} kural{explain.risk_checks.length ? ` · ${explain.risk_checks.length} risk kontrolü` : ""} · tayfanın izi
+          </span>
+        </span>
+        <span
+          aria-hidden
+          className="grid size-9 shrink-0 place-items-center border-[1.5px] border-ink text-[18px] leading-none text-ink transition-[transform,background-color] duration-[var(--dur-base)] ease-[var(--ease-out-expo)] group-hover:bg-wash-tint group-open:rotate-45"
+        >
+          +
         </span>
       </summary>
-      <div className="mt-6 space-y-8 text-[14px] leading-[21px]">
+      <div className="mt-3 space-y-8 pb-2 text-dense">
         <Block title="Kurallar">
           {card.rule_trace_summary.map((r) => (
             <Row key={r.rule} ok={r.passed} code={r.rule} text={r.detail_tr} aside={[r.observed, r.threshold].filter(Boolean).join(" · ")} />
@@ -50,7 +58,7 @@ export function Details({ card, explain }: { card: ApprovalCard; explain: Explai
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h3 className="mb-2 text-[12px] font-medium tracking-[0.06em] text-ink uppercase">{title}</h3>
+      <h3 className="label mb-2">{title}</h3>
       <ul className="divide-y divide-hairline border-y border-hairline">{children}</ul>
     </section>
   );
@@ -65,7 +73,7 @@ function Row({ ok, code, text, aside }: { ok: boolean; code: string; text: strin
       <span className="min-w-0">
         <span className="code text-ink">{code}</span>
         {text ? <span className="text-ink-soft"> — {text}</span> : null}
-        {aside ? <span className="block text-[12px] text-muted tabular-nums">{aside}</span> : null}
+        {aside ? <span className="block text-meta text-muted tabular-nums">{aside}</span> : null}
       </span>
     </li>
   );

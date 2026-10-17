@@ -1,6 +1,6 @@
 import { LIMIT_META, type LimitKey, type LimitValue, type LimitVersion } from "@/lib/domain";
 import { fmtPct } from "@/lib/format";
-import { possessive } from "@/components/story/turkish";
+import { locative, possessive } from "@/components/story/turkish";
 
 /**
  * The limits as plain sentences ("Bir işlemde en fazla sermayenin %0,5’i riske girer.") and
@@ -75,4 +75,24 @@ export function inputUnit(key: LimitKey): string {
 export function changedKey(next: LimitVersion, prev: LimitVersion): LimitKey | null {
   const hit = next.values.find((v) => valueOf(prev.values, v.key) !== v.value);
   return hit?.key ?? null;
+}
+
+/** "09.11" in Istanbul time (UTC+3 all year), the same everywhere Intl data differs. */
+const IST_OFFSET_MS = 3 * 3_600_000;
+const pad2 = (n: number) => String(n).padStart(2, "0");
+function dm(iso: string): string {
+  const d = new Date(Date.parse(iso) + IST_OFFSET_MS);
+  return `${pad2(d.getUTCDate())}.${pad2(d.getUTCMonth() + 1)}`;
+}
+
+/**
+ * One version's story in a line: "Üye 1 önerdi 08.11 · Üye 3 onayladı, 09.11’de yürürlüğe
+ * girdi" (or "… · Üye 3 reddetti 09.11"; a version still waiting has only its first half).
+ */
+export function historyLine(v: LimitVersion): string {
+  const proposed = `${v.proposed_by.name} önerdi ${dm(v.proposed_by.at)}`;
+  const d = v.decided_by;
+  if (!d) return proposed;
+  if (v.status === "rejected") return `${proposed} · ${d.name} reddetti ${dm(d.at)}`;
+  return `${proposed} · ${d.name} onayladı, ${locative(dm(v.effective_from ?? d.at))} yürürlüğe girdi`;
 }

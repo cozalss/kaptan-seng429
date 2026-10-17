@@ -21,7 +21,8 @@ Next.js 16 · React 19 · Tailwind 4 · zod · Vitest · Playwright.
   reddeder; durdurur) · Yönetici (kullanıcılar, ayarlar, senaryolar) · Denetçi (her şeyi görür, hiçbir şeyi değiştiremez).
   Yetkisiz düğme kapalı durur ve nedenini söyler: "Bunu Risk Sorumlusu yapar."
 
-Ürün kuralları: **[SPEC.md](SPEC.md)**. Backend sözleşmesi: **[API.md](API.md)**.
+Ürün kuralları: **[SPEC.md](SPEC.md)**. Backend sözleşmesi: **[API.md](API.md)**. Projenin tamamı: depo kökündeki
+[README](../README.md) ve [`docs/`](../docs/README.md).
 
 ## Hızlı başlangıç
 

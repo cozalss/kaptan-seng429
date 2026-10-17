@@ -24,7 +24,12 @@ describe("role doors: slug ↔ role", () => {
   it("gives every door one line and two or three things you do", () => {
     expect(ROLE_DOOR.risk_officer.line).toBe("Son imzayı sen atarsın.");
     expect(ROLE_DOOR.auditor.line).toBe("Her şeyi görürsün, hiçbir şeye dokunmazsın.");
+    expect(ROLE_DOOR.admin.line).toBe("Ekibi, sınırları ve senaryoları sen yönetirsin.");
     for (const role of ROLES) expect(ROLE_DOOR[role].does.length).toBeGreaterThanOrEqual(2);
+  });
+  it("names each door by the role's verb, in capitals and distinct", () => {
+    expect(ROLES.map((r) => ROLE_DOOR[r].verb)).toEqual(["OKUR", "İMZALAR", "KURAR", "GÖZETLER"]);
+    for (const role of ROLES) expect(ROLE_DOOR[role].verb).toBe(ROLE_DOOR[role].verb.toLocaleUpperCase("tr"));
   });
   it("names who sits behind each door", () => {
     expect(doorPeople("admin")).toBe("Üye 1");

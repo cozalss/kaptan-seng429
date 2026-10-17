@@ -12,31 +12,42 @@ import { Dialog, DialogContent } from "@/components/ui/overlay";
 import { Denied } from "@/components/roles/denied";
 import { useRole } from "@/components/roles/use-role";
 import { useDesk } from "@/components/shell/desk-state";
-import { startGuidedDemo } from "@/components/demo/demo-store";
+import { SECTION, SectionHead } from "./section-nav";
 
 /** The four demo scenarios (11 §2), each in one plain line. */
 export const SCENARIOS: ReadonlyArray<{ id: DemoScenario; title: string; what: string }> = [
-  { id: "e3_contract", title: "Yeni iş (E3)", what: "ÖRNEK ENERJİ büyük bir sözleşme imzalar; birkaç saniye içinde Bugün’e bir öneri düşer." },
+  { id: "e3_contract", title: "Yeni iş", what: "ÖRNEK ENERJİ büyük bir sözleşme imzalar; birkaç saniye içinde Bugün’e bir öneri düşer." },
   { id: "redteam_injection", title: "Gizli talimat", what: "Bildirime saklanmış bir komut; tayfa yakalar, öneri çıkmaz." },
   { id: "restricted_r04", title: "Tedbirli hisse", what: "SPK tedbiri olan bir hisse; kural hemen reddeder." },
   { id: "loss_simulation", title: "Zarar simülasyonu", what: "Portföy adım adım düşer; −⁠%1’de yeni emir durur, −⁠%5’te her şey durur." },
 ];
 
-const sectionTitle = "text-[13px] font-medium tracking-[0.04em] text-ink uppercase";
-
 /**
- * Demo — the guided walk through the six acts, the scenario buttons, the tamper test and a
- * fresh start. Everything that changes the demo data is the Yönetici's.
+ * Senaryolar — the scenario buttons, the tamper test and a fresh start. Everything that
+ * changes the data is the Yönetici's; any other role sees the same controls closed, with the
+ * reason said once at the top (never hidden: the Denetçi sees everything).
  */
 export function DemoSection() {
+  const { can } = useRole();
+  return (
+    <section aria-labelledby="demo-baslik" id="demo" {...SECTION}>
+      <SectionHead id="demo-baslik" title="Senaryolar">
+        Her senaryo tayfaya bir olay verir; ne yaptıklarını Bugün’de ve Denetim’de izlersin.
+      </SectionHead>
+      <Denied action="demo.run" />
+      <Controls allowed={can("demo.run")} />
+    </section>
+  );
+}
+
+/** The Yönetici's controls: add a scenario, tamper with one record, start the day again. */
+function Controls({ allowed }: { allowed: boolean }) {
   const api = useApi();
   const desk = useDesk();
-  const { can } = useRole();
   const tamper = useApiQuery((a) => a.auditList({ scope: "today", limit: 1 }), []);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
-  const mayRun = can("demo.run");
   const tamperOn = tamper.data?.tamper_on ?? false;
 
   const act = async (key: string, fn: () => Promise<unknown>, done: string) => {
@@ -51,40 +62,33 @@ export function DemoSection() {
       setBusy(null);
     }
   };
+  const toggleTamper = () =>
+    act(
+      "tamper",
+      async () => {
+        await api.setTamper(!tamperOn);
+        await tamper.refetch();
+      },
+      tamperOn ? "Kurcalama geri alındı." : "Kayıt değiştirildi. Denetim’de doğrula.",
+    );
 
   return (
-    <section aria-labelledby="demo-baslik" id="demo" className="scroll-mt-28 space-y-8">
-      <div className="space-y-2">
-        <h2 id="demo-baslik" className={sectionTitle}>
-          Senaryolar
-        </h2>
-        <p className="max-w-[600px] text-[16px] leading-[25px] text-ink-soft">Veriyi değiştiren düğmeler Yönetici’nindir.</p>
-      </div>
-
-      <div className="space-y-3 border-[1.5px] border-ink bg-panel px-5 py-5 shadow-ink">
-        <p className="font-display text-[26px] leading-tight text-ink">Rehberli tur</p>
-        <p className="max-w-[560px] text-[15px] leading-[23px] text-ink-soft">
-          Final sunumunun altı perdesini adım adım yürür: alttaki çubukta → ve ← ile ilerlersin, gerektiğinde rol kendiliğinden değişir, her adımda sunucuya bir cümle.
-        </p>
-        <Button variant="primary" size="lg" onClick={() => startGuidedDemo()}>
-          Rehberli turu başlat
-        </Button>
-      </div>
-
+    <div className="space-y-8">
       <div className="space-y-3">
-        <h3 className="text-[16px] font-medium text-ink">Senaryolar</h3>
         <ul className="divide-y divide-hairline border-y border-hairline">
           {SCENARIOS.map((s) => (
             <li key={s.id} className="flex items-center justify-between gap-5 py-4">
               <div className="min-w-0">
                 <p className="text-[16px] font-medium text-ink">{s.title}</p>
-                <p className="mt-0.5 text-[14px] leading-[21px] text-muted">{s.what}</p>
+                <p className="mt-0.5 text-dense text-muted">{s.what}</p>
               </div>
               <Button
                 variant="secondary"
                 className="shrink-0"
                 aria-label={`Senaryo ekle: ${s.title}`}
-                disabled={!mayRun || busy !== null}
+                locked={!allowed}
+                pending={busy === s.id}
+                disabled={!allowed || busy !== null}
                 onClick={() => void act(s.id, () => api.injectDemo(s.id), s.id === "e3_contract" ? "Eklendi. Öneri birkaç saniye içinde Bugün’de." : `Eklendi: ${s.title}.`)}
               >
                 {busy === s.id ? "Ekleniyor…" : "Ekle"}
@@ -92,8 +96,7 @@ export function DemoSection() {
             </li>
           ))}
         </ul>
-        <Denied action="demo.run" />
-        <p role="status" aria-live="polite" className="text-[15px] text-ink empty:hidden">
+        <p role="status" aria-live="polite" className="text-ui text-ink empty:hidden">
           {msg}
           {msg?.includes("Bugün") ? (
             <>
@@ -108,37 +111,31 @@ export function DemoSection() {
 
       <div className="space-y-3" data-testid="tamper">
         <h3 className="text-[16px] font-medium text-ink">Kurcalama testi</h3>
-        <p className="max-w-[560px] text-[15px] leading-[23px] text-ink-soft">
-          Defterin gerçekten koruduğunu görmek için kayıt #{fmtInt(AUDIT_TAMPER_POS)}’i arkadan değiştirir. Sonra Denetim’de “Defteri doğrula”: zincir tam orada kırılır.
+        <p className="max-w-[560px] text-ui text-ink-soft">
+          Defterin gerçekten koruduğunu görmek için kayıt #{fmtInt(AUDIT_TAMPER_POS)} arkadan değiştirilir. Sonra Denetim’de “Defteri doğrula”: zincir tam orada kopar.
         </p>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <Button
             variant={tamperOn ? "danger-outline" : "secondary"}
-            disabled={!mayRun || busy !== null || tamper.loading}
-            onClick={() => void act("tamper", async () => {
-              await api.setTamper(!tamperOn);
-              await tamper.refetch();
-            }, tamperOn ? "Kurcalama geri alındı." : "Kayıt değiştirildi. Denetim’de doğrula.")}
+            locked={!allowed}
+            pending={busy === "tamper"}
+            disabled={!allowed || busy !== null || tamper.loading}
+            onClick={() => void toggleTamper()}
           >
             {tamperOn ? "Kurcalamayı geri al" : "Bir kaydı kurcala"}
           </Button>
-          <span className="text-[14px] text-muted">{tamperOn ? "Şu an: kayıt değişik" : "Şu an: defter temiz"}</span>
-          <Link href={ROUTES.denetim} className="text-[14px] text-ink underline decoration-rule-soft underline-offset-4 hover:decoration-ink">
+          <span className="text-dense text-muted">{tamperOn ? "Şu an: kayıt değişik" : "Şu an: defter temiz"}</span>
+          <Link href={ROUTES.denetim} className="inline-flex min-h-11 items-center text-dense text-ink underline decoration-rule-soft underline-offset-4 hover:decoration-ink">
             Denetim’e git →
           </Link>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-5 border-t border-hairline pt-5">
-        <p className="text-[14px] leading-[21px] text-muted">Her şeyi günün başına döndürür.</p>
-        <button
-          type="button"
-          disabled={!mayRun}
-          className="shrink-0 text-[15px] text-ink underline decoration-rule-soft underline-offset-4 hover:decoration-ink disabled:opacity-45"
-          onClick={() => setConfirmReset(true)}
-        >
+      <div className="flex items-center justify-between gap-5 border-t border-hairline pt-3">
+        <p className="text-dense text-muted">Her şeyi günün başına döndürür.</p>
+        <Button variant="link" className="shrink-0" locked={!allowed} pending={busy === "reset"} disabled={!allowed || busy !== null} onClick={() => setConfirmReset(true)}>
           Verileri sıfırla
-        </button>
+        </Button>
       </div>
 
       <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
@@ -160,6 +157,6 @@ export function DemoSection() {
           </div>
         </DialogContent>
       </Dialog>
-    </section>
+    </div>
   );
 }

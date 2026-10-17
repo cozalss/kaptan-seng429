@@ -3,12 +3,17 @@ import { memberByUid, ROLE_LABEL } from "@/lib/domain/user";
 
 const SYSTEM_NAMES: Readonly<Record<string, string>> = {
   kap_poller: "KAP okuyucu",
-  simbist: "Paper borsa (SimBIST)",
+  simbist: "KAPtan hesabı borsası (SimBIST)",
   risk_monitor: "Risk izleyici",
   order_ticket: "Fiş yazıcı",
   scheduler: "Zamanlayıcı",
   nightly_verify: "Gece doğrulaması",
   restrictions_sync: "Tedbir listesi",
+};
+
+/** Crew members whose plain name reads better than the pipeline label. */
+const NODE_NAMES: Readonly<Partial<Record<string, string>>> = {
+  request_approval: "Öneri yazıcı",
 };
 
 /** Who did it, in words, as two parts: the name and what they are ("Üye 3", "Risk Sorumlusu"). */
@@ -18,8 +23,9 @@ export function actorParts(actor: string | null | undefined): { name: string; ki
   if (member) return { name: member.name, kind: ROLE_LABEL[member.role] };
   if (actor.startsWith("user:")) return { name: actor.slice(5), kind: "Kullanıcı" };
   if (actor.startsWith("agent:")) {
-    const node = NodeName.safeParse(actor.slice(6));
-    return { name: node.success ? NODE_LABELS[node.data].tr : actor.slice(6), kind: "Tayfa" };
+    const id = actor.slice(6);
+    const node = NodeName.safeParse(id);
+    return { name: NODE_NAMES[id] ?? (node.success ? NODE_LABELS[node.data].tr : id), kind: "Tayfa" };
   }
   if (actor.startsWith("system:")) return { name: SYSTEM_NAMES[actor.slice(7)] ?? actor.slice(7), kind: "Sistem" };
   return { name: actor, kind: "" };

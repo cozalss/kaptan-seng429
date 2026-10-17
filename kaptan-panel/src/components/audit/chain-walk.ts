@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ChainVerifyResult } from "@/lib/domain";
+import type { AuditEntry, ChainVerifyResult } from "@/lib/domain";
 import { useApi } from "@/lib/api/react";
-import { errorMessage } from "@/lib/api/types";
+import { errorMessage, type KaptanApi } from "@/lib/api/types";
+import { prefersReducedMotion } from "@/lib/utils";
 
 /**
  * "Defteri doğrula": ask the API to walk the chain, then replay the walk on screen — a count
@@ -13,7 +14,7 @@ import { errorMessage } from "@/lib/api/types";
 export type Walk =
   | { phase: "idle" }
   | { phase: "walking"; checked: number; total: number }
-  | { phase: "done"; result: ChainVerifyResult; total: number }
+  | { phase: "done"; result: ChainVerifyResult; total: number; bad: AuditEntry | null }
   | { phase: "error"; message: string };
 
 const WALK_MS = 1_400;
@@ -29,8 +30,26 @@ export function walkProgress(elapsed: number, target: number, duration = WALK_MS
   return Math.round(target * (1 - (1 - t) ** 3));
 }
 
-function reducedMotion(): boolean {
-  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+/** Repaint the count at most every 33 ms, and only once it moved 1/120 of the way. */
+const FRAME_MS = 33;
+const STEPS = 120;
+
+/** Should the walk show a new count? (Throttles setState; the last record always shows.) */
+export function shouldPaint(checked: number, last: number, target: number, sinceMs: number): boolean {
+  if (checked >= target) return true;
+  return sinceMs >= FRAME_MS && checked - last >= Math.max(1, target / STEPS);
+}
+
+/** The broken record itself, so the verdict can show it (null when it cannot be read). */
+async function brokenEntry(api: KaptanApi, result: ChainVerifyResult): Promise<AuditEntry | null> {
+  if (result.ok || result.first_bad_pos === null) return null;
+  try {
+    const found = await api.auditList({ scope: "all", q: `#${result.first_bad_pos}`, limit: 1 });
+    return found.items[0] ?? null;
+  } catch {
+    // The verdict stands without the record; the ledger below still lists it.
+    return null;
+  }
 }
 
 /** The guided demo asks the open Denetim screen to verify (no query string needed). */
@@ -50,34 +69,64 @@ export function useChainWalk(length: number) {
     if (frame.current !== null) cancelAnimationFrame(frame.current);
     setWalk({ phase: "walking", checked: 0, total: length });
     let result: ChainVerifyResult;
+    let bad: AuditEntry | null;
     let chainLength = length;
     try {
       result = await api.verifyAudit();
       // Asked before the list arrived (the guided demo does this): read the length first.
       if (chainLength === 0) chainLength = (await api.auditList({ scope: "all", limit: 1 })).length;
+      bad = await brokenEntry(api, result);
     } catch (e) {
       setWalk({ phase: "error", message: errorMessage(e) });
       return;
     }
     const total = Math.max(chainLength, walkTarget(result));
     const target = walkTarget(result);
-    if (reducedMotion() || typeof requestAnimationFrame !== "function") {
-      setWalk({ phase: "done", result, total });
+    const done: Walk = { phase: "done", result, total, bad };
+    if (prefersReducedMotion() || typeof requestAnimationFrame !== "function") {
+      setWalk(done);
       return;
     }
     const start = performance.now();
+    let lastAt = start;
+    let lastChecked = 0;
     const step = (t: number) => {
       const checked = walkProgress(t - start, target);
       if (checked >= target) {
         frame.current = null;
-        setWalk({ phase: "done", result, total });
+        setWalk(done);
         return;
       }
-      setWalk({ phase: "walking", checked, total });
+      if (shouldPaint(checked, lastChecked, target, t - lastAt)) {
+        lastAt = t;
+        lastChecked = checked;
+        setWalk({ phase: "walking", checked, total });
+      }
       frame.current = requestAnimationFrame(step);
     };
     frame.current = requestAnimationFrame(step);
   }, [api, length]);
 
   return { walk, verify, reset: () => setWalk({ phase: "idle" }) };
+}
+
+/** The strip under "Defteri doğrula": 48 square segments, each about total/48 records. */
+export const SEGMENTS = 48;
+export type Segment = "ink" | "north" | "dashed" | "blank";
+
+/**
+ * Which segments the walk has inked. A segment is inked once every record in it was checked;
+ * on a break the segment holding the broken record turns north and the rest are dashed
+ * (never walked: nothing after the break can be trusted). Pure.
+ */
+export function walkSegments(checked: number, total: number, badPos: number | null, count = SEGMENTS): Segment[] {
+  const per = Math.max(1, Math.ceil(total / count));
+  return Array.from({ length: count }, (_, i): Segment => {
+    if (badPos !== null) {
+      const bad = Math.ceil(badPos / per) - 1;
+      return i < bad ? "ink" : i === bad ? "north" : "dashed";
+    }
+    const end = Math.min((i + 1) * per, total);
+    return total > 0 && checked >= end ? "ink" : "blank";
+  });
 }

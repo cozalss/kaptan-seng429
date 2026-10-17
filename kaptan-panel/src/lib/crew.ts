@@ -6,7 +6,8 @@ import type { AgentName, CrewAgent } from "@/lib/domain";
  * only — no invented metrics here; live numbers come from `api.crew()`.
  *
  * Portraits are tracked assets in `public/crew/` (copied from the landing's generated set,
- * 3:4, 400/600/800 px, AVIF → WebP → JPEG). `public/crew/` is not touched by
+ * 3:4, 400/600/800 px, AVIF → WebP → JPEG; plus 96/136 px cuts for the 44px log
+ * portraits, made from the 800 px source with sharp). `public/crew/` is not touched by
  * `scripts/sync-landing.mjs`.
  */
 export type CrewKind = "llm" | "rule";
@@ -120,6 +121,8 @@ export const CREW: readonly CrewMember[] = Object.freeze(
 );
 
 export const PORTRAIT_WIDTHS = [400, 600, 800] as const;
+/** The small cuts for the 44px crew-log portraits (2× and 3×), plus the 400 for safety. */
+export const LOG_PORTRAIT_WIDTHS = [96, 136, 400] as const;
 /** Intrinsic aspect of every portrait (3:4). */
 export const PORTRAIT_RATIO = { w: 3, h: 4 } as const;
 
@@ -133,9 +136,13 @@ export function crewByAgent(agent: CrewAgent): CrewMember {
   return found;
 }
 
-/** `srcset` for one format: "/crew/ajan-1-400.avif 400w, …". */
-export function portraitSrcSet(member: Pick<CrewMember, "portraitBase">, ext: "avif" | "webp" | "jpg"): string {
-  return PORTRAIT_WIDTHS.map((w) => `${member.portraitBase}-${w}.${ext} ${w}w`).join(", ");
+/** `srcset` for one format: "/crew/ajan-1-400.avif 400w, …" (pass LOG_PORTRAIT_WIDTHS for 44px portraits). */
+export function portraitSrcSet(
+  member: Pick<CrewMember, "portraitBase">,
+  ext: "avif" | "webp" | "jpg",
+  widths: readonly number[] = PORTRAIT_WIDTHS,
+): string {
+  return widths.map((w) => `${member.portraitBase}-${w}.${ext} ${w}w`).join(", ");
 }
 
 /** Fallback `src` (JPEG, given width). */

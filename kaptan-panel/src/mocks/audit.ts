@@ -99,7 +99,7 @@ function todayEntries(): Fields[] {
           entity_id: s.run_id.replace(/^run-/, "ord-"),
           run_id: s.run_id,
           strategy_version: s.strategy_version,
-          payload: { qty: s.proposal?.qty ?? 0, price: s.decision.fill.price },
+          payload: { ticker: s.ticker, company, qty: s.proposal?.qty ?? 0, price: s.decision.fill.price },
         });
       }
     }

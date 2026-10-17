@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ApprovalCard, DayCounters, RiskStatus } from "@/lib/domain";
 import { ROUTES, href } from "@/lib/nav";
 import { useApi } from "@/lib/api/react";
+import { errorMessage } from "@/lib/api/types";
 import { useEventStream, type StreamStatus } from "@/lib/sse/use-event-stream";
 import { notify } from "@/components/ui/toast";
 
@@ -19,6 +20,8 @@ export interface DeskState {
   pending: ApprovalCard[];
   feedStatus: StreamStatus;
   deskStatus: StreamStatus;
+  /** Why the last refresh failed, in plain words (null once a refresh succeeds). */
+  error: string | null;
   refresh: () => Promise<void>;
   /** Bumped after "Demo verisini sıfırla": screens keyed on it remount and refetch. */
   epoch: number;
@@ -36,6 +39,7 @@ export function DeskStateProvider({ children }: { children: ReactNode }) {
   const [risk, setRisk] = useState<RiskStatus | null>(null);
   const [pending, setPending] = useState<ApprovalCard[]>([]);
   const [epoch, setEpoch] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   // A risk event that lands while a refresh is in flight is newer than the refresh's read.
   const riskVersion = useRef(0);
@@ -51,8 +55,10 @@ export function DeskStateProvider({ children }: { children: ReactNode }) {
       setCounters(c);
       if (riskVersion.current === startedAt) setRisk(r);
       setPending(p);
-    } catch {
-      // The shell degrades quietly; screens show their own errors.
+      setError(null);
+    } catch (e) {
+      // The shell itself stays quiet; Bugün and Portföy show this with a retry (ErrorState).
+      setError(errorMessage(e));
     }
   }, [api]);
 
@@ -89,8 +95,8 @@ export function DeskStateProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const value = useMemo<DeskState>(
-    () => ({ counters, risk, pending, feedStatus, deskStatus, refresh, epoch, resetView }),
-    [counters, risk, pending, feedStatus, deskStatus, refresh, epoch, resetView],
+    () => ({ counters, risk, pending, feedStatus, deskStatus, error, refresh, epoch, resetView }),
+    [counters, risk, pending, feedStatus, deskStatus, error, refresh, epoch, resetView],
   );
   return <DeskContext.Provider value={value}>{children}</DeskContext.Provider>;
 }

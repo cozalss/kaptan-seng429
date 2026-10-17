@@ -1,0 +1,47 @@
+/* The calm sea (calm-sea.tsx), on /login, /login/<rol> and the 404: the swells drift a few
+   pixels and the boat rocks gently. Each moves its own layer with transform only; all of it
+   stops under prefers-reduced-motion. */
+@keyframes login-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-24px);
+  }
+}
+@keyframes login-rock {
+  0%,
+  100% {
+    transform: rotate(-1.25deg) translateY(0);
+  }
+  50% {
+    transform: rotate(1.25deg) translateY(-1.5px);
+  }
+}
+
+.login-swell {
+  animation: login-drift 16s ease-in-out infinite alternate;
+}
+.login-swell--b {
+  animation-duration: 21s;
+  animation-direction: alternate-reverse;
+}
+.login-swell--c {
+  animation-duration: 26s;
+}
+.login-boat {
+  transform-origin: 50% 90%;
+  animation: login-rock 8s ease-in-out infinite;
+}
+
+.calm-sea[data-still] .login-swell,
+.calm-sea[data-still] .login-boat {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-swell,
+  .login-boat {
+    animation: none !important;
+  }
+}

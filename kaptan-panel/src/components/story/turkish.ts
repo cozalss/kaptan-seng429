@@ -82,3 +82,22 @@ export function locative(printed: string): string {
   const d = HARD.includes(w[w.length - 1] ?? "") ? "t" : "d";
   return `${printed}’${d}${wide(lastVowel(w))}`;
 }
+
+/** "A.Ş.", "T.A.Ş.": short dotted abbreviations are written as they are. */
+const isDottedAbbreviation = (token: string) => token.includes(".") && (token.match(/\p{L}/gu) ?? []).length <= 3;
+
+/**
+ * Title case the Turkish way, for names printed in capitals: "DOĞU ENERJİ ÜRETİM A.Ş." →
+ * "Doğu Enerji Üretim A.Ş.", "İZMİR" → "İzmir" (İ/ı survive, unlike toLowerCase()).
+ * Pure; whitespace is kept as it was.
+ */
+export function titleTr(name: string): string {
+  return name
+    .split(/(\s+)/)
+    .map((token) => {
+      if (/^\s*$/.test(token) || isDottedAbbreviation(token)) return token;
+      const lower = token.toLocaleLowerCase("tr-TR");
+      return lower.replace(/^(\P{L}*)(\p{L})/u, (_m, lead: string, c: string) => lead + c.toLocaleUpperCase("tr-TR"));
+    })
+    .join("");
+}

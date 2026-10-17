@@ -16,16 +16,17 @@ değişikliği**, **iki kişilik yeniden başlatma**. Her özellik ait olduğu y
 
 ## 1. Ekranlar
 
-Üst çubuk: `KAPtan · Bugün · Portföy · Denetim · [rol] · ⚙` (⚙: Ayarlar, Çıkış). Telefonda rol seçici ikinci
-ince satıra iner. Üstte DEMO şeridi, altta feragatname. ~720 px'lik sakin sütun.
+Üst çubuk: `KAPtan · Bugün · Portföy · Denetim · [rol] · ⚙ Ayarlar` (⚙: Ayarlar, Çıkış). Geniş ekranda tek satır
+ve yapışkan; telefonda çubuk sayfayla birlikte kayar, ikinci satırda "Kimin gözüyle bakıyorsun?" sorusunun yanında
+rol seçici ve ⚙ durur. Her denetim bir kez çizilir. Altta feragatname. ~720 px'lik sakin sütun.
 
 | Ekran | Yol | İçerik |
 |---|---|---|
 | Bugün | `/bugun` | Büyük cümle, karar saati, öneri kartları, portföy satırı, tayfa satırı |
-| Öneri | `/oneri/[id]` | Hikâye (Ne oldu? → … → Risk) · **İki imza** (Tayfa önerdi → Kurallar onayladı → Risk Sorumlusu imzalar) · Onayla / Reddet · emir fişi · **Notlar** · Tüm ayrıntılar |
+| Öneri | `/oneri/[id]` | Hikâye (Ne oldu? → … → Risk) · **İki imza** (tayfa önerir; 1. imza kurallar, 2. imza Risk Sorumlusu) · Onayla / Reddet · emir fişi · **Notlar** · Tüm ayrıntılar |
 | Portföy | `/portfoy` | Toplam, çizgi, elindekiler, girilecek fişler, **Durdur** (iki damgalı yeniden başlatma) |
-| Denetim | `/denetim` | Düz zaman çizelgesi (kim · ne · ne zaman · hash çipi), **Defteri doğrula**, Bugün / Tümü, arama |
-| Ayarlar | `/ayarlar` | **Sınırlar** (cümleler, iki imzalı değişiklik, sürümler) · **Ekip ve roller** (kullanıcılar, "Kim ne yapabilir?") · **Demo** (Rehberli demo, senaryolar, kurcalama testi, sıfırla) · Çıkış |
+| Denetim | `/denetim` | Düz zaman çizelgesi (kim · ne · ne zaman · parmak izi; KAP okuyucu okumaları katlanır), **Defteri doğrula**, Bugün / Tümü, arama |
+| Ayarlar | `/ayarlar` | Başlık → "Bu sayfada" bağlantıları → **Rehberli tur** kartı → **Sınırlar** (cümleler, iki imzalı değişiklik, sürümler) → **Ekip ve roller** (kullanıcılar, "Kim ne yapabilir?") → **Senaryolar** (senaryolar, kurcalama testi, sıfırla; yalnız Yönetici) · Çıkış |
 | Giriş | `/login` | Tek parola, "← Tanıtım sayfası" |
 
 Eski yollar `src/lib/nav.ts`'te: `/audit` → `/denetim`, `/limits`, `/admin` → `/ayarlar`, `/portfolio` → `/portfoy`, gerisi `/bugun`.
@@ -49,8 +50,8 @@ Yetkisiz bir düğme gizlenmez: kapalı durur, altında gerekçe ("Bunu Risk Sor
 "Risk Sorumlusu gözüyle bak →" bağlantısı vardır. Her ekran dört role açıktır (`canOpen`); fark, basabildiklerindedir.
 
 ### 2.2 Öneride iki imza
-"Öneriyi tayfa yazar, kurallar denetler; son imzayı bir insan atar. Bir kişi hem önerip hem onaylayamaz — bu
-yüzden iki imza var." Yalnız Risk Sorumlusu Onayla/Reddet'e basar; damga rol adı, kişi ve saatle düşer.
+"Öneriyi tayfa yazar ama emir için iki imza gerekir: önce kurallar (makine), sonra Risk Sorumlusu (insan).
+Öneriyi yazan onu onaylayamaz." Yalnız Risk Sorumlusu Onayla/Reddet'e basar; damga rol adı, kişi ve saatle düşer.
 Emir fişini de Risk Sorumlusu işaretler. Analist, Risk Sorumlusu ve Yönetici not ekleyebilir.
 
 ### 2.3 Denetim defteri
@@ -71,8 +72,8 @@ pozisyon satılmaz. Zirveden −%5'te risk izleyici kendisi durdurur. **Yeniden 
 başlatır, Risk Sorumlusu onaylar** (_KANONIK "Reset = Admin + Risk Officer"). Başlatan onaylayamaz. Kişisel
 moddaki 24 saat + 5 seans kuralı kaldırıldı. Günlük −%1 durdurması (R02) aynen sürer.
 
-### 2.6 Rehberli demo
-Ayarlar → "Rehberli demoyu başlat": altta küçük bir çubuk, `11-demo-senaryosu.md`'nin 6 perdesi, 15 adım, → / ←.
+### 2.6 Rehberli tur
+Ayarlar → **Rehberli tur** kartı → "Turu başlat": altta küçük bir çubuk, `11-demo-senaryosu.md`'nin 6 perdesi, 15 adım, → / ←.
 Her adım rolü kendiliğinden değiştirir, gerekeni önce çalıştırır (ör. demo gününü sıfırla), ekranı açar, sonra
 sahnede olması gerekeni yapar (senaryo ekle, defteri doğrula). Elle basılan adımlarda çubukta bir **yedek** düğme
 vardır. Her adımda sunucuya tek cümle. Adımlar `src/components/demo/demo-steps.ts`.
@@ -86,10 +87,12 @@ vardır. Her adımda sunucuya tek cümle. Adımlar `src/components/demo/demo-ste
 - Türkçe, düz cümleler (`src/components/story/plain.ts`, `src/lib/audit-words.ts`). Kurgusal "Temsili" şirketler.
 - Örnek sayılar "örnek değer" etiketiyle. Kuzey kırmızısı yalnızca Durdur, veto ve kırık zincir için.
 - Feragatname her ekranın altında, değiştirilmeden.
+- Panel yalnız açık temadır (kâğıt ve mürekkep).
+- Rakamlar Inter tabular; Bodoni kelimeler içindir. Sert gölge yalnız üstte duran ya da damgalanan şeylerde.
 
 ## 5. Demo akışı (elle)
 1. Giriş → Bugün (Risk Sorumlusu).
-2. Rol: Yönetici → Ayarlar → "Yeni iş (E3)" Ekle → Bugün: ÖRNEK ENERJİ kartı.
+2. Rol: Yönetici → Ayarlar → Senaryolar → "Yeni iş" Ekle → Bugün: ÖRNEK ENERJİ kartı.
 3. Rol: Analist → İncele → Onayla kapalı, gerekçe; not ekle → "Risk Sorumlusu gözüyle bak →" → Onayla → damga, emir fişi.
 4. Denetim → Defteri doğrula → "Zincir sağlam." · Yönetici: Ayarlar → Bir kaydı kurcala → Denetim → "Kayıt #3.907'de zincir kırık."
 5. Ayarlar → Değişiklik öner (1/2) → Risk Sorumlusu: Onayla (2/2).

@@ -1,4 +1,4 @@
-import { approvalExpiry, isTradingDay, istanbulIso, nextTradingDay, tradingDaysBetween } from "./time";
+import { approvalExpiry, dayWordTr, fmtCountdown, isTradingDay, istanbulIso, nextTradingDay, tradingDaysBetween } from "./time";
 import { fmtInt, fmtPct, fmtSignedPct, fmtTry, shortHash, upperTr } from "./format";
 import { appendToChain, GENESIS_PREV_HASH, hashOf, verifyChain } from "./audit-chain";
 import type { AuditEntry } from "./domain";
@@ -15,6 +15,27 @@ describe("time", () => {
   });
   it("expires approvals at 09:50 on the next trading session (Ç-10)", () => {
     expect(approvalExpiry(istanbulIso("2027-01-08", "16:00"))).toBe(istanbulIso("2027-01-11", "09:50"));
+  });
+});
+
+describe("countdown and day words", () => {
+  const H = 3_600_000;
+  const M = 60_000;
+  it("writes a countdown in full words, never sa/dk", () => {
+    expect(fmtCountdown(20 * H)).toBe("20 saat");
+    expect(fmtCountdown(H + 5 * M)).toBe("1 saat 5 dakika");
+    expect(fmtCountdown(45 * M + 30_000)).toBe("45 dakika");
+    expect(fmtCountdown(2 * 24 * H + 3 * H + 10 * M)).toBe("2 gün 3 saat");
+    expect(fmtCountdown(30_000)).toBe("1 dakikadan az");
+    expect(fmtCountdown(0)).toBe("süresi doldu");
+  });
+  it("names the day in Istanbul time: bugün, yarın or a short date", () => {
+    const now = istanbulIso("2027-01-11", "13:40");
+    expect(dayWordTr(istanbulIso("2027-01-11", "23:59"), now)).toBe("bugün");
+    expect(dayWordTr(istanbulIso("2027-01-12", "09:50"), now)).toBe("yarın");
+    expect(dayWordTr(istanbulIso("2027-01-14", "09:50"), now)).toBe("14 Oca");
+    // 22:30 UTC on the 11th is already the 12th in Istanbul.
+    expect(dayWordTr("2027-01-11T22:30:00.000Z", now)).toBe("yarın");
   });
 });
 

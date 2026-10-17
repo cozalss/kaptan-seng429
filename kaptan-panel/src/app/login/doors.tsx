@@ -1,13 +1,14 @@
-import { ROLE_LABEL, ROLES, type Role } from "@/lib/domain/user";
+import { ROLE_LABEL, ROLES, type Role } from "@/lib/domain/role-meta";
 import { doorPeople, loginHref, ROLE_DOOR, ROLE_SLUG } from "@/lib/auth/role-doors";
 import { RoleEmblem } from "@/components/roles/role-emblem";
 import { cn } from "@/lib/utils";
 
 /**
  * The four doors of /login. Each is one card: an arched plate in the role's tone holding its
- * emblem, the role in Bodoni, one plain sentence, who sits behind it. The role's name is the
- * link (stretched over the card), so a screen reader hears "Risk Sorumlusu, bağlantı" and the
- * sentence as text. The plate, emblem and name carry view-transition names that the role's own
+ * emblem, the role's verb in small capitals ("İMZALAR"), the role in Bodoni, one plain
+ * sentence, who sits behind it. The role's name is the link (stretched over the card) and the
+ * sentence is its description, so a screen reader hears "Risk Sorumlusu, bağlantı, Son imzayı
+ * sen atarsın." The plate, emblem and name carry view-transition names that the role's own
  * screen reuses, so the door opens into it (login.css).
  */
 export function Doors({ next }: { next: string | null }) {
@@ -22,6 +23,8 @@ export function Doors({ next }: { next: string | null }) {
 
 function Door({ role, index, next }: { role: Role; index: number; next: string | null }) {
   const slug = ROLE_SLUG[role];
+  const door = ROLE_DOOR[role];
+  const lineId = `kapi-${slug}`;
   return (
     <li
       className={cn(
@@ -45,18 +48,21 @@ function Door({ role, index, next }: { role: Role; index: number; next: string |
         <div aria-hidden className="h-[1.5px] bg-ink" />
       </div>
       <div className="flex min-w-0 flex-col py-1 sm:px-5 sm:pt-4 sm:pb-5">
-        <p className="text-[11.5px] font-medium tracking-[0.16em] text-[var(--tone)] uppercase">Kapı {String(index + 1).padStart(2, "0")}</p>
-        <h2 className="mt-1 font-display text-[25px] leading-[1.08] text-ink sm:text-[30px]">
+        <p className="label text-[var(--tone)]">{door.verb}</p>
+        <h2 className="mt-1 font-display-text text-title text-ink">
           <a
             href={loginHref(role, next)}
-            className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-brand"
+            aria-describedby={lineId}
+            className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:outline-[3px] focus-visible:after:outline-offset-[6px] focus-visible:after:outline-brand focus-visible:after:outline-solid"
             style={{ viewTransitionName: `name-${slug}` }}
           >
             {ROLE_LABEL[role]}
           </a>
         </h2>
-        <p className="mt-1.5 text-[14.5px] leading-[21px] text-ink-soft sm:mt-2 sm:pb-5 sm:text-[15px] sm:leading-[22px]">{ROLE_DOOR[role].line}</p>
-        <p className="mt-auto flex items-center justify-between gap-3 pt-3 text-[13px] text-muted sm:border-t sm:border-hairline sm:pt-3">
+        <p id={lineId} className="mt-1.5 text-ui text-ink-soft sm:mt-2 sm:pb-5">
+          {door.line}
+        </p>
+        <p className="mt-auto flex items-center justify-between gap-3 pt-3 text-dense text-muted sm:border-t sm:border-hairline sm:pt-3">
           <span className="truncate">{doorPeople(role)}</span>
           <span aria-hidden className="shrink-0 font-medium text-[var(--tone)] transition-transform duration-[var(--dur-base)] ease-[var(--ease-ink)] group-hover:translate-x-1">
             Gir →

@@ -4,8 +4,8 @@
 
 > Sürüm 1.0 · 02.10.2026 · Sahip: Rol 4 (Frontend & Değerlendirme) · Durum: temel (foundation) teslim edildi.
 >
-> Bu belge `05-proje-dokumanlari/` altındaki belgelerden türetilmiştir. Her madde kaynağını köşeli parantezle verir:
-> `[04 §11]` = `04-mimari.md` bölüm 11, `[K]` = `_KANONIK-KARARLAR.md`, `[NIHAI]` = `NIHAI-PROJE.md`, `[DESIGN]` = `kaptan-landing/DESIGN.md`, `[BRIEF]` = `kaptan-landing/KAPTAN-BRIEF.md`.
+> Bu belge `docs/proje/` altındaki belgelerden türetilmiştir. Her madde kaynağını köşeli parantezle verir:
+> `[04 §11]` = `04-mimari.md` bölüm 11, `[K]` = `_KANONIK-KARARLAR.md`, `[NIHAI]` = `docs/arastirma/NIHAI-PROJE.md`, `[DESIGN]` = `kaptan-landing/DESIGN.md`, `[BRIEF]` = `kaptan-landing/KAPTAN-BRIEF.md`.
 > **Çelişkide `_KANONIK-KARARLAR.md` kazanır** (en üstteki Revizyon 3, sonra Revizyon 2). Çözülen çelişkiler §9'dadır.
 > Kodda alan adları İngilizce ve `05` şemalarıyla birebir aynıdır; arayüz metni Türkçedir [14 başlık notu].
 

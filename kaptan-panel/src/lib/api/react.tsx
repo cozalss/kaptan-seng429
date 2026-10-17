@@ -2,9 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useOptionalSession } from "@/lib/auth/session-context";
-import { API_MODE } from "./config";
-import { createHttpApi } from "./http/http-api";
-import { createMockApi } from "./mock/mock-api";
+import { createClient } from "@/lib/api/client";
 import type { Role } from "@/lib/domain/user";
 import { ApiError, errorMessage, type KaptanApi } from "./types";
 
@@ -16,7 +14,11 @@ async function storeMockRole(role: Role): Promise<void> {
   if (!res.ok) throw new ApiError(res.status, "role", "Rol değiştirilemedi; oturum süresi dolmuş olabilir.");
 }
 
-/** Provides the one API client for the tree (mock or http, by NEXT_PUBLIC_API_MODE). */
+/**
+ * Provides the one API client for the tree. Mock or http is decided at build time by
+ * NEXT_PUBLIC_API_MODE: `@/lib/api/client` is aliased to client.mock.ts or client.http.ts
+ * (next.config.ts), so each build carries only its own client.
+ */
 export function ApiProvider({ children, api }: { children: ReactNode; api?: KaptanApi }) {
   const session = useOptionalSession();
   const uid = session?.uid ?? null;
@@ -25,9 +27,8 @@ export function ApiProvider({ children, api }: { children: ReactNode; api?: Kapt
   // One client per signed-in person and role (signing out or switching role replaces it).
   const client = useMemo<KaptanApi>(() => {
     if (api) return api;
-    if (API_MODE === "http") return createHttpApi();
     const actor = uid && role ? { uid, name, role } : null;
-    return createMockApi({ getActor: () => actor, onRoleChange: storeMockRole });
+    return createClient({ getActor: () => actor, onRoleChange: storeMockRole });
   }, [api, uid, name, role]);
   return <ApiContext.Provider value={client}>{children}</ApiContext.Provider>;
 }

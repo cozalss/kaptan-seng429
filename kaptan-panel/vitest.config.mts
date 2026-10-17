@@ -14,7 +14,11 @@ const WORKERS = Math.max(2, Math.floor(availableParallelism() / 2));
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+    // The specific alias first: tests run against the mock client (next.config.ts picks per build).
+    alias: [
+      { find: /^@\/lib\/api\/client$/, replacement: fileURLToPath(new URL("./src/lib/api/client.mock.ts", import.meta.url)) },
+      { find: "@", replacement: fileURLToPath(new URL("./src", import.meta.url)) },
+    ],
   },
   test: {
     environment: "jsdom",

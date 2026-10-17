@@ -60,6 +60,11 @@ export const ISSUERS: readonly Issuer[] = RAW.map(([ticker, name, sector, group,
 
 const BY_TICKER = new Map(ISSUERS.map((i) => [i.ticker, i]));
 
+/** The issuer behind a ticker, or null when the fixtures do not know it (never throws). */
+export function findIssuer(ticker: string): Issuer | null {
+  return BY_TICKER.get(ticker) ?? null;
+}
+
 export function issuer(ticker: string): Issuer {
   const found = BY_TICKER.get(ticker);
   if (!found) throw new Error(`Unknown fixture ticker ${ticker}`);

@@ -2,15 +2,16 @@ import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Skeleton: a ruled placeholder with a slow sweep (static under reduced motion). Rendered as
- * a block-level <span> so it is valid anywhere, including inside <p> and header text slots.
+ * Skeleton: a ruled placeholder with a slow sweep (static under reduced motion). It waits
+ * 280ms before it shows, so a quick load never flashes grey bars. Rendered as a block-level
+ * <span> so it is valid anywhere, including inside <p> and header text slots.
  */
 export function Skeleton({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
       aria-hidden
       className={cn(
-        "block bg-[linear-gradient(90deg,var(--sunk)_0%,var(--sunk)_40%,#f6f4ef_50%,var(--sunk)_60%,var(--sunk)_100%)] bg-[length:200%_100%] [animation:skeleton-sweep_1.6s_linear_infinite]",
+        "block bg-[linear-gradient(90deg,var(--sunk)_0%,var(--sunk)_40%,var(--panel)_50%,var(--sunk)_60%,var(--sunk)_100%)] bg-[length:200%_100%] opacity-0 [animation:skeleton-show_1ms_280ms_forwards,skeleton-sweep_1.6s_linear_280ms_infinite]",
         className,
       )}
       {...props}

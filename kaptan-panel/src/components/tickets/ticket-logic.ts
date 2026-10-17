@@ -29,6 +29,18 @@ export function isMarkable(t: Pick<OrderTicket, "entry">): boolean {
   return t.entry.status === "awaiting" || t.entry.status === "expired";
 }
 
+/**
+ * The slips Portföy lists under "Girilecek fişler" (and Bugün counts under "Seni bekleyenler"):
+ * still markable and not past their window. Empty until the clock is known.
+ */
+export function slipsToEnter<T extends Pick<OrderTicket, "entry" | "created_at" | "valid_until">>(
+  tickets: readonly T[] | undefined,
+  nowMs: number | null,
+): T[] {
+  if (nowMs === null) return [];
+  return (tickets ?? []).filter((t) => isMarkable(t) && ticketPhase(t, nowMs) !== "expired");
+}
+
 export const ENTRY_LABEL: Readonly<Record<TicketEntryStatus, string>> = {
   awaiting: "İşaretlenmedi",
   entered: "Girildi",
@@ -42,7 +54,11 @@ export function accountShare(t: Pick<OrderTicket, "est_notional_try" | "account_
   return t.account_equity_try > 0 ? t.est_notional_try / t.account_equity_try : 0;
 }
 
-/** The key fields, in the order you type them into a broker app (personal use; never shared). */
+/**
+ * The key fields, in the order you type them into a broker app (personal use; never shared).
+ * Plain spaces only: the screen's no-break spaces ("48,40 TL") paste as odd characters into
+ * a broker's price box.
+ */
 export function ticketCopyText(t: OrderTicket): string {
   return [
     `KAPtan emir fişi ${t.ticket_no}`,
@@ -51,7 +67,9 @@ export function ticketCopyText(t: OrderTicket): string {
     `Tahmini tutar: ${fmtInt(t.est_notional_try)} TL (${fmtPct(accountShare(t), 1)} hesap)`,
     `Geçerli: ${fmtTime(validFrom(t))}–${fmtTime(t.valid_until)} · ${fmtDateTime(t.valid_until).slice(0, 10)}`,
     `Fiyat kovalamak yok.`,
-  ].join("\n");
+  ]
+    .join("\n")
+    .replace(/ /g, " ");
 }
 
 /* ── the mark form ───────────────────────────────────────────────────── */

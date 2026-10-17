@@ -50,6 +50,23 @@ describe("run specs → Explain", () => {
     expect(parsed.success).toBe(true);
   });
 
+  it.each(all.filter((s) => s.evidence && s.event).map((s) => [s.run_id, s] as const))("%s: the hit rate agrees with its own events", (_id, spec) => {
+    const e = buildExplain(spec);
+    const stats = e.evidence_card?.stats;
+    if (!stats) throw new Error("no evidence card");
+    const rose = e.evidence_events.filter((ev) => ev.car_5d > 0).length;
+    expect(e.evidence_events).toHaveLength(stats.n);
+    expect(Math.round(stats.hit_rate_5d * stats.n)).toBe(rose);
+    expect(e.approval?.evidence_summary.hit_rate_5d ?? stats.hit_rate_5d).toBe(stats.hit_rate_5d);
+  });
+
+  it("Uyum names the exact point it wants a person to look at", () => {
+    const e4 = buildExplain(DAY_SPECS.find((s) => s.run_id === "run-day-e4-tmspz")!);
+    const flagged = e4.compliance?.checks.find((c) => c.result === "escalate");
+    expect(flagged?.detail_tr).toMatch(/tek seferlik arsa satışından/);
+    expect(e4.compliance?.summary_tr).not.toMatch(/escalate/);
+  });
+
   it("E3 demo carries the scripted numbers (11 Adım 2)", () => {
     const e = buildExplain(DEMO_SPECS.find((s) => s.run_id === DEMO_E3_RUN)!);
     expect(e.classifier?.confidence).toBe(0.93);
