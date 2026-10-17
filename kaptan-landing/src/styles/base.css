@@ -69,6 +69,7 @@ body {
   background: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
   font-size: var(--text-body-md);
   line-height: 1.375;
   letter-spacing: -0.01em;
@@ -145,7 +146,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-brand);
+  outline: 3px solid var(--color-brand);
   outline-offset: 3px;
 }
 
@@ -200,6 +201,7 @@ footer[tabindex='-1']:focus {
   border-radius: 0;
   box-shadow: var(--shadow-panel);
   font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
   font-size: var(--text-button);
   font-weight: 500;
   line-height: 1.1;

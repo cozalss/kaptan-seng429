@@ -27,7 +27,7 @@ export function DialogContent({
       <D.Overlay className="fixed inset-0 z-50 bg-scrim data-[state=open]:animate-[fade-in_160ms_var(--ease-out-expo)] data-[state=closed]:animate-[fade-out_120ms_var(--ease-out-expo)]" />
       <D.Content
         className={cn(
-          "fixed top-[max(8px,6vh)] left-1/2 z-50 max-h-[calc(100dvh-16px)] w-[calc(100vw-32px)] -translate-x-1/2 overflow-y-auto overscroll-contain border-[1.5px] bg-panel shadow-ink-lg outline-none",
+          "fixed top-[max(8px,6vh)] left-1/2 z-50 max-h-[calc(100dvh-16px)] w-[calc(100vw-32px)] -translate-x-1/2 overflow-y-auto overscroll-contain border-2 bg-panel shadow-ink-lg outline-none",
           "data-[state=open]:animate-[dialog-in_220ms_var(--ease-out-expo)] data-[state=closed]:animate-[fade-out_120ms_var(--ease-out-expo)]",
           tone === "critical" ? "border-north" : "border-ink",
           size === "sm" && "max-w-[420px]",
@@ -37,7 +37,7 @@ export function DialogContent({
         )}
         {...props}
       >
-        <header className={cn("flex items-start gap-3 border-b px-5 pt-4 pb-3", tone === "critical" ? "border-north" : "border-hairline")}>
+        <header className={cn("flex items-start gap-3 border-b-2 px-5 pt-4 pb-3", tone === "critical" ? "border-north" : "border-ink")}>
           <div className="min-w-0 flex-1">
             <D.Title className={cn("font-display-text text-title", tone === "critical" ? "text-north" : "text-ink")}>{title}</D.Title>
             {description ? <D.Description className="mt-1 text-ui text-ink-soft">{description}</D.Description> : <D.Description className="sr-only">{typeof title === "string" ? title : "Ayrıntı"}</D.Description>}

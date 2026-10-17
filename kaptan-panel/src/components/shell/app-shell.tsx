@@ -42,7 +42,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
     <SessionProvider user={user}>
       <ApiProvider>
         <DeskStateProvider>
-          <a href="#icerik" className="sr-only-focusable fixed top-2 left-2 z-[70] border-[1.5px] border-ink bg-panel px-3 py-2 text-ui font-medium">
+          <a href="#icerik" className="sr-only-focusable fixed top-2 left-2 z-[70] border-2 border-ink bg-panel px-3 py-2 text-ui font-medium">
             İçeriğe geç
           </a>
           <TopBar />

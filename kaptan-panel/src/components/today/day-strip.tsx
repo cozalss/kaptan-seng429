@@ -26,7 +26,7 @@ export function DayStrip({
   halted?: boolean;
 }) {
   return (
-    <div className="grid border-t-[1.5px] border-ink sm:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div className="grid border-t-2 border-ink sm:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <Cell label="Karar saati" className="border-b border-hairline sm:border-r sm:border-b-0 sm:pr-8">
         <ClockBody state={state} clock={clock} halted={halted} />
       </Cell>
@@ -79,9 +79,9 @@ function ClockBody({ state, clock, halted }: { state: "loading" | "stopped" | "o
         {clock.left} · {halted ? "bugün yalnızca ret verilebilir (−%1 sınırı)." : "bu saate dek imzalanmayan öneri düşer."}
       </p>
       {/* What is left of the soonest proposal's window: drawn once, then it shortens in place. */}
-      <div aria-hidden className="mt-3 h-[1.5px] bg-hairline">
+      <div aria-hidden className="mt-3 h-[3px] bg-hairline">
         <div
-          className="today-window h-full origin-left bg-ink"
+          className="today-window h-full origin-left bg-brand"
           style={{ "--today-left": clock.remaining } as CSSProperties}
         />
       </div>
@@ -94,7 +94,7 @@ function CrewRow() {
   return (
     <ul aria-label="Tayfa: sekiz üye" className="flex gap-1">
       {CREW.map((m) => (
-        <li key={m.id} title={m.name} className="max-w-11 min-w-0 flex-1 border border-rule-soft sm:w-8 sm:flex-none">
+        <li key={m.id} title={m.name} className="max-w-11 min-w-0 flex-1 border-2 border-ink sm:w-9 sm:flex-none">
           <CrewPortrait member={m} sizes="32px" widths={LOG_PORTRAIT_WIDTHS} alt={m.name} />
         </li>
       ))}

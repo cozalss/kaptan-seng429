@@ -5,12 +5,12 @@ import { seededRandom } from './random.js';
 
 export const INK = Object.freeze({
   paper: '#f3f1ec',
-  sheet: '#fbfaf6',
+  sheet: '#fffefa',
   sumi: '#121318',
-  indigo: '#2b4261',
-  wash: '#dfe1e3',
+  indigo: '#2a4c8c',
+  wash: '#d6dde9',
   north: '#b3261e',
-  muted: '#666663',
+  muted: '#45433e',
 });
 
 /** Cheap smooth 1D value noise in [0, 1], deterministic. */

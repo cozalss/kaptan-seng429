@@ -45,13 +45,13 @@ export function ProposalHeader({ card }: { card: ApprovalCard }) {
         {plainEvent(card)}
       </BigSentence>
       {/* The ask in one plain line, ruled off like the head of a form, with the way down to the decision. */}
-      <div className="flex flex-col gap-3 border-y-[1.5px] border-ink py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <div className="flex flex-col gap-3 border-y-2 border-ink py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
         {/* An Inter line: its figures are already tabular, so no <Num> (that is for Bodoni lines). */}
         <p className="max-w-[560px] text-body text-pretty text-ink tabular-nums">{proposalLine(card).replace(/(\d)–(\d)/g, `$1${WORD_JOINER}–${WORD_JOINER}$2`)}</p>
         <a
           href="#karar"
           onClick={goToDecision}
-          className="group inline-flex min-h-11 shrink-0 items-center gap-2 self-start border-[1.5px] border-ink bg-panel px-4 text-ui font-medium text-ink transition-colors duration-[var(--dur-quick)] hover:bg-wash-tint active:bg-wash-tint-strong sm:self-auto"
+          className="group inline-flex min-h-11 shrink-0 items-center gap-2 self-start border-2 border-ink bg-panel px-4 text-ui font-medium text-ink transition-colors duration-[var(--dur-quick)] hover:bg-wash-tint active:bg-wash-tint-strong sm:self-auto"
         >
           Karara git
           <span aria-hidden className="inline-block transition-transform duration-[var(--dur-quick)] ease-[var(--ease-out-expo)] group-hover:translate-y-0.5">

@@ -1,19 +1,20 @@
 ---
 version: book-1
 name: KAPtan-landing-design-system
-description: The KAPtan landing page as a graphic novel printed on rice paper (after SBS "The Boat"). Sumi ink and an indigo wash on warm paper, Bodoni Moda Display capitals for titles, Inter in sentence case for everything else, comic caption panels with an ink border and a hard offset shadow, square corners everywhere. North red is spent on three marks only; kaptan navy only on the wordmark, focus and selection.
+description: The KAPtan landing page as a graphic novel printed on rice paper (after SBS "The Boat"). Sumi ink and an indigo wash on warm paper, Bodoni Moda Display capitals for titles, Inter in sentence case for everything else, comic caption panels with an ink border and a hard offset shadow, square corners everywhere. North red is spent on three marks only; kaptan navy is the second ink (wordmark, focus, selection, the active choice, focal numbers). Projector-proof: every value survives a washed-out classroom projector (§2.1).
 
 colors:
   paper: "#F3F1EC"          # --color-paper / --color-canvas: every page and overlay
-  paper-panel: "#FBFAF6"    # --color-paper-panel: caption panels, ink buttons, modal sheets
+  paper-panel: "#FFFEFA"    # --color-paper-panel: caption panels, ink buttons, modal sheets (was #FBFAF6)
   sumi: "#121318"           # --color-sumi / --color-ink: type, ink lines, hard shadows
-  wash: "#2B4261"           # --color-wash: indigo wash (sea, hover fill, agent-detail scrim)
-  muted: "#666663"          # --color-muted: meta lines, past milestones, "· yakında"
-  rule-soft: "rgb(18 19 24 / 0.28)"
-  hairline: "rgb(18 19 24 / 0.14)"
+  wash: "#2A4C8C"           # --color-wash: deep indigo wash (sea, hover fill, agent-detail scrim; was #2B4261)
+  muted: "#45433E"          # --color-muted: meta lines, inactive choices, "· yakında" (8.8:1; was #666663)
+  rule-soft: "rgb(18 19 24 / 0.6)"
+  hairline: "rgb(18 19 24 / 0.34)"
   scrim: "rgb(243 241 236 / 0.72)"
   north: "#B3261E"          # needle, boat flag, the one ONAYLANDI stamp
-  brand: "#0E3A66"          # wordmark, focus ring, text selection
+  brand: "#0C2F63"          # kaptan navy, the second ink: wordmark, focus, selection, active choice, focal numbers (was #0E3A66)
+  sea-ink: "#09102A"        # SEA_COLORS.ink: the hero sea's navy-black (never UI)
   on-brand: "#FFFFFF"
 
 typography:
@@ -22,8 +23,9 @@ typography:
   title-mark-room: 0.12em     # --title-mark-room: room under line 1 where Turkish marks would touch (lib/title-marks.js)
   chapter:   { size: "min(12vw, 20vh)", indent: 1.05em }
   hero:      { size: "min(15vw, 25vh)", indent: 1.05em }
-  caption-panel: { fontFamily: "Bodoni Moda Display", size: "clamp(20px, 1.7vw, 27px)", lineHeight: 1.2, case: sentence }
-  running-head:  { fontFamily: Inter, size: 13px, numerals: tabular }   # left slot: live folio, never the wordmark
+  caption-panel: { fontFamily: "Bodoni Moda Display", size: "clamp(21px, 1.8vw, 28px)", lineHeight: 1.2, case: sentence }
+  bodoni-stroke: "clamp(0.35px, 0.02em, 2.2px)"   # --bodoni-stroke on every Bodoni setting (projector rule)
+  running-head:  { fontFamily: Inter, size: 14px, numerals: tabular }   # left slot: live folio, never the wordmark
   ui-minimum:    12px          # no visible UI text below this
   body-lg:   { fontFamily: Inter, size: "clamp(17px, 1.39vw, 22px)" }
   body-md:   { fontFamily: Inter, size: 16px, lineHeight: 1.375, letterSpacing: -0.01em }
@@ -32,10 +34,12 @@ typography:
   wordmark:  { fontFamily: "Bodoni Moda", weight: 700, size: "38 (212×64 viewBox)" }
 
 ink:
-  line: 1.5px
-  border: "1.5px solid sumi"
-  shadow-panel: "4px 4px 0 sumi"
-  shadow-panel-lg: "6px 6px 0 sumi"
+  line: 2px
+  border: "2px solid sumi"
+  rule: 2px                 # running heads, header rule, structural borders
+  shadow-panel: "5px 5px 0 sumi"
+  shadow-panel-lg: "7px 7px 0 sumi"
+  art-print: "contrast(1.2) saturate(1.35) brightness(0.97)"   # --art-print on raster plates
   radius: 0
 
 spacing: { xxs: 4px, xs: 8px, sm: 12px, md: 16px, lg: 24px, xl: 32px, xxl: 48px, section: 96px, gutter: 48px, gutter-mobile: 20px, header: 80px, header-mobile: 64px, gutter-panel: 14px }
@@ -94,16 +98,16 @@ Bölüm 3 footnote, the colophon and the legal modal; no forms, no personal data
 | Token | Value | Its only job |
 |---|---|---|
 | `--color-paper` (= `--color-canvas`) | #F3F1EC | The page, every section, drawers. `<meta name="color-scheme" content="light only">` stops auto-dark from inverting it. |
-| `--color-paper-panel` | #FBFAF6 | A brighter sheet laid on the page: caption panels, ink buttons, modal sheets, plates. |
+| `--color-paper-panel` | #FFFEFA | A brighter sheet laid on the page: caption panels, ink buttons, modal sheets, plates. |
 | `--color-sumi` (= `--color-ink`) | #121318 | Type, ink lines, borders, hard shadows. |
-| `--color-wash` | #2B4261 | The indigo wash: the sea, `.pill` hover fill, the scrim behind the agent detail. Same value as `SEA_COLORS.indigo` in `sea-renderer.js`. |
-| `--color-muted` | #666663 | Meta lines (`.caption-panel__meta`), past milestones, "· yakında" links. |
+| `--color-wash` | #2A4C8C | The deep indigo wash: the sea, `.pill` hover fill, the scrim behind the agent detail, instrument washes. Same value as `SEA_COLORS.indigo` (`sea-renderer.js`), `INK.indigo` (`lib/ink3d/ink.js`) and `WASH_COLOR` (`rota-sea-render.js`). The sea's darkest ink is a navy-black (`SEA_COLORS.ink` #09102A), so the storm reads as deep blue ink, not grey. |
+| `--color-muted` | #45433E | Meta lines (`.caption-panel__meta`), inactive choices, "· yakında" links. Near-ink (8.8:1): a state is never told by a pale grey alone. |
 | `--color-rule-soft`, `--color-hairline` | sumi at 28 % / 14 % | Secondary rules and dividers. |
 | `--color-scrim` | paper at 72 % | Veil under drawers and modals. |
 | `--color-north` | #B3261E | **Only** the compass needle's north half (loader, hero compass, Pusula scene), the boat's flag (hero, chart spread, Rota), and the single ONAYLANDI stamp in the Pusula scene (`compass/sprites.js`). Never UI chrome, never text. |
-| `--color-brand` "kaptan laciverti" | #0E3A66 | **Only** the wordmark (`#kaptan-logo` via `currentColor`), the 2px focus ring and `::selection`. Not nav text, not buttons, not headings. |
+| `--color-brand` "kaptan laciverti" | #0C2F63 | The second ink, only where it means something: the wordmark (`#kaptan-logo` via `currentColor`), the 3px focus ring, `::selection`, the **active choice** (the chosen rule in Seyir Kuralları and its underline, the current Pusula act and its bar, the running head's "Bölüm N", the current folio tick) and **focal numbers** (the Pusula counter, the hero caption's clock). Not body text, not buttons, not chapter titles. |
 
-Contrast notes kept in `tokens.css`: brand 10.4:1 on paper; muted ≈ 4.9:1. The header over the hero
+Contrast notes kept in `tokens.css`: brand 11.6:1 on paper; muted 8.8:1; wash 7.4:1 with paper text. The header over the hero
 sea sits on a paper scrim gradient sized to keep text ≥ 4.5:1 (`header.css`).
 
 Illustrations follow the same economy: crew plates may carry *at most one tiny* north-red accent
@@ -115,13 +119,39 @@ stamp stays ink (`storyboard-art.js`).
 `--text-display-stat`, `--text-heading-*`, `--text-mono`, `--shadow-pill`, `--shadow-overlay` and
 `--radius-sm/md/lg` are still defined but unused (or aliased to the new values). Don't build on them.
 
+### 2.1 The projector rule (permanent)
+
+The site is presented in class on a projector in a sunlit room, which crushes contrast: light greys
+vanish, Bodoni hairlines disappear, 1px rules and dashes drop out, near-white tones merge. So the
+whole book is set to survive a washout. Check every change with a simulated washout as well as a
+normal screenshot (Playwright:
+`page.addStyleTag({ content: "html{filter:contrast(.55) brightness(1.25) saturate(.8)}" })`): every
+heading, number, label, line and button must still read.
+
+1. **Contrast.** Text that carries meaning ≥ 7:1 on its ground; nothing below 4.5:1. Meta text is
+   `--color-muted` (8.8:1), never a lighter grey, and never dimmed by `opacity` much below 0.6.
+2. **Weight.** Every Bodoni setting carries `-webkit-text-stroke: var(--bodoni-stroke) currentColor`
+   (2 % of the size, 0.35–2.2px), which roughly doubles the hairlines and barely touches the stems;
+   every Inter / mono setting resets it to 0 (so Inter inside a Bodoni panel stays Inter). Add both
+   when you add a setting. Meta labels are 13px / 500; no visible text under 12px.
+3. **Rules.** Structural rules are 2px ink (running heads, header, borders); secondary dividers
+   1.5px at `--color-rule-soft` (60 %) or `--color-hairline` (34 %). Dashed and dotted lines are
+   heavier (≥ 1.8px) and darker.
+4. **Surfaces.** Paper (#F3F1EC) and panel (#FFFEFA) differ by a clear step and every panel keeps
+   its 2px ink border and hard shadow. The paper value itself does not change: it is baked into the
+   raster art and is the colour the hero sea dries back to.
+5. **Colour with meaning.** Navy marks the active choice and focal numbers; the indigo wash is the
+   sea and the instrument washes; north red stays on its three marks. No decorative colour.
+6. **Raster art** (crew plates, chart, Rota plates, agent-detail plate) is printed through
+   `--art-print` (firmer contrast, deeper indigo) instead of being regenerated.
+
 ### Ink marks
 
 | Token | Value | Use |
 |---|---|---|
-| `--ink-line` / `--ink-border` | 1.5px / 1.5px solid sumi | Panel borders, button borders, arrow strokes. |
-| `--shadow-panel` | 4px 4px 0 sumi | Caption panels, buttons, agent panels. |
-| `--shadow-panel-lg` | 6px 6px 0 sumi | Modal sheets, the schedule plate, the chart's right page. |
+| `--ink-line` / `--ink-border` | 2px / 2px solid sumi | Panel borders, button borders, arrow strokes. Running heads, the header rule and structural borders are 2px too; hairline / rule-soft borders 1.5px. |
+| `--shadow-panel` | 5px 5px 0 sumi | Caption panels, buttons, agent panels. |
+| `--shadow-panel-lg` | 7px 7px 0 sumi | Modal sheets, the schedule plate, the chart's right page. |
 | radius | 0 | Everything is square. `--radius-pill` survives only for the skip link and scrollbar thumb. |
 
 Depth is shown by the *offset* of a hard shadow (a lifted panel casts a longer one — see
@@ -301,7 +331,7 @@ These read as template output and were removed on purpose. Don't bring them back
 ## 8. Accessibility rules
 
 - `lang="tr"`; one `<h1>` (hero); each chapter is a `<section aria-labelledby>` with its `<h2>`.
-- Skip link "İçeriğe geç" → `#main`. Focus ring: 2px `--color-brand`, offset 3px (never removed).
+- Skip link "İçeriğe geç" → `#main`. Focus ring: 3px `--color-brand`, offset 3px (never removed).
 - Touch targets ≥ 44 × 44 (buttons, nav links, ✕, the phone logo: 146 × 44 itself). No visible
   UI text below 12px.
 - **Focus never falls to `<body>`** (`lib/focus-guard.js`): lazy pins (e.g. the Sancak Tezgâhı

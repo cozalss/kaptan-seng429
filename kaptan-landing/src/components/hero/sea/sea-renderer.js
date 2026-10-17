@@ -12,8 +12,10 @@ import { fragment, vertex } from './sea-shader.js';
 // so the dried sea is indistinguishable from the page.
 export const SEA_COLORS = Object.freeze({
   paper: [243 / 255, 241 / 255, 236 / 255],
-  ink: [0.07, 0.075, 0.09],
-  indigo: [0.17, 0.26, 0.38],
+  // a navy-black ink and a saturated indigo (--color-wash #2a4c8c): the storm reads as deep blue
+  // ink, not grey, and still holds its bands on a washed-out projector
+  ink: [0.035, 0.063, 0.16],
+  indigo: [0.165, 0.298, 0.549],
 });
 
 const CONTEXT = { alpha: false, antialias: false, depth: false, stencil: false, premultipliedAlpha: false, powerPreference: 'high-performance' };

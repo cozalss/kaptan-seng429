@@ -23,7 +23,7 @@ export function VerifyPanel({ walk, onVerify, onShow, tamperOn }: { walk: Walk; 
   const allowed = can("audit.verify");
   const walking = walk.phase === "walking";
   return (
-    <section aria-labelledby="dogrula" className="space-y-5 border-[1.5px] border-ink bg-panel px-5 py-6 sm:px-7">
+    <section aria-labelledby="dogrula" className="space-y-5 border-2 border-ink bg-panel px-5 py-6 sm:px-7">
       <div className="space-y-2">
         <h2 id="dogrula" className="font-display-text text-title text-ink">
           Defter sağlam mı?
@@ -74,7 +74,7 @@ function WalkResult({ walk, onShow }: { walk: Walk; onShow: (pos: number) => voi
   const checked = walk.phase === "walking" ? walk.checked : walk.result.ok ? walk.result.checked : (walk.result.first_bad_pos ?? 0);
   const badPos = walk.phase === "done" && !walk.result.ok ? (walk.result.first_bad_pos ?? null) : null;
   return (
-    <div ref={box} className="scroll-mb-6 space-y-4 border-t border-hairline pt-5" data-testid="walk-result">
+    <div ref={box} className="scroll-mb-6 space-y-4 border-t-2 border-ink pt-5" data-testid="walk-result">
       <WalkRuler checked={checked} total={walk.total} badPos={badPos} />
       <p className="flex flex-wrap items-baseline gap-x-2 tabular-nums">
         <span className={cn("text-title leading-none font-normal tracking-[-0.02em]", badPos !== null ? "text-north" : "text-ink")}>{fmtInt(checked)}</span>{" "}
@@ -82,7 +82,7 @@ function WalkResult({ walk, onShow }: { walk: Walk; onShow: (pos: number) => voi
       </p>
       {/* The verdict's place is kept while the walk runs, so nothing jumps when it lands. */}
       <div aria-hidden className="min-h-[72px] space-y-2">
-        {walk.phase === "done" ? <Verdict walk={walk} badPos={badPos} /> : <p className="font-display-text text-lead text-muted">Her halka bir öncekiyle karşılaştırılıyor…</p>}
+        {walk.phase === "done" ? <Verdict walk={walk} badPos={badPos} /> : <p className="font-display-text text-[22px] leading-[30px] text-ink-soft">Her halka bir öncekiyle karşılaştırılıyor…</p>}
       </div>
       {badPos !== null ? (
         <Button variant="link" onClick={() => onShow(badPos)}>

@@ -29,14 +29,14 @@ function Door({ role, index, next }: { role: Role; index: number; next: string |
     <li
       className={cn(
         `tone-${role}`,
-        "login-door group relative grid grid-cols-[92px_1fr] gap-4 border-[1.5px] border-ink bg-panel p-3 animate-page-in",
+        "login-door group relative grid grid-cols-[92px_1fr] gap-4 border-2 border-ink bg-panel p-3 animate-page-in",
         "sm:grid-cols-1 sm:grid-rows-[auto_1fr] sm:gap-0 sm:p-0",
       )}
       style={{ animationDelay: `${80 + index * 70}ms` }}
     >
       <div className="sm:px-5 sm:pt-5">
         <div
-          className="login-arch relative grid h-[112px] place-items-center rounded-t-full border-[1.5px] border-b-0 border-[var(--tone)] bg-[var(--tone-wash)] sm:h-[220px]"
+          className="login-arch relative grid h-[112px] place-items-center rounded-t-full border-2 border-b-0 border-[var(--tone)] bg-[color-mix(in_srgb,var(--tone)_13%,var(--paper))] sm:h-[220px]"
           style={{ viewTransitionName: `door-${slug}` }}
         >
           <RoleEmblem
@@ -45,7 +45,7 @@ function Door({ role, index, next }: { role: Role; index: number; next: string |
             style={{ viewTransitionName: `emblem-${slug}` }}
           />
         </div>
-        <div aria-hidden className="h-[1.5px] bg-ink" />
+        <div aria-hidden className="h-[2px] bg-ink" />
       </div>
       <div className="flex min-w-0 flex-col py-1 sm:px-5 sm:pt-4 sm:pb-5">
         <p className="label text-[var(--tone)]">{door.verb}</p>
@@ -62,9 +62,9 @@ function Door({ role, index, next }: { role: Role; index: number; next: string |
         <p id={lineId} className="mt-1.5 text-ui text-ink-soft sm:mt-2 sm:pb-5">
           {door.line}
         </p>
-        <p className="mt-auto flex items-center justify-between gap-3 pt-3 text-dense text-muted sm:border-t sm:border-hairline sm:pt-3">
+        <p className="mt-auto flex items-center justify-between gap-3 pt-3 text-dense text-ink-soft sm:border-t-2 sm:border-hairline sm:pt-3">
           <span className="truncate">{doorPeople(role)}</span>
-          <span aria-hidden className="shrink-0 font-medium text-[var(--tone)] transition-transform duration-[var(--dur-base)] ease-[var(--ease-ink)] group-hover:translate-x-1">
+          <span aria-hidden className="shrink-0 font-semibold text-[var(--tone)] transition-transform duration-[var(--dur-base)] ease-[var(--ease-ink)] group-hover:translate-x-1">
             Gir →
           </span>
         </p>

@@ -45,7 +45,7 @@
   from {
     opacity: 0;
     transform: translate(10px, -22px) rotate(-1.4deg);
-    box-shadow: 14px 16px 0 rgb(18 19 24 / 0.18);
+    box-shadow: 14px 16px 0 rgb(16 17 23 / 0.22);
   }
   /* No `to`: it lands on its own shadow (the sheet's slip casts the long one). */
 }

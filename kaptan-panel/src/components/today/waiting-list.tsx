@@ -37,7 +37,7 @@ export function WaitingList({ className }: { className?: string }) {
         {items.map((it) => (
           <li key={it.key}>
             <Link href={it.href} className="group inline-flex min-h-11 flex-wrap items-baseline gap-x-2 py-2 text-ui text-ink-soft hover:text-ink sm:min-h-0 sm:py-1">
-              <span className="underline decoration-rule-soft underline-offset-4 group-hover:decoration-ink">{it.text}</span>
+              <span className="underline decoration-rule-ui underline-offset-4 group-hover:decoration-ink">{it.text}</span>
               <span className="whitespace-nowrap text-ink">
                 <span aria-hidden className="inline-block transition-transform duration-[var(--dur-quick)] ease-[var(--ease-ink)] group-hover:translate-x-1">
                   →

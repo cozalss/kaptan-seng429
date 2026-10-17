@@ -40,18 +40,18 @@ export function RolePicker({ testId = "role-picker" }: { testId?: string }) {
         >
           <span
             className={cn(
-              "inline-flex h-9 min-w-0 items-center gap-2 border border-r-0 border-rule-ui bg-panel pr-2 pl-2 text-dense text-ink shadow-[inset_0_-2px_0_var(--tone)]",
+              "inline-flex h-9 min-w-0 items-center gap-2 border-2 border-r-0 border-rule-ui bg-panel pr-2 pl-2 text-dense text-ink shadow-[inset_0_-3px_0_var(--tone)]",
               "[transition-property:--tone,background-color,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-ink)]",
               "group-hover/chip:bg-wash-tint group-data-[state=open]/chip:bg-wash-tint",
               "group-focus-visible/chip:outline-2 group-focus-visible/chip:outline-offset-2 group-focus-visible/chip:outline-brand",
             )}
           >
             <RoleEmblem role={role} className="size-[18px] shrink-0 text-[var(--tone)]" />
-            <span className="truncate font-medium">{ROLE_LABEL[role]}</span>
+            <span className="truncate font-semibold text-[var(--tone)]">{ROLE_LABEL[role]}</span>
             <svg
               aria-hidden
               viewBox="0 0 10 10"
-              className="size-2.5 shrink-0 text-muted transition-transform duration-[var(--dur-quick)] ease-[var(--ease-ink)] group-data-[state=open]/chip:rotate-180"
+              className="size-2.5 shrink-0 text-ink-soft transition-transform duration-[var(--dur-quick)] ease-[var(--ease-ink)] group-data-[state=open]/chip:rotate-180"
               fill="none"
               stroke="currentColor"
               strokeWidth={1.5}
@@ -72,7 +72,7 @@ export function RolePicker({ testId = "role-picker" }: { testId?: string }) {
                     "transition-colors duration-[var(--dur-instant)] data-[state=checked]:shadow-[inset_3px_0_0_var(--tone)]",
                   )}
                 >
-                  <span aria-hidden className="mt-[5px] grid size-[11px] shrink-0 place-items-center rounded-full border-[1.5px] border-ink">
+                  <span aria-hidden className="mt-[5px] grid size-[11px] shrink-0 place-items-center rounded-full border-2 border-ink">
                     <M.ItemIndicator className="size-[5px] rounded-full bg-ink" />
                   </span>
                   <RoleEmblem role={r} className="mt-px size-6 shrink-0 text-[var(--tone)]" />

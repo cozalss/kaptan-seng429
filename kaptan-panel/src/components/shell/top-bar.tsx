@@ -11,7 +11,7 @@ import { SettingsMenu } from "./settings-menu";
 
 /**
  * KAPtan · Bugün · Portföy · Denetim · [rol] · ⚙ Ayarlar. One row on a wide screen, sticky,
- * on paper with one hairline under it. On a phone the bar scrolls away with the page and the
+ * on paper with one ink rule under it. On a phone the bar scrolls away with the page and the
  * role picker and ⚙ get a second row, under the question they answer. Each control is
  * rendered once; the second row simply dissolves into the first on wider screens.
  */
@@ -19,7 +19,7 @@ export function TopBar() {
   const active = activeNavHref(usePathname());
 
   return (
-    <header className="z-30 border-b border-hairline bg-paper sm:sticky sm:top-0">
+    <header className="z-30 border-b-2 border-ink bg-paper sm:sticky sm:top-0">
       <div className="mx-auto grid max-w-[752px] grid-cols-[1fr_auto] items-center px-4 sm:flex sm:h-14 sm:gap-1 sm:px-6">
         <Link href={HOME} aria-label="KAPtan — Bugün" className="-ml-1 inline-flex h-11 shrink-0 items-center self-center p-1 sm:mr-auto sm:h-14">
           <Wordmark className="h-6 w-auto sm:h-7" />
@@ -34,7 +34,7 @@ export function TopBar() {
                 aria-current={on ? "page" : undefined}
                 className={cn(
                   "relative inline-flex h-11 items-center px-1.5 text-ui transition-colors duration-[var(--dur-quick)] min-[360px]:px-2 sm:h-14 sm:px-3",
-                  on ? "font-medium text-ink" : "text-ink-soft hover:text-ink",
+                  on ? "font-semibold text-brand" : "font-medium text-ink-soft hover:text-ink",
                 )}
               >
                 {item.label}

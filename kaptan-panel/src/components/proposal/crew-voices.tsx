@@ -15,8 +15,8 @@ export function CrewVoices({ card, explain, loading }: { card: ApprovalCard; exp
   return (
     <div className="space-y-4">
       <p className="text-body text-ink">{crewLead(lines, card)}</p>
-      <ul aria-label="Tayfanın notları" aria-busy={loading || undefined} className="relative border-t border-hairline pt-1">
-        <span aria-hidden className="absolute top-0 bottom-3 left-[23.25px] w-[1.5px] bg-ink" />
+      <ul aria-label="Tayfanın notları" aria-busy={loading || undefined} className="relative border-t-2 border-ink pt-1">
+        <span aria-hidden className="absolute top-0 bottom-3 left-[23.25px] w-[2px] bg-ink" />
         {lines.map((l) => {
           const m = crewByAgent(l.agent);
           return (
@@ -39,7 +39,7 @@ export function CrewVoices({ card, explain, loading }: { card: ApprovalCard; exp
                 {l.changed ? (
                   <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
                     <span className="text-ui font-medium text-ink">{m.name}</span>
-                    <span className="text-meta font-medium tracking-[0.08em] text-wash uppercase">Tutarı değiştirdi</span>
+                    <span className="text-meta font-semibold tracking-[0.08em] text-wash uppercase">Tutarı değiştirdi</span>
                   </p>
                 ) : (
                   <p className="text-dense font-medium text-ink sm:pt-px">{m.name}</p>

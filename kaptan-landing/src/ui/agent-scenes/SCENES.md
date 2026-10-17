@@ -68,7 +68,7 @@ The Pusula interlude (`src/components/compass/`) uses the same modules (re-expor
 
 ## Style rules (the award bar)
 
-- **Book, not app.** Sumi line work on rice paper; flat indigo washes (`#2b4261` and its darker
+- **Book, not app.** Sumi line work on rice paper; flat indigo washes (`#2a4c8c` and its darker
   tints) for shade; dry-brush hatching for turned faces. No gradients as decoration, no glow, no neon,
   no drop blur, no bevels, no default 3D-app lighting. Hard shapes, hand-ruled edges (`stillLine`).
 - **One north-red mark at most** (`INK.north`) — and only if it means something (Sınıflandırıcı:
@@ -86,7 +86,7 @@ The Pusula interlude (`src/components/compass/`) uses the same modules (re-expor
   once; draw ≤ 1 ms per frame on a laptop (at 702 × 468 CSS px, 1440 × 900: 0.38–0.95 ms avg, all
   eight). Printed matter inside the drawing legible ≥ 8 CSS px; the letters and legend are HTML ≥ 12 px.
 - **Style bridge.** The plates belong to the portraits' book: the key props' turned faces carry the
-  portraits' mid indigo wash (`#a4b0be`, fronts `#dde2e8`), one or two props a flat `#2b4261`
+  portraits' mid indigo wash (`#a4b0be`, fronts `#dde2e8`), one or two props a flat `#2a4c8c`
   (slots, masks, hulls, lantern), and the line weight scales with the plate (above).
 - **Layout.** One aspect for all eight: **3:2**, on every screen. On desktop the detail is a spread
   of two co-equal figures — the portrait on the left, the type over the plate on the right; the plate

@@ -3,6 +3,7 @@
 import { useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { fmtDateLong, fmtShortDate, fmtSignedPct, fmtTry } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { signTone } from "@/components/story/sign-tone";
 import { H, linePath, nearestIndex, pct, W, type EquityPoint } from "./equity-math";
 
 export { equitySeries, linePath, seriesChange, yDomain, type EquityPoint } from "./equity-math";
@@ -62,10 +63,10 @@ export function EquityLine({ points, peak }: { points: readonly EquityPoint[]; p
             <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden className="absolute inset-0 block size-full overflow-visible">
               <defs>
                 <pattern id="pf-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                  <line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink)" strokeOpacity="0.1" strokeWidth="1" />
+                  <line x1="0" y1="0" x2="0" y2="5" stroke="var(--brand)" strokeOpacity="0.28" strokeWidth="1.4" />
                 </pattern>
               </defs>
-              {geo.peakY !== null ? <Level y={geo.peakY} className="stroke-[var(--rule-soft)]" /> : null}
+              {geo.peakY !== null ? <Level y={geo.peakY} className="stroke-[var(--rule-ui)]" /> : null}
               {geo.stopY !== null ? <Level y={geo.stopY} dashed className="stroke-north" /> : null}
               <path d={geo.area} fill="url(#pf-hatch)" className="animate-[fade-in_420ms_var(--ease-out-expo)_200ms_both]" />
               {/* Draw-in: dash and gap of 1.25 path lengths, so a stretched, non-scaling stroke is still whole at the end. */}
@@ -73,8 +74,8 @@ export function EquityLine({ points, peak }: { points: readonly EquityPoint[]; p
                 d={geo.line}
                 pathLength={1}
                 fill="none"
-                stroke="var(--ink)"
-                strokeWidth={2}
+                stroke="var(--brand)"
+                strokeWidth={2.75}
                 vectorEffect="non-scaling-stroke"
                 strokeLinejoin="round"
                 strokeLinecap="round"
@@ -88,11 +89,11 @@ export function EquityLine({ points, peak }: { points: readonly EquityPoint[]; p
             ) : null}
             {geo.stopY !== null && peak ? (
               <LevelLabel y={geo.stopY}>
-                <span aria-hidden className="mr-1.5 inline-block h-px w-3 -translate-y-[3px] bg-north" />
+                <span aria-hidden className="mr-1.5 inline-block h-[2px] w-3 -translate-y-[3px] bg-north" />
                 −%5 · burada her şey kendiliğinden durur
               </LevelLabel>
             ) : null}
-            {atMark ? <span aria-hidden className="pointer-events-none absolute inset-y-0 w-px -translate-x-1/2 bg-ink/40" style={{ left: pct(atMark).left }} /> : null}
+            {atMark ? <span aria-hidden className="pointer-events-none absolute inset-y-0 w-[2px] -translate-x-1/2 bg-ink/70" style={{ left: pct(atMark).left }} /> : null}
             <Dot mark={atMark ?? geo.last!} />
             {at && atMark ? <Readout point={at} prev={active ? points[active - 1] : undefined} left={(atMark.x / W) * 100} /> : null}
           </>
@@ -125,10 +126,10 @@ function Level({ y, dashed = false, className }: { y: number; dashed?: boolean; 
       x2={W}
       y1={y}
       y2={y}
-      strokeWidth={1}
+      strokeWidth={dashed ? 2 : 1.5}
       vectorEffect="non-scaling-stroke"
-      strokeDasharray={dashed ? "5 4" : undefined}
-      className={cn(className, dashed && "opacity-70")}
+      strokeDasharray={dashed ? "9 4" : undefined}
+      className={className}
     />
   );
 }
@@ -137,7 +138,7 @@ function LevelLabel({ y, above = false, children }: { y: number; above?: boolean
   return (
     <span
       aria-hidden
-      className={cn("pointer-events-none absolute left-0 text-meta whitespace-nowrap text-muted tabular-nums", above ? "-translate-y-[calc(100%+3px)]" : "translate-y-[3px]")}
+      className={cn("pointer-events-none absolute left-0 text-meta font-medium whitespace-nowrap text-ink-soft tabular-nums", above ? "-translate-y-[calc(100%+3px)]" : "translate-y-[3px]")}
       style={{ top: `${(y / H) * 100}%` }}
     >
       {children}
@@ -150,7 +151,7 @@ function Dot({ mark }: { mark: { x: number; y: number } }) {
   return (
     <span
       aria-hidden
-      className="pointer-events-none absolute size-[11px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink bg-paper shadow-[0_0_0_2px_var(--paper)]"
+      className="pointer-events-none absolute size-[11px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-brand bg-paper shadow-[0_0_0_2px_var(--paper)]"
       style={pct(mark)}
     />
   );
@@ -162,7 +163,7 @@ function Readout({ point, prev, left }: { point: EquityPoint; prev: EquityPoint 
   return (
     <span
       aria-hidden
-      className={cn("pointer-events-none absolute -top-2 z-10 -translate-y-full border border-ink bg-panel px-2 py-1 text-meta whitespace-nowrap tabular-nums", edge)}
+      className={cn("pointer-events-none absolute -top-2 z-10 -translate-y-full border-2 border-ink bg-panel px-2 py-1 text-meta whitespace-nowrap tabular-nums", edge)}
       style={{ left: `${left}%` }}
     >
       <span className="text-muted">{fmtShortDate(point.d)}</span>
@@ -171,7 +172,7 @@ function Readout({ point, prev, left }: { point: EquityPoint; prev: EquityPoint 
       {prev ? (
         <>
           <span className="mx-1.5 text-rule-soft">·</span>
-          <span className="text-ink-soft">{fmtSignedPct(point.equity / prev.equity - 1, 1)}</span>
+          <span className={cn("font-medium", signTone(point.equity / prev.equity - 1))}>{fmtSignedPct(point.equity / prev.equity - 1, 1)}</span>
         </>
       ) : null}
     </span>

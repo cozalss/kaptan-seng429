@@ -6,11 +6,13 @@ import { fmtInt, fmtSignedPct } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { shortName } from "@/components/story/plain";
 import { titleTr } from "@/components/story/turkish";
+import { signTone } from "@/components/story/sign-tone";
 
 /**
- * Past similar events as a pile of small ink squares: each square is one event, set in the
+ * Past similar events as a pile of small squares: each square is one event, set in the
  * column of how far the stock moved in 5 days (1 % per column, ±10 % across). Left of the zero
- * line it fell (open squares), right of it it rose (filled). The two counts sit over their
+ * line it fell (open claret squares), right of it it rose (filled deep green); the open/filled
+ * difference carries the meaning without colour too. The two counts sit over their
  * halves, so the answer reads at a glance; a pointer or ← → names any one event, ▲ marks the median.
  */
 const W = 640;
@@ -86,12 +88,12 @@ export function HistoryStrip({ events, median, total }: { events: readonly Evide
     <figure className="mt-5">
       <div aria-hidden className="grid grid-cols-2 items-end">
         <p className="pr-4 text-right">
-          <span className="text-title leading-none font-medium text-ink-soft tabular-nums">{fmtInt(down)}</span>
-          <span className="ml-1.5 text-dense text-muted">düştü</span>
+          <span className="text-title leading-none font-semibold text-loss tabular-nums">{fmtInt(down)}</span>
+          <span className="ml-1.5 text-dense font-medium text-ink-soft">düştü</span>
         </p>
         <p className="pl-4">
-          <span className="text-title leading-none font-medium text-ink tabular-nums">{fmtInt(up)}</span>
-          <span className="ml-1.5 text-dense text-muted">yükseldi</span>
+          <span className="text-title leading-none font-semibold text-gain tabular-nums">{fmtInt(up)}</span>
+          <span className="ml-1.5 text-dense font-medium text-ink-soft">yükseldi</span>
         </p>
       </div>
       <div
@@ -111,9 +113,10 @@ export function HistoryStrip({ events, median, total }: { events: readonly Evide
           onPointerDown={nearest}
           onPointerLeave={(e) => (e.pointerType === "mouse" ? setActive(null) : undefined)}
         >
-          <rect x={mid} y={0} width={W / 2 - PAD} height={base} fill="var(--wash-tint)" />
-          <line x1={PAD} x2={W - PAD} y1={base} y2={base} stroke="var(--rule-ui)" strokeWidth={1} />
-          <line x1={mid} x2={mid} y1={-4} y2={base + 6} stroke="var(--ink)" strokeWidth={1.5} />
+          <rect x={PAD} y={0} width={W / 2 - PAD} height={base} fill="color-mix(in srgb, var(--loss) 7%, transparent)" />
+          <rect x={mid} y={0} width={W / 2 - PAD} height={base} fill="color-mix(in srgb, var(--gain) 10%, transparent)" />
+          <line x1={PAD} x2={W - PAD} y1={base} y2={base} stroke="var(--ink)" strokeWidth={2} />
+          <line x1={mid} x2={mid} y1={-4} y2={base + 6} stroke="var(--ink)" strokeWidth={2.5} />
           {pips.map((p, i) => {
             const rose = p.event.car_5d > 0;
             const on = i === active;
@@ -125,16 +128,16 @@ export function HistoryStrip({ events, median, total }: { events: readonly Evide
                 y={y}
                 width={SQ}
                 height={SQ}
-                fill={on ? "var(--wash)" : rose ? "var(--ink)" : "var(--panel)"}
-                stroke={on ? "var(--wash)" : rose ? "var(--ink)" : "var(--ink-soft)"}
-                strokeWidth={1.5}
+                fill={on ? "var(--wash)" : rose ? "var(--gain)" : "var(--panel)"}
+                stroke={on ? "var(--wash)" : rose ? "var(--gain)" : "var(--loss)"}
+                strokeWidth={2}
               />
             );
           })}
           <path d={`M${stripX(median) - 6} ${H} L${stripX(median) + 6} ${H} L${stripX(median)} ${H - 10} Z`} fill="var(--ink)" />
         </svg>
       </div>
-      <div aria-hidden className="mt-0.5 grid grid-cols-3 text-meta text-muted tabular-nums">
+      <div aria-hidden className="mt-0.5 grid grid-cols-3 text-meta font-medium text-ink-soft tabular-nums">
         <span>−%10</span>
         <span className="text-center">0</span>
         <span className="text-right">+%10</span>
@@ -144,7 +147,7 @@ export function HistoryStrip({ events, median, total }: { events: readonly Evide
           <>
             <span className="font-medium text-ink">{titleTr(shortName(current.event.company_name))}</span>
             <span>5 günde</span>
-            <span className={cn("font-medium tabular-nums", current.event.car_5d > 0 ? "text-ink" : "text-ink-soft")}>{fmtSignedPct(current.event.car_5d)}</span>
+            <span className={cn("font-semibold tabular-nums", signTone(current.event.car_5d))}>{fmtSignedPct(current.event.car_5d)}</span>
           </>
         ) : (
           <>
@@ -155,7 +158,7 @@ export function HistoryStrip({ events, median, total }: { events: readonly Evide
               ·
             </span>
             <span>
-              ▲ ortanca (tümü) <span className="font-medium text-ink tabular-nums">{fmtSignedPct(median)}</span>
+              ▲ ortanca (tümü) <span className={cn("font-semibold tabular-nums", signTone(median))}>{fmtSignedPct(median)}</span>
             </span>
           </>
         )}

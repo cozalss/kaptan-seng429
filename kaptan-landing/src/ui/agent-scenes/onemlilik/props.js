@@ -18,7 +18,7 @@ const SHADE = Object.freeze({
   lid: '#97a4b4',
   strap: INK.indigo,
   weight: '#d9dde2',
-  cloth: Object.freeze(['#2b4261', '#1d2c42']),
+  cloth: Object.freeze(['#2a4c8c', '#1c335e']),
   pages: '#efeee8',
   shadow: 'rgba(43, 66, 97, 0.22)',
 });

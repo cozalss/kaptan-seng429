@@ -5,6 +5,7 @@ import { href } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { shortName } from "@/components/story/plain";
 import { titleTr } from "@/components/story/turkish";
+import { signTone } from "@/components/story/sign-tone";
 import { holdingProgress, istanbulDate, positionReturn } from "./risk-math";
 
 /** "3 gün kaldı" / "bugün çıkılır" / "çıkış günü geçti" — sessions left until the planned exit. */
@@ -52,16 +53,15 @@ export function Holdings({
   today: string;
   signedAt: Readonly<Record<string, string>>;
 }) {
-  if (!positions.length) return <p className="border-y border-hairline py-6 text-body text-ink-soft">Şu an elinde hisse yok. İmzalanan bir öneri buraya düşer.</p>;
+  if (!positions.length) return <p className="border-y-2 border-ink py-6 text-body text-ink-soft">Şu an elinde hisse yok. İmzalanan bir öneri buraya düşer.</p>;
   return (
-    <ul aria-label="Elindekiler" className="divide-y divide-hairline border-y border-hairline">
+    <ul aria-label="Elindekiler" className="divide-y divide-hairline border-y-2 border-ink">
       {positions.map((p) => {
         const r = positionReturn(p);
         const signed = signedAt[p.source_proposal];
         const meta = [`${fmtInt(p.qty)} lot`, p.book === "personal" ? "kendi hesabında" : null, signed ? signedLine(signed, today) : null].filter(
           (part): part is string => part !== null,
         );
-        const loss = p.unrealized_pnl < 0;
         return (
           <li key={`${p.ticker}-${p.book}-${p.opened_at}`}>
             <Link
@@ -94,10 +94,10 @@ export function Holdings({
               </span>
               <HoldingTicks p={p} today={today} className="hidden self-center sm:flex" />
               <span className="text-right tabular-nums">
-                <span className={cn("block text-ui font-medium", loss ? "text-ink-soft" : "text-ink")}>{signedTry(p.unrealized_pnl)}</span>
-                <span className="mt-0.5 block text-dense text-muted sm:hidden">{fmtSignedPct(r)}</span>
+                <span className={cn("block text-ui font-semibold", signTone(p.unrealized_pnl))}>{signedTry(p.unrealized_pnl)}</span>
+                <span className={cn("mt-0.5 block text-dense sm:hidden", signTone(r))}>{fmtSignedPct(r)}</span>
               </span>
-              <span className="hidden text-right text-ui text-ink-soft tabular-nums sm:block">{fmtSignedPct(r)}</span>
+              <span className={cn("hidden text-right text-ui tabular-nums sm:block", signTone(r))}>{fmtSignedPct(r)}</span>
             </Link>
           </li>
         );
@@ -116,7 +116,7 @@ function HoldingTicks({ p, today, className }: { p: Pick<Position, "opened_at" |
   const inked = h.dueToday || h.overdue ? count : Math.round(h.fraction * count);
   return (
     <span className={cn("flex items-center gap-2.5 text-dense text-ink-soft tabular-nums", className)}>
-      <span aria-hidden className="flex h-2.5 items-stretch gap-[2px]">
+      <span aria-hidden className="flex h-3 items-stretch gap-[2px]">
         {Array.from({ length: count }, (_, i) => (
           <span key={i} className={cn("w-[3px]", i < inked ? "bg-ink" : "bg-hairline")} />
         ))}

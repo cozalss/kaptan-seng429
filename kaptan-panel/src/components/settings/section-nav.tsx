@@ -30,7 +30,7 @@ function jump(e: MouseEvent<HTMLAnchorElement>, id: string) {
  */
 export function SectionNav({ links }: { links: readonly SectionLink[] }) {
   return (
-    <nav aria-label="Bu sayfada" className="flex flex-wrap items-center gap-x-6 border-y border-hairline">
+    <nav aria-label="Bu sayfada" className="flex flex-wrap items-center gap-x-6 border-y-2 border-ink">
       <span aria-hidden className="hidden text-meta text-muted sm:inline">
         Bu sayfada
       </span>
@@ -41,7 +41,7 @@ export function SectionNav({ links }: { links: readonly SectionLink[] }) {
           onClick={(e) => jump(e, l.id)}
           className="group inline-flex min-h-11 items-center gap-1.5 text-ui text-ink-soft transition-colors duration-[var(--dur-quick)] hover:text-ink"
         >
-          <span className="underline decoration-rule-soft underline-offset-4 transition-[text-decoration-color] duration-[var(--dur-quick)] group-hover:decoration-ink">{l.label}</span>
+          <span className="underline decoration-rule-ui underline-offset-4 transition-[text-decoration-color] duration-[var(--dur-quick)] group-hover:decoration-ink">{l.label}</span>
           <span aria-hidden className="text-muted transition-transform duration-[var(--dur-quick)] ease-[var(--ease-ink)] group-hover:translate-y-[2px] group-hover:text-ink">
             ↓
           </span>

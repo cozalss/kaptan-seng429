@@ -42,7 +42,7 @@ export function SignatureLines({ card, status, justSigned = false }: { card: App
       </div>
       <ol aria-label="İmza zinciri" className="grid gap-x-10 sm:grid-cols-2">
         <Line state="done" title="1. imza — Kurallar (makine)" meta={`${passed}/${total} kural geçti · ${proposedAt}`}>
-          <span className="code inline-flex items-center gap-2 border-[1.5px] border-ink px-2 py-1 text-dense text-ink">
+          <span className="code inline-flex items-center gap-2 border-2 border-ink px-2 py-1 text-dense text-ink">
             <span className="font-sans">✓</span>KURALLAR {passed}/{total}
           </span>
         </Line>
@@ -81,7 +81,7 @@ function Line({
       <div aria-hidden className="relative z-10 flex h-16 items-end sm:h-[76px] pb-2.5 pl-1">
         {children}
       </div>
-      <div className={cn("border-t-[1.5px] pt-2", open ? "border-dashed border-rule-ui" : state === "rejected" ? "border-north" : "border-ink")}>
+      <div className={cn("border-t-2 pt-2", open ? "border-rule-soft" : state === "rejected" ? "border-north" : "border-ink")}>
         <span className={cn("block text-ui font-medium", state === "rejected" ? "text-north" : tone ? "text-[var(--role-risk)]" : "text-ink")}>
           <span className="sr-only">{STATE_WORD[state]}</span>
           {title}
@@ -97,14 +97,14 @@ function Stamp({ word, who, veto, press }: { word: string; who: string; veto: bo
   return (
     <span
       className={cn(
-        "relative inline-flex flex-col items-start border-2 border-current bg-panel/40 px-3.5 py-1.5 outline outline-1 outline-offset-2 outline-current mix-blend-multiply [--oneri-stamp-rot:-3deg]",
+        "relative inline-flex flex-col items-start border-[2.5px] border-current bg-panel/40 px-3.5 py-1.5 outline-2 outline-offset-2 outline-current outline-solid mix-blend-multiply [--oneri-stamp-rot:-3deg]",
         "translate-y-[7px] rotate-[-3deg]",
         veto ? "text-north" : "text-[var(--role-risk)]",
         press && "oneri-stamp-press",
       )}
     >
       <span className="text-[21px] leading-7 font-semibold tracking-[0.16em] uppercase">{word}</span>
-      <span className="text-meta font-medium tracking-[0.06em] tabular-nums uppercase">{who}</span>
+      <span className="text-meta font-semibold tracking-[0.06em] tabular-nums uppercase">{who}</span>
     </span>
   );
 }

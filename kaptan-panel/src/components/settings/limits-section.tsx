@@ -47,7 +47,7 @@ function ActiveLimits({ version }: { version: LimitVersion }) {
       <p className="mb-2 text-dense text-muted">
         Yürürlükte: sürüm {version.version} · {fmtDate(version.effective_from ?? version.created_at)}
       </p>
-      <ul aria-label="Geçerli sınırlar" className="divide-y divide-hairline border-y border-hairline">
+      <ul aria-label="Geçerli sınırlar" className="divide-y divide-hairline border-y-2 border-ink">
         {PLAIN_LIMITS.map((key) => {
           const v = valueOf(version.values, key);
           return v === null ? null : (
@@ -63,8 +63,8 @@ function ActiveLimits({ version }: { version: LimitVersion }) {
 
 function Sig({ n, label, sig, waiting, yours = false }: { n: 1 | 2; label: string; sig: Signature | null; waiting: boolean; yours?: boolean }) {
   return (
-    <li data-testid={`limit-stamp-${n}`} className={cn("flex items-start gap-3 border-[1.5px] px-3.5 py-3", sig ? "border-ink bg-panel shadow-ink" : "border-dashed border-rule-soft")}>
-      <span aria-hidden className={cn("mt-[1px] grid size-6 shrink-0 place-items-center rounded-full border-[1.5px] text-[12px] font-medium", sig ? "border-ink bg-ink text-on-dark" : "border-wash text-wash")}>
+    <li data-testid={`limit-stamp-${n}`} className={cn("flex items-start gap-3 border-2 px-3.5 py-3", sig ? "border-ink bg-panel shadow-ink" : "border-dashed border-rule-soft")}>
+      <span aria-hidden className={cn("mt-[1px] grid size-6 shrink-0 place-items-center rounded-full border-2 text-[13px] font-semibold", sig ? "border-ink bg-ink text-on-dark" : "border-wash text-wash")}>
         {sig ? "✓" : n}
       </span>
       <span className="min-w-0">
@@ -92,11 +92,11 @@ function Pending({ view, onDone }: { view: LimitsView; onDone: () => void }) {
   const after = key ? valueOf(pending.values, key) : null;
 
   return (
-    <div className="space-y-4 border-[1.5px] border-ink bg-panel px-5 py-5" data-testid="limit-pending">
+    <div className="space-y-4 border-2 border-ink bg-panel px-5 py-5" data-testid="limit-pending">
       <p className="label">Bekleyen değişiklik · 1/2 imza</p>
       {key && before !== null && after !== null ? (
         <div className="space-y-1 text-[16px] leading-[24px]">
-          <p className="text-muted line-through decoration-rule-soft">{limitSentence(key, before)}</p>
+          <p className="text-muted line-through decoration-rule-ui">{limitSentence(key, before)}</p>
           <p className="text-ink">{limitSentence(key, after)}</p>
         </div>
       ) : null}
@@ -126,13 +126,13 @@ function History({ versions }: { versions: LimitVersion[] }) {
   return (
     <div>
       <h3 className="mb-2 text-dense text-muted">Sürümler</h3>
-      <ol aria-label="Sınır sürümleri" className="divide-y divide-hairline border-y border-hairline">
+      <ol aria-label="Sınır sürümleri" className="divide-y divide-hairline border-y-2 border-ink">
         {versions.slice(0, 5).map((v) => (
           <li key={v.version} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 py-2.5 text-dense text-ink-soft">
             <span className="font-medium text-ink">Sürüm {v.version}</span>
             <span aria-hidden>·</span>
             <span className="tabular-nums">{historyLine(v)}</span>
-            {v.status === "active" ? <span className="text-meta text-muted underline decoration-dotted underline-offset-[3px]">yürürlükte</span> : null}
+            {v.status === "active" ? <span className="text-meta text-muted underline decoration-dotted decoration-2 underline-offset-[4px]">yürürlükte</span> : null}
           </li>
         ))}
       </ol>

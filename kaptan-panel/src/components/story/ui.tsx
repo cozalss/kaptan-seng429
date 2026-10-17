@@ -52,7 +52,7 @@ export function Lead({ children, className }: { children: ReactNode; className?:
 export function StorySection({ label, children, aside, className }: { label: string; children: ReactNode; aside?: ReactNode; className?: string }) {
   const id = `bolum-${label.toLocaleLowerCase("tr-TR").replace(/[^a-zçğıöşü0-9]+/g, "-").replace(/(^-|-$)/g, "")}`;
   return (
-    <section aria-labelledby={id} className={cn("grid gap-3 sm:grid-cols-[148px_minmax(0,1fr)] sm:gap-8", className)}>
+    <section aria-labelledby={id} className={cn("grid gap-3 sm:grid-cols-[164px_minmax(0,1fr)] sm:gap-8", className)}>
       <div className="flex items-baseline gap-2 sm:block sm:pt-[5px]">
         <h2 id={id} className="label">
           {label}
@@ -67,17 +67,17 @@ export function StorySection({ label, children, aside, className }: { label: str
 /** "E3" — the code is only ever a tiny tag; the words carry the meaning. */
 export function CodeTag({ children, title }: { children: ReactNode; title?: string }) {
   return (
-    <span title={title} className="code inline-block border border-rule-soft px-1 text-meta text-ink-soft">
+    <span title={title} className="code inline-block border-[1.5px] border-rule-ui px-1 text-meta font-medium text-ink">
       {children}
     </span>
   );
 }
 
-/** "örnek değer": a dotted underline says "this figure is an example", no ornament. */
+/** "örnek değer": a heavy dotted underline (still visible on a projector) says "this figure is an example", no ornament. */
 export function SampleTag({ className }: { className?: string }) {
   return (
     <span
-      className={cn("text-meta whitespace-nowrap text-muted underline decoration-muted decoration-dotted underline-offset-[3px]", className)}
+      className={cn("text-meta font-medium whitespace-nowrap text-ink-soft underline decoration-ink-soft decoration-dotted decoration-2 underline-offset-[4px]", className)}
       title="Örnek veri: gerçek sonuç değil"
     >
       örnek değer
@@ -89,9 +89,9 @@ export function SampleTag({ className }: { className?: string }) {
 export function Fleuron({ className }: { className?: string }) {
   return (
     <div aria-hidden className={cn("my-[72px] flex items-center gap-3 text-rule-soft", className)}>
-      <span className="h-px flex-1 bg-hairline" />
-      <span className="inline-block size-[6px] rotate-45 border border-current" />
-      <span className="h-px flex-1 bg-hairline" />
+      <span className="h-[2px] flex-1 bg-hairline" />
+      <span className="inline-block size-[8px] rotate-45 border-2 border-current" />
+      <span className="h-[2px] flex-1 bg-hairline" />
     </div>
   );
 }

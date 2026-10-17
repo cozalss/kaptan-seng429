@@ -42,7 +42,7 @@ export function ProposalCard({
         <p className="flex min-w-0 flex-wrap items-baseline gap-x-3">
           <span className="text-ui font-medium tracking-normal text-ink">{titleTr(name)}</span>
           <span className="text-meta text-muted">{kind}</span>
-          {fresh ? <span className="border border-wash px-1.5 text-meta font-medium text-wash">yeni</span> : null}
+          {fresh ? <span className="bg-wash px-1.5 text-meta font-semibold text-on-dark">yeni</span> : null}
         </p>
         <Signatures yours={yours} />
       </div>
@@ -72,13 +72,13 @@ function Signatures({ yours }: { yours: boolean }) {
   return (
     <p className="tone-risk_officer flex shrink-0 items-center gap-2 text-meta text-ink-soft">
       <span aria-hidden className="flex items-center gap-[3px]">
-        <span className="size-[9px] bg-ink" />
-        <span className="size-[9px] border-[1.5px] border-[var(--tone)]" />
+        <span className="size-[11px] bg-ink" />
+        <span className="size-[11px] border-2 border-[var(--tone)]" />
       </span>
       <span className="sr-only">İmzalar: kurallar imzaladı;</span>
       <span>
         <span aria-hidden className="tabular-nums">1/2 · </span>
-        {yours ? <span className="font-medium text-[var(--tone)]">ikinci imza senin</span> : "ikinci imza Risk Sorumlusu’nun"}
+        {yours ? <span className="font-semibold text-[var(--tone)]">ikinci imza senin</span> : "ikinci imza Risk Sorumlusu’nun"}
       </span>
     </p>
   );

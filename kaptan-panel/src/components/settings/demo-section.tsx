@@ -75,7 +75,7 @@ function Controls({ allowed }: { allowed: boolean }) {
   return (
     <div className="space-y-8">
       <div className="space-y-3">
-        <ul className="divide-y divide-hairline border-y border-hairline">
+        <ul className="divide-y divide-hairline border-y-2 border-ink">
           {SCENARIOS.map((s) => (
             <li key={s.id} className="flex items-center justify-between gap-5 py-4">
               <div className="min-w-0">
@@ -125,7 +125,7 @@ function Controls({ allowed }: { allowed: boolean }) {
             {tamperOn ? "Kurcalamayı geri al" : "Bir kaydı kurcala"}
           </Button>
           <span className="text-dense text-muted">{tamperOn ? "Şu an: kayıt değişik" : "Şu an: defter temiz"}</span>
-          <Link href={ROUTES.denetim} className="inline-flex min-h-11 items-center text-dense text-ink underline decoration-rule-soft underline-offset-4 hover:decoration-ink">
+          <Link href={ROUTES.denetim} className="inline-flex min-h-11 items-center text-dense text-ink underline decoration-rule-ui underline-offset-4 hover:decoration-ink">
             Denetim’e git →
           </Link>
         </div>

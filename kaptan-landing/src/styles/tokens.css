@@ -1,44 +1,51 @@
 /* Mirrors the YAML tokens in DESIGN.md — change both together.
-   The page is a printed book on rice paper: sumi ink, an indigo wash, navy only for the mark and
-   focus, north red only for the needle, the boat's flag and the one approval stamp. */
+   The page is a printed book on rice paper: sumi ink, an indigo wash, kaptan navy as the second
+   ink (mark, focus, the active choice, focal numbers), north red only for the needle, the boat's
+   flag and the one approval stamp.
+   Projector rule (DESIGN.md §2): the site is shown on a projector in a sunlit room, so every value
+   here must survive a washout (contrast .55, brightness 1.25): text that carries meaning ≥ 7:1,
+   nothing below 4.5:1, rules that structure the page ≥ 2px. */
 :root {
   /* Colors */
-  --color-brand: #0e3a66; /* kaptan laciverti: the wordmark, focus ring, selection (10.4:1 on paper) */
+  --color-brand: #0c2f63; /* kaptan laciverti: wordmark, focus, selection, the active choice, focal numbers (11.6:1 on paper) */
   --color-on-brand: #ffffff;
   /* north red: compass needle tips, the boat's flag, the approval stamp — never UI chrome */
   --color-north: #b3261e;
   --color-ink: #121318;
   --color-ink-pure: #000000;
-  /* greys on paper (#f3f1ec): muted 4.9:1, subtle / unrevealed 4.8:1, placeholder 4.9:1 on panel */
-  --color-muted: #666663;
-  --color-subtle: #686865;
-  --color-unrevealed: #686865;
-  --color-placeholder: #6a6a67;
+  /* greys on paper (#f3f1ec): muted 8.8:1 (projector rule: meta text stays near-ink) */
+  --color-muted: #45433e;
+  --color-subtle: #45433e;
+  --color-unrevealed: #45433e;
+  --color-placeholder: #45433e;
   /* rice paper everywhere; panels are a brighter sheet laid on it */
   --color-canvas: #f3f1ec;
   --color-canvas-hero: #f3f1ec;
   --color-paper: #f3f1ec;
-  --color-paper-panel: #fbfaf6;
+  --color-paper-panel: #fffefa; /* a brighter sheet: a clear step up from the paper even when washed out */
   --color-sumi: #121318;
-  /* the ink sea's indigo wash (sea-renderer.js SEA_COLORS.indigo): tints, hover fills */
-  --color-wash: #2b4261;
-  --color-wash-soft: rgb(43 66 97 / 0.08);
-  --color-surface-product: #fbfaf6;
-  --color-surface-input: #fbfaf6;
+  /* the indigo wash (sea-renderer.js SEA_COLORS.indigo, INK.indigo): the sea, tints, hover fills (7.4:1 with paper) */
+  --color-wash: #2a4c8c;
+  --color-wash-soft: rgb(42 76 140 / 0.1);
+  --color-surface-product: #fffefa;
+  --color-surface-input: #fffefa;
   --color-surface-soft: #f7f5f0;
   --color-chip: #121318;
-  --color-on-chip: #fbfaf6;
+  --color-on-chip: #fffefa;
   --color-rule-strong: #121318;
-  --color-rule-soft: rgb(18 19 24 / 0.28);
-  --color-hairline: rgb(18 19 24 / 0.14);
+  --color-rule-soft: rgb(18 19 24 / 0.6);
+  --color-hairline: rgb(18 19 24 / 0.34);
   --color-scrim: rgb(243 241 236 / 0.72);
 
   /* Ink marks: panels with an ink border and a hard offset shadow, like comic panels */
-  --ink-line: 1.5px;
+  --ink-line: 2px;
   --ink-border: var(--ink-line) solid var(--color-sumi);
-  --shadow-panel: 4px 4px 0 var(--color-sumi);
-  --shadow-panel-lg: 6px 6px 0 var(--color-sumi);
+  --shadow-panel: 5px 5px 0 var(--color-sumi);
+  --shadow-panel-lg: 7px 7px 0 var(--color-sumi);
   --gutter-panel: 14px;
+  /* Projector rule for raster art (crew plates, chart, Rota plates): the plates were drawn pale, so
+     they are printed with firmer ink — darker darks, a deeper indigo — instead of being regenerated. */
+  --art-print: contrast(1.2) saturate(1.35) brightness(0.97);
 
   /* Font families */
   /* Bodoni at display size carries the page (Instrument Serif reads as a template default in 2026). */
@@ -54,8 +61,12 @@
   --text-chapter: min(12vw, 20vh);
   --text-heading-section: clamp(28px, 2.5vw, 44px);
   --text-heading-overlay: 32px;
-  --text-caption-panel: clamp(20px, 1.7vw, 27px);
-  --text-running-head: 13px;
+  --text-caption-panel: clamp(21px, 1.8vw, 28px);
+  --text-running-head: 14px;
+  /* Projector rule: Bodoni Moda Display only ships 400 and its hairlines vanish on a projector. Every
+     Bodoni setting carries a stroke in its own colour that roughly doubles the hairlines and barely
+     touches the stems: 2 % of the size, at least 0.35px, at most 2.2px (hero and chapter titles). */
+  --bodoni-stroke: clamp(0.35px, 0.02em, 2.2px);
   /* Display leading (0.9) and the extra room a two-line title gets when Turkish marks would touch
      (Ş/Ç cedilla on line 1, İ/Ö/Ü/Ğ on line 2): set by lib/title-marks.js, used in book.css. */
   --title-leading: 0.9;
@@ -63,7 +74,7 @@
   --text-body-lg: clamp(17px, 1.39vw, 22px);
   --text-body-md: 16px;
   --text-body-sm: 14px;
-  --text-caption: 12px;
+  --text-caption: 13px;
   --text-nav: 14px;
   --text-button: 14px;
   --text-mono: 12px;

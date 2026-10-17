@@ -99,7 +99,7 @@ export function LoginForm({ next, role }: { next: string | null; role: Role }) {
         value={passphrase}
         onChange={(e) => setPassphrase(e.target.value)}
         className={cn(
-          "h-13 w-full border-[1.5px] border-ink bg-panel px-3.5 text-[16px] text-ink",
+          "h-13 w-full border-2 border-ink bg-panel px-3.5 text-[16px] text-ink",
           "transition-[box-shadow,border-color] duration-[var(--dur-quick)] ease-[var(--ease-ink)]",
           "focus-visible:border-brand focus-visible:shadow-[3px_3px_0_var(--brand)] focus-visible:outline-none",
           "aria-[invalid=true]:border-north",

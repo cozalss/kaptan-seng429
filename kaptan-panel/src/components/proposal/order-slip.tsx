@@ -55,11 +55,11 @@ export function OrderSlip({
       data-ticket-slip={t.ticket_no}
       aria-label={`Emir fişi ${t.ticket_no}`}
       role="group"
-      className={cn("paper-grain relative border-[1.5px] border-ink bg-panel shadow-ink", laid && "oneri-slip-lay", className)}
+      className={cn("paper-grain relative border-2 border-ink bg-panel shadow-ink", laid && "oneri-slip-lay", className)}
     >
       <div className="flex items-baseline justify-between gap-3 px-5 pt-4 sm:px-6">
         <span className="label">Emir fişi</span>
-        <span className="code text-meta text-muted">{t.ticket_no}</span>
+        <span className="code text-meta text-ink-soft">{t.ticket_no}</span>
       </div>
       <div className="space-y-4 px-5 pt-3 pb-5 sm:px-6">
         <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-ink">
@@ -67,14 +67,14 @@ export function OrderSlip({
           <span className="code text-[28px] leading-none tracking-normal">{t.ticker}</span>
           <span className="text-dense text-muted">{titleTr(shortName(t.company_name))}</span>
         </p>
-        <dl key={copies} className={cn("grid border-[1.5px] border-ink", compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-[1fr_1.2fr_2fr]")}>
+        <dl key={copies} className={cn("grid border-2 border-ink", compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-[1fr_1.2fr_2fr]")}>
           <Box label="Lot" value={fmtInt(t.qty)} flash={copies > 0} />
-          <Box label="Limit" value={fmtPrice(t.limit_price)} flash={copies > 0} className="border-l border-rule-ui" />
+          <Box label="Limit" value={fmtPrice(t.limit_price)} flash={copies > 0} className="border-l-2 border-rule-ui" />
           <Box
             label="Seans"
             value={t.session_tr}
             flash={copies > 0}
-            className={cn("col-span-2 border-t border-rule-ui", !compact && "sm:col-span-1 sm:border-t-0 sm:border-l")}
+            className={cn("col-span-2 border-t-2 border-rule-ui", !compact && "sm:col-span-1 sm:border-t-0 sm:border-l-2")}
             small
           />
         </dl>
@@ -89,7 +89,7 @@ export function OrderSlip({
 function Box({ label, value, flash, small = false, className }: { label: string; value: string; flash: boolean; small?: boolean; className?: string }) {
   return (
     <div className={cn("min-w-0 px-3 pt-2 pb-2.5", flash && "oneri-copied", className)}>
-      <dt className="text-meta text-muted">{label}</dt>
+      <dt className="text-meta font-medium text-ink-soft">{label}</dt>
       <dd className={cn("mt-0.5 text-ink tabular-nums", small ? "text-ui leading-7" : "text-[22px] leading-7 font-medium tracking-[-0.01em]")}>{value}</dd>
     </div>
   );
@@ -126,7 +126,7 @@ function Marked({ ticket, pressed }: { ticket: OrderTicket; pressed: boolean }) 
   const e = ticket.entry;
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-3">
-      <p className={cn(pressed && "animate-stamp-in", "inline-block -rotate-2 border-2 border-ink px-2.5 py-1 text-[14px] font-medium tracking-[0.06em] text-ink uppercase [--stamp-rot:-2deg]")}>
+      <p className={cn(pressed && "animate-stamp-in", "inline-block -rotate-2 border-[2.5px] border-ink px-2.5 py-1 text-[14px] font-semibold tracking-[0.06em] text-ink uppercase [--stamp-rot:-2deg]")}>
         {ENTRY_LABEL[e.status]}
         {e.status === "entered" && e.filled_qty && e.avg_price ? ` · ${fmtInt(e.filled_qty)} lot @ ${fmtPrice(e.avg_price)}` : ""}
       </p>

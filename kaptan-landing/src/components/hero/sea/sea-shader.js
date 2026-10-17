@@ -187,7 +187,7 @@ void main() {
   float lane = fract(slant * columns);
   float fall = uv.y * (3.0 + hash(vec2(column, 2.0)) * 3.0) + uTime * (6.0 + hash(vec2(column, 5.0)) * 4.0) + hash(vec2(column, 9.0)) * 20.0;
   float drop = step(mix(0.9, 0.8, uStorm), noise(vec2(column * 1.7, fall)));
-  ink = max(ink, smoothstep(0.92, 1.0, lane) * drop * uStorm * 0.5 * weather);
+  ink = max(ink, smoothstep(0.88, 1.0, lane) * drop * uStorm * 0.72 * weather);
 
   // Intro: the ink bleeds into the paper, bottom first, along a ragged front.
   float field = fbm3(uv * 3.2) * 0.55 + (1.0 - uv.y) * 0.45;

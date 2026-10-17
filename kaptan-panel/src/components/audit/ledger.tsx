@@ -23,7 +23,7 @@ export const rowId = (pos: number) => `kayit-${pos}`;
 export const Timeline = memo(function Timeline({ items, scope, broken }: { items: readonly AuditEntry[]; scope: Scope; broken: number | null }) {
   const rows = useMemo(() => groupRuns(items), [items]);
   return (
-    <ol aria-label="Denetim kayıtları" className="animate-fade-in divide-y divide-hairline border-y border-hairline">
+    <ol aria-label="Denetim kayıtları" className="animate-fade-in divide-y divide-hairline border-y-2 border-ink">
       {rows.map((r) =>
         r.kind === "one" ? (
           <Row key={r.entry.chain_pos} entry={r.entry} scope={scope} broken={broken} />
@@ -63,8 +63,8 @@ function Sentence({ entry }: { entry: AuditEntry }) {
 function Fingerprint({ entry, bad }: { entry: AuditEntry; bad: boolean }) {
   return (
     <span className="col-start-2 mt-1 flex items-baseline gap-2 self-start sm:col-start-3 sm:mt-[3px]">
-      <span className={cn("code text-meta tabular-nums", bad ? "text-north" : "text-ink-soft")}>#{fmtInt(entry.chain_pos)}</span>
-      <span className={cn("code text-meta", bad ? "text-north" : "text-muted")} title={`parmak izi (hash): ${entry.hash}`}>
+      <span className={cn("code text-meta font-semibold tabular-nums", bad ? "text-north" : "text-ink")}>#{fmtInt(entry.chain_pos)}</span>
+      <span className={cn("code text-meta", bad ? "text-north" : "text-ink-soft")} title={`parmak izi (hash): ${entry.hash}`}>
         {entry.hash.slice(0, 8)}
       </span>
     </span>
@@ -81,8 +81,9 @@ function Row({ entry, scope, broken }: { entry: AuditEntry; scope: Scope; broken
       className={cn(
         GRID,
         "scroll-mt-24",
-        (person || bad) && "relative before:absolute before:top-3 before:bottom-3 before:-left-3 before:w-[3px]",
-        person && `tone-${person.role} before:bg-[var(--tone)]`,
+        (person || bad) && "relative before:absolute before:top-3 before:bottom-3 before:-left-3 before:w-[4px]",
+        // A person's act: the role's tone as a margin bar and a faint wash of the same ink.
+        person && `tone-${person.role} -mx-3 bg-[var(--tone-wash)] px-3 before:left-0 before:bg-[var(--tone)]`,
         // The broken record: a north rule in the margin and a tint that keeps clear of the text.
         bad && "-mx-3 bg-north-tint px-3 before:left-0 before:bg-north",
       )}
@@ -93,7 +94,7 @@ function Row({ entry, scope, broken }: { entry: AuditEntry; scope: Scope; broken
           <Sentence entry={entry} />
         </p>
         <p className="mt-0.5 flex items-center gap-1.5 text-dense text-muted">
-          {person ? <RoleEmblem role={person.role} className="size-[14px] shrink-0 text-[var(--tone)]" /> : null}
+          {person ? <RoleEmblem role={person.role} className="size-4 shrink-0 text-[var(--tone)]" /> : null}
           <span>
             {who.name}
             {who.kind ? ` · ${who.kind}` : ""}
@@ -118,7 +119,7 @@ function Run({ entries, actor, scope, broken }: { entries: readonly AuditEntry[]
         <details className="group" open={hasBroken || undefined}>
           <summary className="flex min-h-11 cursor-pointer list-none flex-wrap items-center gap-x-3 text-dense text-muted sm:min-h-8 [&::-webkit-details-marker]:hidden">
             <span className="tabular-nums">{runMeta(entries)}</span>
-            <span className="text-ink underline decoration-rule-soft underline-offset-4 group-hover:decoration-ink">
+            <span className="text-ink underline decoration-rule-ui underline-offset-4 group-hover:decoration-ink">
               <span className="group-open:hidden">göster</span>
               <span className="hidden group-open:inline">gizle</span>
             </span>

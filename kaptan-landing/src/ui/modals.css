@@ -30,8 +30,9 @@
 .about-modal__title,
 .legal-modal__title {
   padding-bottom: var(--space-sm);
-  border-bottom: 1px solid var(--color-sumi);
+  border-bottom: 2px solid var(--color-sumi);
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: clamp(34px, 4vw, 48px);
   font-weight: 400;
   line-height: 0.95;
@@ -59,14 +60,14 @@
   margin: 0;
   font-size: var(--text-body-sm);
   font-variant-numeric: tabular-nums;
-  border-bottom: 1px solid var(--color-rule-soft);
+  border-bottom: 1.5px solid var(--color-rule-soft);
 }
 
 .about-modal__facts dt,
 .about-modal__facts dd {
   margin: 0;
   padding: var(--space-xs) 0;
-  border-top: 1px solid var(--color-rule-soft);
+  border-top: 1.5px solid var(--color-rule-soft);
 }
 
 .about-modal__facts dt {
@@ -117,6 +118,7 @@
   content: counter(legal) '.';
   grid-row: span 2;
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: 22px;
   line-height: 1;
   color: var(--color-sumi);
@@ -124,6 +126,7 @@
 
 .legal-modal__heading {
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: 22px;
   font-weight: 400;
   line-height: 1.1;

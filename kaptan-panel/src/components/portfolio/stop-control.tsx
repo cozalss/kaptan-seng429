@@ -62,7 +62,7 @@ export function StopControl({ risk }: { risk: RiskStatus }) {
   const reopened = justChanged === "confirm";
   const stopped = risk.kill_switch === "on";
   return (
-    <section aria-labelledby="durdur" className={cn("border-t-[1.5px] pt-5", stopped ? "border-north" : "border-ink")}>
+    <section aria-labelledby="durdur" className={cn("border-t-2 pt-5", stopped ? "border-north" : "border-ink")}>
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 id="durdur" className="label">
           Durdur

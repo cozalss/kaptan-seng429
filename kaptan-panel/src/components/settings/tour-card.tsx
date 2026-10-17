@@ -12,7 +12,7 @@ const preload = () => void import("@/components/demo/guided-demo-bar");
  */
 export function TourCard() {
   return (
-    <section aria-labelledby="tur-baslik" className="space-y-3 border-[1.5px] border-ink bg-panel px-5 py-5 sm:px-7 sm:py-6">
+    <section aria-labelledby="tur-baslik" className="space-y-3 border-2 border-ink bg-panel px-5 py-5 sm:px-7 sm:py-6">
       <h2 id="tur-baslik" className="font-display-text text-title text-ink">
         Rehberli tur
       </h2>

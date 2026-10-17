@@ -7,7 +7,7 @@
   padding: var(--space-xl) var(--gutter) 72px;
   background: var(--color-paper);
   color: var(--color-sumi);
-  border-top: 1px solid var(--color-hairline);
+  border-top: 1.5px solid var(--color-hairline);
 }
 
 .colophon__page {
@@ -20,6 +20,7 @@
 
 .colophon__title {
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: clamp(40px, 4.4vw, 68px);
   font-weight: 400;
   line-height: 1;
@@ -40,6 +41,7 @@
 .colophon__lead {
   margin-top: 28px;
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: clamp(19px, 1.5vw, 23px);
   line-height: 1.38;
 }
@@ -65,6 +67,7 @@
   width: 100%;
   margin-top: 52px;
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: 24px;
   font-weight: 400;
   line-height: 1;
@@ -98,6 +101,7 @@
   align-items: baseline;
   gap: var(--space-xs);
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: 21px;
   line-height: 1.2;
 }
@@ -124,8 +128,8 @@
   gap: 0 18px;
   margin-top: 44px;
   padding: 10px 0;
-  border-top: 1px solid var(--color-sumi);
-  border-bottom: 1px solid var(--color-sumi);
+  border-top: 2px solid var(--color-sumi);
+  border-bottom: 2px solid var(--color-sumi);
   font-size: var(--text-body-sm);
 }
 
@@ -169,6 +173,7 @@
 .colophon__end {
   margin-top: clamp(56px, 9vh, 96px);
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: clamp(22px, 1.8vw, 28px);
   line-height: 1;
   letter-spacing: 0.04em;

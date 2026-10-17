@@ -71,7 +71,7 @@ export function TodayScreen() {
             {state === "stopped" && risk ? <StoppedDay risk={risk} /> : null}
             {state === "empty" ? <CalmDay /> : null}
             {state === "open" ? (
-              <ol aria-label="Bekleyen öneriler" className="animate-fade-in divide-y divide-hairline border-y-[1.5px] border-ink">
+              <ol aria-label="Bekleyen öneriler" className="animate-fade-in divide-y divide-hairline border-y-2 border-ink">
                 {open.map((c) => (
                   <li key={c.proposal_id}>
                     <ProposalCard card={c} fresh={fresh.has(c.proposal_id)} nowIso={nowIso} yours={role === "risk_officer"} />
@@ -113,7 +113,7 @@ function keepDash(text: string): ReactNode {
 /** Two quiet rows in the list's own rhythm while the desk loads (they show only after 280ms). */
 function LoadingRows() {
   return (
-    <div role="status" aria-label="Öneriler yükleniyor" className="divide-y divide-hairline border-y-[1.5px] border-ink">
+    <div role="status" aria-label="Öneriler yükleniyor" className="divide-y divide-hairline border-y-2 border-ink">
       {[0, 1].map((i) => (
         <div key={i} className="space-y-3 py-6">
           <Skeleton className="h-3.5 w-40" />

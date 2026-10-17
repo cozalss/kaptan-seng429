@@ -10,7 +10,7 @@ import { writeQuadAffine } from '../../../lib/ink3d/quad.js';
 import { stillOutline } from '../../../lib/ink3d/paths.js';
 import { BARGE, BOX_FACES, FACE, bargeAxes, deckY, writeBox } from './world.js';
 
-const HULL = Object.freeze({ side: '#2b4261', end: '#1d2d44', deck: '#b3bdc9' });
+const HULL = Object.freeze({ side: '#2a4c8c', end: '#1c335e', deck: '#b3bdc9' });
 const STACK = Object.freeze({ top: INK.sheet, lit: '#eef0ef', side: '#dfe3e6', end: '#d6dbe0' });
 const LIGHT = Object.freeze([-0.55, 0.75, 0.35]); // from the upper left, a little in front
 const STAMP = Object.freeze({ halfH: 0.13, rotate: -0.06 });

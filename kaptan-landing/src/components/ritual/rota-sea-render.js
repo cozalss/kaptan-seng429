@@ -7,7 +7,7 @@ import { LANDMARKS } from './rota-landmarks.js';
 import { seaBands, washPools } from './rota-sea.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const WASH_COLOR = '#2b4261'; // --color-wash, SEA_COLORS.indigo in the hero
+const WASH_COLOR = '#2a4c8c'; // --color-wash, SEA_COLORS.indigo in the hero
 const INK_COLOR = '#121318'; // --color-sumi, SEA_COLORS.ink
 const PAPER_COLOR = '#f3f1ec'; // --color-paper
 export const HORIZON = 22; // px below the chart top: the sea begins under the title

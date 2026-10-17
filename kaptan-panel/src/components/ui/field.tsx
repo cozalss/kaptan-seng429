@@ -4,7 +4,7 @@ import { forwardRef, type HTMLAttributes, type InputHTMLAttributes, type Textare
 import { cn } from "@/lib/utils";
 
 const control =
-  "w-full border-[1.5px] border-ink bg-panel px-3 text-ui text-ink placeholder:text-muted " +
+  "w-full border-2 border-ink bg-panel px-3 text-ui text-ink placeholder:text-muted " +
   "transition-[border-color,box-shadow] duration-[var(--dur-quick)] focus-visible:outline-none focus-visible:border-brand focus-visible:shadow-[3px_3px_0_var(--brand)] " +
   "disabled:cursor-not-allowed disabled:bg-sunk disabled:text-muted aria-[invalid=true]:border-north";
 

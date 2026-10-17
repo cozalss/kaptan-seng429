@@ -64,7 +64,7 @@ export function SlipActions({ ticket, onMarked, onCopied }: { ticket: OrderTicke
   const quick = (kind: MarkKind) => void mark(initialDraft(kind, ticket, currentTimeMs()));
 
   return (
-    <div className="border-t-[1.5px] border-dashed border-rule-ui px-5 pt-4 pb-5 sm:px-6">
+    <div className="border-t-2 border-dashed border-ink px-5 pt-4 pb-5 sm:px-6">
       {draft ? (
         <form
           className="space-y-3"
@@ -76,11 +76,11 @@ export function SlipActions({ ticket, onMarked, onCopied }: { ticket: OrderTicke
           <p className="text-ui text-ink">Kaç lot, hangi fiyattan doldu?</p>
           <div className="grid grid-cols-2 gap-3">
             <label className="space-y-1">
-              <span className="text-meta text-muted">Lot</span>
+              <span className="text-meta font-medium text-ink-soft">Lot</span>
               <Input inputMode="numeric" value={draft.qty} onChange={(e) => setDraft({ ...draft, qty: e.target.value })} className="h-11 tabular-nums" autoFocus />
             </label>
             <label className="space-y-1">
-              <span className="text-meta text-muted">Ortalama fiyat (TL)</span>
+              <span className="text-meta font-medium text-ink-soft">Ortalama fiyat (TL)</span>
               <Input inputMode="decimal" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} className="h-11 tabular-nums" />
             </label>
           </div>

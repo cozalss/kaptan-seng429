@@ -41,6 +41,7 @@
   min-height: var(--sticky-cta-height);
   padding: 0 14px;
   font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
   font-size: 14px;
   font-weight: 500;
   line-height: 1;
@@ -52,7 +53,7 @@
 }
 
 .sticky-cta__action:focus-visible {
-  outline: 2px solid var(--color-brand);
+  outline: 3px solid var(--color-brand);
   outline-offset: -5px;
 }
 

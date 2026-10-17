@@ -85,13 +85,13 @@ export function ProposalScreen({ proposalId }: { proposalId: string }) {
 
       {/* The story reads down a thin ink thread (wide screens) that ends in the decision sheet. */}
       <div className="relative space-y-12 sm:pl-7">
-        <span aria-hidden className="absolute top-2 bottom-[-72px] left-[3px] !m-0 hidden w-px bg-rule-soft sm:block" />
+        <span aria-hidden className="absolute top-2 bottom-[-72px] left-[3px] !m-0 hidden w-[2px] bg-rule-ui sm:block" />
         <StorySection label="Ne oldu?" className={STEP}>
           <p>
             {titleTr(shortName(card.company_name))}, {locative(fmtTime(publishedAt))} KAP’a bir bildirim gönderdi: {card.sub_type_tr.toLocaleLowerCase("tr-TR")}.
           </p>
           {quote ? (
-            <blockquote className="relative border-l-[1.5px] border-ink pl-5 font-display-text text-lead text-ink-soft">
+            <blockquote className="relative border-l-2 border-ink pl-5 font-display-text text-[22px] leading-[31px] text-ink">
               <span aria-hidden className="absolute top-0 left-[7px] text-ink-soft">
                 “
               </span>
@@ -139,7 +139,7 @@ export function ProposalScreen({ proposalId }: { proposalId: string }) {
 }
 
 /** A story step on the thread: a small ink square on the line, level with the step's label. */
-const STEP = "relative sm:before:absolute sm:before:top-[9px] sm:before:left-[-28px] sm:before:size-[7px] sm:before:bg-ink";
+const STEP = "relative sm:before:absolute sm:before:top-[8px] sm:before:left-[-28px] sm:before:size-[10px] sm:before:bg-ink";
 
 /** Holds the history strip's place while the run details load, so nothing jumps. */
 function StripPlaceholder() {

@@ -73,7 +73,7 @@ export function Notes({ card }: { card: ApprovalCard }) {
       {mayNote ? (
         <form
           noValidate
-          className="border-[1.5px] border-ink bg-panel transition-[border-color,box-shadow] duration-[var(--dur-quick)] focus-within:border-brand focus-within:shadow-[3px_3px_0_var(--brand)]"
+          className="border-2 border-ink bg-panel transition-[border-color,box-shadow] duration-[var(--dur-quick)] focus-within:border-brand focus-within:shadow-[3px_3px_0_var(--brand)]"
           onSubmit={(e) => {
             e.preventDefault();
             void submit();

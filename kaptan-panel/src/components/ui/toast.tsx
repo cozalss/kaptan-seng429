@@ -32,12 +32,12 @@ export function Toaster() {
         closeButtonAriaLabel: "Bildirimi kapat",
         classNames: {
           toast:
-            "pointer-events-auto relative flex min-h-12 w-[420px] max-w-[calc(100vw-24px)] items-start gap-3 border-[1.5px] border-ink bg-panel py-2.5 pr-11 pl-3 shadow-ink font-sans text-ui text-ink",
+            "pointer-events-auto relative flex min-h-12 w-[420px] max-w-[calc(100vw-24px)] items-start gap-3 border-2 border-ink bg-panel py-2.5 pr-11 pl-3 shadow-ink font-sans text-ui text-ink",
           content: "min-w-0 flex-1",
           title: "font-medium break-words",
           description: "line-clamp-3 break-words text-dense text-ink-soft",
           icon: "mt-px",
-          actionButton: "ml-auto shrink-0 self-center border-[1.5px] border-ink bg-ink px-2.5 py-1 text-dense font-medium text-on-dark hover:bg-ink-lift",
+          actionButton: "ml-auto shrink-0 self-center border-2 border-ink bg-ink px-2.5 py-1 text-dense font-medium text-on-dark hover:bg-ink-lift",
           closeButton:
             "absolute top-1 right-1 grid size-9 place-items-center text-ink-soft hover:bg-wash-tint hover:text-ink [&_svg]:size-3.5",
           error: "border-north",
@@ -73,8 +73,8 @@ function Mark({ children, critical = false }: { children: string; critical?: boo
       aria-hidden
       className={
         critical
-          ? "grid size-5 shrink-0 place-items-center border border-north bg-north text-meta font-medium text-on-dark"
-          : "grid size-5 shrink-0 place-items-center border border-ink text-meta text-ink"
+          ? "grid size-5 shrink-0 place-items-center border-2 border-north bg-north text-meta font-medium text-on-dark"
+          : "grid size-5 shrink-0 place-items-center border-2 border-ink text-meta text-ink"
       }
     >
       {children}

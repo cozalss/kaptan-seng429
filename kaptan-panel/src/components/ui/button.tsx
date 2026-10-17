@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /**
- * Ink button. Square, 1.5px ink border; the hard offset shadow means "this sits on top" and
+ * Ink button. Square, 2px ink border; the hard offset shadow means "this sits on top" and
  * is printed flat on press. A closed button drops its shadow and fill and gets a dashed rule
  * (it reads as "not now", not as faded ink); a pending one stays pressed flat.
  * `danger` (north red) is reserved for Durdur and rejections.
@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 export const buttonVariants = cva(
   [
     "relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap",
-    "border-[1.5px] font-sans font-medium select-none",
+    "border-2 font-sans font-medium select-none",
     "transition-[translate,box-shadow,background-color,color,border-color] duration-[var(--dur-quick)] ease-[var(--ease-out-expo)] active:duration-[var(--dur-instant)]",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
     // Written out in full (no template strings) so Tailwind sees every class. Not while pending.
@@ -34,7 +34,7 @@ export const buttonVariants = cva(
         "danger-outline":
           "border-north bg-panel text-north shadow-[3px_3px_0_var(--north)] hover:bg-north-tint active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
         /** A text button: underlined words, no box, still a 44px target. */
-        link: "inline-flex min-h-11 items-center border-transparent bg-transparent px-0 font-normal text-ink underline underline-offset-4 decoration-rule-soft hover:decoration-ink",
+        link: "inline-flex min-h-11 items-center border-transparent bg-transparent px-0 font-normal text-ink underline underline-offset-4 decoration-[1.5px] decoration-rule-ui hover:decoration-ink",
       },
       size: {
         sm: "h-8 px-3 text-dense max-sm:h-11",

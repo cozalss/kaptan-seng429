@@ -24,8 +24,8 @@ KAPtan, SENG 429 Enterprise Application Development Lab (Çankaya Üniversitesi,
 
 Site, pirinç kâğıdına basılmış bir **çizgi roman kitabıdır** (SBS "The Boat"tan esinli sumi-e mürekkep): fırtınada küçük bir tekne, okuyan bir tayfa, dümeni tutan kurallar, son imzayı atan bir insan. Tasarım sisteminin tamamı — renk görevleri, tipografi, kitap bileşenleri, hareket haritası, tek WebGL bağlamı kuralı, illüstrasyon hattı, yasaklı "AI izi" kalıpları, erişilebilirlik, bütçeler ve QA — **`DESIGN.md`**'dedir. Kısaca:
 
-- Zemin kâğıt `#F3F1EC`, mürekkep `#121318`, gölgeler için çivit yıkama `#2B4261`; köşeler kare, gölgeler bulanık değil sert ofset.
-- **Kuzey kırmızısı `#B3261E`** yalnızca pusula iğnesi, teknenin bayrağı ve Pusula sahnesindeki tek ONAYLANDI mührü. **Kaptan laciverti `#0E3A66`** yalnızca wordmark, odak halkası ve seçim rengi.
+- Zemin kâğıt `#F3F1EC`, mürekkep `#121318`, deniz ve yıkamalar için koyu çivit `#2A4C8C`; köşeler kare, gölgeler bulanık değil sert ofset.
+- **Kuzey kırmızısı `#B3261E`** yalnızca pusula iğnesi, teknenin bayrağı ve Pusula sahnesindeki tek ONAYLANDI mührü. **Kaptan laciverti `#0C2F63`** ikinci mürekkep: wordmark, odak halkası, seçim rengi, etkin seçim ve odak sayılar. Site güneşli sınıfta projeksiyonla gösterildiği için tüm değerler soluklaşmaya dayanıklıdır (`DESIGN.md` §2.1).
 - Başlıklar Bodoni Moda Display büyük harf, ikinci satır içeriden; metin Inter, cümle düzeni; mono yalnızca kural kodları (E1–E4, R01–R16).
 - Tüm metin Türkçe, "siz" dili, sakin ve somut. Büyük harf CSS `text-transform` + `lang="tr"` ile; JS'te `toLocaleUpperCase('tr-TR')`.
 

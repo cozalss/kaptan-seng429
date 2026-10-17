@@ -2,61 +2,77 @@
 
 /* ──────────────────────────────────────────────────────────────────────────
    KAPtan Paneli — design tokens.
-   A ship's log on rice paper (kaptan-landing/DESIGN.md §2): sumi ink, square 1.5px lines,
+   A ship's log on rice paper (kaptan-landing/DESIGN.md §2): sumi ink, square ink lines,
    Bodoni for words, tabular Inter for every figure. Every device means one thing:
    - a hard offset shadow = "set on top or stamped" (overlays, stamps, the emir fişi, the
-     one primary button); plain content sits flat, divided by hairlines and ruled lists;
+     one primary button); plain content sits flat, divided by rules and ruled lists;
    - north red = Durdur, veto and a broken chain, nothing else;
-   - a role's tone ink marks only that role's acts; kaptan navy only the wordmark, focus
-     and selection.
+   - a role's tone ink marks only that role's acts; indigo is the second brand ink: the
+     wordmark, focus, selection, the active nav and the one focal figure of a screen;
+   - deep green / claret = gain / loss on a figure, never decoration.
+
+   THE PROJECTOR RULE (permanent, no toggle). The panel is shown on a projector in a sunlit
+   room, which crushes contrast: light greys vanish, hairlines and dashes drop out, near-white
+   tones merge. So:
+   - text that carries meaning is ≥ 7:1 on paper (meta lines included), nothing below 4.5:1;
+   - 13px is the floor; labels are medium/semibold; Bodoni below 38px uses the text cut and
+     every Bodoni line carries a whisper of stroke so its hairlines survive;
+   - structural ink lines are 2px, dividers ≥ 30% ink, control borders ≥ 75% ink; a line
+     that means something is solid, never dashed or dotted;
+   - paper / panel / sunk keep a visible tonal step, and a panel laid on the page also gets
+     an ink border;
+   - test it washed out: html{filter:contrast(.55) brightness(1.25) saturate(.8)}.
    ────────────────────────────────────────────────────────────────────────── */
 
 /* The role tone is a registered colour so a role switch can cross-fade it. A registered
    property always has a value, so var(--tone, …) fallbacks never apply: the initial value is
-   the indigo wash (#2b4261, = --wash), which is what untoned places such as the /login sea
+   the indigo wash (#26398a, = --wash), which is what untoned places such as the /login sea
    used as their fallback. */
 @property --tone {
   syntax: "<color>";
   inherits: true;
-  initial-value: #2b4261;
+  initial-value: #26398a;
 }
 
 /* Panel yalnız açık temadır (kâğıt ve mürekkep); karanlık tema yok. */
 :root {
   color-scheme: light only;
 
-  /* Colour — every colour has one job */
-  --paper: #f3f1ec; /* the page */
-  --panel: #fbfaf6; /* a brighter sheet laid on the page */
-  --sunk: #ebe8e1; /* recessed paper: table heads, wells, code */
-  --ink: #121318; /* type, ink lines, hard shadows (16.9:1 on paper) */
-  --ink-lift: #2a2b31; /* the primary button under the pointer: ink, lifted a shade */
-  --ink-soft: #3b3c42; /* secondary type (10.1:1 on paper) */
-  --muted: #5e5e5b; /* meta lines (5.7:1 on paper, 6.1:1 on panel) */
-  --wash: #2b4261; /* indigo wash: active nav, hover fill, info */
-  --wash-tint: rgb(43 66 97 / 0.08);
-  --wash-tint-strong: rgb(43 66 97 / 0.16);
-  --rule-ui: rgb(18 19 24 / 0.55); /* borders of controls (≥ 3:1 on paper) */
-  --rule-soft: rgb(18 19 24 / 0.28);
-  --hairline: rgb(18 19 24 / 0.14);
-  --scrim: rgb(243 241 236 / 0.72);
-  --north: #b3261e; /* Durdur, veto, broken chain (6.1:1 on paper) */
-  --north-deep: #9b1f18; /* north red under the pointer */
-  --north-tint: rgb(179 38 30 / 0.08);
-  --ochre: #c9972c; /* the daily −1% "YENİ EMİR DURDU" band only (ink on ochre 7.4:1) */
-  --ochre-tint: rgb(201 151 44 / 0.16);
-  --brand: #0e3a66; /* wordmark, focus ring, ::selection */
-  --on-dark: #fbfaf6;
+  /* Colour — every colour has one job. Ratios are on --paper (projector rule: ≥ 7:1). */
+  --paper: #eeeae0; /* the page: warm rice paper, a clear step below the panel */
+  --panel: #fdfcf8; /* a brighter sheet laid on the page */
+  --sunk: #e0dbcf; /* recessed paper: table heads, wells, code */
+  --ink: #101117; /* type, ink lines, hard shadows (15.7:1) */
+  --ink-lift: #2a2c38; /* the primary button under the pointer: ink, lifted a shade */
+  --ink-soft: #23242a; /* secondary type (12.9:1) */
+  --muted: #3a3b40; /* meta lines (9.3:1 on paper, 10.9:1 on panel) */
+  --wash: #26398a; /* indigo: active nav, hover fill, info (8.6:1) */
+  --wash-tint: rgb(38 57 138 / 0.1);
+  --wash-tint-strong: rgb(38 57 138 / 0.2);
+  --rule-ui: rgb(16 17 23 / 0.78); /* borders of controls */
+  --rule-soft: rgb(16 17 23 / 0.5);
+  --hairline: rgb(16 17 23 / 0.3); /* dividers: still a line when washed out */
+  --scrim: rgb(238 234 224 / 0.8);
+  --north: #ad1f15; /* Durdur, veto, broken chain (5.9:1, on panel 6.9:1) */
+  --north-deep: #8e170f; /* north red under the pointer */
+  --north-tint: rgb(173 31 21 / 0.1);
+  --gain: #0a5530; /* a figure that went up (7.6:1) */
+  --loss: #8c1038; /* a figure that went down: claret, not north red (7.8:1) */
+  --ochre: #d9961a; /* the daily −1% "YENİ EMİR DURDU" band only (ink on ochre 7.5:1) */
+  --ochre-tint: rgb(217 150 26 / 0.22);
+  --brand: #1f2c7a; /* indigo ink: wordmark, focus ring, ::selection, focal figures (10.3:1) */
+  --on-dark: #fdfcf8;
 
-  /* Role tones — one ink per door (/login/<rol>) and the top-bar role chip. Dark enough to be
-     type on paper and to carry on-dark type (all ≥ 6.4:1 both ways). */
-  --role-analyst: #1d5c58; /* verdigris: the reader (6.8:1 on paper) */
-  --role-risk: #7e4a10; /* umber: the signature's ink (6.5:1) */
-  --role-admin: #5a3368; /* plum: the one who sets the desk (8.8:1) */
-  --role-auditor: #3a4750; /* slate: sees all, touches nothing (8.5:1) */
+  /* Role tones — one ink per door (/login/<rol>) and the top-bar role chip. Saturated enough
+     to read as colour when washed out, dark enough to be type on paper and to carry on-dark
+     type (all ≥ 7:1 both ways). */
+  --role-analyst: #05534d; /* verdigris: the reader (7.6:1) */
+  --role-risk: #7a3c02; /* umber: the signature's ink (7.1:1) */
+  --role-admin: #622779; /* plum: the one who sets the desk (8.4:1) */
+  --role-auditor: #21435e; /* slate blue: sees all, touches nothing (8.6:1) */
 
   /* Ink marks */
-  --ink-line: 1.5px;
+  --ink-line: 2px;
   --shadow-ink: 3px 3px 0 var(--ink);
   --shadow-ink-lg: 6px 6px 0 var(--ink);
 
@@ -94,6 +110,8 @@
   --color-north: var(--north);
   --color-north-deep: var(--north-deep);
   --color-north-tint: var(--north-tint);
+  --color-gain: var(--gain);
+  --color-loss: var(--loss);
   --color-ochre: var(--ochre);
   --color-ochre-tint: var(--ochre-tint);
   --color-brand: var(--brand);
@@ -105,13 +123,13 @@
   --font-sans: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
 
-  /* Type scale. 12px is the floor: nothing in the panel is set smaller.
-     11–12 → meta · 13 → dense · 14–16 → ui · 17 → body · 19–22 → lead · 24–32 → title (text
+  /* Type scale. 13px is the floor (projector rule): nothing in the panel is set smaller.
+     13 → meta · 14 → dense · 14–16 → ui · 17 → body · 19–22 → lead · 24–32 → title (text
      cut) · 38–44 → display · 52–56 → display-lg · 64–68 → hero. */
-  --text-meta: 12px;
-  --text-meta--line-height: 16px;
-  --text-dense: 13px;
-  --text-dense--line-height: 18px;
+  --text-meta: 13px;
+  --text-meta--line-height: 18px;
+  --text-dense: 14px;
+  --text-dense--line-height: 20px;
   --text-ui: 15px;
   --text-ui--line-height: 22px;
   --text-body: 17px;
@@ -157,7 +175,7 @@
     color: var(--on-dark);
   }
   :focus-visible {
-    outline: 2px solid var(--brand);
+    outline: 3px solid var(--brand);
     outline-offset: 2px;
   }
   /* Tabular numerals everywhere numbers are compared. */
@@ -168,6 +186,15 @@
   }
   hr {
     border-color: var(--hairline);
+  }
+  /* Bodoni's hairlines vanish on a washed-out projector: give every Bodoni line a whisper
+     of its own ink as stroke (no faux bold, the letterforms stay Bodoni). */
+  .font-display,
+  .title-display {
+    -webkit-text-stroke: 0.012em currentColor;
+  }
+  .font-display-text {
+    -webkit-text-stroke: 0.016em currentColor;
   }
 }
 
@@ -182,9 +209,9 @@
   }
   /* The small spaced capitals that name a part of a screen ("NE OLDU?"). */
   .label {
-    font-size: 12px;
-    line-height: 16px;
-    font-weight: 500;
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     font-feature-settings: "case";
@@ -202,7 +229,7 @@
   /* The one justified mono use: codes (E1–E4, R01–R16, hashes, tickers). */
   .code {
     font-family: var(--font-mono);
-    font-size: max(12px, 0.86em);
+    font-size: max(13px, 0.86em);
     letter-spacing: 0;
   }
   .ink-border {
@@ -213,7 +240,7 @@
   }
   /* A faint paper grain so large surfaces read as printed, not flat. */
   .paper-grain {
-    background-image: radial-gradient(rgb(18 19 24 / 0.035) 0.6px, transparent 0.7px);
+    background-image: radial-gradient(rgb(16 17 23 / 0.035) 0.6px, transparent 0.7px);
     background-size: 3px 3px;
   }
   /* Role tone: sets --tone (ink) and --tone-wash (a page-sized tint light enough that muted
@@ -234,8 +261,8 @@
   .tone-risk_officer,
   .tone-admin,
   .tone-auditor {
-    --tone-wash: color-mix(in srgb, var(--tone) 7%, var(--paper));
-    --tone-tint: color-mix(in srgb, var(--tone) 14%, transparent);
+    --tone-wash: color-mix(in srgb, var(--tone) 9%, var(--paper));
+    --tone-tint: color-mix(in srgb, var(--tone) 18%, transparent);
   }
   .sr-only-focusable:not(:focus) {
     position: absolute;

@@ -48,7 +48,7 @@ export function SettingsMenu() {
             the chip's border, so the two read as one piece of brass rather than two controls. */}
         <span
           className={cn(
-            "inline-flex h-9 min-w-11 items-center justify-center gap-1.5 border border-rule-ui bg-panel px-2.5 text-dense",
+            "inline-flex h-9 min-w-11 items-center justify-center gap-1.5 border-2 border-rule-ui bg-panel px-2.5 text-dense",
             "transition-colors duration-[var(--dur-quick)] ease-[var(--ease-ink)]",
             "group-hover/cog:bg-wash-tint group-hover/cog:text-ink group-data-[state=open]/cog:bg-wash-tint group-data-[state=open]/cog:text-ink",
             "group-focus-visible/cog:outline-2 group-focus-visible/cog:outline-offset-2 group-focus-visible/cog:outline-brand",

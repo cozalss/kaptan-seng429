@@ -59,7 +59,7 @@ function SessionEnd() {
   const router = useRouter();
   const { role, user } = useRole();
   return (
-    <div className={cn(`tone-${role}`, "flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t-[1.5px] border-ink pt-5")}>
+    <div className={cn(`tone-${role}`, "flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t-2 border-ink pt-5")}>
       <p className="flex items-center gap-2 text-ui text-ink-soft">
         <RoleEmblem role={role} className="size-[14px] shrink-0 text-[var(--tone)]" />
         <span>

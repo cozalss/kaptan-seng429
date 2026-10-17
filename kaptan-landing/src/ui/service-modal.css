@@ -45,7 +45,7 @@
   align-self: flex-end;
   margin: var(--space-sm) var(--space-sm) calc(-44px - var(--space-sm)) 0;
   background: var(--color-paper-panel);
-  border: 1px solid var(--color-sumi);
+  border: 2px solid var(--color-sumi);
 }
 
 .service-modal__content {
@@ -78,6 +78,7 @@
   min-width: 44px;
   padding: 0 10px;
   font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   color: var(--color-sumi);
@@ -101,7 +102,7 @@
 }
 
 .service-modal__step + .service-modal__step {
-  border-left: 1px solid var(--color-hairline);
+  border-left: 1.5px solid var(--color-hairline);
 }
 
 .service-modal__step:disabled {
@@ -146,6 +147,7 @@
   display: block;
   /* printed on the plate's paper, like the card */
   mix-blend-mode: multiply;
+  filter: var(--art-print);
 }
 
 .service-modal__body {
@@ -160,6 +162,7 @@
   padding: 0.16em 0 0.1em;
   margin: -0.16em 0 -0.1em;
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: min(clamp(40px, 12vw, 60px), calc((100vw - 2 * var(--gutter)) / (var(--name-chars, 8) * 0.58)));
   font-weight: 400;
   line-height: 0.95;
@@ -174,9 +177,10 @@
 
 .service-modal__meta {
   padding: var(--space-sm) 0;
-  border-top: 1px solid var(--color-sumi);
-  border-bottom: 1px solid var(--color-rule-soft);
+  border-top: 2px solid var(--color-sumi);
+  border-bottom: 1.5px solid var(--color-rule-soft);
   font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
   font-size: var(--text-body-md);
   font-variant-numeric: tabular-nums;
   color: var(--color-sumi);
@@ -236,6 +240,7 @@
   height: 24px;
   margin: -13px 0 0 -12px;
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: 20px;
   line-height: 24px;
   text-align: center;
@@ -266,6 +271,7 @@
   gap: 2px var(--space-md);
   margin-top: 6px;
   font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
   font-size: 13px;
   line-height: 1.4;
   font-variant-numeric: tabular-nums;
@@ -282,6 +288,7 @@
 
 .agent-scene__key {
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: 16px;
   color: var(--color-sumi);
 }
@@ -312,6 +319,7 @@
   height: 100%;
   object-fit: cover;
   mix-blend-mode: multiply;
+  filter: var(--art-print);
 }
 
 .service-modal-ghost__ink {

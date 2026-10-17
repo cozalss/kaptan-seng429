@@ -44,13 +44,13 @@
 /* Scrolled: the paper itself (never white), a light blur and an ink hairline, like a page's head rule. */
 .site-header::after {
   bottom: 0;
-  height: 1px;
+  height: 2px;
   background: var(--color-sumi);
   opacity: 0;
 }
 
 .site-header[data-scrolled='true'] {
-  background-color: color-mix(in srgb, var(--color-paper) 90%, transparent);
+  background-color: color-mix(in srgb, var(--color-paper) 96%, transparent);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
@@ -104,8 +104,9 @@
   min-height: 44px;
   padding: 0 10px;
   font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
   font-size: 15px;
-  font-weight: 450;
+  font-weight: 500;
   line-height: 1;
   color: var(--color-sumi);
   white-space: nowrap;
@@ -141,7 +142,7 @@
 }
 
 .nav-link:focus-visible {
-  outline: 2px solid var(--color-brand);
+  outline: 3px solid var(--color-brand);
   outline-offset: -4px;
 }
 

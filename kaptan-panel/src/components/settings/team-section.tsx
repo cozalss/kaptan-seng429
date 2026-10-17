@@ -29,7 +29,7 @@ export function TeamSection() {
 
       {mayI("users.view") ? (
         users.data ? (
-          <ul aria-label="Kullanıcılar" className="divide-y divide-hairline border-y border-hairline">
+          <ul aria-label="Kullanıcılar" className="divide-y divide-hairline border-y-2 border-ink">
             {users.data.map((m) => (
               <li key={m.uid} className={cn(`tone-${m.role}`, "grid gap-x-4 gap-y-1 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-baseline")}>
                 <span className="min-w-0">
@@ -58,8 +58,8 @@ export function TeamSection() {
         <table className={cn(`tone-${role}`, "w-full table-fixed border-collapse text-left")}>
           <caption className="sr-only">Her rolün yapabildiği işler</caption>
           <thead>
-            <tr className="border-b-[1.5px] border-ink">
-              <th scope="col" className="w-[40%] py-2 pr-2 text-meta font-normal text-muted">
+            <tr className="border-b-2 border-ink">
+              <th scope="col" className="w-[40%] py-2 pr-2 text-meta font-medium text-ink-soft">
                 İş
               </th>
               {ROLES.map((r) => (
@@ -81,11 +81,11 @@ export function TeamSection() {
                 {ROLES.map((r) => (
                   <td key={r} className={cn("px-1 py-2 text-center font-sans text-ui", r === role && "bg-[var(--tone-tint)]")}>
                     {can(r, a) ? (
-                      <span role="img" aria-label="evet" className="text-ink">
+                      <span role="img" aria-label="evet" className="font-semibold text-ink">
                         ✓
                       </span>
                     ) : (
-                      <span role="img" aria-label="hayır" className="text-rule-soft">
+                      <span role="img" aria-label="hayır" className="text-rule-ui">
                         —
                       </span>
                     )}

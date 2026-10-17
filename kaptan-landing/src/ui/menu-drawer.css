@@ -28,8 +28,9 @@
 .menu-drawer__title {
   margin-top: var(--space-xl);
   padding-bottom: var(--space-sm);
-  border-bottom: 1px solid var(--color-sumi);
+  border-bottom: 2px solid var(--color-sumi);
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: clamp(40px, 5vw, 56px);
   font-weight: 400;
   line-height: 0.95;
@@ -61,6 +62,7 @@
   flex: none;
   max-width: 75%;
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: clamp(24px, 2.2vw, 30px);
   line-height: 1.05;
   transition: transform var(--duration-normal) var(--ease-out-expo);
@@ -83,6 +85,7 @@
 .menu-drawer__entry-label {
   flex: none;
   font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   color: var(--color-muted);
@@ -105,7 +108,7 @@
 }
 
 .menu-drawer__link:focus-visible {
-  outline: 2px solid var(--color-brand);
+  outline: 3px solid var(--color-brand);
   outline-offset: 2px;
 }
 
@@ -119,6 +122,7 @@
 
 .menu-drawer__meta {
   font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   color: var(--color-muted);

@@ -88,7 +88,7 @@ export function AuditScreen() {
           <h2 id="kayitlar" className="label">
             Ne oldu?
           </h2>
-          <div role="group" aria-label="Hangi kayıtlar" className="flex border-[1.5px] border-ink">
+          <div role="group" aria-label="Hangi kayıtlar" className="flex border-2 border-ink">
             {(["today", "all"] as const).map((s) => (
               <button
                 key={s}

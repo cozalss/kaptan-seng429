@@ -88,8 +88,9 @@
   align-items: baseline;
   gap: var(--space-lg);
   padding-bottom: 10px;
-  border-bottom: 1px solid var(--color-sumi);
+  border-bottom: 2px solid var(--color-sumi);
   font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
   font-size: 13px;
   line-height: 1.3;
   font-variant-numeric: tabular-nums;
@@ -107,6 +108,7 @@
 
 .hero__title {
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: min(15vw, 25vh);
   font-weight: 400;
   line-height: 0.9;
@@ -212,6 +214,7 @@
   border: 1.5px solid var(--color-sumi);
   box-shadow: 4px 4px 0 var(--color-sumi);
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: clamp(20px, 1.7vw, 27px);
   line-height: 1.18;
   color: var(--color-sumi);
@@ -242,10 +245,12 @@
   display: block;
   margin-bottom: 4px;
   font-family: var(--font-sans);
-  font-size: 12px;
+  -webkit-text-stroke: 0;
+  font-size: 13px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
-  color: var(--color-muted);
+  color: var(--color-brand); /* the clock is the caption's focal number */
 }
 
 /* ---------- Compass ---------- */
@@ -271,10 +276,12 @@
 .hero-compass figcaption {
   max-width: 17ch;
   font-family: var(--font-sans);
-  font-size: 12px;
+  -webkit-text-stroke: 0;
+  font-size: 13px;
+  font-weight: 500;
   line-height: 1.35;
   text-align: center;
-  color: var(--color-muted);
+  color: var(--color-sumi);
 }
 
 .hero-compass__ring {
@@ -305,6 +312,7 @@
 
 .hero-compass__letter {
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: 26px;
   fill: var(--color-sumi);
   text-anchor: middle;
@@ -354,6 +362,7 @@
   background: var(--color-paper-panel);
   border: 1.5px solid var(--color-sumi);
   font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
   font-size: var(--text-body-md);
   line-height: 1.45;
   letter-spacing: -0.01em;
@@ -487,11 +496,11 @@
    calm until the ink starts drying) that background is washed in the sea's tones, sampled from the
    canvas's right edge, so the sea reads to the last pixel. */
 html[data-hero-sea='storm'] {
-  background: linear-gradient(to bottom, #e3e2df 0 48%, #8a8f97 51%, #60656d 60%, #3d4047 70%, #50545b 84%, #26292e 100%) fixed;
+  background: linear-gradient(to bottom, #e3e2df 0 48%, #7e8fb0 51%, #4d6491 60%, #22386a 70%, #2c4475 84%, #0d1838 100%) fixed;
 }
 
 html[data-hero-sea='calm'] {
-  background: linear-gradient(to bottom, #e5e4e1 0 49%, #dadbdc 51%, #d3d5d8 75%, #c3c6ca 92%, #9da1a7 100%) fixed;
+  background: linear-gradient(to bottom, #e5e4e1 0 49%, #d6dce8 51%, #ccd5e4 75%, #b5c3da 92%, #8ea2c3 100%) fixed;
 }
 
 /* ---------- Hand-off to Bölüm 2 (W1) ----------

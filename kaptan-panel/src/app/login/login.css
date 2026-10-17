@@ -63,7 +63,7 @@
     box-shadow: 6px 6px 0 var(--tone);
   }
   .login-door:hover .login-arch {
-    background-color: color-mix(in srgb, var(--tone) 13%, var(--paper));
+    background-color: color-mix(in srgb, var(--tone) 22%, var(--paper));
   }
   .login-door:hover .login-emblem {
     transform: translateY(-4px);
@@ -76,7 +76,7 @@
     0 0 0 2px var(--paper);
 }
 .login-door:focus-within .login-arch {
-  background-color: color-mix(in srgb, var(--tone) 13%, var(--paper));
+  background-color: color-mix(in srgb, var(--tone) 22%, var(--paper));
 }
 .login-door:focus-within .login-emblem {
   transform: translateY(-4px);

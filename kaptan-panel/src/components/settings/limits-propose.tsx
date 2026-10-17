@@ -63,7 +63,7 @@ export function ProposeLimit({ view, onDone }: { view: LimitsView; onDone: () =>
 
   return (
     <form
-      className="animate-fade-in space-y-4 border-[1.5px] border-ink bg-panel px-5 py-5"
+      className="animate-fade-in space-y-4 border-2 border-ink bg-panel px-5 py-5"
       aria-label="Sınır değişikliği öner"
       onSubmit={async (e) => {
         e.preventDefault();
@@ -81,7 +81,7 @@ export function ProposeLimit({ view, onDone }: { view: LimitsView; onDone: () =>
       <p className="text-ui text-ink-soft">Bu birinci imza (1/2). Değişiklik, Risk Sorumlusu onaylayınca yürürlüğe girer.</p>
       <label className="block space-y-1.5">
         <span className="text-dense text-ink-soft">Hangi sınır?</span>
-        <select value={key} onChange={(e) => pick(e.target.value as LimitKey)} className="h-11 w-full border-[1.5px] border-ink bg-panel px-3 text-ui text-ink sm:h-10">
+        <select value={key} onChange={(e) => pick(e.target.value as LimitKey)} className="h-11 w-full border-2 border-ink bg-panel px-3 text-ui text-ink sm:h-10">
           {PLAIN_LIMITS.map((k) => (
             <option key={k} value={k}>
               {limitSentence(k, valueOf(view.active.values, k) ?? 0)}

@@ -8,8 +8,8 @@ const TICK: Readonly<Record<Segment, string>> = {
   ink: "bg-ink",
   north: "bg-north",
   // Past a break nothing was walked: the ticks stay faint, never inked.
-  dashed: "bg-hairline",
-  blank: "bg-hairline",
+  dashed: "bg-rule-soft",
+  blank: "bg-rule-soft",
 };
 
 /**
@@ -34,12 +34,12 @@ export function WalkRuler({ checked, total, badPos }: { checked: number; total: 
           <path d="M0 0h10L5 7z" fill="currentColor" />
         </svg>
       </div>
-      <div className="flex h-9 items-end border-b-[1.5px] border-ink">
+      <div className="flex h-9 items-end border-b-2 border-ink">
         {segments.map((s, i) => (
           <span key={i} className="flex min-w-0 flex-1 justify-center">
             <span
               className={cn(
-                "w-[1.5px] transition-colors duration-[var(--dur-instant)]",
+                "w-[2px] transition-colors duration-[var(--dur-instant)]",
                 s === "ink" && "w-[2px]",
                 s === "north" ? "h-9 w-[3px]" : (i + 1) % MAJOR === 0 ? "h-5" : "h-3",
                 TICK[s],

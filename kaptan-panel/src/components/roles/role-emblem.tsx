@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
  * Colour comes from `currentColor`; the fill from `--tone-tint` when a tone class is set.
  * Decorative: the role's name is always written next to it.
  */
-const LINE = { fill: "none", stroke: "currentColor", strokeWidth: 1.5, vectorEffect: "non-scaling-stroke", strokeLinejoin: "round", strokeLinecap: "round" } as const;
+const LINE = { fill: "none", stroke: "currentColor", strokeWidth: 2, vectorEffect: "non-scaling-stroke", strokeLinejoin: "round", strokeLinecap: "round" } as const;
 const TINT = "var(--tone-tint, transparent)";
 
 function Analyst() {
@@ -36,7 +36,7 @@ function Risk() {
       <path d="M22 41 L26 28 L45 9 L55 19 L36 38 Z M22 41 L36.5 26.5 M41 13 L51 23" {...LINE} />
       <circle cx="38.5" cy="24.5" r="2.2" {...LINE} />
       <path d="M5 53 C9 47 12 57 16 51 S22 45 25 51 S31 57 36 50 C39 47 42 53 46 51" {...LINE} />
-      <path d="M5 59 H59" {...LINE} strokeDasharray="1 3" />
+      <path d="M5 59 H59" {...LINE} strokeDasharray="1.5 3.5" />
     </>
   );
 }

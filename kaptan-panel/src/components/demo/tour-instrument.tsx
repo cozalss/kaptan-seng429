@@ -23,8 +23,8 @@ function CourseRuler({ index }: { index: number }) {
               <span
                 key={s.id}
                 className={cn(
-                  "h-[6px] flex-1 origin-bottom transition-[scale,background-color] duration-[var(--dur-base)] ease-[var(--ease-ink)]",
-                  i === index ? "bg-ink" : i < index ? "scale-y-50 bg-ink" : "scale-y-50 bg-rule-soft",
+                  "h-[8px] flex-1 origin-bottom transition-[scale,background-color] duration-[var(--dur-base)] ease-[var(--ease-ink)]",
+                  i === index ? "bg-brand" : i < index ? "scale-y-50 bg-ink" : "scale-y-50 bg-rule-soft",
                 )}
               />
             ) : null,
@@ -66,7 +66,7 @@ export function TourInstrument({ index, step, role, busy, error, manual, onBacku
   const pos = actPosition(index);
   const last = index === DEMO_STEPS.length - 1;
   return (
-    <section aria-label="Rehberli tur" data-testid="guided-demo" className="tour-rise fixed inset-x-0 bottom-0 z-40 border-t-[1.5px] border-ink bg-panel shadow-[0_-4px_0_var(--ink)]">
+    <section aria-label="Rehberli tur" data-testid="guided-demo" className="tour-rise fixed inset-x-0 bottom-0 z-40 border-t-2 border-ink bg-panel shadow-[0_-4px_0_var(--ink)]">
       <div className="mx-auto max-w-[960px] px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:px-6 sm:pt-4 sm:pb-4">
         <CourseRuler index={index} />
         <div className="mt-3 flex flex-col gap-3 sm:mt-4 sm:flex-row sm:items-end sm:gap-8">

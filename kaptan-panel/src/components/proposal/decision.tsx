@@ -64,7 +64,7 @@ export function Decision({
 
   return (
     <section aria-label="Karar" className="relative">
-      <div className={cn("paper-grain border-[1.5px] border-ink bg-panel px-5 pt-6 pb-7 sm:px-9 sm:pt-8 sm:pb-9", justSigned && "oneri-sheet-give")}>
+      <div className={cn("paper-grain border-2 border-ink bg-panel px-5 pt-6 pb-7 sm:px-9 sm:pt-8 sm:pb-9", justSigned && "oneri-sheet-give")}>
         <div className="space-y-4">
           <h2 id="karar" tabIndex={-1} className="label scroll-mt-24 outline-none">
             Öneri
@@ -83,7 +83,7 @@ export function Decision({
         <div className="mt-8">
           <div role="status" aria-live="polite">
             {pending ? null : (
-              <div className="space-y-1.5 border-t border-hairline pt-6">
+              <div className="space-y-1.5 border-t-2 border-ink pt-6">
                 <h3 ref={outcomeRef} tabIndex={-1} className={cn(OUTCOME_HEADING, status === "rejected" && "text-north")}>
                   {status === "approved"
                     ? withNums(`İmzalandı${card.decided_at ? ` · ${fmtTime(card.decided_at)}` : ""}`)
@@ -132,11 +132,11 @@ function Receipt({ card, risk }: { card: ApprovalCard; risk: RiskView | null }) 
       : []),
   ];
   return (
-    <dl className="max-w-[560px] border-t-[1.5px] border-ink text-ui tabular-nums">
+    <dl className="max-w-[560px] border-t-2 border-ink text-ui tabular-nums">
       {rows.map(([label, value, strong]) => (
         <div key={label} className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-4 border-b border-hairline py-2.5">
           <dt className="text-muted">{label}</dt>
-          <dd className={cn("text-right", strong ? "font-medium text-ink" : "text-ink")}>{value}</dd>
+          <dd className={cn("text-right", strong ? "font-semibold text-loss" : "text-ink")}>{value}</dd>
         </div>
       ))}
     </dl>

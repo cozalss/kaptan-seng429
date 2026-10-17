@@ -89,6 +89,10 @@ vardır. Her adımda sunucuya tek cümle. Adımlar `src/components/demo/demo-ste
 - Feragatname her ekranın altında, değiştirilmeden.
 - Panel yalnız açık temadır (kâğıt ve mürekkep).
 - Rakamlar Inter tabular; Bodoni kelimeler içindir. Sert gölge yalnız üstte duran ya da damgalanan şeylerde.
+- Projektör kuralı (kalıcı): anlam taşıyan yazı kâğıtta ≥ 7:1, en küçük yazı 13px, yapı çizgileri 2px mürekkep,
+  anlamlı çizgi kesik değil düz; kâğıt / panel / çukur tonları ayrışır. İndigo ikinci marka mürekkebidir (logo, odak,
+  etkin sekme, ekranın odak rakamı); kazanç koyu yeşil, kayıp bordo (kuzey kırmızısı değil). Soluk projektörü
+  `html{filter:contrast(.55) brightness(1.25) saturate(.8)}` ile dene (ayrıntı: `src/app/globals.css` başlığı).
 
 ## 5. Demo akışı (elle)
 1. Giriş → Bugün (Risk Sorumlusu).

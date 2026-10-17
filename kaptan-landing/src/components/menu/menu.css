@@ -42,6 +42,7 @@
 .rules__mark {
   margin-left: 2px;
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   text-decoration: none;
   color: inherit;
 }
@@ -63,6 +64,7 @@
 
 .article__name {
   font-family: var(--font-display);
+  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: clamp(22px, 1.9vw, 30px);
   font-weight: 400;
   line-height: 1.1;
@@ -120,12 +122,12 @@
 }
 
 .article:has(.article__toggle:focus-visible) {
-  outline: 2px solid var(--color-brand);
+  outline: 3px solid var(--color-brand);
   outline-offset: 2px;
 }
 
 .article__toggle[aria-pressed='true'] {
-  color: var(--color-sumi);
+  color: var(--color-brand); /* the chosen rule reads in navy: the active choice, visible even washed out */
   cursor: default;
 }
 
@@ -158,10 +160,10 @@
 .rules__sea path {
   fill: none;
   stroke: var(--color-wash);
-  stroke-width: 1;
+  stroke-width: 1.6;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
-  opacity: 0.55;
+  opacity: 0.85;
 }
 
 .rules__sea .rules__horizon {
@@ -192,8 +194,9 @@
 .rules__sample {
   grid-area: 1 / 1;
   padding-top: 10px;
-  border-top: 1px solid var(--color-sumi);
-  font-size: 12px;
+  border-top: 2px solid var(--color-sumi);
+  font-size: 13px;
+  font-weight: 500;
   line-height: 1.3;
   color: var(--color-muted);
 }
@@ -271,7 +274,7 @@
 }
 
 .rules__try:focus-visible {
-  outline: 2px solid var(--color-brand);
+  outline: 3px solid var(--color-brand);
   outline-offset: 3px;
 }
 
@@ -281,7 +284,7 @@
 
 .rules__filter--quiet {
   max-width: 110ch;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.55;
   color: var(--color-muted);
 }
@@ -293,7 +296,7 @@
 .rules__footnote {
   max-width: 110ch;
   margin-top: 8px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.5;
   color: var(--color-muted);
 }
@@ -390,7 +393,7 @@ html:not(.js-boot) .rules__slot,
 .rules[data-show='pin'] .article {
   width: fit-content;
   padding: 7px 0 9px;
-  opacity: 0.4;
+  opacity: 0.85;
   transition: opacity var(--duration-slow) var(--ease-out-expo);
 }
 
@@ -399,8 +402,14 @@ html:not(.js-boot) .rules__slot,
   opacity: 1;
 }
 
+/* Projector rule: the rule in focus is told apart by colour, not by fading the others out —
+   the others stay in near-ink grey, the chosen one is navy with a navy underline. */
 .rules[data-show='pin'] .article__toggle {
-  color: var(--color-sumi);
+  color: var(--color-muted);
+}
+
+.rules[data-show='pin'] .article.is-active .article__toggle {
+  color: var(--color-brand);
 }
 
 .rules__underline {
@@ -408,8 +417,8 @@ html:not(.js-boot) .rules__slot,
   left: 0;
   right: 0;
   bottom: 2px;
-  height: 1.5px;
-  background: var(--color-sumi);
+  height: 2.5px;
+  background: var(--color-brand);
   transform: scaleX(0);
   transform-origin: 0 50%;
   opacity: 0;

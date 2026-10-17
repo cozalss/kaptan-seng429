@@ -3,6 +3,7 @@ import type { RiskStatus } from "@/lib/domain";
 import { fmtSignedPct, fmtTry } from "@/lib/format";
 import { ROUTES } from "@/lib/nav";
 import { cn } from "@/lib/utils";
+import { signTone } from "@/components/story/sign-tone";
 
 /**
  * The one line about your money at the foot of Bugün, set like a ledger entry: a quiet label,
@@ -23,7 +24,9 @@ export function PortfolioLine({ risk, className }: { risk: RiskStatus; className
     >
       <span className="label text-ink-soft">Portföyün</span>
       <span className="text-lead font-medium text-ink tabular-nums">{total}</span>
-      <span className="tabular-nums">bugün {today}</span>
+      <span className="tabular-nums">
+        bugün <span className={cn("font-medium", signTone(risk.daily_pnl_pct))}>{today}</span>
+      </span>
       <span className="ml-auto inline-flex items-center gap-1.5 text-ink">
         <span className="hidden sm:inline">Portföy</span>
         <span aria-hidden className="transition-transform duration-[var(--dur-quick)] ease-[var(--ease-ink)] group-hover:translate-x-1">

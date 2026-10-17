@@ -24,9 +24,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             Tayfa okur, kurallar tartar, son imza insanın. İlk kez mi? Risk Sorumlusu kapısından gir; son imzayı o atar.
           </p>
         </div>
-        <div aria-hidden className="mt-7 mb-6 h-[1.5px] bg-ink sm:mt-10 sm:mb-8" />
+        <div aria-hidden className="mt-7 mb-6 h-[2px] bg-ink sm:mt-10 sm:mb-8" />
         <Doors next={safeNext(next)} />
-        <p className="mt-10 max-w-[64ch] text-meta leading-[18px] text-muted">{DISCLAIMER_TR}</p>
+        <p className="mt-10 max-w-[64ch] text-meta leading-[18px] text-ink-soft">{DISCLAIMER_TR}</p>
       </main>
     </LoginFrame>
   );

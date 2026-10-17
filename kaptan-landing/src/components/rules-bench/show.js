@@ -18,7 +18,7 @@ const SCRUB = 0.6;
 const SNAP = { snapTo: 'labels', duration: { min: 0.25, max: 0.7 }, delay: 0.08, ease: 'power2.inOut' };
 const GUST_SPEED = 2400; // px/s of scroll that blows a full gust
 const GUST_EVERY_MS = 260;
-const FILTER_REST = 0.32; // the filter line's opacity before its beat
+const FILTER_REST = 0.6; // the filter line's opacity before its beat (projector rule: still readable)
 const LEAK_DIP = [8, 9.5]; // leak rise (%) over which the pennants dip to half-mast
 
 const $$ = (root, selector) => [...root.querySelectorAll(selector)];

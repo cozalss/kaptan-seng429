@@ -109,7 +109,7 @@ function ResetStamp({
     <li
       data-testid={`reset-stamp-${n}`}
       className={cn(
-        "flex min-h-[104px] items-start gap-3 border-[1.5px] px-4 py-3.5",
+        "flex min-h-[104px] items-start gap-3 border-2 px-4 py-3.5",
         sig ? "border-ink bg-panel shadow-ink" : waiting ? `tone-${tone} border-[var(--tone)] bg-[var(--tone-wash)]` : "border-hairline",
         sig && fresh && "animate-stamp-in",
       )}
@@ -117,7 +117,7 @@ function ResetStamp({
       <span
         aria-hidden
         className={cn(
-          "mt-[1px] grid size-7 shrink-0 place-items-center rounded-full border-[1.5px] text-dense font-medium tabular-nums",
+          "mt-[1px] grid size-7 shrink-0 place-items-center rounded-full border-2 text-dense font-medium tabular-nums",
           sig ? `tone-${sig.role} border-[var(--tone)] bg-[var(--tone)] text-on-dark` : waiting ? "border-[var(--tone)] text-[var(--tone)]" : "border-rule-soft text-muted",
         )}
       >
