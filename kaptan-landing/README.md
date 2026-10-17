@@ -4,7 +4,7 @@ KAPtan'ın halka açık tanıtım sayfası: pirinç kâğıdına sumi mürekkepl
 bir tekne, okuyan bir tayfa, dümeni tutan kurallar ve son imzayı atan bir insan. Vite ile derlenen düz
 JavaScript; GSAP, Lenis, WebGL (mürekkep deniz) ve Canvas 2D (Pusula sahnesi).
 
-Yayında: [kaptan-rho.vercel.app](https://kaptan-rho.vercel.app/). Yayında ayrı bir deploy yoktur: panelin
+Yayında: [kaptan-seng429.vercel.app](https://kaptan-seng429.vercel.app/). Yayında ayrı bir deploy yoktur: panelin
 `predev`/`prebuild` adımı (`../kaptan-panel/scripts/sync-landing.mjs`) bu sayfayı derler ve panelin `public/`
 klasörüne kopyalar; `/` bu sayfadır, `/login` paneldir.
 

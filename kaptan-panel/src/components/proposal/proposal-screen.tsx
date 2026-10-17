@@ -3,29 +3,29 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { ApprovalCard, OrderTicket } from "@/lib/domain";
-import { IS_MOCK } from "@/lib/api/config";
 import { useApiQuery } from "@/lib/api/react";
 import { useNow } from "@/lib/clock";
-import { fmtTime } from "@/lib/format";
 import { ROUTES } from "@/lib/nav";
 import { useEventStream } from "@/lib/sse/use-event-stream";
 import { effectiveStatus } from "@/components/approvals/approvals-logic";
 import { useDesk } from "@/components/shell/desk-state";
 import { ErrorState, Skeleton, SkeletonLines } from "@/components/ui/primitives";
-import { disclosureQuote, plainHistory, plainWhy, riskSentence, riskView, shortName } from "@/components/story/plain";
-import { locative, titleTr } from "@/components/story/turkish";
-import { BigSentence, SampleTag, StorySection } from "@/components/story/ui";
+import { crewLead, crewLines, plainHistory, riskView } from "@/components/story/plain";
+import { BigSentence } from "@/components/story/ui";
 import { CrewVoices } from "./crew-voices";
 import { Decision } from "./decision";
-import { Details } from "./details";
-import { HistoryStrip } from "./history-strip";
+import { Details, detailsMeta } from "./details";
+import { Disclosure } from "./disclosure";
 import { Notes } from "./notes";
 import { ProposalHeader } from "./proposal-header";
+import { ProposalSummary } from "./summary";
+import { WhySections } from "./why";
 
 /**
- * /oneri/[id]: the decision, told as a short story: Ne oldu → Neden önemli → Geçmişte ne
- * oldu → Tayfa ne dedi → Risk → Öneri. One action: Onayla (Reddet is quiet). After an approval
- * given here the emir fişi prints and the seal presses (İmza anı).
+ * /oneri/[id]: one proposal and its decision. On top: what happened, the proposal in figures
+ * (amount, risk, deadline), then the decision box (two signatures, Onayla / Reddet) and, once
+ * signed, the emir fişi. The reasons, the crew's notes, the team's notes and all details sit
+ * below in four collapsed sections.
  */
 export function ProposalScreen({ proposalId }: { proposalId: string }) {
   const now = useNow(30_000);
@@ -54,9 +54,11 @@ export function ProposalScreen({ proposalId }: { proposalId: string }) {
   if (cards.loading && !card) return <Loading />;
   if (!card) {
     return (
-      <div className="space-y-6">
-        <BigSentence focusTarget>Bu öneri bulunamadı.</BigSentence>
-        <p className="text-body text-ink-soft">
+      <div className="space-y-4">
+        <BigSentence focusTarget className="text-[32px] leading-[38px] sm:text-[40px] sm:leading-[46px]">
+          Bu öneri bulunamadı.
+        </BigSentence>
+        <p className="text-[16px] leading-6 text-ink-soft">
           Süresi dolmuş ya da veriler sıfırlanmış olabilir.{" "}
           <Link href={ROUTES.bugun} className="font-medium text-ink underline underline-offset-4">
             Bugün’e dön
@@ -75,90 +77,39 @@ export function ProposalScreen({ proposalId }: { proposalId: string }) {
   const risk = riskView(card, explain?.proposal?.stop_price);
   const perTrade = limits.data?.active.values.find((v) => v.key === "risk_per_trade_pct")?.value ?? null;
   const equity = desk.risk?.equity ?? null;
-  const quote = disclosureQuote(explain?.texts[0]?.body);
-  const publishedAt = explain?.disclosure.published_at ?? card.created_at;
-  const justSigned = signedHere && status === "approved";
+  const perTradeCap = perTrade !== null && equity !== null && perTrade > 0 && equity > 0 ? perTrade * equity : null;
+  const lines = crewLines(card, explain);
 
   return (
-    <article aria-labelledby="oneri-baslik" className="animate-fade-in space-y-16 sm:space-y-[72px]">
-      <ProposalHeader card={card} />
+    <article aria-labelledby="oneri-baslik" className="max-w-[800px] animate-fade-in space-y-8">
+      <ProposalHeader card={card} status={status} />
 
-      {/* The story reads down a thin ink thread (wide screens) that ends in the decision sheet. */}
-      <div className="relative space-y-12 sm:pl-7">
-        <span aria-hidden className="absolute top-2 bottom-[-72px] left-[3px] !m-0 hidden w-[2px] bg-rule-ui sm:block" />
-        <StorySection label="Ne oldu?" className={STEP}>
-          <p>
-            {titleTr(shortName(card.company_name))}, {locative(fmtTime(publishedAt))} KAP’a bir bildirim gönderdi: {card.sub_type_tr.toLocaleLowerCase("tr-TR")}.
-          </p>
-          {quote ? (
-            <blockquote className="relative border-l-2 border-ink pl-5 font-display-text text-[22px] leading-[31px] text-ink">
-              <span aria-hidden className="absolute top-0 left-[7px] text-ink-soft">
-                “
-              </span>
-              {quote}”
-            </blockquote>
-          ) : null}
-        </StorySection>
+      <ProposalSummary card={card} status={status} risk={risk} riskLoading={ex.loading} perTradeCap={perTradeCap} equity={equity} nowMs={now} />
 
-        <StorySection label="Neden önemli?" className={STEP}>
-          <p>{plainWhy(card)}</p>
-        </StorySection>
+      <Decision card={card} status={status} ticket={ticket} justSigned={signedHere && status === "approved"} onDecided={onDecidedHere} />
 
-        <StorySection label="Geçmişte ne oldu?" aside={IS_MOCK ? <SampleTag /> : null} className={STEP}>
-          <p>{plainHistory(card.evidence_summary, explain?.evidence_events)}</p>
-          {explain?.evidence_events.length ? (
-            <HistoryStrip events={explain.evidence_events} median={card.evidence_summary.median_car_5d} total={card.evidence_summary.n} />
-          ) : ex.loading ? (
-            <StripPlaceholder />
-          ) : null}
-          <p className="mt-2 text-dense text-muted">Geçmiş, geleceğin sözü değildir.</p>
-        </StorySection>
-
-        <StorySection label="Tayfa ne dedi?" className={STEP}>
+      <div className="border border-rule-soft bg-panel">
+        <Disclosure id="neden" title="Neden bu öneri?" meta={plainHistory(card.evidence_summary, explain?.evidence_events)}>
+          <WhySections card={card} explain={explain} />
+        </Disclosure>
+        <Disclosure id="tayfa" title="Tayfa ne dedi?" meta={crewLead(lines, card)}>
           <CrewVoices card={card} explain={explain} loading={ex.loading} />
-        </StorySection>
-
-        <StorySection label="Risk" className={STEP}>
-          {risk ? (
-            <p>{riskSentence(risk, perTrade !== null && equity !== null ? { pct: perTrade, equity } : null)}</p>
-          ) : ex.loading ? (
-            <SkeletonLines lines={2} />
-          ) : (
-            <p>Zarar durdurma seviyesi bu öneride yok; risk kapısının sınırları geçerli.</p>
-          )}
-        </StorySection>
+        </Disclosure>
+        <Notes card={card} />
+        <Disclosure id="ayrintilar" title="Ayrıntılar" meta={detailsMeta(card, explain)}>
+          <Details card={card} explain={explain} />
+        </Disclosure>
       </div>
-
-      <Decision card={card} status={status} nowMs={now} ticket={ticket} risk={risk} justSigned={justSigned} onDecided={onDecidedHere} />
-
-      <Notes card={card} />
-
-      {explain ? <Details card={card} explain={explain} /> : null}
     </article>
-  );
-}
-
-/** A story step on the thread: a small ink square on the line, level with the step's label. */
-const STEP = "relative sm:before:absolute sm:before:top-[8px] sm:before:left-[-28px] sm:before:size-[10px] sm:before:bg-ink";
-
-/** Holds the history strip's place while the run details load, so nothing jumps. */
-function StripPlaceholder() {
-  return (
-    <div aria-hidden className="mt-5">
-      <div className="h-7" />
-      <div className="mt-2 h-[86px] bg-sunk/60" />
-      <div className="mt-0.5 h-4" />
-      <div className="mt-2 h-[22px]" />
-    </div>
   );
 }
 
 function Loading() {
   return (
-    <div className="space-y-8" role="status" aria-label="Öneri yükleniyor">
+    <div className="max-w-[800px] space-y-6" role="status" aria-label="Öneri yükleniyor">
       <Skeleton className="h-4 w-40" />
-      <Skeleton className="h-14 w-5/6" />
-      <SkeletonLines lines={4} />
+      <Skeleton className="h-12 w-5/6" />
+      <Skeleton className="h-40 w-full" />
       <SkeletonLines lines={3} />
     </div>
   );

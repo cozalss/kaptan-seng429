@@ -2,33 +2,33 @@ import Link from "next/link";
 import { Wordmark } from "@/components/brand/marks";
 import { Disclaimer } from "@/components/brand/disclaimer";
 import { HOME } from "@/lib/nav";
-import { CalmSea } from "./login/calm-sea";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
-/**
- * A page that is not on the map: set in the panel's own reading column (not centred on the
- * screen), one plain sentence, one way home, the disclaimer, and the calm sea from the doors
- * as a quiet strip at the bottom (still under reduced motion).
- */
+/** A page that does not exist: the panel's own column, one sentence, one way home, the disclaimer. */
 export default function NotFound() {
   return (
-    <div className="relative min-h-dvh overflow-x-clip bg-paper">
-      <main className="relative z-[2] mx-auto max-w-[752px] px-4 pt-24 pb-[150px] text-left sm:px-6">
-        <Wordmark className="h-10 w-auto" />
-        <p className="mt-14 text-dense font-medium text-ink-soft tabular-nums">404 · rota dışı</p>
-        <h1 className="mt-3 font-display text-display text-balance text-ink sm:text-display-lg">Bu sayfa haritada yok.</h1>
-        <p className="mt-4 text-body text-ink-soft">Adres yanlış yazılmış ya da ekran taşınmış olabilir.</p>
+    <div className="flex min-h-dvh flex-col bg-paper">
+      <header className="border-b-2 border-ink bg-panel">
+        <div className="mx-auto flex h-16 max-w-[752px] items-center px-4 sm:px-6">
+          <Wordmark className="h-7 w-auto" />
+        </div>
+      </header>
+      <main className="mx-auto w-full max-w-[752px] flex-1 px-4 pt-16 pb-16 sm:px-6 sm:pt-24">
+        <p className="text-dense font-semibold text-ink-soft tabular-nums">Hata 404</p>
+        <h1 className="mt-3 font-display text-display tracking-[-0.015em] text-balance text-ink sm:text-display-lg">Sayfa bulunamadı.</h1>
+        <p className="mt-4 max-w-[52ch] text-body text-ink-soft">Adres yanlış yazılmış ya da sayfa kaldırılmış olabilir.</p>
         <Link
           href={HOME}
-          className="group mt-8 inline-flex min-h-11 items-center gap-1.5 text-body font-medium text-ink"
+          className={cn(buttonVariants({ variant: "primary", size: "lg" }), "mt-8")}
         >
-          <span className="underline decoration-[1.5px] decoration-rule-ui underline-offset-4 group-hover:decoration-ink">Bugün’e dön</span>
-          <span aria-hidden className="transition-transform duration-[var(--dur-quick)] ease-[var(--ease-ink)] group-hover:translate-x-1">
-            →
-          </span>
+          Bugün’e dön
+          <span aria-hidden>→</span>
         </Link>
-        <Disclaimer className="mt-12" />
       </main>
-      <CalmSea className="pointer-events-none fixed inset-x-0 bottom-0 z-[1] h-[120px] w-full" />
+      <div className="mx-auto w-full max-w-[752px] px-4 sm:px-6">
+        <Disclaimer />
+      </div>
     </div>
   );
 }

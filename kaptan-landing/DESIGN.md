@@ -23,7 +23,8 @@ typography:
   title-mark-room: 0.12em     # --title-mark-room: room under line 1 where Turkish marks would touch (lib/title-marks.js)
   chapter:   { size: "min(12vw, 20vh)", indent: 1.05em }
   hero:      { size: "min(15vw, 25vh)", indent: 1.05em }
-  caption-panel: { fontFamily: "Bodoni Moda Display", size: "clamp(21px, 1.8vw, 28px)", lineHeight: 1.2, case: sentence }
+  caption-panel: { fontFamily: Inter, weight: 500, size: "clamp(18px, 1.4vw, 22px)", lineHeight: 1.32, case: sentence }
+  bodoni-minimum: 32px        # Bodoni only at a rendered size >= 32px; below that, Inter (§3, permanent)
   bodoni-stroke: "clamp(0.35px, 0.02em, 2.2px)"   # --bodoni-stroke on every Bodoni setting (projector rule)
   running-head:  { fontFamily: Inter, size: 14px, numerals: tabular }   # left slot: live folio, never the wordmark
   ui-minimum:    12px          # no visible UI text below this
@@ -130,7 +131,7 @@ heading, number, label, line and button must still read.
 
 1. **Contrast.** Text that carries meaning ≥ 7:1 on its ground; nothing below 4.5:1. Meta text is
    `--color-muted` (8.8:1), never a lighter grey, and never dimmed by `opacity` much below 0.6.
-2. **Weight.** Every Bodoni setting carries `-webkit-text-stroke: var(--bodoni-stroke) currentColor`
+2. **Weight.** Bodoni is never set below 32px (§3, Bodoni minimum). Every Bodoni setting carries `-webkit-text-stroke: var(--bodoni-stroke) currentColor`
    (2 % of the size, 0.35–2.2px), which roughly doubles the hairlines and barely touches the stems;
    every Inter / mono setting resets it to 0 (so Inter inside a Bodoni panel stays Inter). Add both
    when you add a setting. Meta labels are 13px / 500; no visible text under 12px.
@@ -169,11 +170,13 @@ headline blur), 480px (drawers full width).
 
 | Role | Face | Setting |
 |---|---|---|
-| Titles (hero, chapter titles, agent names, Rota leg names, colophon) | **Bodoni Moda Display** 400 (`--font-display`) | Uppercase via CSS `text-transform` (so `lang="tr"` maps i → İ), `line-height: var(--title-leading)` (0.9), `letter-spacing: -0.012em`. **Second line indented 1.05em** (`.chapter-title__indent`, `.hero__line--indent`). Never bold, never italic. **Turkish marks:** at 0.9 the Ş/Ç cedilla of line 1, or the İ/Ö/Ü/Ğ marks of line 2, touch the other line; `lib/title-marks.js` tags such `.chapter-title`s with `.chapter-title--marks`, which sets line 2 down by `--title-mark-room` (0.12em). Other titles keep the tight leading. Write titles in sentence case in the markup; never type literal caps. |
-| The book's voice (caption panels, folio, menu entries) | Bodoni Moda Display 400 | Sentence case, `--text-caption-panel`. |
+| Titles (hero, chapter titles, agent names, Rota leg names, colophon title), **only at a rendered size ≥ 32px** | **Bodoni Moda Display** 400 (`--font-display`) | Uppercase via CSS `text-transform` (so `lang="tr"` maps i → İ), `line-height: var(--title-leading)` (0.9), `letter-spacing: -0.012em`. **Second line indented 1.05em** (`.chapter-title__indent`, `.hero__line--indent`). Never bold, never italic. **Turkish marks:** at 0.9 the Ş/Ç cedilla of line 1, or the İ/Ö/Ü/Ğ marks of line 2, touch the other line; `lib/title-marks.js` tags such `.chapter-title`s with `.chapter-title--marks`, which sets line 2 down by `--title-mark-room` (0.12em). Other titles keep the tight leading. Write titles in sentence case in the markup; never type literal caps. |
+| The book's voice (caption panels, hero captions, crew speech bubbles, folio, menu and contents entries, colophon lines, modal and drawer headings) | **Inter** 500 (`--font-sans`), running sentences 400–500 | Sentence case, `--text-caption-panel` (18–22px), line-height ≈ 1.3, near-ink. Body sentences ≥ 17px on desktop. `-webkit-text-stroke: 0`. Inter ships roman only (400–500): no italics; a quote is roman in quotation marks. |
 | Everything else (body, running heads, nav, buttons, meta) | **Inter** 400–500 (`--font-sans`) | Sentence case. Tabular numerals for times and counts. |
 | Rule codes only: E1–E4, R01–R16 | system mono (`--font-mono`) via `.rule-code` | `max(12px, 0.86em)`, no tracking, no uppercase styling. `services-render.js` `withRuleCodes()` wraps them automatically in agent text. |
 | Wordmark | Bodoni Moda 700 (subset to "KAPtan"/"KAPTAN" glyphs) | Only inside the `#kaptan-logo` SVG symbol. |
+
+**Bodoni minimum: 32px (permanent).** Bodoni Moda Display is a display face: below display size its hairlines vanish on a projector and running text set in it is unreadable from the back of a sunlit classroom. So Bodoni is used **only where the rendered font-size is ≥ 32px** at both 1440×900 and 390×844 (hero headline, chapter titles, crew and agent names, Rota leg names and numerals, drawer/modal titles, the Pusula count, the colophon title, the wordmark). Anything smaller is Inter (400–500, `-webkit-text-stroke: 0`). A display title whose clamp could dip below 32px gets a 32px floor (`.service-card__name`, `.services__beat`, `.spread__plate-title`, `.spread__legend-title`) or, where 32px cannot fit (the phone plate and legend, the phone Rota numerals), switches to Inter in that media query. Check: scroll the page at both sizes, open the menu, demo drawer, about/legal modals and an agent detail, and list every visible element with direct text whose computed font-family contains Bodoni and font-size < 32px — the list must be empty. Canvas and raster lettering are out of scope.
 
 **Minimum size.** No visible UI text below 12px (meta lines, legends, captions, rule codes). The
 illustrations' own lettering (the demo storyboard's codes) is sized to stay ≥ 12px at 390px wide.
@@ -194,7 +197,7 @@ All shared devices live in `src/styles/book.css` and `src/styles/base.css`.
 | Running head | `.running-head` + `.running-head__folio[data-folio]` | Flex row, 13px Inter, 1px sumi rule under it, one per chapter at the top. Right: "**Bölüm N** · Ad". Left: the **live folio** (`lib/folio.js`): one tick per chapter (past chapters inked, the current one inking with the reader's progress through it, `--folio-progress`) and the page, "s. 9 / 23" (one page = one viewport of scroll, read half a viewport down). It never repeats the "KAPtan" wordmark: the sticky header carries the brand, so two wordmarks never stack. The slot is `aria-hidden`; empty without JS. |
 | Chapter title | `.chapter-title` + `.chapter-title__indent` | `<h2>` in Bodoni caps; the second line is a `<span class="chapter-title__indent">` (block, indented 1.05em). Sections may override the size (e.g. `.rules__title`). |
 | Caption panel | `.caption-panel` (`--flat` = no tilt) + `.caption-panel__meta` | Paper-panel sheet, ink border, hard shadow, tilted −0.8° (`--tilt`). The meta line is 12px Inter, muted. This is *the* voice of the page: agent quotes, Pusula acts, Rota legs, specs. Add `data-ink-in` to have it ink in (see §5). |
-| Folio | `.folio` | Page number in Bodoni between two drawn 22px rules, at the foot of a chapter. `aria-hidden` when it's decoration. |
+| Folio | `.folio` | Page number in Inter 500 (20px) between two drawn 22px rules, at the foot of a chapter. `aria-hidden` when it's decoration. |
 | Rule code | `.rule-code` | The one justified mono use (see §3). |
 | Ink button | `.pill` + `.pill__label` + `.pill__chip` | Class names kept from the old design; the look is new: square paper-panel box, ink border, hard shadow, ≥ 44px tall, Inter 14/500 sentence case. `.pill__chip` is an **inked arrow** (CSS pseudo-elements), not a "+" chip. Hover (hover-capable only): indigo wash fill, paper text, arrow moves 4px right. `:active`: translates 4px/4px and the shadow goes to 0 — printed flat onto the page. |
 | Text link | `.site-footer__link` | Inter, underline appears on hover. |

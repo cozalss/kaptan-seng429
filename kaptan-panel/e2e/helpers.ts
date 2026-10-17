@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 
-/** The mock deployment's passphrase (printed on every door's screen on purpose). */
+/** The mock deployment's passphrase (shown as a small hint on /login on purpose). */
 export const PASSPHRASE = "kaptan2026";
 
 /** Collect console errors and uncaught page errors for a "no console errors" assertion. */
@@ -15,13 +15,20 @@ export function trackErrors(page: Page): string[] {
 
 export type RoleLabel = "Analist" | "Risk Sorumlusu" | "Yönetici" | "Denetçi";
 
-/** Sign in through a door on /login (Risk Sorumlusu by default); lands on Bugün. */
+/** The account picker on /login: a radio group named "Hesap"; each radio reads "<rol> <kişi>". */
+export function accountRadio(page: Page, label: RoleLabel) {
+  return page.getByRole("radiogroup", { name: "Hesap" }).getByRole("radio", { name: new RegExp(`^${label} `) });
+}
+
+/**
+ * Sign in on /login (Risk Sorumlusu's account by default): pick the account, type the
+ * passphrase, "Giriş yap". Lands on Bugün.
+ */
 export async function login(page: Page, label: RoleLabel = "Risk Sorumlusu") {
   await page.goto("/login");
-  await page.getByRole("list", { name: "Roller" }).getByRole("link", { name: label, exact: true }).click();
-  await expect(page.getByRole("heading", { level: 1, name: label })).toBeVisible();
+  await accountRadio(page, label).check();
   await page.getByLabel("Parola").fill(PASSPHRASE);
-  await page.getByRole("button", { name: `${label} olarak gir` }).click();
+  await page.getByRole("button", { name: "Giriş yap", exact: true }).click();
   await expect(page).toHaveURL(/\/bugun$/);
 }
 
@@ -37,16 +44,24 @@ export async function go(page: Page, label: "Bugün" | "Portföy" | "Denetim", u
   await expect(page).toHaveURL(url);
 }
 
-/** Open Ayarlar from the ⚙ menu (client-side). The top bar renders it once, at every width. */
+/**
+ * The top bar's account menu trigger. Its accessible name starts with "Rol: <rol>." (kept
+ * from the old role chip, so `^Rol: Denetçi\.` assertions still hold).
+ */
+export function accountMenu(page: Page) {
+  return page.getByRole("button", { name: /^Rol: / });
+}
+
+/** Open Ayarlar from the account menu (client-side). */
 export async function openSettings(page: Page) {
-  await page.getByRole("button", { name: "Ayarlar ve çıkış" }).click();
+  await accountMenu(page).click();
   await page.getByRole("menuitem", { name: "Ayarlar" }).click();
   await expect(page).toHaveURL(/\/ayarlar$/);
 }
 
-/** Look through another role's eyes with the top-bar picker (client-side; the choice is kept in the session). */
+/** Switch to another team account with the account menu's "Hesap değiştir" (kept in the session). */
 export async function pickRole(page: Page, label: RoleLabel) {
-  await page.getByRole("button", { name: /Kimin gözüyle bakıyorsun\?/ }).click();
+  await accountMenu(page).click();
   await page.getByRole("menuitemradio", { name: new RegExp(`^${label} ·`) }).click();
   await expect(page.getByRole("button", { name: new RegExp(`^Rol: ${label}\\.`) })).toBeVisible();
 }

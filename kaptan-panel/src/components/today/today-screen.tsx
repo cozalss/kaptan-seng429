@@ -2,26 +2,25 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useNow } from "@/lib/clock";
-import { fmtDateLong } from "@/lib/format";
+import { fmtDateLong, fmtInt } from "@/lib/format";
 import { useEventStream } from "@/lib/sse/use-event-stream";
 import { effectiveStatus, sortQueue } from "@/components/approvals/approvals-logic";
 import { useDesk } from "@/components/shell/desk-state";
 import { useRole } from "@/components/roles/use-role";
 import { ErrorState, Skeleton } from "@/components/ui/primitives";
-import { crewDayLine, shortName, todayHeadline } from "@/components/story/plain";
-import { BigSentence, Kicker } from "@/components/story/ui";
+import { shortName, todayHeadline } from "@/components/story/plain";
+import { BigSentence } from "@/components/story/ui";
 import { decisionClock } from "./decision-clock";
-import { DayStrip } from "./day-strip";
 import { CalmDay, StoppedDay } from "./day-states";
 import { PortfolioLine } from "./portfolio-line";
 import { ProposalCard } from "./proposal-card";
 import { WaitingList } from "./waiting-list";
 
 /**
- * /bugun: the home screen. One big sentence; the day at a glance (karar saati and the tayfa
- * satırı); the open proposals as a ruled list, each with where it stands in the two signatures;
- * what waits for you; one line about your money. A proposal that arrives while you look is set
- * down in place. The empty day shows the calm sea, the stopped day says what Durdur did.
+ * /bugun: the home screen. One title and one meta line (date, notices read, the soonest
+ * deadline); the open proposals as one list of clean rows (company, one-line summary, amount,
+ * deadline, signature status); what waits for you; one compact portfolio summary. A proposal
+ * that arrives while you look is set down in place.
  */
 export function TodayScreen() {
   const { pending, risk, counters, error, refresh } = useDesk();
@@ -38,22 +37,30 @@ export function TodayScreen() {
   const loading = risk === null;
   const arrived = open.find((c) => fresh.has(c.proposal_id));
   const state = loading ? "loading" : stopped ? "stopped" : open.length ? "open" : "empty";
+  const clock = state === "open" ? decisionClock(open, now) : null;
+  const meta = [
+    nowIso === null ? null : fmtDateLong(nowIso),
+    counters ? `${fmtInt(counters.total)} bildirim okundu` : null,
+    clock ? `en yakın son saat ${clock.when}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div>
       <header>
-        <Kicker>{nowIso === null ? " " : fmtDateLong(nowIso)}</Kicker>
         {error && loading ? (
-          <BigSentence focusTarget className="mt-4 animate-fade-in">
+          <BigSentence focusTarget className="animate-fade-in">
             Bugün’ün listesi gelmedi.
           </BigSentence>
         ) : loading ? (
-          <Skeleton className="mt-4 h-12 w-3/4 sm:h-14" />
+          <Skeleton className="h-10 w-3/4" />
         ) : (
-          <BigSentence focusTarget className="mt-4 animate-fade-in">
+          <BigSentence focusTarget className="animate-fade-in">
             {keepDash(todayHeadline(stopped ? 0 : open.length, stopped))}
           </BigSentence>
         )}
+        <p className="mt-3 min-h-6 text-ui text-ink-soft tabular-nums">{meta}</p>
       </header>
 
       {error && loading ? (
@@ -62,16 +69,12 @@ export function TodayScreen() {
         </div>
       ) : (
         <>
-          <div className="mt-8 sm:mt-10">
-            <DayStrip state={state} clock={decisionClock(open, now)} crew={crewDayLine(counters)} halted={Boolean(risk?.halted_today)} />
-          </div>
-
-          <div>
+          <div className="mt-8">
             {state === "loading" ? <LoadingRows /> : null}
             {state === "stopped" && risk ? <StoppedDay risk={risk} /> : null}
             {state === "empty" ? <CalmDay /> : null}
             {state === "open" ? (
-              <ol aria-label="Bekleyen öneriler" className="animate-fade-in divide-y divide-hairline border-y-2 border-ink">
+              <ol aria-label="Bekleyen öneriler" className="animate-fade-in divide-y divide-hairline border-2 border-ink bg-panel">
                 {open.map((c) => (
                   <li key={c.proposal_id}>
                     <ProposalCard card={c} fresh={fresh.has(c.proposal_id)} nowIso={nowIso} yours={role === "risk_officer"} />
@@ -85,8 +88,8 @@ export function TodayScreen() {
             {arrived ? `Yeni öneri geldi: ${shortName(arrived.company_name)}` : ""}
           </p>
 
-          <WaitingList className="mt-12" />
-          {risk ? <PortfolioLine risk={risk} className="mt-12" /> : null}
+          <WaitingList className="mt-8" />
+          {risk ? <PortfolioLine risk={risk} className="mt-8" /> : null}
         </>
       )}
     </div>
@@ -113,11 +116,11 @@ function keepDash(text: string): ReactNode {
 /** Two quiet rows in the list's own rhythm while the desk loads (they show only after 280ms). */
 function LoadingRows() {
   return (
-    <div role="status" aria-label="Öneriler yükleniyor" className="divide-y divide-hairline border-y-2 border-ink">
+    <div role="status" aria-label="Öneriler yükleniyor" className="divide-y divide-hairline border-2 border-ink bg-panel">
       {[0, 1].map((i) => (
-        <div key={i} className="space-y-3 py-6">
+        <div key={i} className="space-y-3 px-4 py-5 sm:px-6">
           <Skeleton className="h-3.5 w-40" />
-          <Skeleton className="h-7 w-9/12" />
+          <Skeleton className="h-4 w-9/12" />
           <Skeleton className="h-3.5 w-7/12" />
         </div>
       ))}

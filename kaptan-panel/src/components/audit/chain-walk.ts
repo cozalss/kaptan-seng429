@@ -7,9 +7,9 @@ import { errorMessage, type KaptanApi } from "@/lib/api/types";
 import { prefersReducedMotion } from "@/lib/utils";
 
 /**
- * "Defteri doğrula": ask the API to walk the chain, then replay the walk on screen — a count
- * running from the first record to the last (or to the broken one) — so the result is seen,
- * not just announced. Reduced motion: the result appears at once.
+ * "Defteri doğrula": ask the API to walk the chain, then replay it as a short progress bar —
+ * a count running from the first record to the last (or to the broken one) — so the result
+ * is seen, not just announced. Reduced motion: the result appears at once.
  */
 export type Walk =
   | { phase: "idle" }
@@ -108,25 +108,4 @@ export function useChainWalk(length: number) {
   }, [api, length]);
 
   return { walk, verify, reset: () => setWalk({ phase: "idle" }) };
-}
-
-/** The strip under "Defteri doğrula": 48 square segments, each about total/48 records. */
-export const SEGMENTS = 48;
-export type Segment = "ink" | "north" | "dashed" | "blank";
-
-/**
- * Which segments the walk has inked. A segment is inked once every record in it was checked;
- * on a break the segment holding the broken record turns north and the rest are dashed
- * (never walked: nothing after the break can be trusted). Pure.
- */
-export function walkSegments(checked: number, total: number, badPos: number | null, count = SEGMENTS): Segment[] {
-  const per = Math.max(1, Math.ceil(total / count));
-  return Array.from({ length: count }, (_, i): Segment => {
-    if (badPos !== null) {
-      const bad = Math.ceil(badPos / per) - 1;
-      return i < bad ? "ink" : i === bad ? "north" : "dashed";
-    }
-    const end = Math.min((i + 1) * per, total);
-    return total > 0 && checked >= end ? "ink" : "blank";
-  });
 }

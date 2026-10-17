@@ -48,7 +48,9 @@
   --art-print: contrast(1.2) saturate(1.35) brightness(0.97);
 
   /* Font families */
-  /* Bodoni at display size carries the page (Instrument Serif reads as a template default in 2026). */
+  /* Bodoni at display size carries the page (Instrument Serif reads as a template default in 2026).
+     Bodoni minimum (DESIGN.md §3, permanent): --font-display only where the rendered size is >= 32px;
+     anything smaller is --font-sans (Inter 400–500, text-stroke 0). */
   --font-display: 'Bodoni Moda Display', 'Didot', 'Bodoni 72', Georgia, serif;
   --font-wordmark: 'Bodoni Moda', 'Didot', Georgia, serif;
   --font-sans: 'Inter', 'Helvetica Neue', Arial, sans-serif;
@@ -61,7 +63,7 @@
   --text-chapter: min(12vw, 20vh);
   --text-heading-section: clamp(28px, 2.5vw, 44px);
   --text-heading-overlay: 32px;
-  --text-caption-panel: clamp(21px, 1.8vw, 28px);
+  --text-caption-panel: clamp(18px, 1.4vw, 22px); /* Inter 500: the book's voice reads from the back row */
   --text-running-head: 14px;
   /* Projector rule: Bodoni Moda Display only ships 400 and its hairlines vanish on a projector. Every
      Bodoni setting carries a stroke in its own colour that roughly doubles the hairlines and barely

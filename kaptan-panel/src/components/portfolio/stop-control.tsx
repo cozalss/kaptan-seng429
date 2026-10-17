@@ -10,11 +10,12 @@ import { Denied } from "@/components/roles/denied";
 import { useRole } from "@/components/roles/use-role";
 import { useDesk } from "@/components/shell/desk-state";
 import { NoteDialog } from "./note-dialog";
-import { askCopy, stopEffects, type Ask } from "./stop-copy";
+import { CARD, CARD_PAD, Pill } from "./kit";
+import { askCopy, stopSentence, type Ask } from "./stop-copy";
 import { Stopped } from "./stopped";
 
 /**
- * Durdur — the kill switch. The Risk Sorumlusu or the Yönetici can stop everything with one
+ * Durdur — the kill switch, as one compact card. The Risk Sorumlusu or the Yönetici can stop everything with one
  * reason. Starting again takes two people (_KANONIK "Reset = Admin + Risk Officer"): the
  * Yönetici starts it, the Risk Sorumlusu confirms it — shown as two stamps. After each step
  * taken here, focus lands on the new state, so a screen reader hears what changed.
@@ -62,44 +63,27 @@ export function StopControl({ risk }: { risk: RiskStatus }) {
   const reopened = justChanged === "confirm";
   const stopped = risk.kill_switch === "on";
   return (
-    <section aria-labelledby="durdur" className={cn("border-t-2 pt-5", stopped ? "border-north" : "border-ink")}>
-      <div className="mb-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="durdur" className="label">
+    <section aria-labelledby="durdur" className={cn(CARD, CARD_PAD, "space-y-5", stopped && "border-north")}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="durdur" className="text-[18px] leading-7 font-semibold text-ink">
           Durdur
         </h2>
-        <p className="text-meta text-muted">Durdurmak tek kişi · yeniden açmak iki kişi</p>
+        {stopped ? <Pill tone="north">Durduruldu</Pill> : <Pill tone="gain">Çalışıyor</Pill>}
       </div>
       {!stopped ? (
-        <div className="space-y-6">
-          {/* After the second signature the confirmation takes the title's place for this visit. */}
-          <div ref={statusRef} role="status" tabIndex={-1} className="space-y-2 outline-none">
-            {reopened ? (
-              <>
-                <p className="animate-ink-in font-display text-display leading-none text-ink">Yeniden açıldı.</p>
-                <p className="text-ui text-ink-soft">İki imza tamam; tayfa yeniden çalışıyor.</p>
-              </>
-            ) : (
-              <p className="font-display-text text-title text-balance text-ink">Bir şey ters giderse her şey tek gerekçeyle durur.</p>
-            )}
-          </div>
-          <div className="grid gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:gap-10">
-            <ul aria-label="Durdurunca ne olur?" className="space-y-2 text-ui text-ink-soft">
-              {[...stopEffects(pending.length), "Yeniden açmak iki kişi ister: Yönetici başlatır, Risk Sorumlusu onaylar."].map((line) => (
-                <li key={line} className="grid grid-cols-[14px_minmax(0,1fr)] gap-2">
-                  <span aria-hidden className="mt-[11px] h-px bg-rule-soft" />
-                  <span>{line}</span>
-                </li>
-              ))}
-            </ul>
-            <Button
-              variant="danger-outline"
-              size="lg"
-              disabled={!canStop}
-              locked={!canStop}
-              onClick={() => open("stop")}
-              className="h-14 w-full px-9 text-body sm:w-auto"
-            >
-              {canStop ? <span aria-hidden className="size-2.5 bg-current" /> : null}
+        <div className="space-y-3">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+            {/* After the second signature the confirmation takes the sentence's place for this visit. */}
+            <div ref={statusRef} role="status" tabIndex={-1} className="outline-none">
+              {reopened ? (
+                <p className="text-ui text-ink">
+                  <span className="font-semibold text-gain">Yeniden açıldı.</span> İki imza tamam; sistem yeniden çalışıyor.
+                </p>
+              ) : (
+                <p className="max-w-[460px] text-ui text-ink-soft">{stopSentence(pending.length)}</p>
+              )}
+            </div>
+            <Button variant="danger" size="lg" disabled={!canStop} locked={!canStop} onClick={() => open("stop")} className="w-full sm:w-auto">
               Durdur
             </Button>
           </div>

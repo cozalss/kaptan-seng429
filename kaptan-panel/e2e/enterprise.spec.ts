@@ -24,6 +24,7 @@ test("roles, two signatures, the ledger, limits and the two-person restart", asy
   // Yönetici adds the E3 scenario.
   await pickRole(page, "Yönetici");
   await openSettings(page);
+  await page.getByRole("tab", { name: "Senaryolar" }).click();
   await page.getByRole("button", { name: "Senaryo ekle: Yeni iş" }).click();
   await page.getByRole("link", { name: "Bugün’e git →" }).click();
   const card = page.getByRole("article", { name: "ÖRNEK ENERJİ" });
@@ -56,6 +57,7 @@ test("roles, two signatures, the ledger, limits and the two-person restart", asy
   // Yönetici tampers; the walk stops at #3.907.
   await pickRole(page, "Yönetici");
   await openSettings(page);
+  await page.getByRole("tab", { name: "Senaryolar" }).click();
   await page.getByTestId("tamper").getByRole("button", { name: "Bir kaydı kurcala" }).click();
   await expect(page.getByTestId("tamper")).toContainText("Şu an: kayıt değişik");
   await go(page, "Denetim", /\/denetim$/);
@@ -65,8 +67,10 @@ test("roles, two signatures, the ledger, limits and the two-person restart", asy
   await page.getByRole("button", { name: "Defterde göster →" }).click();
   await expect(page.locator("#kayit-3907")).toBeFocused();
   await openSettings(page);
+  await page.getByRole("tab", { name: "Senaryolar" }).click();
   await page.getByTestId("tamper").getByRole("button", { name: "Kurcalamayı geri al" }).click();
   await expect(page.getByTestId("tamper")).toContainText("Şu an: defter temiz");
+  await page.getByRole("tab", { name: "Sınırlar" }).click();
 
   // Yönetici proposes a tighter limit (1/2); Risk Sorumlusu approves (2/2).
   await page.getByRole("button", { name: "Değişiklik öner" }).click();

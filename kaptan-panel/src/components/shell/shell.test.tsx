@@ -1,5 +1,6 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { toast } from "sonner";
 import { __setMockDb, MockDb } from "@/lib/api/mock/db";
 import { engageKillSwitch, stopAllTimers, stopLiveTicker } from "@/lib/api/mock/scenarios";
 import { buildExplain } from "@/mocks/explain-builder";
@@ -16,6 +17,9 @@ vi.mock("next/navigation", async () => (await import("../nav.test-utils")).mockN
 const OFFICER = { uid: "uye-3", name: "Üye 3", role: "risk_officer" } as const;
 
 afterEach(() => {
+  act(() => {
+    toast.dismiss();
+  });
   stopAllTimers();
   stopLiveTicker();
   __setMockDb(null);
@@ -24,34 +28,35 @@ afterEach(() => {
 });
 
 describe("top bar", () => {
-  it("has Bugün, Portföy, Denetim, the role picker and the ⚙ menu, and marks the current one", async () => {
+  it("has Bugün, Portföy, Denetim and one account menu, and marks the current place", async () => {
     nav.pathname = "/oneri/p-1";
     renderWithDesk(<TopBar />);
     const main = screen.getByRole("navigation", { name: "Ana gezinme" });
     expect(within(main).getAllByRole("link").map((a) => a.textContent)).toEqual(["Bugün", "Portföy", "Denetim"]);
-    // One role picker and one ⚙ menu at every width: the phone row holds the same controls.
-    expect(screen.getAllByRole("button", { name: /Rol: Risk Sorumlusu/ })).toHaveLength(1);
-    expect(screen.getAllByRole("button", { name: "Ayarlar ve çıkış" })).toHaveLength(1);
-    expect(screen.getByText("Kimin gözüyle bakıyorsun?")).toBeInTheDocument();
+    // One account menu at every width; its name starts with the role.
+    expect(screen.getAllByRole("button", { name: /^Rol: Risk Sorumlusu\. Hesap: / })).toHaveLength(1);
+    expect(screen.queryByText("Kimin gözüyle bakıyorsun?")).toBeNull();
     expect(within(main).getByRole("link", { name: "Bugün" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "KAPtan — Bugün" })).toHaveAttribute("href", "/bugun");
   });
 
-  it("underlines ⚙ Ayarlar while you are on Ayarlar", () => {
-    nav.pathname = "/ayarlar";
+  it("switches the account from the menu and keeps the choice", async () => {
+    const u = userEvent.setup({ delay: null });
     renderWithDesk(<TopBar />);
-    const trigger = screen.getByRole("button", { name: "Ayarlar ve çıkış" });
-    expect(trigger).toHaveTextContent("Ayarlar");
-    expect(trigger.querySelector("span.scale-x-100")).not.toBeNull();
-    const main = screen.getByRole("navigation", { name: "Ana gezinme" });
-    expect(within(main).queryByRole("link", { current: "page" })).toBeNull();
+    await u.click(screen.getByRole("button", { name: /^Rol: Risk Sorumlusu\./ }));
+    expect(await screen.findByText("Hesap değiştir")).toBeInTheDocument();
+    const items = screen.getAllByRole("menuitemradio");
+    expect(items.map((i) => i.textContent)).toEqual(["Analist · Üye 2", "Risk Sorumlusu · Üye 3", "Yönetici · Üye 1", "Denetçi · Denetçi"]);
+    expect(items[1]).toHaveAttribute("aria-checked", "true");
+    await u.click(screen.getByRole("menuitemradio", { name: /^Denetçi ·/ }));
+    expect(await screen.findByRole("button", { name: /^Rol: Denetçi\. Hesap: Denetçi/ })).toBeInTheDocument();
   });
 
-  it("opens Ayarlar and signs out from the ⚙ menu", async () => {
+  it("opens Ayarlar and signs out from the account menu", async () => {
     const u = userEvent.setup({ delay: null });
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 204 }));
     renderWithDesk(<TopBar />);
-    await u.click(screen.getByRole("button", { name: "Ayarlar ve çıkış" }));
+    await u.click(screen.getByRole("button", { name: /^Rol: / }));
     expect(await screen.findByRole("menuitem", { name: "Ayarlar" })).toHaveAttribute("href", "/ayarlar");
     await u.click(screen.getByRole("menuitem", { name: "Çıkış" }));
     await waitFor(() => expect(nav.replace).toHaveBeenCalledWith("/login"));

@@ -5,7 +5,7 @@ export const SITE = Object.freeze({
   descriptor: 'BIST KAP bildirimleri için çok ajanlı yapay zekâ',
   description:
     'KAPtan, Borsa İstanbul şirketlerinin KAP bildirimlerini okuyan çok ajanlı bir yapay zekâ ders projesidir: yapay zekâ kanıt toplar, deterministik kurallar karar verir, insan onaylar. Yatırım tavsiyesi değildir.',
-  url: 'https://kaptan-rho.vercel.app/',
+  url: 'https://kaptan-seng429.vercel.app/',
   course: Object.freeze({
     code: 'SENG 429',
     title: 'Enterprise Application Development Lab',
@@ -17,8 +17,8 @@ export const SITE = Object.freeze({
   }),
   links: Object.freeze({
     proposalUrl: null, // PLACEHOLDER: proposal PDF (due 12 Eki 2026)
-    docsUrl: null, // PLACEHOLDER: project documentation
-    githubUrl: 'https://github.com/cozalss/kaptan',
+    docsUrl: 'https://github.com/cozalss/kaptan-seng429/tree/main/docs',
+    githubUrl: 'https://github.com/cozalss/kaptan-seng429',
   }),
   // PLACEHOLDER names; the four roles are fixed.
   team: Object.freeze(

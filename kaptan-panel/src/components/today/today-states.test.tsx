@@ -45,9 +45,8 @@ describe("Bugün's quiet days", () => {
     desk = base({});
     render(<TodayScreen />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Bugün öneri yok — tayfa izliyor.");
-    expect(screen.getByText("Bekleyen karar yok.")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Bekleyen öneri yok" })).toHaveTextContent("sayfayı yenilemen gerekmez");
-    expect(screen.getByRole("list", { name: "Tayfa: sekiz üye" }).children).toHaveLength(8);
+    expect(screen.queryByText(/son saat/)).toBeNull();
     expect(screen.getByRole("link", { name: /^Portföyün: / })).toHaveAttribute("href", "/portfoy");
   });
 
@@ -57,7 +56,6 @@ describe("Bugün's quiet days", () => {
     const stop = screen.getByRole("region", { name: "Durdurma" });
     expect(stop).toHaveTextContent("Masa elle durduruldu (13:00). Gerekçe: “oynaklık”");
     expect(screen.getByRole("link", { name: /Yeniden başlatma Portföy’de/ })).toHaveAttribute("href", "/portfoy");
-    expect(screen.getByText("Karar yok.")).toBeInTheDocument();
   });
 
   it("names the system when the −5% rule stopped the desk", () => {

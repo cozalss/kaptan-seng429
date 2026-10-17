@@ -23,14 +23,13 @@ describe("Bugün", () => {
     const list = screen.getByRole("list", { name: "Bekleyen öneriler" });
     const cards = within(list).getAllByRole("article");
     expect(cards).toHaveLength(3);
-    expect(cards[0]).toHaveTextContent(/\d+ lot al · tanesi en fazla .* · (bugün|yarın|\d+ \S+) 09:50’ye kadar/);
-    expect(screen.queryByText(/sa var/)).toBeNull();
-    // Each open row says where it stands in the two signatures; the second is the Risk Sorumlusu's.
-    expect(cards[0]).toHaveTextContent("İmzalar: kurallar imzaladı;1/2 · ikinci imza senin");
-    // Karar saati: the soonest deadline and how long is left.
-    expect(screen.getByText("Karar saati")).toBeInTheDocument();
-    expect(await screen.findByText(/^\d+ (saat|dakika).* kaldı · bu saate dek imzalanmayan öneri düşer\.$/)).toBeInTheDocument();
-    expect(await screen.findByText(/^Tayfa bugün \d+ bildirim okudu; \d+’\S+ kurallar hemen eledi, \d+’\S+ inceledi ve \d+ öneri çıkardı: /)).toBeInTheDocument();
+    // Each row: amount, lots and price cap, the deadline, and where it stands in the two signatures.
+    expect(cards[0]).toHaveTextContent(/\d[\d.]* TL\d+ lot · en fazla [\d.,]+ TLSon saat (bugün|yarın|\d+ \S+) 09:50/);
+    expect(cards[0]).toHaveTextContent("İmzalar: kurallar imzaladı;İmza 1/2 · ikinci imza senin");
+    // One meta line under the title: notices read and the soonest deadline (no clock bar, no crew strip).
+    expect(await screen.findByText(/\d+ bildirim okundu · en yakın son saat (bugün|yarın|\d+ \S+) 09:50$/)).toBeInTheDocument();
+    expect(screen.queryByText("Karar saati")).toBeNull();
+    expect(screen.queryByRole("list", { name: /Tayfa/ })).toBeNull();
     expect(screen.getByRole("link", { name: /Portföyün:/ })).toHaveAttribute("href", "/portfoy");
     expect(screen.getAllByRole("link", { name: /^İncele/ })[0]).toHaveAttribute("href", expect.stringMatching(/^\/oneri\/prop-day-/));
   });

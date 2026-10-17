@@ -4,36 +4,8 @@ import { ROLE_LABEL, type Role } from "@/lib/domain/user";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { RoleEmblem } from "@/components/roles/role-emblem";
-import { ACT_TITLES, actPosition, DEMO_STEPS, type DemoStep } from "./demo-steps";
+import { DEMO_STEPS, type DemoStep } from "./demo-steps";
 import "./tour-bar.css";
-
-const ACTS = [1, 2, 3, 4, 5, 6] as const;
-
-/**
- * The course ruler along the bar's top edge: one tick per step, grouped by act (a wider gap
- * between acts). Walked steps are ink, the current one stands taller, the rest are hairlines.
- */
-function CourseRuler({ index }: { index: number }) {
-  return (
-    <div aria-hidden className="flex items-end gap-3 sm:gap-4">
-      {ACTS.map((act) => (
-        <span key={act} className="flex flex-1 items-end gap-[3px]">
-          {DEMO_STEPS.map((s, i) =>
-            s.act === act ? (
-              <span
-                key={s.id}
-                className={cn(
-                  "h-[8px] flex-1 origin-bottom transition-[scale,background-color] duration-[var(--dur-base)] ease-[var(--ease-ink)]",
-                  i === index ? "bg-brand" : i < index ? "scale-y-50 bg-ink" : "scale-y-50 bg-rule-soft",
-                )}
-              />
-            ) : null,
-          )}
-        </span>
-      ))}
-    </div>
-  );
-}
 
 function Cross() {
   return (
@@ -57,28 +29,24 @@ export interface TourInstrumentProps {
 }
 
 /**
- * The guided tour's bar, drawn as a ship's instrument laid over the foot of the page: the
- * course ruler on top, the act and step in words (the step's title in Bodoni, inked in on
- * every step), whose eyes we look through in that role's ink, and the helm on the right:
- * ← · Sonraki → · close. It rises once when the tour starts; nothing else moves.
+ * The guided tour's bar at the foot of the page: a thin progress line, "Adım n/15", the step's
+ * title and one-line note, whose eyes we look through, and ← · Sonraki → · close on the right.
  */
 export function TourInstrument({ index, step, role, busy, error, manual, onBackup, onPrev, onNext, onClose }: TourInstrumentProps) {
-  const pos = actPosition(index);
   const last = index === DEMO_STEPS.length - 1;
+  const total = DEMO_STEPS.length;
   return (
-    <section aria-label="Rehberli tur" data-testid="guided-demo" className="tour-rise fixed inset-x-0 bottom-0 z-40 border-t-2 border-ink bg-panel shadow-[0_-4px_0_var(--ink)]">
-      <div className="mx-auto max-w-[960px] px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:px-6 sm:pt-4 sm:pb-4">
-        <CourseRuler index={index} />
-        <div className="mt-3 flex flex-col gap-3 sm:mt-4 sm:flex-row sm:items-end sm:gap-8">
-          <div className="min-w-0 flex-1">
-            <p className="text-meta text-muted">
-              <span className="font-medium text-ink">Perde {pos.act}/6</span> · {ACT_TITLES[pos.act]}
-            </p>
-            <p key={step.id} className="animate-ink-in mt-1 font-display-text text-lead text-balance text-ink sm:text-[24px] sm:leading-[30px]" data-testid="demo-step-title">
-              {step.title}
-            </p>
-            <p className="mt-1 max-w-[620px] text-dense text-ink-soft">{step.note}</p>
-            <p aria-live="polite" className={cn(`tone-${role}`, "mt-2 flex min-h-4 items-center gap-1.5 text-meta text-muted")}>
+    <section aria-label="Rehberli tur" data-testid="guided-demo" className="tour-rise fixed inset-x-0 bottom-0 z-40 border-t-2 border-hairline bg-panel shadow-[0_-4px_16px_rgb(16_17_23/0.12)]">
+      <div aria-hidden className="h-[3px] bg-sunk">
+        <div className="h-full origin-left bg-brand transition-transform duration-[var(--dur-base)] ease-[var(--ease-out-expo)]" style={{ transform: `scaleX(${(index + 1) / total})` }} />
+      </div>
+      <div className="mx-auto flex max-w-[752px] flex-col gap-3 px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:gap-6 sm:px-6 sm:py-3">
+        <div className="min-w-0 flex-1">
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-meta text-muted">
+            <span className="font-semibold text-ink tabular-nums">
+              Adım {index + 1}/{total}
+            </span>
+            <span aria-live="polite" className={cn(`tone-${role}`, "inline-flex items-center gap-1.5")}>
               {error ? (
                 <span className="text-north">{error}</span>
               ) : busy ? (
@@ -89,28 +57,29 @@ export function TourInstrument({ index, step, role, busy, error, manual, onBacku
                   <span>Rol: {ROLE_LABEL[role]}</span>
                 </>
               )}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2 max-sm:justify-between">
-            {manual ? (
-              <Button variant="outline" size="sm" disabled={busy !== null} onClick={onBackup}>
-                {manual.label}
-              </Button>
-            ) : null}
-            <div className="flex items-center gap-2 max-sm:ml-auto">
-              <span className="mr-1 text-dense text-muted tabular-nums">
-                <span className="text-ink">{index + 1}</span>/{DEMO_STEPS.length}
-              </span>
-              <Button variant="secondary" size="icon" aria-label="Önceki adım" disabled={index === 0} onClick={onPrev}>
-                ←
-              </Button>
-              <Button variant="primary" className="max-sm:h-11" aria-label={last ? "Turu bitir" : "Sonraki adım"} onClick={onNext}>
-                {last ? "Bitir" : "Sonraki"} <span aria-hidden>{last ? "✓" : "→"}</span>
-              </Button>
-              <Button variant="ghost" size="icon" aria-label="Rehberli turu kapat" onClick={onClose}>
-                <Cross />
-              </Button>
-            </div>
+            </span>
+          </p>
+          <p key={step.id} className="animate-fade-in mt-0.5 text-[17px] leading-6 font-semibold text-ink" data-testid="demo-step-title">
+            {step.title}
+          </p>
+          <p className="mt-0.5 line-clamp-2 max-w-[680px] text-dense text-ink-soft">{step.note}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {manual ? (
+            <Button variant="outline" size="sm" disabled={busy !== null} onClick={onBackup}>
+              {manual.label}
+            </Button>
+          ) : null}
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="secondary" size="icon" aria-label="Önceki adım" disabled={index === 0} onClick={onPrev}>
+              ←
+            </Button>
+            <Button variant="primary" className="max-sm:h-11" aria-label={last ? "Turu bitir" : "Sonraki adım"} onClick={onNext}>
+              {last ? "Bitir" : "Sonraki"} <span aria-hidden>{last ? "✓" : "→"}</span>
+            </Button>
+            <Button variant="ghost" size="icon" aria-label="Rehberli turu kapat" onClick={onClose}>
+              <Cross />
+            </Button>
           </div>
         </div>
       </div>

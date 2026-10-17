@@ -1,8 +1,8 @@
 import { LoginRequest, ROLES } from "@/lib/domain/user";
 import { isPublicPath, safeNext } from "@/lib/nav";
-import { doorPeople, loginHref, ROLE_DOOR, ROLE_SLUG, ROLE_SLUGS, roleFromSlug } from "./role-doors";
+import { accountPerson, loginHref, ROLE_SLUG, ROLE_SLUGS, roleFromSlug } from "./role-doors";
 
-describe("role doors: slug ↔ role", () => {
+describe("sign-in accounts: slug ↔ role", () => {
   it("maps every role to a distinct ASCII slug and back", () => {
     expect(ROLE_SLUGS).toEqual(["analist", "risk", "yonetici", "denetci"]);
     for (const role of ROLES) {
@@ -21,21 +21,11 @@ describe("role doors: slug ↔ role", () => {
     expect(loginHref("auditor", "/oneri/p 1")).toBe("/login/denetci?next=%2Foneri%2Fp%201");
     expect(loginHref(null, "/portfoy")).toBe("/login?next=%2Fportfoy");
   });
-  it("gives every door one line and two or three things you do", () => {
-    expect(ROLE_DOOR.risk_officer.line).toBe("Son imzayı sen atarsın.");
-    expect(ROLE_DOOR.auditor.line).toBe("Her şeyi görürsün, hiçbir şeye dokunmazsın.");
-    expect(ROLE_DOOR.admin.line).toBe("Ekibi, sınırları ve senaryoları sen yönetirsin.");
-    for (const role of ROLES) expect(ROLE_DOOR[role].does.length).toBeGreaterThanOrEqual(2);
-  });
-  it("names each door by the role's verb, in capitals and distinct", () => {
-    expect(ROLES.map((r) => ROLE_DOOR[r].verb)).toEqual(["OKUR", "İMZALAR", "KURAR", "GÖZETLER"]);
-    for (const role of ROLES) expect(ROLE_DOOR[role].verb).toBe(ROLE_DOOR[role].verb.toLocaleUpperCase("tr"));
-  });
-  it("names who sits behind each door", () => {
-    expect(doorPeople("admin")).toBe("Üye 1");
-    expect(doorPeople("analyst")).toBe("Üye 2 · Üye 4");
-    expect(doorPeople("risk_officer")).toBe("Üye 3");
-    expect(doorPeople("auditor")).toMatch(/Jüri/);
+  it("names who each account is", () => {
+    expect(accountPerson("admin")).toBe("Üye 1");
+    expect(accountPerson("analyst")).toBe("Üye 2");
+    expect(accountPerson("risk_officer")).toBe("Üye 3");
+    expect(accountPerson("auditor")).toMatch(/Jüri/);
   });
 });
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://kaptan-rho.vercel.app/">
+  <a href="https://kaptan-seng429.vercel.app/">
     <img src="docs/screens/landing.png" alt="KAPtan tanıtım sayfası: pirinç kâğıdına sumi mürekkeple basılmış bir çizgi roman" width="100%">
   </a>
 </p>
@@ -12,8 +12,8 @@
 </p>
 
 <p align="center">
-  <a href="https://kaptan-rho.vercel.app/">Canlı site</a> ·
-  <a href="https://kaptan-rho.vercel.app/login">Panel</a> ·
+  <a href="https://kaptan-seng429.vercel.app/">Canlı site</a> ·
+  <a href="https://kaptan-seng429.vercel.app/login">Panel</a> ·
   <a href="docs/README.md">Belgeler</a> ·
   <a href="#in-english">In English</a>
 </p>
@@ -69,8 +69,8 @@ değiştirilemez bir deftere yazılır.
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/screens/panel-login.png" alt="KAPtan paneli, dört rol kapısıyla giriş ekranı" width="100%"><br>
-      <sub><b>Giriş</b> · dört kapı: Analist, Risk Sorumlusu, Yönetici, Denetçi</sub>
+      <img src="docs/screens/panel-login.png" alt="KAPtan paneli, hesap seçerek giriş ekranı" width="100%"><br>
+      <sub><b>Giriş</b> · hesap seçimi (Analist, Risk Sorumlusu, Yönetici, Denetçi) ve parola</sub>
     </td>
     <td width="50%" valign="top" align="center">
       <img src="docs/screens/panel-telefon.png" alt="KAPtan paneli telefon genişliğinde" width="240"><br>
@@ -231,8 +231,8 @@ aynı tabloyu okur. Ürün kuralları: [`kaptan-panel/SPEC.md`](kaptan-panel/SPE
 
 | Parça | Durum |
 |---|---|
-| Tanıtım sayfası | Yayında: [kaptan-rho.vercel.app](https://kaptan-rho.vercel.app/) |
-| Panel | Yayında: [kaptan-rho.vercel.app/login](https://kaptan-rho.vercel.app/login). Bütün ekranlar, dört rol, iki imza, defter doğrulama, sınır değişikliği, Durdur ve rehberli tur, tarayıcı içinde çalışan deterministik bir mock API ile |
+| Tanıtım sayfası | Yayında: [kaptan-seng429.vercel.app](https://kaptan-seng429.vercel.app/) |
+| Panel | Yayında: [kaptan-seng429.vercel.app/login](https://kaptan-seng429.vercel.app/login). Bütün ekranlar, dört rol, iki imza, defter doğrulama, sınır değişikliği, Durdur ve rehberli tur, tarayıcı içinde çalışan deterministik bir mock API ile |
 | Backend | Yazılıyor. Python ajan grafı ve FastAPI servisi bir ekip arkadaşı tarafından [`kaptan-panel/API.md`](kaptan-panel/API.md) sözleşmesine göre geliştiriliyor; panelin http istemcisi hazır |
 | Proje belgeleri | 15 belge ve kanonik kararlar: [`docs/proje/`](docs/proje/00-ICINDEKILER.md) |
 

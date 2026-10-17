@@ -1,53 +1,29 @@
 /* ──────────────────────────────────────────────────────────────────────────
-   Öneri: the signing moment and the emir fişi. Co-located with the screen (oneri- prefix).
-   İmza anı, in order: the stamp is set down on the second signature line in the signer's
-   ink (a short press, the sheet gives a hair under it), then the emir fişi is laid on top
-   of the sheet. Nothing loops or bounces; reduced motion keeps only quick fades.
+   Öneri: the one short signing moment and the Kopyala flash (oneri- prefix).
+   When the second signature is given here, its mark is pressed in once and the emir
+   fişi rises into place. Nothing loops; reduced motion keeps only quick fades.
    ────────────────────────────────────────────────────────────────────────── */
 
-/* The stamp: lifted and a touch larger, then pressed flat at its own angle. */
+/* The mark: set down from a touch larger, flat at its own angle. */
 @keyframes oneri-stamp-press {
   0% {
     opacity: 0;
-    transform: rotate(var(--oneri-stamp-rot, -4deg)) translateY(-10px) scale(1.42);
+    transform: rotate(var(--oneri-stamp-rot, -2deg)) scale(1.35);
   }
-  55% {
+  60% {
     opacity: 1;
   }
   100% {
     opacity: 1;
-    transform: rotate(var(--oneri-stamp-rot, -4deg)) scale(1);
+    transform: rotate(var(--oneri-stamp-rot, -2deg)) scale(1);
   }
 }
-/* The ink spreading a little into the paper as the stamp lands, once. */
-@keyframes oneri-stamp-bleed {
-  0% {
-    opacity: 0.5;
-    transform: scale(0.92);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.12);
-  }
-}
-/* The sheet under the stamp: one 1px give at impact, then still. */
-@keyframes oneri-sheet-give {
-  0%,
-  100% {
-    transform: none;
-  }
-  40% {
-    transform: translateY(1px);
-  }
-}
-/* The emir fişi is laid on top of the sheet: from a little above and askew, flat on landing. */
+/* The emir fişi appears under the decision: a short rise and fade. */
 @keyframes oneri-slip-lay {
   from {
     opacity: 0;
-    transform: translate(10px, -22px) rotate(-1.4deg);
-    box-shadow: 14px 16px 0 rgb(16 17 23 / 0.22);
+    transform: translateY(8px);
   }
-  /* No `to`: it lands on its own shadow (the sheet's slip casts the long one). */
 }
 /* Kopyala: the copied fields flash the wash once, so you see what went to the clipboard. */
 @keyframes oneri-copied {
@@ -60,22 +36,10 @@
 }
 
 .oneri-stamp-press {
-  animation: oneri-stamp-press 360ms var(--ease-ink) 120ms both;
-}
-.oneri-stamp-press::after {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  border: 2px solid currentColor;
-  pointer-events: none;
-  opacity: 0;
-  animation: oneri-stamp-bleed 520ms var(--ease-out-expo) 440ms both;
-}
-.oneri-sheet-give {
-  animation: oneri-sheet-give 200ms var(--ease-ink) 400ms both;
+  animation: oneri-stamp-press 280ms var(--ease-ink) 80ms both;
 }
 .oneri-slip-lay {
-  animation: oneri-slip-lay 460ms var(--ease-ink) 700ms both;
+  animation: oneri-slip-lay 280ms var(--ease-out-expo) 300ms both;
 }
 .oneri-copied {
   animation: oneri-copied 1200ms var(--ease-out-expo) both;
@@ -85,10 +49,6 @@
   .oneri-stamp-press,
   .oneri-slip-lay {
     animation: fade-in 150ms ease-out both !important;
-  }
-  .oneri-stamp-press::after,
-  .oneri-sheet-give {
-    animation: none !important;
   }
   /* A colour change, not motion: kept, only shorter. */
   .oneri-copied {

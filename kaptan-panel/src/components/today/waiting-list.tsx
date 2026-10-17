@@ -29,20 +29,20 @@ export function WaitingList({ className }: { className?: string }) {
   const items = waitingItems({ can, uid: user.uid, tickets: tickets.data, now, limits: limits.data, risk });
   if (!items.length) return null;
   return (
-    <section aria-labelledby="seni-bekleyenler" className={cn("animate-fade-in space-y-3", className)}>
-      <h2 id="seni-bekleyenler" className="label">
+    <section aria-labelledby="seni-bekleyenler" className={cn("animate-fade-in border-2 border-ink bg-panel px-4 py-4 sm:px-6", className)}>
+      <h2 id="seni-bekleyenler" className="text-body font-semibold text-ink">
         Seni bekleyenler
       </h2>
-      <ul className="space-y-1">
+      <ul className="mt-2 divide-y divide-hairline">
         {items.map((it) => (
           <li key={it.key}>
-            <Link href={it.href} className="group inline-flex min-h-11 flex-wrap items-baseline gap-x-2 py-2 text-ui text-ink-soft hover:text-ink sm:min-h-0 sm:py-1">
-              <span className="underline decoration-rule-ui underline-offset-4 group-hover:decoration-ink">{it.text}</span>
-              <span className="whitespace-nowrap text-ink">
+            <Link href={it.href} className="group flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2 text-ui text-ink">
+              <span>{it.text}</span>
+              <span className="inline-flex items-center gap-1.5 font-semibold whitespace-nowrap text-brand">
+                {it.place}
                 <span aria-hidden className="inline-block transition-transform duration-[var(--dur-quick)] ease-[var(--ease-ink)] group-hover:translate-x-1">
                   →
-                </span>{" "}
-                {it.place}
+                </span>
               </span>
             </Link>
           </li>

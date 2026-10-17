@@ -74,7 +74,7 @@ describe("primitives", () => {
 });
 
 describe("buttons", () => {
-  it("says it is busy while pending and stays pressed flat", () => {
+  it("says it is busy while pending", () => {
     render(
       <Button variant="primary" pending disabled>
         İmzala

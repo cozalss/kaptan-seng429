@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 import { signTone } from "@/components/story/sign-tone";
 
 /**
- * The one line about your money at the foot of Bugün, set like a ledger entry: a quiet label,
- * the total in tabular Inter, today's move, and the way to Portföy. The whole line is the link.
+ * The one compact portfolio summary on Bugün: total value, today's move and the way to
+ * Portföy. The whole box is the link.
  */
 export function PortfolioLine({ risk, className }: { risk: RiskStatus; className?: string }) {
   const total = fmtTry(risk.equity);
@@ -17,18 +17,21 @@ export function PortfolioLine({ risk, className }: { risk: RiskStatus; className
       href={ROUTES.portfoy}
       aria-label={`Portföyün: ${total}, bugün ${today}. Portföy’e git`}
       className={cn(
-        "group flex min-h-11 flex-wrap items-baseline gap-x-4 gap-y-1 text-ui text-ink-soft",
-        "transition-colors duration-[var(--dur-quick)] ease-[var(--ease-ink)] hover:text-ink",
+        "group flex flex-wrap items-center gap-x-8 gap-y-2 border-2 border-ink bg-panel px-4 py-4 sm:px-6",
+        "transition-colors duration-[var(--dur-quick)] ease-[var(--ease-ink)] hover:bg-wash-tint",
         className,
       )}
     >
-      <span className="label text-ink-soft">Portföyün</span>
-      <span className="text-lead font-medium text-ink tabular-nums">{total}</span>
-      <span className="tabular-nums">
-        bugün <span className={cn("font-medium", signTone(risk.daily_pnl_pct))}>{today}</span>
+      <span>
+        <span className="block text-meta text-ink-soft">Portföy değeri</span>
+        <span className="block text-lead font-semibold text-ink tabular-nums">{total}</span>
       </span>
-      <span className="ml-auto inline-flex items-center gap-1.5 text-ink">
-        <span className="hidden sm:inline">Portföy</span>
+      <span>
+        <span className="block text-meta text-ink-soft">Bugün</span>
+        <span className={cn("block text-lead font-semibold tabular-nums", signTone(risk.daily_pnl_pct))}>{today}</span>
+      </span>
+      <span className="ml-auto inline-flex items-center gap-1.5 text-ui font-semibold text-brand">
+        Portföy
         <span aria-hidden className="transition-transform duration-[var(--dur-quick)] ease-[var(--ease-ink)] group-hover:translate-x-1">
           →
         </span>

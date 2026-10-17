@@ -504,8 +504,8 @@
   bottom: 14px;
   max-width: min(84%, 19em);
   padding: 8px 12px 10px;
-  font-size: clamp(15px, 2.1vh, 19px);
-  line-height: 1.22;
+  font-size: clamp(17px, 2.1vh, 19px);
+  line-height: 1.28;
 }
 
 .services__item:nth-child(even) .service-card__voice {
@@ -528,7 +528,7 @@
   max-width: 100%;
   font-family: var(--font-display);
   -webkit-text-stroke: var(--bodoni-stroke) currentColor;
-  font-size: clamp(24px, 8.6cqi, 58px);
+  font-size: clamp(32px, 8.6cqi, 58px); /* Bodoni floor: never below 32px */
   font-weight: 400;
   line-height: 0.95;
   letter-spacing: -0.01em;
@@ -705,7 +705,7 @@
 }
 
 .spread__plate-title {
-  font-size: 6.2cqi;
+  font-size: max(32px, 6.2cqi); /* Bodoni floor */
 }
 
 /* a plate is framed by a fine inner rule, as in a printed book */
@@ -720,7 +720,7 @@
 .spread__plate-caption {
   align-self: flex-start;
   margin-left: 1.2em;
-  font-size: max(15px, 1.9cqi);
+  font-size: max(17px, 1.9cqi);
 }
 
 /* The chart: one raster, each page shows its half (the picture spans the whole spread). */
@@ -817,7 +817,7 @@
 .spread__legend-title {
   font-family: var(--font-display);
   -webkit-text-stroke: var(--bodoni-stroke) currentColor;
-  font-size: max(22px, 3.1cqi);
+  font-size: max(32px, 3.1cqi); /* Bodoni floor; Inter on phones */
   font-weight: 400;
   line-height: 1;
   letter-spacing: -0.01em;
@@ -1014,6 +1014,29 @@
     padding-left: 0;
   }
 
+  /* Bodoni floor (32px): the band is full width here, so the two lines wrap instead */
+  .services__beat {
+    font-size: 32px;
+  }
+
+  /* the plate on the leaf's back is ~170px wide on a phone: too narrow for 32px Bodoni */
+  .spread__plate-title {
+    font-family: var(--font-sans);
+    -webkit-text-stroke: 0;
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: 0;
+  }
+
+  .spread__legend-title {
+    font-family: var(--font-sans);
+    -webkit-text-stroke: 0;
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.15;
+  }
+
   .services__beat::after {
     display: none;
   }
@@ -1074,6 +1097,6 @@
   .services__pin:not(.is-pinned) .services__beat {
     width: calc(var(--panel-w) * 0.42);
     min-width: max-content; /* "HÜKMEDER." is never cut off */
-    font-size: clamp(20px, calc(var(--panel-w) * 0.052), 32px);
+    font-size: 32px; /* Bodoni floor */
   }
 }

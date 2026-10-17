@@ -15,30 +15,11 @@ export interface AskCopy {
   submit: string;
 }
 
-/** The paragraph under DURDUR while the desk runs. */
-export function stopSectionLine(pending: number): string {
-  const drop = pending > 0 ? `bekleyen ${pending} öneri düşer, ` : "";
-  return (
-    `Bir şey ters giderse Risk Sorumlusu ya da Yönetici her şeyi durdurur: ${drop}yeni öneri gelmez, ` +
-    "girilmemiş fişler iptal olur. Elindekiler satılmaz; kendi çıkış günlerinde kapanır. Yeniden açmak iki kişi ister."
-  );
+/** The one sentence beside the Durdur button while the desk runs. */
+export function stopSentence(pending: number): string {
+  const drop = pending > 0 ? `bekleyen ${pending} öneri düşer ve ` : "";
+  return `Bir şey ters giderse her şeyi tek gerekçeyle durdurur: ${drop}yeni emir çıkmaz. Yeniden açmak iki kişi ister.`;
 }
-
-/** What Durdur does, one plain line each (the list beside the button while the desk runs). */
-export function stopEffects(pending: number): string[] {
-  return [
-    pending > 0 ? `Bekleyen ${pending} öneri düşer; yeni öneri gelmez.` : "Yeni öneri gelmez.",
-    "Aracı kuruma girilmemiş fişler iptal olur.",
-    "Elindekiler satılmaz; kendi çıkış günlerinde kapanır.",
-  ];
-}
-
-/** What is true while the desk is stopped (the list under "Durduruldu."). */
-export const STOPPED_EFFECTS = [
-  "Yeni öneri gelmiyor; bekleyenler düştü.",
-  "Girilmemiş fişler iptal edildi.",
-  "Elindekiler satılmadı; kendi çıkış günlerinde kapanır.",
-] as const;
 
 /** The stop dialog's lead. */
 export function stopDialogLead(pending: number): string {

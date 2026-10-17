@@ -61,10 +61,11 @@
 .menu-drawer__entry-title {
   flex: none;
   max-width: 75%;
-  font-family: var(--font-display);
-  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
-  font-size: clamp(24px, 2.2vw, 30px);
-  line-height: 1.05;
+  font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
+  font-size: clamp(20px, 1.6vw, 24px);
+  font-weight: 500;
+  line-height: 1.2;
   transition: transform var(--duration-normal) var(--ease-out-expo);
 }
 

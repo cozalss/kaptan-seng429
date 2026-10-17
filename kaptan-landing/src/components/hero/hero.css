@@ -213,10 +213,12 @@
   background: var(--color-paper-panel);
   border: 1.5px solid var(--color-sumi);
   box-shadow: 4px 4px 0 var(--color-sumi);
-  font-family: var(--font-display);
-  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
-  font-size: clamp(20px, 1.7vw, 27px);
-  line-height: 1.18;
+  font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
+  font-size: clamp(18px, 1.45vw, 22px);
+  font-weight: 500;
+  line-height: 1.32;
+  letter-spacing: -0.01em;
   color: var(--color-sumi);
   transform: rotate(calc(var(--tilt) + var(--sway, 0deg)));
   opacity: 0;
@@ -311,9 +313,10 @@
 }
 
 .hero-compass__letter {
-  font-family: var(--font-display);
-  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
-  font-size: 26px;
+  font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
+  font-size: 22px;
+  font-weight: 500;
   fill: var(--color-sumi);
   text-anchor: middle;
   dominant-baseline: middle;

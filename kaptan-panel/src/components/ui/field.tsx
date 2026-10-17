@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const control =
   "w-full border-2 border-ink bg-panel px-3 text-ui text-ink placeholder:text-muted " +
-  "transition-[border-color,box-shadow] duration-[var(--dur-quick)] focus-visible:outline-none focus-visible:border-brand focus-visible:shadow-[3px_3px_0_var(--brand)] " +
+  "transition-[border-color,box-shadow] duration-[var(--dur-quick)] focus-visible:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand " +
   "disabled:cursor-not-allowed disabled:bg-sunk disabled:text-muted aria-[invalid=true]:border-north";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...props }, ref) {

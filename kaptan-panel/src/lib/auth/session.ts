@@ -5,7 +5,7 @@ import { DEFAULT_ROLE, Role } from "@/lib/domain/user";
  * Mock session cookie. Read by src/proxy.ts (route guard) and the panel layout.
  * Edge-safe: no Node APIs. Not a security boundary — mock mode is a demo whose passphrase is
  * printed on /login; in http mode the API owns the session (SPEC.md §4).
- * The chosen role ("Kimin gözüyle bakıyorsun?") lives here too, so a reload keeps it.
+ * The chosen account's role lives here too, so a reload keeps it.
  */
 export const SESSION_COOKIE = "kaptan_mock_session";
 export const SESSION_MAX_AGE_S = 8 * 60 * 60; // mirrors the 8 h refresh-token life (09 §6)

@@ -109,10 +109,12 @@
   background: var(--color-paper-panel);
   border: var(--ink-border);
   box-shadow: var(--shadow-panel);
-  font-family: var(--font-display);
-  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
+  font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
   font-size: var(--text-caption-panel);
-  line-height: 1.2;
+  font-weight: 500;
+  line-height: 1.32;
+  letter-spacing: -0.01em;
   color: var(--color-sumi);
   transform: rotate(var(--tilt));
 }
@@ -150,10 +152,11 @@
   align-items: center;
   gap: 14px;
   padding: var(--space-xl) 0 var(--space-lg);
-  font-family: var(--font-display);
-  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
-  font-size: 22px;
-  font-variant-numeric: lining-nums;
+  font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
+  font-size: 20px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   color: var(--color-sumi);
 }
 

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Hint, Input, Textarea } from "@/components/ui/field";
 import { Denied } from "@/components/roles/denied";
 import { useRole } from "@/components/roles/use-role";
+import { CARD, CARD_PAD, Pill } from "@/components/portfolio/kit";
 import { fromInput, inputUnit, limitSentence, PLAIN_LIMITS, toInput, valueOf } from "./limits-logic";
 
 /** A reason must say something: at least this many letters (the mock and API agree). */
@@ -41,7 +42,7 @@ export function ProposeLimit({ view, onDone }: { view: LimitsView; onDone: () =>
   if (!open) {
     const allowed = can("limits.propose");
     return (
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         <Button
           variant="secondary"
           locked={!allowed}
@@ -63,7 +64,7 @@ export function ProposeLimit({ view, onDone }: { view: LimitsView; onDone: () =>
 
   return (
     <form
-      className="animate-fade-in space-y-4 border-2 border-ink bg-panel px-5 py-5"
+      className={cn(CARD, CARD_PAD, "animate-fade-in space-y-4")}
       aria-label="Sınır değişikliği öner"
       onSubmit={async (e) => {
         e.preventDefault();
@@ -78,10 +79,14 @@ export function ProposeLimit({ view, onDone }: { view: LimitsView; onDone: () =>
         }
       }}
     >
-      <p className="text-ui text-ink-soft">Bu birinci imza (1/2). Değişiklik, Risk Sorumlusu onaylayınca yürürlüğe girer.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-[18px] leading-7 font-semibold text-ink">Değişiklik öner</h3>
+        <Pill tone="neutral">1/2 imza</Pill>
+      </div>
+      <p className="text-ui text-ink-soft">Risk Sorumlusu onaylayınca yürürlüğe girer.</p>
       <label className="block space-y-1.5">
         <span className="text-dense text-ink-soft">Hangi sınır?</span>
-        <select value={key} onChange={(e) => pick(e.target.value as LimitKey)} className="h-11 w-full border-2 border-ink bg-panel px-3 text-ui text-ink sm:h-10">
+        <select value={key} onChange={(e) => pick(e.target.value as LimitKey)} className="h-11 w-full border-2 border-rule-ui bg-panel px-3 text-ui text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:h-10">
           {PLAIN_LIMITS.map((k) => (
             <option key={k} value={k}>
               {limitSentence(k, valueOf(view.active.values, k) ?? 0)}

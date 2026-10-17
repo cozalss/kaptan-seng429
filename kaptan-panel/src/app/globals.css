@@ -2,8 +2,9 @@
 
 /* ──────────────────────────────────────────────────────────────────────────
    KAPtan Paneli — design tokens.
-   A ship's log on rice paper (kaptan-landing/DESIGN.md §2): sumi ink, square ink lines,
-   Bodoni for words, tabular Inter for every figure. Every device means one thing:
+   A B2B product (B2B brief, 2026-10-17): a clean neutral page, white sections with ink
+   borders, square corners, Inter for everything, Bodoni only for page titles ≥ 32px and the
+   wordmark, tabular Inter for every figure. Every device means one thing:
    - a hard offset shadow = "set on top or stamped" (overlays, stamps, the emir fişi, the
      one primary button); plain content sits flat, divided by rules and ruled lists;
    - north red = Durdur, veto and a broken chain, nothing else;
@@ -15,8 +16,8 @@
    room, which crushes contrast: light greys vanish, hairlines and dashes drop out, near-white
    tones merge. So:
    - text that carries meaning is ≥ 7:1 on paper (meta lines included), nothing below 4.5:1;
-   - 13px is the floor; labels are medium/semibold; Bodoni below 38px uses the text cut and
-     every Bodoni line carries a whisper of stroke so its hairlines survive;
+   - 13px is the floor; labels are medium/semibold; every Bodoni title carries a whisper of
+     stroke so its hairlines survive (Inter never does);
    - structural ink lines are 2px, dividers ≥ 30% ink, control borders ≥ 75% ink; a line
      that means something is solid, never dashed or dotted;
    - paper / panel / sunk keep a visible tonal step, and a panel laid on the page also gets
@@ -39,9 +40,9 @@
   color-scheme: light only;
 
   /* Colour — every colour has one job. Ratios are on --paper (projector rule: ≥ 7:1). */
-  --paper: #eeeae0; /* the page: warm rice paper, a clear step below the panel */
-  --panel: #fdfcf8; /* a brighter sheet laid on the page */
-  --sunk: #e0dbcf; /* recessed paper: table heads, wells, code */
+  --paper: #eceef2; /* the page: a clean cool neutral, a clear step below the panel */
+  --panel: #ffffff; /* cards and sections laid on the page */
+  --sunk: #dde1e8; /* recessed: table heads, wells, code */
   --ink: #101117; /* type, ink lines, hard shadows (15.7:1) */
   --ink-lift: #2a2c38; /* the primary button under the pointer: ink, lifted a shade */
   --ink-soft: #23242a; /* secondary type (12.9:1) */
@@ -52,7 +53,7 @@
   --rule-ui: rgb(16 17 23 / 0.78); /* borders of controls */
   --rule-soft: rgb(16 17 23 / 0.5);
   --hairline: rgb(16 17 23 / 0.3); /* dividers: still a line when washed out */
-  --scrim: rgb(238 234 224 / 0.8);
+  --scrim: rgb(236 238 242 / 0.8);
   --north: #ad1f15; /* Durdur, veto, broken chain (5.9:1, on panel 6.9:1) */
   --north-deep: #8e170f; /* north red under the pointer */
   --north-tint: rgb(173 31 21 / 0.1);
@@ -117,33 +118,36 @@
   --color-brand: var(--brand);
   --color-on-dark: var(--on-dark);
 
-  /* Bodoni display cut (opsz 96) for 38px and up; the text cut (opsz 28) for 24–32px lines. */
+  /* Bodoni (display cut) only for page titles of 32px and up and the wordmark (B2B brief).
+     `font-display-text` was the Bodoni text cut for 24–32px lines; it now resolves to Inter
+     (set 600 in the components layer below), so every section title reads as one product. */
   --font-display: var(--font-bodoni), "Didot", "Bodoni 72", Georgia, serif;
-  --font-display-text: var(--font-bodoni-text), Georgia, serif;
+  --font-display-text: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
   --font-sans: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
 
-  /* Type scale. 13px is the floor (projector rule): nothing in the panel is set smaller.
-     13 → meta · 14 → dense · 14–16 → ui · 17 → body · 19–22 → lead · 24–32 → title (text
-     cut) · 38–44 → display · 52–56 → display-lg · 64–68 → hero. */
-  --text-meta: 13px;
-  --text-meta--line-height: 18px;
+  /* Type scale (8px grid for line heights). 13px is the floor (projector rule).
+     14 → meta · 14 → dense · 15 → ui (controls) · 16 → body · 20 → lead · 20 → title (an
+     Inter 600 section title) · 34/40 → display (Bodoni page title) · 52 → display-lg ·
+     64 → hero. Bodoni is never set under 32px. */
+  --text-meta: 14px;
+  --text-meta--line-height: 20px;
   --text-dense: 14px;
   --text-dense--line-height: 20px;
   --text-ui: 15px;
   --text-ui--line-height: 22px;
-  --text-body: 17px;
-  --text-body--line-height: 26px;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
   --text-lead: 20px;
   --text-lead--line-height: 28px;
-  --text-title: 28px;
-  --text-title--line-height: 34px;
-  --text-display: 38px;
+  --text-title: 20px;
+  --text-title--line-height: 28px;
+  --text-display: 34px;
   --text-display--line-height: 40px;
-  --text-display-lg: 52px;
-  --text-display-lg--line-height: 54px;
-  --text-hero: 68px;
-  --text-hero--line-height: 68px;
+  --text-display-lg: 40px;
+  --text-display-lg--line-height: 48px;
+  --text-hero: 52px;
+  --text-hero--line-height: 56px;
 
   --shadow-ink: var(--shadow-ink);
   --shadow-ink-lg: var(--shadow-ink-lg);
@@ -193,12 +197,14 @@
   .title-display {
     -webkit-text-stroke: 0.012em currentColor;
   }
-  .font-display-text {
-    -webkit-text-stroke: 0.016em currentColor;
-  }
 }
 
 @layer components {
+  /* A section title (Inter 600). Explicit weight utilities still win (utilities layer). */
+  .font-display-text {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
   /* Bodoni display titles: uppercase via CSS so lang="tr" maps i → İ. */
   .title-display {
     font-family: var(--font-display);

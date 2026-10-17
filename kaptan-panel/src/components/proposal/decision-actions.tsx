@@ -12,9 +12,9 @@ import { Denied } from "@/components/roles/denied";
 import { useRole } from "@/components/roles/use-role";
 
 /**
- * Where the second signature is given: one Onayla, a quiet Reddet (with an optional note in a
- * small sheet). Only the Risk Sorumlusu signs; every other role sees the same two buttons closed,
- * with the plain reason and a way to look through the Risk Sorumlusu's eyes.
+ * Where the second signature is given: Onayla (primary) and Reddet (secondary, with an optional
+ * note in a small dialog). Only the Risk Sorumlusu signs; every other role sees both buttons
+ * closed, with the one-line reason and a way to look through the Risk Sorumlusu's eyes.
  */
 export function DecisionActions({ card, status, onDecided }: { card: ApprovalCard; status: ApprovalStatus; onDecided: (c: ApprovalCard) => void }) {
   const desk = useDesk();
@@ -37,18 +37,18 @@ export function DecisionActions({ card, status, onDecided }: { card: ApprovalCar
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {gate.reason ? (
-        <p role="status" className="border-l-[3px] border-ink bg-sunk px-4 py-2.5 text-ui text-ink">
+        <p role="status" className="border-l-[3px] border-ink bg-sunk px-4 py-2.5 text-[16px] leading-6 text-ink">
           {gate.tone === "kill" ? "Her şey durduruldu; yeni öneri onaylanamaz." : gate.tone === "halt" ? "Bugün yeni emir yok (günlük −%1 sınırı); yalnızca reddedebilirsin." : gate.reason}
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Button
           variant="primary"
           size="lg"
-          className="h-14 w-full px-12 text-body sm:w-auto"
+          className="h-12 w-full px-10 text-[16px] sm:w-auto"
           locked={!maySign}
           pending={approving}
           disabled={!maySign || !gate.canApprove || decide.pending}
@@ -57,9 +57,9 @@ export function DecisionActions({ card, status, onDecided }: { card: ApprovalCar
           {approving ? "İmzalanıyor…" : "Onayla"}
         </Button>
         <Button
-          variant="ghost"
+          variant="secondary"
           size="lg"
-          className="h-12 px-5 text-ink-soft"
+          className="h-12 w-full px-6 text-[16px] sm:w-auto"
           locked={!maySign}
           disabled={!maySign || !gate.canDecide || decide.pending}
           onClick={() => {
@@ -69,7 +69,7 @@ export function DecisionActions({ card, status, onDecided }: { card: ApprovalCar
         >
           Reddet
         </Button>
-        {maySign && gate.canApprove ? <p className="text-dense text-muted sm:ml-auto sm:max-w-[240px] sm:text-right">Onayla, 2. imzayı senin adınla atar.</p> : null}
+        {maySign && gate.canApprove ? <p className="text-dense text-muted sm:ml-auto sm:text-right">Onayla, 2. imzayı senin adınla atar.</p> : null}
       </div>
       <Denied action="proposal.decide" />
       {decide.error && !rejecting ? (

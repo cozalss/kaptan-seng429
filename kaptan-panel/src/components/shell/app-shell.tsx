@@ -31,7 +31,7 @@ function useRouteFocus(pathname: string) {
 }
 
 /**
- * The panel's frame: a quiet top bar (KAPtan · Bugün · Portföy · Denetim · rol · ⚙), one
+ * The panel's frame: a white top bar (KAPtan · Bugün · Portföy · Denetim · account), one
  * calm column (~720 px) for the screen, the required disclaimer under it, the guided-tour bar
  * when it is running, and the toasts.
  */

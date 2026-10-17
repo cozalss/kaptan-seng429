@@ -17,27 +17,32 @@ for (const size of [
     const errors = trackErrors(page);
     await login(page);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Bugün \d+ öneri var\./);
-    await expect(page.getByText(/Tayfa bugün \d+ bildirim okudu/)).toBeVisible();
+    await expect(page.getByText(/\d+ bildirim okundu/)).toBeVisible();
+    await expect(page.getByRole("list", { name: "Bekleyen öneriler" }).getByRole("article").first()).toBeVisible();
 
     await page.getByRole("link", { name: /^İncele/ }).first().click();
     await expect(page).toHaveURL(/\/oneri\//);
-    for (const label of ["Ne oldu?", "Neden önemli?", "Geçmişte ne oldu?", "Tayfa ne dedi?", "Risk", "Öneri"]) {
+    // The summary card, then the story and the crew behind their disclosures.
+    await expect(page.getByRole("region", { name: "Öneri" })).toBeVisible();
+    await page.getByRole("button", { name: /Neden bu öneri\?/ }).click();
+    for (const label of ["Ne oldu?", "Neden önemli?", "Geçmişte ne oldu?"]) {
       await expect(page.getByRole("heading", { name: label, exact: true })).toBeVisible();
     }
+    await page.getByRole("button", { name: /Tayfa ne dedi\?/ }).click();
     await expect(page.getByRole("list", { name: "Tayfanın notları" }).getByRole("listitem")).toHaveCount(8);
     await expect(page.getByRole("button", { name: "Onayla", exact: true })).toBeEnabled();
 
     await go(page, "Portföy", /\/portfoy$/);
-    await expect(page.getByRole("heading", { name: "Elindekiler" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Durdur", exact: true })).toBeVisible();
 
     await go(page, "Denetim", /\/denetim$/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Her adım bir deftere yazılır.");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.getByRole("list", { name: "Denetim kayıtları" })).toBeVisible();
 
     await openSettings(page);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Ayarlar");
     await expect(page.getByRole("list", { name: "Geçerli sınırlar" })).toBeVisible();
+    await page.getByRole("tab", { name: "Ekip ve roller" }).click();
     await expect(page.getByRole("table")).toBeVisible();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

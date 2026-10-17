@@ -239,9 +239,10 @@
   width: 24px;
   height: 24px;
   margin: -13px 0 0 -12px;
-  font-family: var(--font-display);
-  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
-  font-size: 20px;
+  font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
+  font-size: 18px;
+  font-weight: 500;
   line-height: 24px;
   text-align: center;
   color: var(--color-sumi);
@@ -287,9 +288,10 @@
 }
 
 .agent-scene__key {
-  font-family: var(--font-display);
-  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
+  font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
   font-size: 16px;
+  font-weight: 500;
   color: var(--color-sumi);
 }
 

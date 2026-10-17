@@ -3,10 +3,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 /*
- * Self-hosted, subset to Latin + Turkish (OFL, see src/app/fonts/OFL.txt). Two Bodoni Moda
- * cuts: the display cut (opsz 96) for the big titles, the text cut (opsz 28) for 24–32px
- * lines, where the display hairlines would break up. Inter carries everything read fast.
- * The wordmark needs no font: it is drawn as outlines (components/brand/marks.tsx).
+ * Self-hosted, subset to Latin + Turkish (OFL, see src/app/fonts/OFL.txt). Inter carries
+ * everything; Bodoni Moda (display cut) is kept for page titles of 32px and up. The wordmark
+ * needs no font: it is drawn as outlines (components/brand/marks.tsx).
  */
 const bodoni = localFont({
   src: "./fonts/bodoni-moda-display-latin-tr.woff2",
@@ -16,17 +15,6 @@ const bodoni = localFont({
   display: "swap",
   adjustFontFallback: "Times New Roman",
   fallback: ["Didot", "Georgia", "serif"], // no "Bodoni 72": next/font emits it unquoted, which invalidates the stack
-});
-
-const bodoniText = localFont({
-  src: "./fonts/bodoni-moda-text-latin-tr.woff2",
-  weight: "400",
-  style: "normal",
-  variable: "--font-bodoni-text",
-  display: "swap",
-  preload: true,
-  adjustFontFallback: "Times New Roman",
-  fallback: ["Georgia", "serif"],
 });
 
 const inter = localFont({
@@ -46,7 +34,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#eeeae0",
+  themeColor: "#eceef2",
   colorScheme: "light",
   width: "device-width",
   initialScale: 1,
@@ -54,7 +42,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="tr" className={`${bodoni.variable} ${bodoniText.variable} ${inter.variable} antialiased`}>
+    <html lang="tr" className={`${bodoni.variable} ${inter.variable} antialiased`}>
       <body>{children}</body>
     </html>
   );

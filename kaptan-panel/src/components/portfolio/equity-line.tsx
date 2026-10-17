@@ -4,16 +4,15 @@ import { useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 
 import { fmtDateLong, fmtShortDate, fmtSignedPct, fmtTry } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { signTone } from "@/components/story/sign-tone";
+import { CARD, CARD_PAD } from "./kit";
 import { H, linePath, nearestIndex, pct, W, type EquityPoint } from "./equity-math";
 
 export { equitySeries, linePath, seriesChange, yDomain, type EquityPoint } from "./equity-math";
 
 /**
- * Your money over the last sessions, as one calm ink line. Two levels give it meaning: the
- * peak (a hairline) and, under it, the −5% level where the risk monitor stops everything (a
- * north-red threshold, the colour of Durdur). Point, tap or use the arrow keys: a crosshair
- * answers "on this day it was X". The SVG only carries strokes; dots, labels and the
- * crosshair are HTML laid over it, so they stay round and 12px at any width.
+ * The portfolio's value over the last sessions as one line, in a card. Two reference lines:
+ * the peak and the −5% level where everything stops (north red, the colour of Durdur).
+ * Point, tap or use the arrow keys: a readout answers "on this day it was X".
  */
 export function EquityLine({ points, peak }: { points: readonly EquityPoint[]; peak: number | null }) {
   const geo = linePath(points, peak);
@@ -23,6 +22,7 @@ export function EquityLine({ points, peak }: { points: readonly EquityPoint[]; p
   const ready = geo.last !== null && first !== undefined && end !== undefined;
   const at = active !== null ? points[active] : undefined;
   const atMark = active !== null ? geo.xy[active] : undefined;
+  const change = ready ? end.equity / first.equity - 1 : null;
 
   const onPointer = (e: PointerEvent<HTMLDivElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
@@ -38,9 +38,17 @@ export function EquityLine({ points, peak }: { points: readonly EquityPoint[]; p
   };
 
   return (
-    <figure className="space-y-2">
+    <figure className={cn(CARD, CARD_PAD, "space-y-4")}>
+      <figcaption className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <span className="text-[18px] leading-7 font-semibold text-ink">Değer</span>
+        {ready && change !== null ? (
+          <span className="text-dense text-muted tabular-nums">
+            Son {points.length - 1} seansta <span className={cn("font-semibold", signTone(change))}>{fmtSignedPct(change, 1)}</span>
+          </span>
+        ) : null}
+      </figcaption>
       <div
-        className={cn("relative h-[132px] touch-pan-y select-none sm:h-[176px]", ready && "cursor-crosshair")}
+        className={cn("relative h-[140px] touch-pan-y select-none sm:h-[180px]", ready && "cursor-crosshair")}
         {...(ready
           ? {
               role: "slider",
@@ -61,56 +69,42 @@ export function EquityLine({ points, peak }: { points: readonly EquityPoint[]; p
         {ready ? (
           <>
             <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden className="absolute inset-0 block size-full overflow-visible">
-              <defs>
-                <pattern id="pf-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                  <line x1="0" y1="0" x2="0" y2="5" stroke="var(--brand)" strokeOpacity="0.28" strokeWidth="1.4" />
-                </pattern>
-              </defs>
-              {geo.peakY !== null ? <Level y={geo.peakY} className="stroke-[var(--rule-ui)]" /> : null}
+              {geo.peakY !== null ? <Level y={geo.peakY} className="stroke-[var(--rule-soft)]" /> : null}
               {geo.stopY !== null ? <Level y={geo.stopY} dashed className="stroke-north" /> : null}
-              <path d={geo.area} fill="url(#pf-hatch)" className="animate-[fade-in_420ms_var(--ease-out-expo)_200ms_both]" />
-              {/* Draw-in: dash and gap of 1.25 path lengths, so a stretched, non-scaling stroke is still whole at the end. */}
               <path
                 d={geo.line}
-                pathLength={1}
                 fill="none"
                 stroke="var(--brand)"
-                strokeWidth={2.75}
+                strokeWidth={2.5}
                 vectorEffect="non-scaling-stroke"
                 strokeLinejoin="round"
                 strokeLinecap="round"
-                className="[stroke-dasharray:1.25] [stroke-dashoffset:1.25] animate-[draw_700ms_var(--ease-out-expo)_forwards]"
               />
             </svg>
             {geo.peakY !== null && peak ? (
               <LevelLabel y={geo.peakY} above>
-                zirve · {fmtTry(peak)}
+                Zirve
               </LevelLabel>
             ) : null}
             {geo.stopY !== null && peak ? (
-              <LevelLabel y={geo.stopY}>
-                <span aria-hidden className="mr-1.5 inline-block h-[2px] w-3 -translate-y-[3px] bg-north" />
-                −%5 · burada her şey kendiliğinden durur
+              <LevelLabel y={geo.stopY} className="text-north">
+                −%5: her şey durur
               </LevelLabel>
             ) : null}
-            {atMark ? <span aria-hidden className="pointer-events-none absolute inset-y-0 w-[2px] -translate-x-1/2 bg-ink/70" style={{ left: pct(atMark).left }} /> : null}
+            {atMark ? <span aria-hidden className="pointer-events-none absolute inset-y-0 w-px -translate-x-1/2 bg-ink/60" style={{ left: pct(atMark).left }} /> : null}
             <Dot mark={atMark ?? geo.last!} />
             {at && atMark ? <Readout point={at} prev={active ? points[active - 1] : undefined} left={(atMark.x / W) * 100} /> : null}
           </>
         ) : null}
       </div>
-      <figcaption className="flex min-h-4 justify-between gap-4 text-meta text-muted tabular-nums">
+      <div className="flex min-h-5 justify-between gap-4 text-dense text-muted tabular-nums">
         {ready ? (
           <>
-            <span>
-              {fmtShortDate(first.d)} · {fmtTry(first.equity)}
-            </span>
-            <span className="text-right">
-              bugün · <span className="text-ink">{fmtTry(end.equity)}</span>
-            </span>
+            <span>{fmtShortDate(first.d)}</span>
+            <span>bugün</span>
           </>
         ) : null}
-      </figcaption>
+      </div>
     </figure>
   );
 }
@@ -126,19 +120,23 @@ function Level({ y, dashed = false, className }: { y: number; dashed?: boolean; 
       x2={W}
       y1={y}
       y2={y}
-      strokeWidth={dashed ? 2 : 1.5}
+      strokeWidth={dashed ? 1.5 : 1}
       vectorEffect="non-scaling-stroke"
-      strokeDasharray={dashed ? "9 4" : undefined}
+      strokeDasharray={dashed ? "6 4" : undefined}
       className={className}
     />
   );
 }
 
-function LevelLabel({ y, above = false, children }: { y: number; above?: boolean; children: ReactNode }) {
+function LevelLabel({ y, above = false, className, children }: { y: number; above?: boolean; className?: string; children: ReactNode }) {
   return (
     <span
       aria-hidden
-      className={cn("pointer-events-none absolute left-0 text-meta font-medium whitespace-nowrap text-ink-soft tabular-nums", above ? "-translate-y-[calc(100%+3px)]" : "translate-y-[3px]")}
+      className={cn(
+        "pointer-events-none absolute right-0 text-meta font-medium whitespace-nowrap text-muted tabular-nums",
+        above ? "-translate-y-[calc(100%+2px)]" : "translate-y-[2px]",
+        className,
+      )}
       style={{ top: `${(y / H) * 100}%` }}
     >
       {children}
@@ -151,7 +149,7 @@ function Dot({ mark }: { mark: { x: number; y: number } }) {
   return (
     <span
       aria-hidden
-      className="pointer-events-none absolute size-[11px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-brand bg-paper shadow-[0_0_0_2px_var(--paper)]"
+      className="pointer-events-none absolute size-[11px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-brand bg-panel shadow-[0_0_0_2px_var(--panel)]"
       style={pct(mark)}
     />
   );
@@ -163,7 +161,7 @@ function Readout({ point, prev, left }: { point: EquityPoint; prev: EquityPoint 
   return (
     <span
       aria-hidden
-      className={cn("pointer-events-none absolute -top-2 z-10 -translate-y-full border-2 border-ink bg-panel px-2 py-1 text-meta whitespace-nowrap tabular-nums", edge)}
+      className={cn("pointer-events-none absolute -top-2 z-10 -translate-y-full border border-rule-soft bg-panel px-2.5 py-1 text-dense whitespace-nowrap tabular-nums shadow-[0_2px_8px_rgb(16_17_23/0.12)]", edge)}
       style={{ left: `${left}%` }}
     >
       <span className="text-muted">{fmtShortDate(point.d)}</span>

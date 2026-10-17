@@ -1,8 +1,8 @@
 import type { PnlPoint, Position } from "@/lib/domain";
 import { holdingProgress, istanbulDate, positionReturn, sessionsBetween } from "./risk-math";
-import { exitLine, onDateTr, signedLine } from "./holdings";
+import { exitLine } from "./holdings";
 import { equitySeries, H, linePath, nearestIndex, seriesChange, STOP_DRAWDOWN, yDomain } from "./equity-math";
-import { askCopy, stopDialogLead, stopEffects, stopSectionLine } from "./stop-copy";
+import { askCopy, stopDialogLead, stopSentence } from "./stop-copy";
 
 const pos = (over: Partial<Position> = {}): Position => ({
   ticker: "ORNEK",
@@ -137,29 +137,11 @@ describe("equity line scale and change", () => {
   });
 });
 
-describe("signed on", () => {
-  it("reads the month aloud for its suffix", () => {
-    expect(onDateTr("2027-01-11T08:00:00Z")).toBe("11 Ocak’ta");
-    expect(onDateTr("2026-11-23T08:00:00Z")).toBe("23 Kasım’da");
-    expect(onDateTr("2026-09-03T08:00:00Z")).toBe("3 Eylül’de");
-    expect(onDateTr("2026-02-03T08:00:00Z")).toBe("3 Şubat’ta");
-  });
-  it("says bugün for today", () => {
-    expect(signedLine("2027-01-11T08:00:00Z", "2027-01-11")).toBe("bugün imzalandı");
-    expect(signedLine("2027-01-08T08:00:00Z", "2027-01-11")).toBe("8 Ocak’ta imzalandı");
-  });
-});
-
 describe("Durdur words", () => {
-  it("lists what Durdur does, naming waiting proposals only when there are some", () => {
-    expect(stopEffects(2)[0]).toBe("Bekleyen 2 öneri düşer; yeni öneri gelmez.");
-    expect(stopEffects(0)[0]).toBe("Yeni öneri gelmez.");
-    expect(stopEffects(0)).toContain("Elindekiler satılmaz; kendi çıkış günlerinde kapanır.");
-  });
   it("names the waiting proposals only when there are some", () => {
-    expect(stopSectionLine(2)).toContain("durdurur: bekleyen 2 öneri düşer, yeni öneri gelmez");
-    expect(stopSectionLine(0)).toContain("durdurur: yeni öneri gelmez");
-    expect(stopSectionLine(0)).toContain("Yeniden açmak iki kişi ister.");
+    expect(stopSentence(2)).toContain("durdurur: bekleyen 2 öneri düşer ve yeni emir çıkmaz");
+    expect(stopSentence(0)).toContain("durdurur: yeni emir çıkmaz");
+    expect(stopSentence(0)).toContain("Yeniden açmak iki kişi ister.");
     expect(stopDialogLead(3)).toBe("Bekleyen 3 öneri düşer, yeni öneri gelmez. Geri açmak iki kişi ister: Yönetici başlatır, Risk Sorumlusu onaylar.");
     expect(stopDialogLead(0).startsWith("Yeni öneri gelmez.")).toBe(true);
   });

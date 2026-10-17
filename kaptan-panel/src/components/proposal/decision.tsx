@@ -2,12 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ApprovalCard, ApprovalStatus, OrderTicket } from "@/lib/domain";
-import { fmtInt, fmtPrice, fmtTime, fmtTry } from "@/lib/format";
+import { fmtInt, fmtTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { useDesk } from "@/components/shell/desk-state";
 import { STATUS_LABEL } from "@/components/approvals/approvals-logic";
-import { decisionMetaLine, holdLine, type RiskView } from "@/components/story/plain";
-import { withNums } from "@/components/story/num";
 import { DecisionActions } from "./decision-actions";
 import { OrderSlip } from "./order-slip";
 import { SignatureLines } from "./signatures";
@@ -19,36 +16,24 @@ const CLOSED: Partial<Record<ApprovalStatus, { title: string; body: string }>> =
   expired: { title: "Süresi doldu.", body: "Karar için son saat geçti; öneri kendiliğinden düştü." },
 };
 
-/** Keeps a range such as "5–10" on one line. */
-const WORD_JOINER = String.fromCharCode(0x2060);
-
-/** The outcome heading sits in an always-mounted status region; focus moves to it after a decision here. */
-const OUTCOME_HEADING = "font-display-text text-title text-ink outline-none";
-
 /**
- * The decision sheet, the end of the story: what is proposed (one big line and a small receipt),
- * the two signature lines, then Onayla / Reddet. Once signed, the outcome takes the buttons'
- * place, and the emir fişi is laid on top of the sheet. İmza anı (only when signed here and now,
- * `justSigned`): the umber stamp is pressed onto the second line, then the slip is laid down.
+ * The decision box: the two signatures, then Onayla / Reddet. Once decided, the outcome takes
+ * the buttons' place (focus moves to it when decided here), and after a signature the emir fişi
+ * follows under the box. `justSigned`: signed here and now, so the stamp and the slip animate once.
  */
 export function Decision({
   card,
   status,
-  nowMs,
   ticket,
-  risk,
   justSigned,
   onDecided,
 }: {
   card: ApprovalCard;
   status: ApprovalStatus;
-  nowMs: number | null;
   ticket: OrderTicket | null;
-  risk: RiskView | null;
   justSigned: boolean;
   onDecided: (c: ApprovalCard) => void;
 }) {
-  const desk = useDesk();
   const outcomeRef = useRef<HTMLHeadingElement>(null);
   const [decidedHere, setDecidedHere] = useState(false);
 
@@ -63,35 +48,33 @@ export function Decision({
   const pending = status === "pending";
 
   return (
-    <section aria-label="Karar" className="relative">
-      <div className={cn("paper-grain border-2 border-ink bg-panel px-5 pt-6 pb-7 sm:px-9 sm:pt-8 sm:pb-9", justSigned && "oneri-sheet-give")}>
-        <div className="space-y-4">
-          <h2 id="karar" tabIndex={-1} className="label scroll-mt-24 outline-none">
-            Öneri
+    <section aria-labelledby="karar" className="space-y-6">
+      <div className="border border-rule-soft bg-panel">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 pt-5 pb-3 sm:px-6">
+          <h2 id="karar" tabIndex={-1} className="scroll-mt-24 text-[19px] leading-7 font-semibold text-ink outline-none">
+            Karar
           </h2>
-          <p className="font-display text-display text-balance text-ink">
-            {withNums(`${fmtInt(card.qty)} lot · limit ${fmtPrice(card.limit_price)} · ${holdLine(card).replace("–", `${WORD_JOINER}–${WORD_JOINER}`)}.`)}
-          </p>
-          <Receipt card={card} risk={risk} />
-          {pending ? <p className="text-dense text-muted tabular-nums">{decisionMetaLine(card, desk.risk?.equity ?? null, nowMs)}</p> : null}
+          <p className="text-dense text-muted">Emir için iki imza gerekir.</p>
         </div>
-
-        <div className="mt-8">
+        <div className="px-5 sm:px-6">
           <SignatureLines card={card} status={status} justSigned={justSigned} />
         </div>
-
-        <div className="mt-8">
+        <div className="px-5 pt-5 pb-6 sm:px-6">
           <div role="status" aria-live="polite">
             {pending ? null : (
-              <div className="space-y-1.5 border-t-2 border-ink pt-6">
-                <h3 ref={outcomeRef} tabIndex={-1} className={cn(OUTCOME_HEADING, status === "rejected" && "text-north")}>
+              <div className="space-y-1">
+                <h3
+                  ref={outcomeRef}
+                  tabIndex={-1}
+                  className={cn("text-[19px] leading-7 font-semibold text-ink tabular-nums outline-none", status === "rejected" && "text-north")}
+                >
                   {status === "approved"
-                    ? withNums(`İmzalandı${card.decided_at ? ` · ${fmtTime(card.decided_at)}` : ""}`)
+                    ? `İmzalandı${card.decided_at ? ` · ${fmtTime(card.decided_at)}` : ""}`
                     : (CLOSED[status]?.title ?? STATUS_LABEL[status])}
                 </h3>
-                <p className="text-ui text-ink-soft">
+                <p className="text-[16px] leading-6 text-ink-soft">
                   {status === "approved"
-                    ? "Emir fişi aşağıda. Aracı kurum uygulamana gir, sonra burada işaretle."
+                    ? "Emir fişi aşağıda: aracı kurum uygulamana gir, sonra burada işaretle."
                     : (CLOSED[status]?.body ?? "Bu öneri için artık karar verilemez.")}
                 </p>
               </div>
@@ -106,39 +89,16 @@ export function Decision({
   );
 }
 
-/** The emir fişi, laid on top of the sheet's lower edge (a little in from the left, casting the long shadow). */
 function Slip({ card, ticket, laid }: { card: ApprovalCard; ticket: OrderTicket | null; laid: boolean }) {
-  if (!ticket) return <p className="mt-5 text-body text-ink-soft">Emir fişin hazırlanıyor…</p>;
+  if (!ticket) return <p className="text-[16px] text-ink-soft">Emir fişi hazırlanıyor…</p>;
   return (
-    <div className="relative z-10 -mt-3 ml-3 sm:-mt-5 sm:ml-14 sm:mr-[-12px]">
-      <OrderSlip ticket={ticket} laid={laid} className="shadow-ink-lg" />
+    <div className="space-y-3">
+      <OrderSlip ticket={ticket} laid={laid} />
       {ticket.qty !== card.qty ? (
-        <p className="mt-4 text-ui text-muted">
-          Öneri {fmtInt(card.qty)} lot idi; fiş kendi hesabının büyüklüğüne göre {fmtInt(ticket.qty)} lot.
+        <p className="text-dense text-muted tabular-nums">
+          Öneri {fmtInt(card.qty)} lot idi; fiş hesabının büyüklüğüne göre {fmtInt(ticket.qty)} lot.
         </p>
       ) : null}
     </div>
-  );
-}
-
-function Receipt({ card, risk }: { card: ApprovalCard; risk: RiskView | null }) {
-  const rows: ReadonlyArray<readonly [string, string, boolean]> = [
-    ["Tutar", `${fmtInt(card.qty)} lot × ${fmtPrice(card.limit_price)} = ${fmtTry(card.final_notional_try)}`, false],
-    ...(risk
-      ? ([
-          ["Zarar sınırı", `${fmtPrice(risk.stopPrice)}’ye inerse`, false],
-          ["En kötü durumda", `−${fmtTry(risk.maxLoss)}`, true],
-        ] as const)
-      : []),
-  ];
-  return (
-    <dl className="max-w-[560px] border-t-2 border-ink text-ui tabular-nums">
-      {rows.map(([label, value, strong]) => (
-        <div key={label} className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-4 border-b border-hairline py-2.5">
-          <dt className="text-muted">{label}</dt>
-          <dd className={cn("text-right", strong ? "font-semibold text-loss" : "text-ink")}>{value}</dd>
-        </div>
-      ))}
-    </dl>
   );
 }

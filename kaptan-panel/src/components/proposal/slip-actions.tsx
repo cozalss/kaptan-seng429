@@ -18,8 +18,8 @@ import { buildMarkInput, hasMarkErrors, initialDraft, markErrors, ticketCopyText
 const COPIED_MS = 2_400;
 
 /**
- * The slip's tear-off stub: Girdim (then "how many, at what price"), Kopyala, and the small "…"
- * for Dolmadı / Girmedim. Kopyala answers in place: the button says so, the boxes flash, and
+ * The slip's actions: Girdim (then "how many, at what price"), Kopyala, and the small "…" for
+ * Dolmadı / Girmedim. Kopyala answers in place: the button says so, the boxes flash once, and
  * the line under it shows the order line that went to the clipboard.
  */
 export function SlipActions({ ticket, onMarked, onCopied }: { ticket: OrderTicket; onMarked: (t: OrderTicket) => void; onCopied?: () => void }) {
@@ -64,7 +64,7 @@ export function SlipActions({ ticket, onMarked, onCopied }: { ticket: OrderTicke
   const quick = (kind: MarkKind) => void mark(initialDraft(kind, ticket, currentTimeMs()));
 
   return (
-    <div className="border-t-2 border-dashed border-ink px-5 pt-4 pb-5 sm:px-6">
+    <div className="border-t border-hairline px-5 pt-4 pb-5 sm:px-6">
       {draft ? (
         <form
           className="space-y-3"
@@ -73,19 +73,19 @@ export function SlipActions({ ticket, onMarked, onCopied }: { ticket: OrderTicke
             void mark(draft);
           }}
         >
-          <p className="text-ui text-ink">Kaç lot, hangi fiyattan doldu?</p>
+          <p className="text-[16px] leading-6 text-ink">Kaç lot, hangi fiyattan doldu?</p>
           <div className="grid grid-cols-2 gap-3">
             <label className="space-y-1">
-              <span className="text-meta font-medium text-ink-soft">Lot</span>
+              <span className="text-dense text-muted">Lot</span>
               <Input inputMode="numeric" value={draft.qty} onChange={(e) => setDraft({ ...draft, qty: e.target.value })} className="h-11 tabular-nums" autoFocus />
             </label>
             <label className="space-y-1">
-              <span className="text-meta font-medium text-ink-soft">Ortalama fiyat (TL)</span>
+              <span className="text-dense text-muted">Ortalama fiyat (TL)</span>
               <Input inputMode="decimal" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} className="h-11 tabular-nums" />
             </label>
           </div>
           {error ? (
-            <p role="alert" className="text-[14px] text-north">
+            <p role="alert" className="text-dense text-north">
               {error}
             </p>
           ) : null}
@@ -144,12 +144,12 @@ export function SlipActions({ ticket, onMarked, onCopied }: { ticket: OrderTicke
                 <span className="code text-ink-soft">{copyText.split("\n")[1]}</span>
               </>
             ) : (
-              "Kopyala: sembol, yön, lot, limit, seans; aracı kurum uygulamana yapıştırmak için."
+              "Kopyala, emri aracı kurum uygulamana yapıştırmak için panoya alır."
             )}
           </p>
           <Denied action="ticket.mark" className="mt-2.5" />
           {error ? (
-            <p role="alert" className="mt-2 text-[14px] text-north">
+            <p role="alert" className="mt-2 text-dense text-north">
               {error}
             </p>
           ) : null}

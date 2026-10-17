@@ -22,43 +22,51 @@ afterEach(() => {
 });
 
 describe("Öneri", () => {
-  it("tells the story and takes one decision: approve → slip → Girdim", async () => {
+  it("puts the proposal and the decision first, the story behind four sections: approve → slip → Girdim", async () => {
     const u = user();
     const id = PENDING_PROPOSALS[0];
     renderWithDesk(<ProposalScreen proposalId={id} />);
     expect(await screen.findByRole("heading", { level: 1, name: /kendi hissesini geri aldı\.$/ })).toBeInTheDocument();
-    for (const label of ["Ne oldu?", "Neden önemli?", "Geçmişte ne oldu?", "Tayfa ne dedi?", "Risk", "Öneri"]) {
-      expect(screen.getByRole("heading", { name: label })).toBeInTheDocument();
+    expect(screen.getByText("İmza bekliyor")).toBeInTheDocument();
+
+    // The summary: lot and limit, then total, hold, stop, worst case, and the deadline.
+    const summary = screen.getByRole("region", { name: "Öneri" });
+    expect(summary).toHaveTextContent(/1\.480 lot al · limit /);
+    expect(summary).toHaveTextContent(/Toplam tutar≈ .*TLTutma süresi20–40 gün/);
+    expect(await within(summary).findByText(/^−.*TL$/)).toBeInTheDocument();
+    expect(summary).toHaveTextContent(/Zarar durdurma.*Fiyat %.* düşerse satEn kötü durumda−/);
+    expect(within(summary).getByText(/^Portföyün %.*karar için son saat/)).toBeInTheDocument();
+
+    // The secondary sections are closed, with a meta line each; opening one shows its content.
+    for (const name of ["Neden bu öneri?", "Tayfa ne dedi?", "Notlar", "Ayrıntılar"]) {
+      expect(screen.getByRole("button", { name })).toHaveAttribute("aria-expanded", "false");
     }
-    expect(screen.queryByRole("list", { name: "Önerinin yolu" })).toBeNull();
-    expect(screen.getByText(/^Öneri: 1\.480 lot al, tanesi en fazla .* — toplam ≈ .*\. 20\u2060?–\u2060?40 gün tut\.$/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Karara git" })).toHaveAttribute("href", "#karar");
-    expect(await screen.findByText(/^Fiyat .* düşerse satman gerekir; o noktada kaybın en fazla ≈ .* olur\./)).toBeInTheDocument();
+    expect(screen.getByText(/^Benzer \d+ olayın/)).toBeInTheDocument();
     expect(screen.getByText(/^\d üye çalıştı;/)).toBeInTheDocument();
-    const receipt = screen.getByText("Tutar").closest("dl");
-    if (!receipt) throw new Error("no receipt");
-    expect(receipt).toHaveTextContent(/Tutar1\.480 lot × .* = .*Zarar sınırı.*’ye inerseEn kötü durumda−/);
-    expect(screen.getByText(/^Portföyün %.*karar için son saat/)).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: /benzer olay: \d+ yükseldi/ })).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Tayfanın notları" })).toBeNull();
+    await u.click(screen.getByRole("button", { name: "Tayfa ne dedi?" }));
     expect(within(screen.getByRole("list", { name: "Tayfanın notları" })).getAllByRole("listitem")).toHaveLength(8);
+    await u.click(screen.getByRole("button", { name: "Neden bu öneri?" }));
+    for (const label of ["Ne oldu?", "Neden önemli?", "Geçmişte ne oldu?"]) {
+      expect(screen.getByRole("heading", { name: label })).toBeVisible();
+    }
+    await u.click(screen.getByRole("button", { name: "Ayrıntılar" }));
+    expect(screen.getByRole("heading", { name: "Kurallar" })).toBeVisible();
 
-    await u.click(screen.getByText("Tüm ayrıntılar"));
-    expect(screen.getByRole("heading", { name: "Kurallar" })).toBeInTheDocument();
-
-    expect(screen.getByTestId("human-signature")).toHaveTextContent("Bekliyor: 2. imza — Risk Sorumlusu (insan)Üye 3 bekleniyor");
-    expect(screen.getByText(/Öneriyi yazan onu onaylayamaz\./)).toBeInTheDocument();
-    expect(screen.getByText(/^Tayfa \d\d:\d\d’(de|da|te|ta) önerdi\.$/)).toBeInTheDocument();
+    expect(screen.getByTestId("human-signature")).toHaveTextContent("Bekliyor: 2. imza — Risk SorumlusuÜye 3 bekleniyor");
+    expect(screen.getByRole("list", { name: "İmza zinciri" })).toHaveTextContent(/Tamamlandı: 1\. imza — Kurallar\d+\/\d+ kural geçti/);
     await u.click(screen.getByRole("button", { name: "Onayla" }));
     const slip = await screen.findByRole("group", { name: /^Emir fişi/ });
     const outcome = screen.getByRole("heading", { name: /^İmzalandı · \d\d:\d\d$/ });
     await waitFor(() => expect(outcome).toHaveFocus());
-    expect(screen.getByTestId("human-signature")).toHaveTextContent(/Tamamlandı: 2\. imza — Risk Sorumlusu \(insan\)Üye 3 · \d\d:\d\d/);
-    // İmza anı: the umber stamp presses onto the second line and the slip is laid on top, only because it was signed here.
-    expect(within(screen.getByTestId("human-signature")).getByText("İmzalandı").parentElement).toHaveClass("oneri-stamp-press");
+    expect(screen.getByTestId("human-signature")).toHaveTextContent(/Tamamlandı: 2\. imza — Risk SorumlusuÜye 3 · \d\d:\d\d/);
+    // The one short stamp moment: the mark presses in and the slip rises, only because it was signed here.
+    expect(screen.getByTestId("human-signature").querySelector("[data-mark=signed]")).toHaveClass("oneri-stamp-press");
     expect(slip).toHaveClass("oneri-slip-lay");
+    expect(within(slip).getByRole("button", { name: "Kopyala" })).toBeEnabled();
     await u.click(within(slip).getByRole("button", { name: "Girdim" }));
     await u.click(within(slip).getByRole("button", { name: "Kaydet" }));
-    expect(await within(slip).findByText(/^Girildi · /)).toHaveClass("animate-stamp-in");
+    expect(await within(slip).findByText(/^Girildi · /)).toBeInTheDocument();
     expect(within(slip).getByRole("link", { name: "Portföyünde →" })).toHaveAttribute("href", "/portfoy");
   });
 
@@ -99,8 +107,9 @@ describe("Öneri", () => {
     expect(screen.getByRole("button", { name: "Reddet" })).toBeDisabled();
     expect(screen.getByTestId("denied-proposal.decide")).toHaveTextContent("Bunu Risk Sorumlusu yapar.");
     expect(screen.getByTestId("human-signature")).toHaveTextContent("Üye 3 bekleniyor");
-    expect(screen.getByRole("button", { name: "Reddet" })).toBeDisabled();
 
+    // Notes are the Analist's job: that section starts open for them.
+    expect(screen.getByRole("button", { name: "Notlar" })).toHaveAttribute("aria-expanded", "true");
     await u.type(screen.getByPlaceholderText("Kısa bir not…"), "Hacim düşük, dikkat.");
     await u.click(screen.getByRole("button", { name: "Not ekle" }));
     expect(await within(await screen.findByRole("list", { name: "Öneri notları" })).findByText("Hacim düşük, dikkat.")).toBeInTheDocument();
@@ -109,6 +118,7 @@ describe("Öneri", () => {
     await u.click(screen.getByRole("button", { name: "Risk Sorumlusu gözüyle bak →" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "Onayla" })).toBeEnabled());
     expect(screen.queryByTestId("denied-proposal.decide")).toBeNull();
+    expect(screen.getByRole("button", { name: "Notlar" })).toHaveAttribute("aria-expanded", "false");
   });
 
   it("keeps a Denetçi read-only, with no note box", async () => {
@@ -139,7 +149,7 @@ describe("Öneri", () => {
     expect(await screen.findByRole("heading", { name: "Bu öneri bulunamadı." })).toBeInTheDocument();
   });
 
-  it("shows an approval from before quietly: no print, no seal", async () => {
+  it("shows an approval from before quietly: no animation", async () => {
     const db = new MockDb(null);
     const approved = approvalCards(db.snapshot).find((c) => c.status === "approved");
     if (!approved) throw new Error("fixture");
@@ -147,7 +157,7 @@ describe("Öneri", () => {
     expect(await screen.findByRole("heading", { name: /^İmzalandı/ })).not.toHaveFocus();
     const slip = screen.queryByRole("group", { name: /^Emir fişi/ });
     if (slip) expect(slip).not.toHaveClass("oneri-slip-lay");
-    expect(within(screen.getByTestId("human-signature")).getByText("İmzalandı").parentElement).not.toHaveClass("oneri-stamp-press");
+    expect(screen.getByTestId("human-signature").querySelector("[data-mark=signed]")).not.toHaveClass("oneri-stamp-press");
   });
 
   it("follows a decision made elsewhere", async () => {

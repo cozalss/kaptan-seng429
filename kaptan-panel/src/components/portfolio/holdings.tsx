@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 import { shortName } from "@/components/story/plain";
 import { titleTr } from "@/components/story/turkish";
 import { signTone } from "@/components/story/sign-tone";
-import { holdingProgress, istanbulDate, positionReturn } from "./risk-math";
+import { TH } from "./kit";
+import { holdingProgress, positionReturn } from "./risk-math";
 
 /** "3 gün kaldı" / "bugün çıkılır" / "çıkış günü geçti" — sessions left until the planned exit. */
 export function exitLine(p: Pick<Position, "opened_at" | "planned_exit_date">, today: string): string {
@@ -16,112 +17,67 @@ export function exitLine(p: Pick<Position, "opened_at" | "planned_exit_date">, t
   return `${Math.max(1, h.planned - h.elapsed)} gün kaldı`;
 }
 
-const dayMonthFmt = new Intl.DateTimeFormat("tr-TR", { timeZone: "Europe/Istanbul", day: "numeric", month: "long" });
-const HARD = "çfhkpsşt";
-const BACK_VOWELS = "aıou";
-
-/** "11 Ocak’ta", "23 Kasım’da", "3 Eylül’de": a date with its locative, read as the month. */
-export function onDateTr(iso: string): string {
-  const printed = dayMonthFmt.format(new Date(iso));
-  const vowels = printed.toLocaleLowerCase("tr-TR").match(/[aeıioöuü]/g) ?? ["e"];
-  const lastVowel = vowels[vowels.length - 1] as string;
-  const d = HARD.includes(printed.slice(-1).toLocaleLowerCase("tr-TR")) ? "t" : "d";
-  return `${printed}’${d}${BACK_VOWELS.includes(lastVowel) ? "a" : "e"}`;
-}
-
-/** "bugün imzalandı" / "11 Ocak’ta imzalandı" — when the Risk Sorumlusu signed it. */
-export function signedLine(signedAt: string, today: string): string {
-  return istanbulDate(Date.parse(signedAt)) === today ? "bugün imzalandı" : `${onDateTr(signedAt)} imzalandı`;
-}
-
 function signedTry(n: number): string {
   if (n === 0) return `0${NBSP}TL`;
   return `${n > 0 ? "+" : "−"}${fmtInt(Math.abs(Math.round(n)))}${NBSP}TL`;
 }
 
 /**
- * What you hold, one ruled row each: name, lots and when it was signed; the holding period as
- * a row of session ticks (inked = held, hairline = still to go) with "n gün kaldı"; then the
- * gain or loss in TL and % in two right-aligned tabular columns. Each row opens its öneri.
+ * What you hold, as a table: company, lots, gain or loss in TL and in %, sessions left until
+ * the planned exit. Figures are tabular and right-aligned; each company opens its öneri. On a
+ * phone the lot sits under the name and the % under the TL figure.
  */
-export function Holdings({
-  positions,
-  today,
-  signedAt,
-}: {
-  positions: readonly Position[];
-  today: string;
-  signedAt: Readonly<Record<string, string>>;
-}) {
-  if (!positions.length) return <p className="border-y-2 border-ink py-6 text-body text-ink-soft">Şu an elinde hisse yok. İmzalanan bir öneri buraya düşer.</p>;
+export function Holdings({ positions, today }: { positions: readonly Position[]; today: string }) {
+  if (!positions.length) return <p className="px-4 py-8 text-center text-ui text-ink-soft sm:px-6">Şu an elinde hisse yok. İmzalanan bir öneri buraya düşer.</p>;
   return (
-    <ul aria-label="Elindekiler" className="divide-y divide-hairline border-y-2 border-ink">
-      {positions.map((p) => {
-        const r = positionReturn(p);
-        const signed = signedAt[p.source_proposal];
-        const meta = [`${fmtInt(p.qty)} lot`, p.book === "personal" ? "kendi hesabında" : null, signed ? signedLine(signed, today) : null].filter(
-          (part): part is string => part !== null,
-        );
-        return (
-          <li key={`${p.ticker}-${p.book}-${p.opened_at}`}>
-            <Link
-              href={href.proposal(p.source_proposal)}
-              className={cn(
-                "group -mx-3 grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 px-3 py-4 sm:grid-cols-[minmax(0,1fr)_12.5rem_7rem_4rem]",
-                "transition-colors duration-[var(--dur-quick)] hover:bg-wash-tint active:bg-wash-tint-strong",
-                "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand",
-              )}
-            >
-              <span className="min-w-0">
-                <span className="flex items-baseline gap-2 text-ui font-medium text-ink">
-                  <span className="truncate">{titleTr(shortName(p.company_name))}</span>
-                  <span
-                    aria-hidden
-                    className="text-ink-soft opacity-0 transition-[opacity,translate] duration-[var(--dur-quick)] ease-[var(--ease-out-expo)] group-hover:translate-x-1 group-hover:opacity-100 group-focus-visible:opacity-100 max-sm:opacity-100"
-                  >
-                    →
-                  </span>
-                </span>
-                <span className="mt-0.5 block text-dense text-muted tabular-nums">
-                  {meta.map((part, i) => (
-                    <span key={part}>
-                      {i > 0 ? " · " : null}
-                      <span className="whitespace-nowrap">{part}</span>
-                    </span>
-                  ))}
-                </span>
-                <HoldingTicks p={p} today={today} className="mt-2 sm:hidden" />
-              </span>
-              <HoldingTicks p={p} today={today} className="hidden self-center sm:flex" />
-              <span className="text-right tabular-nums">
+    <table aria-label="Elindekiler" className="w-full border-collapse text-left">
+      <thead>
+        <tr className="border-b-2 border-hairline">
+          <th scope="col" className={cn(TH, "py-2.5 pr-3 pl-4 sm:pl-6")}>
+            Şirket
+          </th>
+          <th scope="col" className={cn(TH, "hidden px-3 py-2.5 text-right sm:table-cell")}>
+            Lot
+          </th>
+          <th scope="col" className={cn(TH, "px-3 py-2.5 text-right")}>
+            K/Z (TL)
+          </th>
+          <th scope="col" className={cn(TH, "hidden px-3 py-2.5 text-right sm:table-cell")}>
+            K/Z (%)
+          </th>
+          <th scope="col" className={cn(TH, "py-2.5 pr-4 pl-3 text-right sm:pr-6")}>
+            Çıkış
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {positions.map((p) => {
+          const r = positionReturn(p);
+          const h = holdingProgress(p, today);
+          return (
+            <tr key={`${p.ticker}-${p.book}-${p.opened_at}`} className="border-b border-hairline last:border-b-0 hover:bg-wash-tint">
+              <th scope="row" className="py-3 pr-3 pl-4 text-left font-normal sm:pl-6">
+                <Link
+                  href={href.proposal(p.source_proposal)}
+                  className="text-ui font-semibold text-ink underline decoration-transparent underline-offset-4 hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                >
+                  {titleTr(shortName(p.company_name))}
+                </Link>
+                <span className="mt-0.5 block text-dense text-muted tabular-nums sm:hidden">{fmtInt(p.qty)} lot</span>
+              </th>
+              <td className="hidden px-3 py-3 text-right text-ui text-ink tabular-nums sm:table-cell">{fmtInt(p.qty)}</td>
+              <td className="px-3 py-3 text-right tabular-nums">
                 <span className={cn("block text-ui font-semibold", signTone(p.unrealized_pnl))}>{signedTry(p.unrealized_pnl)}</span>
                 <span className={cn("mt-0.5 block text-dense sm:hidden", signTone(r))}>{fmtSignedPct(r)}</span>
-              </span>
-              <span className={cn("hidden text-right text-ui tabular-nums sm:block", signTone(r))}>{fmtSignedPct(r)}</span>
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-/** Upper bound on drawn ticks: a longer plan is drawn to scale in this many. */
-const MAX_TICKS = 24;
-
-/** One tick per session of the plan: inked when held, a hairline when still to go. */
-function HoldingTicks({ p, today, className }: { p: Pick<Position, "opened_at" | "planned_exit_date">; today: string; className: string }) {
-  const h = holdingProgress(p, today);
-  const count = Math.min(h.planned, MAX_TICKS);
-  const inked = h.dueToday || h.overdue ? count : Math.round(h.fraction * count);
-  return (
-    <span className={cn("flex items-center gap-2.5 text-dense text-ink-soft tabular-nums", className)}>
-      <span aria-hidden className="flex h-3 items-stretch gap-[2px]">
-        {Array.from({ length: count }, (_, i) => (
-          <span key={i} className={cn("w-[3px]", i < inked ? "bg-ink" : "bg-hairline")} />
-        ))}
-      </span>
-      <span className={cn("whitespace-nowrap", (h.dueToday || h.overdue) && "font-medium text-ink")}>{exitLine(p, today)}</span>
-    </span>
+              </td>
+              <td className={cn("hidden px-3 py-3 text-right text-ui tabular-nums sm:table-cell", signTone(r))}>{fmtSignedPct(r)}</td>
+              <td className={cn("py-3 pr-4 pl-3 text-right text-ui whitespace-nowrap tabular-nums sm:pr-6", h.dueToday || h.overdue ? "font-semibold text-ink" : "text-ink-soft")}>
+                {exitLine(p, today)}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }

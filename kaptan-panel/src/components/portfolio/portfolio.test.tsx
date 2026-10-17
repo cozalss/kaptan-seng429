@@ -26,17 +26,18 @@ describe("Portföy", () => {
   it("stops with one person and restarts with two: Yönetici starts (1/2), Risk Sorumlusu confirms (2/2)", async () => {
     const u = user();
     renderWithDesk(<PortfolioScreen />, new MockDb(null), "analyst");
-    expect(await screen.findByRole("heading", { level: 1, name: /TL$/ })).toBeInTheDocument();
-    const held = await screen.findByRole("list", { name: "Elindekiler" });
-    expect(within(held).getAllByRole("listitem").length).toBeGreaterThan(3);
+    expect(await screen.findByRole("heading", { level: 1, name: "Portföy" })).toBeInTheDocument();
+    expect(await screen.findByText("Toplam değer")).toBeInTheDocument();
+    const held = await screen.findByRole("table", { name: "Elindekiler" });
+    const rows = within(held).getAllByRole("row").slice(1);
+    expect(rows.length).toBeGreaterThan(3);
     expect(within(held).getAllByText(/gün kaldı|bugün çıkılır/).length).toBeGreaterThan(0);
     // Each holding opens its öneri; names read in title case, with no internal book codes.
-    const rows = within(held).getAllByRole("link");
-    expect(rows[0]).toHaveAttribute("href", expect.stringMatching(/^\/oneri\/prop-/));
+    const links = within(held).getAllByRole("link");
+    expect(links[0]).toHaveAttribute("href", expect.stringMatching(/^\/oneri\/prop-/));
     expect(held).not.toHaveTextContent("paper");
-    expect(within(held).getAllByText(/imzalandı/).length).toBeGreaterThan(0);
-    expect(screen.getByText("Bunlar KAPtan hesabındaki pozisyonlar; fişleri aracı kuruma sen girersin.")).toBeInTheDocument();
-    expect(screen.getByText(/seansta/)).toBeInTheDocument();
+    expect(screen.getByText(/Son \d+ seansta/)).toBeInTheDocument();
+    expect(screen.getByText("Çalışıyor")).toBeInTheDocument();
 
     // The Analist cannot stop; the reason names who can.
     expect(screen.getByRole("button", { name: "Durdur" })).toBeDisabled();
@@ -64,6 +65,7 @@ describe("Portföy", () => {
     // Focus lands on the new state, so a screen reader hears "Durduruldu."
     await waitFor(() => expect(within(state).getByRole("status")).toHaveFocus());
     expect(state).toHaveTextContent("Yönetici başlatır, Risk Sorumlusu onaylar.");
+    expect(screen.getAllByText("Durduruldu").length).toBeGreaterThan(0);
     expect(state).toHaveTextContent("Üye 3 (Risk Sorumlusu)");
 
     // The Risk Sorumlusu cannot start the restart.
@@ -134,10 +136,10 @@ describe("Portföy", () => {
       drawdown_pct: -0.024, peak_equity: 1_030_000, equity: 1_005_000, regime: "normal", live_armed: false, quota: [], reset: null,
       as_of: "2027-01-11T10:00:00Z",
     } as const;
-    const { rerender } = render(<PortfolioHero risk={{ ...risk, quota: [] }} change={{ sessions: 34, ratio: 0.009 }} />);
+    const { rerender } = render(<PortfolioHero risk={{ ...risk, quota: [] }} />);
     expect(screen.getByText("Bugün · yeni emir yok")).toBeInTheDocument();
-    expect(screen.getByText("34 seansta")).toBeInTheDocument();
-    rerender(<PortfolioHero risk={{ ...risk, quota: [], halted_today: false, drawdown_pct: 0 }} change={null} />);
+    expect(screen.getByText(/^1\.005\.000/)).toBeInTheDocument();
+    rerender(<PortfolioHero risk={{ ...risk, quota: [], halted_today: false, drawdown_pct: 0 }} />);
     expect(screen.getByText("Bugün")).toBeInTheDocument();
     expect(screen.getByText("zirvede")).toBeInTheDocument();
   });

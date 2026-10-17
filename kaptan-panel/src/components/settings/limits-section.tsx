@@ -1,21 +1,20 @@
 "use client";
 
-import type { LimitsView, LimitVersion, Signature } from "@/lib/domain";
-import { ROLE_LABEL } from "@/lib/domain/user";
+import type { LimitsView, LimitVersion } from "@/lib/domain";
 import { useApiMutation, useApiQuery } from "@/lib/api/react";
-import { fmtDate, fmtTime } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
 import { useEventStream } from "@/lib/sse/use-event-stream";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SkeletonLines } from "@/components/ui/primitives";
 import { Denied } from "@/components/roles/denied";
 import { useRole } from "@/components/roles/use-role";
-import { SECTION, SectionHead } from "./section-nav";
+import { CARD, CARD_PAD, Pill, SectionTitle, TwoStep } from "@/components/portfolio/kit";
 import { changedKey, historyLine, limitSentence, PLAIN_LIMITS, valueOf } from "./limits-logic";
 import { ProposeLimit } from "./limits-propose";
 
 /**
- * Sınırlar — the canonical limits as plain sentences. A change takes two signatures: the
+ * Sınırlar — the limits in force as plain sentences. A change takes two signatures: the
  * Yönetici proposes with a reason (1/2), the Risk Sorumlusu approves (2/2). Short history.
  */
 export function LimitsSection() {
@@ -24,57 +23,44 @@ export function LimitsSection() {
   const view = q.data;
 
   return (
-    <section aria-labelledby="sinirlar-baslik" id="sinirlar" {...SECTION}>
-      <SectionHead id="sinirlar-baslik" title="Sınırlar">
-        Kuralların dayandığı sabitler. Değiştirmek iki imza ister: Yönetici önerir, Risk Sorumlusu onaylar. Sınırlar panelden yalnızca sıkılaştırılabilir; gevşetmek riski büyütür.
-      </SectionHead>
+    <section aria-labelledby="sinirlar-baslik" id="sinirlar" className="space-y-6">
+      {/* A change waiting for its second signature is the one thing to act on: it comes first. */}
+      {view?.pending ? <Pending view={view} onDone={() => void q.refetch()} /> : null}
+      <div className={CARD}>
+        <div className="flex flex-col gap-2 px-4 pt-4 pb-3 sm:flex-row sm:items-start sm:justify-between sm:px-6 sm:pt-5">
+          <SectionTitle id="sinirlar-baslik" title="Sınırlar">
+            Değiştirmek iki imza ister: Yönetici önerir, Risk Sorumlusu onaylar.
+          </SectionTitle>
+          {view ? (
+            <p className="shrink-0 text-dense text-muted tabular-nums sm:pt-1">
+              Sürüm {view.active.version} · {fmtDate(view.active.effective_from ?? view.active.created_at)}
+            </p>
+          ) : null}
+        </div>
+        {view ? <ActiveLimits version={view.active} /> : <SkeletonLines lines={5} className="px-4 pb-5 sm:px-6" />}
+      </div>
       {view ? (
         <>
-          <ActiveLimits version={view.active} />
-          {view.pending ? <Pending view={view} onDone={() => void q.refetch()} /> : <ProposeLimit view={view} onDone={() => void q.refetch()} />}
+          {view.pending ? null : <ProposeLimit view={view} onDone={() => void q.refetch()} />}
           <History versions={view.history} />
         </>
-      ) : (
-        <SkeletonLines lines={5} />
-      )}
+      ) : null}
     </section>
   );
 }
 
 function ActiveLimits({ version }: { version: LimitVersion }) {
   return (
-    <div>
-      <p className="mb-2 text-dense text-muted">
-        Yürürlükte: sürüm {version.version} · {fmtDate(version.effective_from ?? version.created_at)}
-      </p>
-      <ul aria-label="Geçerli sınırlar" className="divide-y divide-hairline border-y-2 border-ink">
-        {PLAIN_LIMITS.map((key) => {
-          const v = valueOf(version.values, key);
-          return v === null ? null : (
-            <li key={key} className="py-2.5 text-[16px] leading-[24px] text-ink">
-              {limitSentence(key, v)}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
-function Sig({ n, label, sig, waiting, yours = false }: { n: 1 | 2; label: string; sig: Signature | null; waiting: boolean; yours?: boolean }) {
-  return (
-    <li data-testid={`limit-stamp-${n}`} className={cn("flex items-start gap-3 border-2 px-3.5 py-3", sig ? "border-ink bg-panel shadow-ink" : "border-dashed border-rule-soft")}>
-      <span aria-hidden className={cn("mt-[1px] grid size-6 shrink-0 place-items-center rounded-full border-2 text-[13px] font-semibold", sig ? "border-ink bg-ink text-on-dark" : "border-wash text-wash")}>
-        {sig ? "✓" : n}
-      </span>
-      <span className="min-w-0">
-        <span className="block text-[15px] font-medium text-ink">
-          {label} <span className="font-normal text-muted">· {n}/2</span>
-        </span>
-        <span className="mt-0.5 block text-[13px] text-muted">{sig ? `${sig.name} · ${ROLE_LABEL[sig.role]} · ${fmtTime(sig.at)}` : waiting ? (yours ? "imza bekleniyor · sıra sende" : "imza bekleniyor") : "—"}</span>
-        {sig?.reason ? <span className="mt-1 block text-[14px] leading-[20px] text-ink-soft">“{sig.reason}”</span> : null}
-      </span>
-    </li>
+    <ul aria-label="Geçerli sınırlar" className="divide-y divide-hairline border-t-2 border-hairline">
+      {PLAIN_LIMITS.map((key) => {
+        const v = valueOf(version.values, key);
+        return v === null ? null : (
+          <li key={key} className="px-4 py-3 text-ui text-ink sm:px-6">
+            {limitSentence(key, v)}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -92,18 +78,24 @@ function Pending({ view, onDone }: { view: LimitsView; onDone: () => void }) {
   const after = key ? valueOf(pending.values, key) : null;
 
   return (
-    <div className="space-y-4 border-2 border-ink bg-panel px-5 py-5" data-testid="limit-pending">
-      <p className="label">Bekleyen değişiklik · 1/2 imza</p>
+    <div className={cn(CARD, CARD_PAD, "space-y-4 border-brand")} data-testid="limit-pending">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-[18px] leading-7 font-semibold text-ink">Bekleyen değişiklik</h3>
+        <Pill tone="brand">1/2 imza</Pill>
+      </div>
       {key && before !== null && after !== null ? (
-        <div className="space-y-1 text-[16px] leading-[24px]">
-          <p className="text-muted line-through decoration-rule-ui">{limitSentence(key, before)}</p>
-          <p className="text-ink">{limitSentence(key, after)}</p>
+        <div className="space-y-1 text-ui">
+          <p className="text-muted line-through decoration-rule-soft">{limitSentence(key, before)}</p>
+          <p className="font-medium text-ink">{limitSentence(key, after)}</p>
         </div>
       ) : null}
-      <ol aria-label="Sınır değişikliği imzaları" className="grid gap-3 sm:grid-cols-2">
-        <Sig n={1} label="Yönetici önerdi" sig={pending.proposed_by} waiting={false} />
-        <Sig n={2} label="Risk Sorumlusu onaylar" sig={null} waiting yours={allowed} />
-      </ol>
+      <TwoStep
+        label="Sınır değişikliği imzaları"
+        steps={[
+          { label: "Yönetici önerdi", sig: pending.proposed_by, waiting: false, testId: "limit-stamp-1" },
+          { label: "Risk Sorumlusu onaylar", sig: null, waiting: true, testId: "limit-stamp-2", waitingText: allowed ? "imza bekleniyor · sıra sende" : "imza bekleniyor" },
+        ]}
+      />
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="primary" locked={!allowed} pending={decide.pending} disabled={!allowed || decide.pending} onClick={() => void run("approve")}>
           {decide.pending ? "Kaydediliyor…" : "Onayla (2/2)"}
@@ -114,7 +106,7 @@ function Pending({ view, onDone }: { view: LimitsView; onDone: () => void }) {
       </div>
       <Denied action="limits.decide" />
       {decide.error ? (
-        <p role="alert" className="text-[14px] text-north">
+        <p role="alert" className="text-dense text-north">
           {decide.error}
         </p>
       ) : null}
@@ -124,15 +116,14 @@ function Pending({ view, onDone }: { view: LimitsView; onDone: () => void }) {
 
 function History({ versions }: { versions: LimitVersion[] }) {
   return (
-    <div>
-      <h3 className="mb-2 text-dense text-muted">Sürümler</h3>
-      <ol aria-label="Sınır sürümleri" className="divide-y divide-hairline border-y-2 border-ink">
+    <div className="space-y-2">
+      <h3 className="text-ui font-semibold text-ink">Sürümler</h3>
+      <ol aria-label="Sınır sürümleri" className={cn(CARD, "divide-y divide-hairline")}>
         {versions.slice(0, 5).map((v) => (
-          <li key={v.version} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 py-2.5 text-dense text-ink-soft">
-            <span className="font-medium text-ink">Sürüm {v.version}</span>
-            <span aria-hidden>·</span>
+          <li key={v.version} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-4 py-2.5 text-dense text-ink-soft sm:px-6">
+            <span className="font-semibold text-ink">Sürüm {v.version}</span>
             <span className="tabular-nums">{historyLine(v)}</span>
-            {v.status === "active" ? <span className="text-meta text-muted underline decoration-dotted decoration-2 underline-offset-[4px]">yürürlükte</span> : null}
+            {v.status === "active" ? <span className="text-meta font-semibold text-gain">yürürlükte</span> : null}
           </li>
         ))}
       </ol>

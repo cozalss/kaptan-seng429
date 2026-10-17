@@ -16,10 +16,10 @@
 
 /* While the tour runs, slips (toasts) are laid above the bar, never over its buttons. */
 body:has([data-testid="guided-demo"]) [data-sonner-toaster][data-y-position="bottom"] {
-  bottom: 268px !important;
+  bottom: 216px !important;
 }
 @media (min-width: 640px) {
   body:has([data-testid="guided-demo"]) [data-sonner-toaster][data-y-position="bottom"] {
-    bottom: 204px !important;
+    bottom: 140px !important;
   }
 }

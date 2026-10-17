@@ -7,9 +7,9 @@ import { HOME, safeNext } from "@/lib/nav";
 
 /**
  * Mock session endpoints (mock mode only):
- *   POST   → sign in with the demo passphrase → session cookie, starting as the door's role
- *            (`role`, from /login/<rol>) or Risk Sorumlusu
- *   PUT    → change the role you look through ("Kimin gözüyle bakıyorsun?")
+ *   POST   → sign in with the demo passphrase → session cookie, starting as the chosen account's role
+ *            (`role`) or Risk Sorumlusu
+ *   PUT    → switch to another team account (the top bar's account menu)
  *   DELETE → sign out
  * In http mode these return 404: auth goes to FastAPI /api/v1/auth/*.
  */

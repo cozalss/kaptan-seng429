@@ -264,7 +264,7 @@
   grid-area: 1 / 1;
   align-self: end;
   max-width: 30ch;
-  font-size: clamp(19px, 1.55vw, 25px);
+  font-size: clamp(18px, 1.45vw, 22px);
 }
 
 .pusula:not([data-pusula='static']) .pusula__act {
@@ -475,11 +475,11 @@
 }
 
 .pusula__label strong {
-  font-family: var(--font-display);
-  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
-  font-size: clamp(19px, 1.5vw, 24px);
-  font-weight: 400;
-  line-height: 1.1;
+  font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
+  font-size: clamp(17px, 1.3vw, 20px);
+  font-weight: 500;
+  line-height: 1.2;
   color: var(--color-sumi);
 }
 
@@ -513,10 +513,11 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-family: var(--font-display);
-  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
-  font-size: clamp(17px, 1.35vw, 21px);
-  line-height: 1.2;
+  font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
+  font-size: clamp(15px, 1.15vw, 18px);
+  font-weight: 500;
+  line-height: 1.25;
   color: var(--color-muted);
 }
 
@@ -810,6 +811,7 @@
 
   .pusula__steps {
     font-size: 12px;
+    letter-spacing: -0.015em;
   }
 
   .pusula__steps li {

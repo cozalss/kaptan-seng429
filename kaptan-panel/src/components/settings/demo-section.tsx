@@ -12,7 +12,8 @@ import { Dialog, DialogContent } from "@/components/ui/overlay";
 import { Denied } from "@/components/roles/denied";
 import { useRole } from "@/components/roles/use-role";
 import { useDesk } from "@/components/shell/desk-state";
-import { SECTION, SectionHead } from "./section-nav";
+import { cn } from "@/lib/utils";
+import { CARD, CARD_PAD, Pill, SectionTitle } from "@/components/portfolio/kit";
 
 /** The four demo scenarios (11 §2), each in one plain line. */
 export const SCENARIOS: ReadonlyArray<{ id: DemoScenario; title: string; what: string }> = [
@@ -30,10 +31,10 @@ export const SCENARIOS: ReadonlyArray<{ id: DemoScenario; title: string; what: s
 export function DemoSection() {
   const { can } = useRole();
   return (
-    <section aria-labelledby="demo-baslik" id="demo" {...SECTION}>
-      <SectionHead id="demo-baslik" title="Senaryolar">
-        Her senaryo tayfaya bir olay verir; ne yaptıklarını Bugün’de ve Denetim’de izlersin.
-      </SectionHead>
+    <section aria-labelledby="demo-baslik" id="senaryolar" className="space-y-4">
+      <SectionTitle id="demo-baslik" title="Senaryolar">
+        Her senaryo sisteme bir olay verir; sonucu Bugün’de ve Denetim’de izlersin.
+      </SectionTitle>
       <Denied action="demo.run" />
       <Controls allowed={can("demo.run")} />
     </section>
@@ -73,13 +74,13 @@ function Controls({ allowed }: { allowed: boolean }) {
     );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="space-y-3">
-        <ul className="divide-y divide-hairline border-y-2 border-ink">
+        <ul aria-label="Senaryolar" className={cn(CARD, "divide-y divide-hairline")}>
           {SCENARIOS.map((s) => (
-            <li key={s.id} className="flex items-center justify-between gap-5 py-4">
+            <li key={s.id} className="flex items-center justify-between gap-5 px-4 py-4 sm:px-6">
               <div className="min-w-0">
-                <p className="text-[16px] font-medium text-ink">{s.title}</p>
+                <p className="text-ui font-semibold text-ink">{s.title}</p>
                 <p className="mt-0.5 text-dense text-muted">{s.what}</p>
               </div>
               <Button
@@ -109,10 +110,13 @@ function Controls({ allowed }: { allowed: boolean }) {
         </p>
       </div>
 
-      <div className="space-y-3" data-testid="tamper">
-        <h3 className="text-[16px] font-medium text-ink">Kurcalama testi</h3>
-        <p className="max-w-[560px] text-ui text-ink-soft">
-          Defterin gerçekten koruduğunu görmek için kayıt #{fmtInt(AUDIT_TAMPER_POS)} arkadan değiştirilir. Sonra Denetim’de “Defteri doğrula”: zincir tam orada kopar.
+      <div className={cn(CARD, CARD_PAD, "space-y-3")} data-testid="tamper">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-ui font-semibold text-ink">Kurcalama testi</h3>
+          {tamperOn ? <Pill tone="north">Şu an: kayıt değişik</Pill> : <Pill tone="gain">Şu an: defter temiz</Pill>}
+        </div>
+        <p className="max-w-[560px] text-dense text-ink-soft">
+          Kayıt #{fmtInt(AUDIT_TAMPER_POS)} arkadan değiştirilir; Denetim’de “Defteri doğrula” zinciri tam orada kırık bulur.
         </p>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <Button
@@ -124,14 +128,13 @@ function Controls({ allowed }: { allowed: boolean }) {
           >
             {tamperOn ? "Kurcalamayı geri al" : "Bir kaydı kurcala"}
           </Button>
-          <span className="text-dense text-muted">{tamperOn ? "Şu an: kayıt değişik" : "Şu an: defter temiz"}</span>
           <Link href={ROUTES.denetim} className="inline-flex min-h-11 items-center text-dense text-ink underline decoration-rule-ui underline-offset-4 hover:decoration-ink">
             Denetim’e git →
           </Link>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-5 border-t border-hairline pt-3">
+      <div className="flex items-center justify-between gap-5 border-t-2 border-hairline pt-3">
         <p className="text-dense text-muted">Her şeyi günün başına döndürür.</p>
         <Button variant="link" className="shrink-0" locked={!allowed} pending={busy === "reset"} disabled={!allowed || busy !== null} onClick={() => setConfirmReset(true)}>
           Verileri sıfırla

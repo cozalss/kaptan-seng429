@@ -1,6 +1,6 @@
 import type { AuditEntry } from "@/lib/domain";
 import { groupRuns, runMeta } from "./ledger-runs";
-import { shouldPaint, walkSegments } from "./chain-walk";
+import { shouldPaint, walkProgress } from "./chain-walk";
 
 const at = (pos: number, actor: string, action: string, hhmm: string): AuditEntry => ({
   seq: pos,
@@ -40,19 +40,11 @@ describe("groupRuns", () => {
   });
 });
 
-describe("chain walk strip and pacing", () => {
-  it("inks the segments the walk has passed, and on a break turns one north and dashes the rest", () => {
-    expect(walkSegments(0, 4_812, null)).toHaveLength(48);
-    expect(walkSegments(0, 4_812, null).every((s) => s === "blank")).toBe(true);
-    expect(walkSegments(4_812, 4_812, null).every((s) => s === "ink")).toBe(true);
-    const half = walkSegments(2_424, 4_812, null);
-    expect(half.filter((s) => s === "ink")).toHaveLength(24);
-    const broken = walkSegments(3_907, 4_812, 3_907);
-    const bad = broken.indexOf("north");
-    expect(bad).toBe(38);
-    expect(broken.slice(0, bad).every((s) => s === "ink")).toBe(true);
-    expect(broken.slice(bad + 1).every((s) => s === "dashed")).toBe(true);
-    expect(walkSegments(0, 0, null).every((s) => s === "blank")).toBe(true);
+describe("chain walk pacing", () => {
+  it("counts up to the target with an ease-out and stops there", () => {
+    expect(walkProgress(0, 4_812)).toBe(0);
+    expect(walkProgress(700, 4_812)).toBeGreaterThan(2_406);
+    expect(walkProgress(5_000, 4_812)).toBe(4_812);
   });
 
   it("repaints at most every 33 ms and 1/120 of the way, always on the last record", () => {

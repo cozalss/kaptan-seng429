@@ -27,7 +27,7 @@ describe("Denetim", () => {
   it("reads the ledger as plain sentences, filters, searches and verifies the chain", async () => {
     const u = user();
     renderWithDesk(<AuditScreen />, new MockDb(null), "auditor");
-    expect(await screen.findByRole("heading", { level: 1, name: "Her adım bir deftere yazılır." })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Denetim" })).toBeInTheDocument();
     const list = await screen.findByRole("list", { name: "Denetim kayıtları" });
     expect(records(list)).toHaveLength(30);
     expect(within(list).getAllByText(/^KAP okuyucu .* bildirimini getirdi\.$/).length).toBeGreaterThan(0);
@@ -57,7 +57,7 @@ describe("Denetim", () => {
 
     await u.click(screen.getByRole("button", { name: "Defteri doğrula" }));
     expect(await screen.findByText("Zincir sağlam.", {}, { timeout: 8_000 })).toBeInTheDocument();
-    expect(screen.getByTestId("walk-result")).toHaveTextContent("4.812 / 4.812 kayıt yürüdü");
+    expect(screen.getByTestId("walk-result")).toHaveTextContent("4.812 / 4.812 kayıt kontrol edildi");
     expect(screen.getByText("4.812 kaydın hiçbiri değişmemiş. Zincir sağlam.")).toHaveAttribute("role", "status");
   });
 
@@ -65,7 +65,7 @@ describe("Denetim", () => {
     const db = new MockDb(null);
     db.update((s) => ({ ...s, tamperOn: true }));
     renderWithDesk(<AuditScreen />, db, "admin");
-    expect(await screen.findByText("Kurcalama testi açık (Ayarlar)")).toBeInTheDocument();
+    expect(await screen.findByText("Kurcalama testi açık (Ayarlar).")).toBeInTheDocument();
     act(() => requestVerify());
     await waitFor(() => expect(screen.getByTestId("walk-result")).toHaveTextContent("Kayıt #3.907’de zincir kırık."), { timeout: 8_000 });
     expect(screen.getByTestId("walk-result")).toHaveTextContent("Bu kaydın şimdiki parmak izi zincirdekiyle tutmuyor.");

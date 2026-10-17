@@ -131,7 +131,7 @@ export default function GuidedDemoBar({ index, nonce }: { index: number; nonce: 
 
   return (
     <>
-      <div aria-hidden className="h-64 sm:h-48" />
+      <div aria-hidden className="h-52 sm:h-32" />
       <TourInstrument
         index={index}
         step={step}

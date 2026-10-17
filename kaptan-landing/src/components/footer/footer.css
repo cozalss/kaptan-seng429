@@ -40,10 +40,12 @@
 
 .colophon__lead {
   margin-top: 28px;
-  font-family: var(--font-display);
-  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
-  font-size: clamp(19px, 1.5vw, 23px);
-  line-height: 1.38;
+  font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
+  font-size: clamp(18px, 1.35vw, 21px);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-ink);
 }
 
 .colophon__facts {
@@ -66,10 +68,10 @@
   gap: var(--space-md);
   width: 100%;
   margin-top: 52px;
-  font-family: var(--font-display);
-  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
-  font-size: 24px;
-  font-weight: 400;
+  font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
+  font-size: 22px;
+  font-weight: 500;
   line-height: 1;
 }
 
@@ -100,10 +102,11 @@
   flex: 1;
   align-items: baseline;
   gap: var(--space-xs);
-  font-family: var(--font-display);
-  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
-  font-size: 21px;
-  line-height: 1.2;
+  font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.25;
 }
 
 .colophon__member dt::after {
@@ -172,9 +175,10 @@
 /* ---------- The end ---------- */
 .colophon__end {
   margin-top: clamp(56px, 9vh, 96px);
-  font-family: var(--font-display);
-  -webkit-text-stroke: var(--bodoni-stroke) currentColor;
-  font-size: clamp(22px, 1.8vw, 28px);
+  font-family: var(--font-sans);
+  -webkit-text-stroke: 0;
+  font-size: 20px;
+  font-weight: 500;
   line-height: 1;
   letter-spacing: 0.04em;
 }

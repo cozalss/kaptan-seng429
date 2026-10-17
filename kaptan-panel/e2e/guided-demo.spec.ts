@@ -14,11 +14,12 @@ test.beforeEach(async ({ page }) => {
 
 const role = (bar: Locator, label: string) => expect(bar).toContainText(`Rol: ${label}`, { timeout: 15_000 });
 
-test("Rehberli tur: 6 perde, 15 adım", async ({ page }) => {
+test("Rehberli tur: 15 adım", async ({ page }) => {
   test.setTimeout(240_000);
   const errors = trackErrors(page);
   await login(page);
   await openSettings(page);
+  await page.getByRole("tab", { name: "Rehberli tur" }).click();
   await page.getByRole("button", { name: "Turu başlat" }).click();
   const bar = page.getByTestId("guided-demo");
   const title = bar.getByTestId("demo-step-title");

@@ -16,25 +16,28 @@ değişikliği**, **iki kişilik yeniden başlatma**. Her özellik ait olduğu y
 
 ## 1. Ekranlar
 
-Üst çubuk: `KAPtan · Bugün · Portföy · Denetim · [rol] · ⚙ Ayarlar` (⚙: Ayarlar, Çıkış). Geniş ekranda tek satır
-ve yapışkan; telefonda çubuk sayfayla birlikte kayar, ikinci satırda "Kimin gözüyle bakıyorsun?" sorusunun yanında
-rol seçici ve ⚙ durur. Her denetim bir kez çizilir. Altta feragatname. ~720 px'lik sakin sütun.
+Üst çubuk (beyaz, altında tek mürekkep çizgi): `KAPtan · Bugün · Portföy · Denetim · [hesap]`. Hesap menüsü: ad ve
+rol, "Hesap değiştir" (dört ekip hesabı), Ayarlar, Çıkış; düğmenin erişilebilir adı "Rol: <rol>. Hesap: <ad>".
+Geniş ekranda tek satır ve yapışkan; telefonda gezinme ikinci satırdadır. Altta feragatname. ~720 px'lik sütun.
+Tipografi: her şey Inter; Bodoni yalnız sayfa başlığında (≥ 32 px) ve logoda. Bölüm başlığı Inter 600 20 px,
+gövde 16 px, ara bilgi 14 px, hiçbir şey 13 px'in altında değil. Açık, nötr zemin; beyaz kartlar 2 px mürekkep çerçeve.
 
 | Ekran | Yol | İçerik |
 |---|---|---|
-| Bugün | `/bugun` | Büyük cümle, karar saati, öneri kartları, portföy satırı, tayfa satırı |
-| Öneri | `/oneri/[id]` | Hikâye (Ne oldu? → … → Risk) · **İki imza** (tayfa önerir; 1. imza kurallar, 2. imza Risk Sorumlusu) · Onayla / Reddet · emir fişi · **Notlar** · Tüm ayrıntılar |
-| Portföy | `/portfoy` | Toplam, çizgi, elindekiler, girilecek fişler, **Durdur** (iki damgalı yeniden başlatma) |
-| Denetim | `/denetim` | Düz zaman çizelgesi (kim · ne · ne zaman · parmak izi; KAP okuyucu okumaları katlanır), **Defteri doğrula**, Bugün / Tümü, arama |
-| Ayarlar | `/ayarlar` | Başlık → "Bu sayfada" bağlantıları → **Rehberli tur** kartı → **Sınırlar** (cümleler, iki imzalı değişiklik, sürümler) → **Ekip ve roller** (kullanıcılar, "Kim ne yapabilir?") → **Senaryolar** (senaryolar, kurcalama testi, sıfırla; yalnız Yönetici) · Çıkış |
-| Giriş | `/login` | Tek parola, "← Tanıtım sayfası" |
+| Bugün | `/bugun` | Başlık ("Bugün 3 öneri var.") + tek ara satır (tarih · okunan bildirim · en yakın son saat), öneri satırları (şirket, tek satır özet, tutar, son saat, imza durumu, İncele), Seni bekleyenler, tek portföy özeti |
+| Öneri | `/oneri/[id]` | Başlık (şirket · kod · olay türü · durum; ne olduğu tek cümle) · **Öneri** kartı (lot · limit; toplam tutar, tutma süresi, zarar durdurma, en kötü durum; açıkken son saat ve portföy payı) · **Karar** kutusu (1. imza Kurallar ✓, 2. imza Risk Sorumlusu; Onayla / Reddet, yetkisiz role kapalı + tek satır gerekçe) · imzadan sonra emir fişi (Girdim, Kopyala, …) · altta dört kapalı bölüm: **Neden bu öneri?** (Ne oldu, Neden önemli, Geçmişte ne oldu), **Tayfa ne dedi?** (8 üye), **Notlar** (Analist için açık gelir), **Ayrıntılar** (kurallar, risk kapısı, tayfanın izi) |
+| Portföy | `/portfoy` | Üç kart (toplam değer, bugün, zirveden), değer çizgisi (zirve ve −%5 çizgisi, üzerine gelince gün değeri), elindekiler tablosu (şirket · lot · K/Z TL · K/Z % · çıkış), girilecek fişler, **Durdur** kartı (bir cümle + düğme; durunca başlığın altına gelir, yeniden başlatma 1/2 → 2/2 durum) |
+| Denetim | `/denetim` | **Defteri doğrula** kartı (ilerleme çubuğu, karar: sağlam / #N’de kırık + "Defterde göster →"), Kayıtlar tablosu (saat · kim · ne oldu · kayıt #; KAP okuyucu okumaları katlanır), Bugün / Tümü, arama |
+| Ayarlar | `/ayarlar` | Sekmeler (açık sekme adreste, ör. `#tur`): **Sınırlar** (cümleler, bekleyen değişiklik en üstte 1/2 → 2/2, sürümler) · **Ekip ve roller** (kullanıcılar tablosu, "Kim ne yapabilir?") · **Senaryolar** (senaryolar, kurcalama testi, sıfırla; yalnız Yönetici, diğerlerine kapalı + neden) · **Rehberli tur** (tek kart, "Turu başlat"). Çıkış hesap menüsünde |
+| Giriş | `/login` | Logo, ürün adı, tek satır değer cümlesi; kart: **Hesap** (dört ekip hesabı, ad + rol) + **Parola** + "Giriş yap"; altta "← Tanıtım sayfası" ve feragatname. `/login/<rol>` aynı ekranı o hesap seçili açar |
 
 Eski yollar `src/lib/nav.ts`'te: `/audit` → `/denetim`, `/limits`, `/admin` → `/ayarlar`, `/portfolio` → `/portfoy`, gerisi `/bugun`.
 
 ## 2. Kurumsal katman
 
-### 2.1 Roller — "Kimin gözüyle bakıyorsun?"
-Tek giriş (tek parola), dört rol. Seçim oturum çerezinde saklanır; her rol ekipten bir kişiye bağlıdır, böylece
+### 2.1 Roller — dört ekip hesabı
+Tek parola, dört hesap; girişte seçilen hesap rolü belirler, üst çubuktaki hesap menüsünden ("Hesap değiştir")
+değiştirilir. Seçim oturum çerezinde saklanır; her rol ekipten bir kişiye bağlıdır, böylece
 "başka biri imzalar" gerçek bir kuraldır.
 
 | Rol | Kişi | Tek satır |
@@ -44,14 +47,14 @@ Tek giriş (tek parola), dört rol. Seçim oturum çerezinde saklanır; her rol 
 | Yönetici | Üye 1 | Kullanıcılar, ayarlar, demo. |
 | Denetçi | Denetçi | Her şeyi görür, hiçbir şeyi değiştiremez (jüri için). |
 
-Girişten sonra **Risk Sorumlusu** (kanonik demo böyle başlar). Tek tablo `src/lib/auth/permissions.ts`:
+Giriş ekranında **Risk Sorumlusu** hesabı önceden seçilidir. Tek tablo `src/lib/auth/permissions.ts`:
 `can(role, action)`; mock API (403 + düz gerekçe), her düğme ve "Kim ne yapabilir?" tablosu aynı tabloyu okur.
 Yetkisiz bir düğme gizlenmez: kapalı durur, altında gerekçe ("Bunu Risk Sorumlusu yapar.") ve
 "Risk Sorumlusu gözüyle bak →" bağlantısı vardır. Her ekran dört role açıktır (`canOpen`); fark, basabildiklerindedir.
 
 ### 2.2 Öneride iki imza
 "Öneriyi tayfa yazar ama emir için iki imza gerekir: önce kurallar (makine), sonra Risk Sorumlusu (insan).
-Öneriyi yazan onu onaylayamaz." Yalnız Risk Sorumlusu Onayla/Reddet'e basar; damga rol adı, kişi ve saatle düşer.
+Öneriyi yazan onu onaylayamaz." Yalnız Risk Sorumlusu Onayla/Reddet'e basar; 2. imza satırı kişi ve saatle tamamlanır (burada imzalanınca onay işareti bir kez basılır, emir fişi belirir).
 Emir fişini de Risk Sorumlusu işaretler. Analist, Risk Sorumlusu ve Yönetici not ekleyebilir.
 
 ### 2.3 Denetim defteri
@@ -73,13 +76,13 @@ başlatır, Risk Sorumlusu onaylar** (_KANONIK "Reset = Admin + Risk Officer"). 
 moddaki 24 saat + 5 seans kuralı kaldırıldı. Günlük −%1 durdurması (R02) aynen sürer.
 
 ### 2.6 Rehberli tur
-Ayarlar → **Rehberli tur** kartı → "Turu başlat": altta küçük bir çubuk, `11-demo-senaryosu.md`'nin 6 perdesi, 15 adım, → / ←.
+Ayarlar → **Rehberli tur** sekmesi → "Turu başlat": altta sade bir çubuk (ince ilerleme çizgisi, "Adım n/15", başlık, tek satır not, rol, ← →, kapat), `11-demo-senaryosu.md`'nin 15 adımı.
 Her adım rolü kendiliğinden değiştirir, gerekeni önce çalıştırır (ör. demo gününü sıfırla), ekranı açar, sonra
 sahnede olması gerekeni yapar (senaryo ekle, defteri doğrula). Elle basılan adımlarda çubukta bir **yedek** düğme
 vardır. Her adımda sunucuya tek cümle. Adımlar `src/components/demo/demo-steps.ts`.
 
 ## 3. Oturum
-- **Mock.** `POST /api/mock/session {passphrase}` → `kaptan_mock_session` çerezi (8 saat, rol içinde). Parola `kaptan2026`. `PUT {role}` rolü değiştirir. Demo içindir, güvenlik sınırı değildir.
+- **Mock.** `POST /api/mock/session {passphrase, role}` (role = seçilen hesap) → `kaptan_mock_session` çerezi (8 saat, rol içinde). Parola `kaptan2026`. `PUT {role}` rolü değiştirir. Demo içindir, güvenlik sınırı değildir.
 - **http.** Tek parola; rol `POST /auth/role` ile seçilir (API.md §2).
 - **Proxy** (`src/proxy.ts`). Panel rotaları oturum ister; `/`, açılış sayfasının dosyaları ve `/crew/*` açıktır.
 

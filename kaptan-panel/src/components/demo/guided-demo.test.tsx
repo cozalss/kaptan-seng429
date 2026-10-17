@@ -20,6 +20,7 @@ afterEach(() => {
   __resetDemoStore();
   nav.pathname = "/bugun";
   nav.push.mockReset();
+  window.history.replaceState(null, "", window.location.pathname);
 });
 
 describe("rehberli tur", () => {
@@ -33,10 +34,11 @@ describe("rehberli tur", () => {
       new MockDb(null),
       "risk_officer",
     );
+    await u.click(await screen.findByRole("tab", { name: "Rehberli tur" }));
     await u.click(await screen.findByRole("button", { name: "Turu başlat" }));
     const bar = await screen.findByTestId("guided-demo");
     expect(within(bar).getByTestId("demo-step-title")).toHaveTextContent(DEMO_STEPS[0]!.title);
-    expect(bar).toHaveTextContent("Perde 1/6");
+    expect(bar).toHaveTextContent("Adım 1/15");
     await waitFor(() => expect(nav.push).toHaveBeenCalledWith("/bugun"));
     await waitFor(() => expect(bar).toHaveTextContent("Rol: Analist"));
 
