@@ -15,7 +15,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Query
 
-from kaptan.api.deps import ClockDep, CurrentUser
+from kaptan.api.deps import ClockDep, CurrentUser, SettingsDep
 from kaptan.api.errors import ApiError
 from kaptan.db import Conn
 from kaptan.domain.schemas import PnlPoint, Position
@@ -28,8 +28,8 @@ DATE_PATTERN = r"^\d{4}-\d{2}-\d{2}$"
 
 
 @router.get("/portfolio/positions", response_model=list[Position])
-async def positions(user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
-    return await list_positions(conn, clock.now())
+async def positions(user: CurrentUser, conn: Conn, clock: ClockDep, settings: SettingsDep) -> Any:
+    return await list_positions(conn, clock.now(), live=settings.prices_live)
 
 
 def _day(value: str | None) -> date | None:

@@ -31,6 +31,7 @@ from kaptan.clock import Clock, istanbul_date
 from kaptan.demo.fixtures import DemoFixtures
 from kaptan.llm import get_provider
 from kaptan.llm.provider import LLMProvider
+from kaptan.llm.usage import sync_usage
 
 log = logging.getLogger("kaptan.agents")
 
@@ -200,13 +201,17 @@ async def run_scenario(
     run = await q.demo_run(conn, scenario)
     first = run["injected_at"] is None
     now = _ms(clock.now())
-    mode = getattr(getattr(app, "state", None), "settings", None)
-    llm = provider or get_provider(getattr(mode, "llm_mode", "replay"))
+    app_state = getattr(app, "state", None)
+    mode = getattr(app_state, "settings", None)
+    llm = provider or get_provider(
+        getattr(mode, "llm_mode", "replay"), settings=mode, redis=getattr(app_state, "redis", None)
+    )
     ctx, disc_doc, texts = await build_context(conn, run, now, provider=llm, tools=tools or ReplayToolbox())
     await conn.commit()  # release the read snapshot before the graph runs
     state = await run_graph(ctx, thread_id=f"{run['run_id']}@{now.isoformat()}")
     explain = assemble(state, ctx, disc_doc, texts)
     await persist(conn, explain, now, first)
+    await sync_usage(conn, llm)  # live mode: per-call usage rows + real quota counters (no-op in replay)
     scheduled = 0
     if app is not None:
         from kaptan.agents.timeline import schedule

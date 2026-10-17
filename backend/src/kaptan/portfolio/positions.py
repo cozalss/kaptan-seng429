@@ -20,6 +20,8 @@ from kaptan.portfolio.marks import (
     mark_price,
     round_to,
 )
+from kaptan.prices.models import Mark
+from kaptan.prices.reads import latest_marks
 
 Book = Literal["paper", "personal"]
 
@@ -36,19 +38,20 @@ LIST_SQL: Final = POSITION_SELECT + "ORDER BY p.opened_at DESC, (p.book = 'perso
 ONE_SQL: Final = POSITION_SELECT + "WHERE p.book = %s AND p.source_proposal = %s"
 
 
-def position_view(row: dict[str, Any], now: datetime) -> dict[str, Any]:
-    """One DB row (LIST_SQL) → a Position document."""
+def position_view(row: dict[str, Any], now: datetime, mark: Mark | None = None) -> dict[str, Any]:
+    """One DB row (LIST_SQL) → a Position document. `mark` = a real price (PRICES_LIVE), else replay marks."""
     issuer_price = row["issuer_price"]
-    last = (
-        float(row["avg_cost"])
-        if issuer_price is None
-        else mark_price(
+    if mark is not None:
+        last = float(mark.price)
+    elif issuer_price is None:
+        last = float(row["avg_cost"])
+    else:
+        last = mark_price(
             book=row["book"],
             run_id=row["run_id"],
             issuer_price=float(issuer_price),
             disclosure_index=int(row["disclosure_index"]),
         )
-    )
     qty = int(row["qty"])
     avg = float(row["avg_cost"])
     return {
@@ -71,12 +74,16 @@ def position_view(row: dict[str, Any], now: datetime) -> dict[str, Any]:
     }
 
 
-async def list_positions(conn: AsyncConnection[Any], now: datetime) -> list[dict[str, Any]]:
-    """Every open position, newest opened first (paper before personal on a tie)."""
+async def list_positions(conn: AsyncConnection[Any], now: datetime, *, live: bool = False) -> list[dict[str, Any]]:
+    """Every open position, newest opened first (paper before personal on a tie).
+
+    `live` (PRICES_LIVE): mark with the latest stored raw price; a ticker without one keeps its replay mark.
+    """
     async with conn.cursor() as cur:
         await cur.execute(LIST_SQL)
         rows = await cur.fetchall()
-    return [position_view(r, now) for r in rows]
+    marks = await latest_marks(conn, [r["ticker"] for r in rows], now) if live and rows else {}
+    return [position_view(r, now, marks.get(r["ticker"])) for r in rows]
 
 
 RUN_SQL: Final = """

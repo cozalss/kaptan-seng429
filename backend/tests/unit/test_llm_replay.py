@@ -90,6 +90,11 @@ async def test_chain_falls_back_then_gives_up() -> None:
 
 
 def test_get_provider() -> None:
+    from kaptan.llm.live import LiveProvider
+
     assert isinstance(get_provider("replay"), ReplayProvider)
-    with pytest.raises(NotImplementedError, match="M2"):
-        get_provider("live")
+    live = get_provider("live")
+    assert isinstance(live, LiveProvider)
+    assert get_provider("live") is live  # one per process (shared cache, counters, connections)
+    with pytest.raises(ValueError, match="unknown LLM_MODE"):
+        get_provider("ghost")

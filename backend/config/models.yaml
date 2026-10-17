@@ -1,0 +1,56 @@
+# KAPtan live LLM registry (LLM_MODE=live). The only place model IDs live (05 §1.4, 04 §9.2).
+# Pinned IDs, no "-latest" aliases. Change a model here; daily caps are in settings (LLM_CAP_*).
+# Verified available on 2026-10-17 with the project's keys (see backend/README.md "Live LLM mode").
+version: 1
+
+providers:
+  gemini:
+    kind: gemini
+    base_url: https://generativelanguage.googleapis.com/v1beta
+    model: gemini-3.5-flash-lite
+    timeout_s: 45
+    max_retries: 2          # extra attempts on 429/5xx/timeouts (exponential backoff + jitter)
+    thinking_level: minimal # Flash-Lite default; extraction/classification needs no long thinking
+    # Free tier: no price. Daily request cap: LLM_CAP_GEMINI_RPD.
+  deepseek:
+    kind: openai
+    base_url: https://api.deepseek.com
+    model: deepseek-flash
+    timeout_s: 60
+    max_retries: 2
+    response_format: json_object
+    # Paid (the owner's balance). USD per 1M tokens, estimate used for the daily cost cap
+    # (LLM_CAP_DEEPSEEK_USD); verify on https://api-docs.deepseek.com/quick_start/pricing.
+    price_usd_per_mtok:
+      input_cache_hit: 0.028
+      input_cache_miss: 0.28
+      output: 0.42
+  groq:
+    kind: openai
+    base_url: https://api.groq.com/openai/v1
+    model: openai/gpt-oss-120b
+    timeout_s: 45
+    max_retries: 2
+    response_format: json_schema   # best-effort structured outputs (strict: false) on gpt-oss
+    reasoning_effort: low
+  # TODO(M3): azure (Azure for Students) and ollama (local Qwen) slots of the canonical chain.
+
+guard:
+  provider: groq
+  model: meta-llama/llama-prompt-guard-2-86m
+  chunk_chars: 1500        # ~< 512 tokens of Turkish text per call (model context = 512 tokens)
+  max_chunks: 8            # 05 §8: ≤ 8 calls per disclosure
+  timeout_s: 20
+  rule_score: 0.95         # a Turkish rule hit lifts the score above the graph's 0.90 quarantine line
+
+# Chains per agent: first answer wins; exhausted / failing providers are skipped; nothing left → HOLD.
+# Default = Gemini Flash-Lite → DeepSeek → Groq gpt-oss. Classifier and Skeptic start on Groq
+# (05 §1.4: a different model family from the Reader); DeepSeek (paid) comes last for them.
+default_chain: [gemini, deepseek, groq]
+agents:
+  classifier: {chain: [groq, gemini, deepseek], max_output_tokens: 600}
+  reader: {max_output_tokens: 1500}
+  materiality: {max_output_tokens: 900}
+  evidence: {max_output_tokens: 1000}
+  skeptic: {chain: [groq, gemini, deepseek], max_output_tokens: 900}
+  compliance: {max_output_tokens: 1200}

@@ -69,7 +69,7 @@ async def classifier(state: KaptanState, runtime: Runtime[RunContext]) -> dict[s
         }
         row = step(ctx, "classifier", status="skipped", note="Konu alanı tipledi; LLM gerekmedi")
         return {"classifier": out, "event_type": target, "steps": [row], "llm_calls": 0}
-    answer, called = await ask_or_fail(ctx, "classifier", ClassifierOutput)
+    answer, called = await ask_or_fail(ctx, "classifier", ClassifierOutput, state=state)
     if answer is None:
         return {"classifier": None, "event_type": None, "status": "completed", "outcome": "HOLD", "steps": [called]}
     return {"classifier": answer, "event_type": answer["event_type"], "steps": [called], "llm_calls": 1}
@@ -81,27 +81,29 @@ def _called(out: dict[str, Any] | None) -> int:
 
 async def reader(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, Any]:
     ctx = runtime.context
-    out, row = await ask_or_fail(ctx, "reader", READER_SCHEMAS[str(state["event_type"])], group=FANOUT_GROUP)
+    out, row = await ask_or_fail(
+        ctx, "reader", READER_SCHEMAS[str(state["event_type"])], group=FANOUT_GROUP, state=state
+    )
     return {"reader": out, "steps": [row], "llm_calls": _called(out)}
 
 
 async def materiality(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, Any]:
     ctx = runtime.context
-    out, row = await ask_or_fail(ctx, "materiality", MaterialityOutput, group=FANOUT_GROUP)
+    out, row = await ask_or_fail(ctx, "materiality", MaterialityOutput, group=FANOUT_GROUP, state=state)
     return {"materiality": out, "steps": [row], "llm_calls": _called(out)}
 
 
 async def evidence(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, Any]:
     """Selects similar past events without seeing their returns; the statistics come later (merge)."""
     ctx = runtime.context
-    out, row = await ask_or_fail(ctx, "evidence", EvidenceSelection, group=FANOUT_GROUP)
+    out, row = await ask_or_fail(ctx, "evidence", EvidenceSelection, group=FANOUT_GROUP, state=state)
     return {"evidence_selection": out, "steps": [row], "llm_calls": _called(out)}
 
 
 async def skeptic(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, Any]:
     """Only ever shrinks or vetoes; a failed skeptic simply did not run (05 §5.1 `ran=False`)."""
     ctx = runtime.context
-    out, row = await ask_or_fail(ctx, "skeptic", SkepticOutput)
+    out, row = await ask_or_fail(ctx, "skeptic", SkepticOutput, state=state)
     merged = state.get("merged")
     flags = [f["code"] for f in (out or {}).get("flags", [])]
     return {
@@ -116,7 +118,7 @@ async def skeptic(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str,
 async def compliance(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, Any]:
     """Veto/escalate only. A quarantined text comes here too, so the refusal is on record (RET)."""
     ctx = runtime.context
-    out, row = await ask_or_fail(ctx, "compliance", ComplianceReport)
+    out, row = await ask_or_fail(ctx, "compliance", ComplianceReport, state=state)
     quarantined = bool((state.get("guard") or {}).get("quarantined"))
     if out is not None and out["decision"] == "veto" and quarantined:
         row = {**row, "note_tr": "RET"}

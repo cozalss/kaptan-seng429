@@ -1,0 +1,70 @@
+[
+ {
+  "id": "chatcmpl-req_01m55tgt0we7xaravmpcff85ch",
+  "object": "chat.completion",
+  "created": 1792270690,
+  "model": "meta-llama/llama-prompt-guard-2-86m",
+  "choices": [
+   {
+    "index": 0,
+    "message": {
+     "role": "assistant",
+     "content": "0.0004561880195979029"
+    },
+    "logprobs": null,
+    "finish_reason": "stop"
+   }
+  ],
+  "usage": {
+   "queue_time": 0,
+   "prompt_tokens": 83,
+   "prompt_time": 0,
+   "completion_tokens": 0,
+   "completion_time": 0,
+   "total_tokens": 0,
+   "total_time": 0
+  },
+  "usage_breakdown": null,
+  "system_fingerprint": "fp_a88aaa667e",
+  "instance_id": "PROMPT-GUARD-2-86M-GPU_dmm1-prod1_0",
+  "x_groq": {
+   "id": "req_01m55tgt0we7xaravmpcff85ch",
+   "seed": 1678837893
+  },
+  "service_tier": "on_demand"
+ },
+ {
+  "id": "chatcmpl-req_01m55tgtbhe6rvyry7f447wr7g",
+  "object": "chat.completion",
+  "created": 1792270690,
+  "model": "meta-llama/llama-prompt-guard-2-86m",
+  "choices": [
+   {
+    "index": 0,
+    "message": {
+     "role": "assistant",
+     "content": "0.9995260238647461"
+    },
+    "logprobs": null,
+    "finish_reason": "stop"
+   }
+  ],
+  "usage": {
+   "queue_time": 0,
+   "prompt_tokens": 13,
+   "prompt_time": 0,
+   "completion_tokens": 0,
+   "completion_time": 0,
+   "total_tokens": 0,
+   "total_time": 0
+  },
+  "usage_breakdown": null,
+  "system_fingerprint": "fp_a88aaa667e",
+  "instance_id": "PROMPT-GUARD-2-86M-GPU_dmm1-prod1_0",
+  "x_groq": {
+   "id": "req_01m55tgtbhe6rvyry7f447wr7g",
+   "seed": 632420043
+  },
+  "service_tier": "on_demand"
+ }
+]

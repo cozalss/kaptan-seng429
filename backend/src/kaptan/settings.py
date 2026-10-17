@@ -52,6 +52,41 @@ class Settings(BaseSettings):
     #: DEMO_MODE: release the day's post-13:40 disclosures every 7–12 s (package C ticker).
     demo_live_ticker: bool = True
     llm_mode: Literal["replay", "live"] = "replay"
+    #: Live providers (M2). Empty = that provider is skipped in the chain.
+    gemini_api_key: SecretStr | None = None
+    deepseek_api_key: SecretStr | None = None
+    groq_api_key: SecretStr | None = None
+    #: Live LLM hard caps per UTC day (kaptan.llm.budget); model IDs live in config/models.yaml.
+    llm_cap_gemini_rpd: int = Field(default=400, ge=0)  # Flash-Lite free tier ~500 RPD (measured)
+    llm_cap_groq_rpd: int = Field(default=900, ge=0)  # gpt-oss free ~1K RPD
+    llm_cap_groq_tpd: int = Field(default=180_000, ge=0)  # gpt-oss free ~200K TPD
+    llm_cap_guard_rpd: int = Field(default=14_000, ge=0)  # Prompt Guard 2 free 14.4K RPD
+    llm_cap_deepseek_rpd: int = Field(default=200, ge=0)
+    llm_cap_deepseek_usd: float = Field(default=0.50, ge=0)  # paid: the owner's balance
+    llm_cache_ttl_s: int = Field(default=30 * 24 * 3600, gt=0)
+
+    #: Live KAP ingestion (M2, kaptan.ingest). Off by default; DEMO_MODE stays the default.
+    kap_live: bool = False
+    kap_base_url: str = "https://www.kap.org.tr"
+    #: A real browser User-Agent: MKK's WAF blocks non-browser clients (07 §1).
+    kap_user_agent: str = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36"
+    )
+    #: Poll interval in session (08:00–19:00 on weekdays); never below 30 s (canonical).
+    kap_poll_session_s: float = Field(default=30.0, ge=30.0)
+    kap_poll_offhours_s: float = Field(default=60.0, ge=30.0)
+    kap_poll_night_s: float = Field(default=300.0, ge=60.0)
+    #: Minimum gap between any two KAP requests of one process (backfill: ≥ 2 s per request).
+    kap_min_interval_s: float = Field(default=2.0, ge=1.0)
+    kap_timeout_s: float = Field(default=60.0, gt=0)
+    kap_max_retries: int = Field(default=4, ge=0, le=8)
+    #: Fetch full texts (BildirimPdf → text, /tr/Bildirim fallback) for target subjects.
+    kap_fetch_details: bool = True
+
+    #: Marks from core.prices_daily (kaptan.prices, M2) instead of the demo's replay marks. Off by default.
+    prices_live: bool = False
+    #: Minimum gap between two price-source requests (İş Yatırım / Yahoo), seconds.
+    prices_min_interval_s: float = Field(default=2.0, ge=0.5)
 
     cookie_secure: bool = True
     allowed_origins: Annotated[list[str], NoDecode] = Field(default_factory=list)

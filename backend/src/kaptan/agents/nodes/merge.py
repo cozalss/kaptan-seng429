@@ -26,7 +26,7 @@ AMOUNT_TOLERANCE: Final = Decimal("0.005")
 CENT: Final = Decimal("0.01")
 
 
-def regex_amounts(text: str, duration_months: int | None = None) -> list[Decimal]:
+def regex_amounts(text: str, duration_months: float | None = None) -> list[Decimal]:
     """TL amounts written in the text, plus their monthly equivalents when a duration is stated."""
     found: list[Decimal] = []
     for whole, frac in AMOUNT_RE.findall(text):
@@ -34,7 +34,9 @@ def regex_amounts(text: str, duration_months: int | None = None) -> list[Decimal
         if value > 0 and value not in found:
             found.append(value)
     if duration_months and duration_months > 0:
-        monthly = [(v / duration_months).quantize(Decimal(1), rounding=ROUND_HALF_UP) for v in found]
+        # A model may write the duration as a float (24.0, 24.5); go through str so Decimal stays exact.
+        months = Decimal(str(duration_months))
+        monthly = [(v / months).quantize(Decimal(1), rounding=ROUND_HALF_UP) for v in found]
         found.extend(m for m in monthly if m not in found)
     return found
 

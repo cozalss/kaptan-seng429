@@ -1,0 +1,33 @@
+{
+  "recorded_at": "2026-10-17",
+  "source": "https://www.kap.org.tr (public website JSON endpoints, polite: >= 2.5 s apart)",
+  "list_main": [
+    "2026-10-15",
+    "2026-10-16"
+  ],
+  "by_criteria": [
+    "2026-10-16"
+  ],
+  "company_items": "IGS/A (trimmed to the fields ingestion reads)",
+  "detail_text": {
+    "1683376": "Payların Geri Alınmasına İlişkin Bildirim",
+    "1683372": "Payların Geri Alınmasına İlişkin Bildirim",
+    "1683269": "Pay Alım Satım Bildirimi",
+    "1682800": "Pay Alım Satım Bildirimi",
+    "1683334": "Pay Alım Satım Bildirimi",
+    "1682993": "Yeni İş İlişkisi",
+    "1682657": "Yeni İş İlişkisi",
+    "1683277": "İhale Süreci / Sonucu",
+    "1682623": "İhale Süreci / Sonucu",
+    "1683354": "Finansal Rapor",
+    "1683355": "Özel Durum Açıklaması (Genel)"
+  },
+  "detail_pdf": [
+    1683372,
+    1682993
+  ],
+  "detail_html": [
+    1683355
+  ],
+  "note": "Test fixtures only; academic, non-commercial use. Do not redistribute KAP data beyond this test set."
+}

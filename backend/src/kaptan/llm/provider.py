@@ -33,6 +33,10 @@ class LLMRequest:
     output_schema: type[BaseModel] | None = None
     run_id: str | None = None
     max_output_tokens: int = 2_048
+    #: Live mode only (never part of the replay key): the untrusted disclosure text the model reads
+    #: (masked and fenced by the live provider) and trusted, structured task context (05 §2.3).
+    document: str | None = None
+    context: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

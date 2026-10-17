@@ -12,6 +12,7 @@ from kaptan.agents.context import RunContext
 from kaptan.agents.state import Step
 from kaptan.llm.provider import LLMRequest, LLMUsage, ProviderError
 from kaptan.llm.replay import agent_inputs, prompt_version
+from kaptan.llm.task_context import task_context
 
 FANOUT_GROUP = "fanout-1"
 log = logging.getLogger("kaptan.agents")
@@ -57,24 +58,44 @@ def step(
 
 
 async def ask(
-    ctx: RunContext, agent: str, schema: type[BaseModel] | None, *, extra: Mapping[str, Any] | None = None
+    ctx: RunContext,
+    agent: str,
+    schema: type[BaseModel] | None,
+    *,
+    extra: Mapping[str, Any] | None = None,
+    state: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], LLMUsage, str]:
-    """Call the provider for `agent` on this disclosure; returns (output, usage, prompt version)."""
+    """Call the provider for `agent` on this disclosure; returns (output, usage, prompt version).
+
+    The text and the structured TASK_CONTEXT ride along for live providers (masked/fenced there); the
+    replay key stays agent + prompt version + inputs."""
     d = ctx.disclosure
     inputs: dict[str, Any] = {**agent_inputs(d.ticker, d.text_tr), **(extra or {})}
     version = prompt_version(agent)
-    result = await ctx.provider.complete(
-        LLMRequest(agent=agent, prompt_version=version, inputs=inputs, output_schema=schema, run_id=d.run_id)
+    request = LLMRequest(
+        agent=agent,
+        prompt_version=version,
+        inputs=inputs,
+        output_schema=schema,
+        run_id=d.run_id,
+        document=d.text_tr,
+        context=task_context(agent, state or {}, ctx),
     )
+    result = await ctx.provider.complete(request)
     return dict(result.output), result.usage, version
 
 
 async def ask_or_fail(
-    ctx: RunContext, agent: str, schema: type[BaseModel] | None, *, group: str | None = None
+    ctx: RunContext,
+    agent: str,
+    schema: type[BaseModel] | None,
+    *,
+    group: str | None = None,
+    state: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any] | None, Step]:
     """Like `ask`, but an exhausted provider chain is a failed agent (05 §2.4 → HOLD), not a crash."""
     try:
-        out, usage, version = await ask(ctx, agent, schema)
+        out, usage, version = await ask(ctx, agent, schema, state=state)
     except ProviderError as exc:
         log.warning("agent %s failed for %s: %s", agent, ctx.disclosure.run_id, exc)
         return None, step(ctx, agent, status="failed", group=group, note="Model yanıt vermedi: HOLD")
