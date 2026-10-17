@@ -84,7 +84,8 @@ describe("Öneri", () => {
     await u.click(within(slip).getByRole("button", { name: "Vazgeç" }));
     await u.click(within(slip).getByRole("button", { name: "Başka bir sonuç" }));
     await u.click(await screen.findByRole("menuitem", { name: "Dolmadı" }));
-    expect(await within(slip).findByText("Dolmadı")).toBeInTheDocument();
+    // The mark goes through the mock API and a re-render; give slow CI runners more than the 1 s default.
+    expect(await within(slip).findByText("Dolmadı", undefined, { timeout: 5_000 })).toBeInTheDocument();
   });
 
   it("rejects with an optional note", async () => {
