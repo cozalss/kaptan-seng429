@@ -27,12 +27,12 @@
 
 /* The role tone is a registered colour so a role switch can cross-fade it. A registered
    property always has a value, so var(--tone, …) fallbacks never apply: the initial value is
-   the indigo wash (#26398a, = --wash), which is what untoned places such as the /login sea
+   the indigo wash (#2a4c8c, = --wash), which is what untoned places such as the /login sea
    used as their fallback. */
 @property --tone {
   syntax: "<color>";
   inherits: true;
-  initial-value: #26398a;
+  initial-value: #2a4c8c;
 }
 
 /* Panel yalnız açık temadır (kâğıt ve mürekkep); karanlık tema yok. */
@@ -40,29 +40,29 @@
   color-scheme: light only;
 
   /* Colour — every colour has one job. Ratios are on --paper (projector rule: ≥ 7:1). */
-  --paper: #eceef2; /* the page: a clean cool neutral, a clear step below the panel */
-  --panel: #ffffff; /* cards and sections laid on the page */
-  --sunk: #dde1e8; /* recessed: table heads, wells, code */
-  --ink: #101117; /* type, ink lines, hard shadows (15.7:1) */
+  --paper: #f3f1ec; /* rice paper, the landing's page colour */
+  --panel: #fffefa; /* a brighter sheet laid on the paper (as on the landing) */
+  --sunk: #e7e3d9; /* recessed paper: table heads, wells, code */
+  --ink: #121318; /* type, ink lines, hard shadows (15.7:1) */
   --ink-lift: #2a2c38; /* the primary button under the pointer: ink, lifted a shade */
   --ink-soft: #23242a; /* secondary type (12.9:1) */
-  --muted: #3a3b40; /* meta lines (9.3:1 on paper, 10.9:1 on panel) */
-  --wash: #26398a; /* indigo: active nav, hover fill, info (8.6:1) */
-  --wash-tint: rgb(38 57 138 / 0.1);
-  --wash-tint-strong: rgb(38 57 138 / 0.2);
-  --rule-ui: rgb(16 17 23 / 0.78); /* borders of controls */
-  --rule-soft: rgb(16 17 23 / 0.5);
-  --hairline: rgb(16 17 23 / 0.3); /* dividers: still a line when washed out */
-  --scrim: rgb(236 238 242 / 0.8);
-  --north: #ad1f15; /* Durdur, veto, broken chain (5.9:1, on panel 6.9:1) */
-  --north-deep: #8e170f; /* north red under the pointer */
-  --north-tint: rgb(173 31 21 / 0.1);
+  --muted: #45433e; /* meta lines (9.3:1 on paper, 10.9:1 on panel) */
+  --wash: #2a4c8c; /* indigo: active nav, hover fill, info (8.6:1) */
+  --wash-tint: rgb(42 76 140 / 0.1);
+  --wash-tint-strong: rgb(42 76 140 / 0.2);
+  --rule-ui: rgb(18 19 24 / 0.78); /* borders of controls */
+  --rule-soft: rgb(18 19 24 / 0.5);
+  --hairline: rgb(18 19 24 / 0.3); /* dividers: still a line when washed out */
+  --scrim: rgb(243 241 236 / 0.8);
+  --north: #b3261e; /* Durdur, veto, broken chain (5.9:1, on panel 6.9:1) */
+  --north-deep: #9b1f18; /* north red under the pointer */
+  --north-tint: rgb(179 38 30 / 0.1);
   --gain: #0a5530; /* a figure that went up (7.6:1) */
   --loss: #8c1038; /* a figure that went down: claret, not north red (7.8:1) */
   --ochre: #d9961a; /* the daily −1% "YENİ EMİR DURDU" band only (ink on ochre 7.5:1) */
   --ochre-tint: rgb(217 150 26 / 0.22);
-  --brand: #1f2c7a; /* indigo ink: wordmark, focus ring, ::selection, focal figures (10.3:1) */
-  --on-dark: #fdfcf8;
+  --brand: #0c2f63; /* indigo ink: wordmark, focus ring, ::selection, focal figures (10.3:1) */
+  --on-dark: #fffefa;
 
   /* Role tones — one ink per door (/login/<rol>) and the top-bar role chip. Saturated enough
      to read as colour when washed out, dark enough to be type on paper and to carry on-dark
@@ -246,7 +246,7 @@
   }
   /* A faint paper grain so large surfaces read as printed, not flat. */
   .paper-grain {
-    background-image: radial-gradient(rgb(16 17 23 / 0.035) 0.6px, transparent 0.7px);
+    background-image: radial-gradient(rgb(18 19 24 / 0.035) 0.6px, transparent 0.7px);
     background-size: 3px 3px;
   }
   /* Role tone: sets --tone (ink) and --tone-wash (a page-sized tint light enough that muted
