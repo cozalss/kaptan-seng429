@@ -154,6 +154,7 @@ def test_setup_logging_installs_one_root_handler() -> None:
     try:
         stream = io.StringIO()
         logging.getLogger("uvicorn.error").disabled = True  # as alembic's fileConfig leaves it
+        logging.getLogger("uvicorn.error").setLevel(logging.WARNING)  # as a uvicorn Config(log_level="warning") leaves it
         setup_logging(settings(log_format="json"), "api", stream)
         setup_logging(settings(log_format="json"), "api", stream)
         assert len(root.handlers) == 1

@@ -202,6 +202,7 @@ def setup_logging(settings: Settings, component: str, stream: Any = None) -> log
         lg.handlers.clear()
         lg.propagate = True
         lg.disabled = False  # alembic's fileConfig (disable_existing_loggers) may have switched it off
+        lg.setLevel(logging.NOTSET)  # an earlier uvicorn Config(log_level=…) may have raised it; follow root
     for name in QUIET_LOGGERS:
         logging.getLogger(name).setLevel(logging.WARNING)
     return handler
