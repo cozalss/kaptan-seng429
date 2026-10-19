@@ -84,8 +84,9 @@ describe("Öneri", () => {
     await u.click(within(slip).getByRole("button", { name: "Vazgeç" }));
     await u.click(within(slip).getByRole("button", { name: "Başka bir sonuç" }));
     await u.click(await screen.findByRole("menuitem", { name: "Dolmadı" }));
-    // The mark goes through the mock API and a re-render; give slow CI runners more than the 1 s default.
-    expect(await within(slip).findByText("Dolmadı", undefined, { timeout: 5_000 })).toBeInTheDocument();
+    // Look the slip up again: the ticket echo can re-render it, and a held node may be stale on slow CI runners.
+    await waitFor(() => expect(screen.getByRole("group", { name: /^Emir fişi/ })).toHaveTextContent(/Dolmadı/), { timeout: 5_000 });
+    expect(screen.queryByRole("menuitem", { name: "Dolmadı" })).toBeNull();
   });
 
   it("rejects with an optional note", async () => {
