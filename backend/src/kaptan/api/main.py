@@ -17,6 +17,7 @@ from typing import Any, Final
 import redis.asyncio as aioredis
 from fastapi import APIRouter, FastAPI, Request
 
+from kaptan.agents.checkpoint import open_saver
 from kaptan.api.errors import install_error_handlers
 from kaptan.api.routers import (
     admin,
@@ -82,7 +83,8 @@ def _lifespan(settings: Settings) -> Any:
             app.state.clock.started_at = await load_demo_started_at(app)
         demo_control.on_startup(app, settings)  # demo timers + live ticker (package C)
         try:
-            yield
+            async with open_saver(settings):  # CHECKPOINTER=postgres: graph threads in agent_ckpt.*
+                yield
         finally:
             await demo_control.on_shutdown(app)
             await app.state.redis.aclose()

@@ -1,0 +1,31 @@
+# KAPtan RAG (M2, kaptan.rag): embedding model, vector size, chunker and hybrid-search parameters.
+# Pinned model ID, no "-latest". Daily caps and the batch size are in settings (RAG_EMBED_*).
+# gemini-embedding-001 verified available on 2026-10-18 with the project's key (models.list).
+version: 1
+
+embedding:
+  provider: gemini
+  base_url: https://generativelanguage.googleapis.com/v1beta
+  model: gemini-embedding-001
+  version: "001"
+  # Matryoshka truncation to 1024 (vectors are L2-normalised afterwards): the column is vector(1024),
+  # the size bge-m3 has (04 ADR-002), so a later local bge-m3 needs no new column.
+  dim: 1024
+  max_input_tokens: 2048
+  timeout_s: 30
+  max_retries: 2
+  task_document: RETRIEVAL_DOCUMENT
+  task_query: RETRIEVAL_QUERY
+
+chunking:            # 07 §11.1 (token counts are estimates: ~3.5 characters per token of Turkish)
+  single_max_tokens: 500
+  target_tokens: 400
+  max_tokens: 700
+  overlap_max_tokens: 80
+  query_max_chars: 2400
+
+hybrid:              # 07 §12
+  rrf_k: 60
+  leg_limit: 50
+  ef_search: 100
+  trigram_max_words: 12

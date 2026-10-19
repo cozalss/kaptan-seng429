@@ -1,8 +1,10 @@
 """Read-only tools the agents and the deterministic nodes consult (05 §3), behind one protocol.
 
-M2 implements them with point-in-time SQL (`get_market_snapshot`, `event_returns`, the sizer's
-budget) and measures node latency; in replay mode `ReplayToolbox` returns what the recorded run saw,
-so the graph is deterministic end to end (same input → same Explain, timings included).
+In replay mode `ReplayToolbox` returns what the recorded run saw, so the graph is deterministic end
+to end (same input → same Explain, timings included). In live mode `kaptan.evidence.LiveToolbox`
+answers `features` / `evidence_store` with point-in-time SQL (price context, market-model event
+study) and delegates the rest (sizing, recorded latencies) to a base toolbox; pick one per run with
+`kaptan.evidence.toolbox_for(conn, disclosure, settings.llm_mode)`.
 """
 
 from __future__ import annotations

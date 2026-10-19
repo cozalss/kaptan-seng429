@@ -13,6 +13,7 @@ import redis.asyncio as aioredis
 import kaptan.approvals.execute as execute
 from kaptan.events import bus
 from kaptan.settings import Settings
+from tests.conftest import skip_or_fail
 from tests.contract.harness import assert_matches
 from tests.integration.a_support import (
     DEMO_E3_PROPOSAL,
@@ -146,7 +147,7 @@ async def test_demo_e3_end_to_end_with_fill_position_and_sse(
         await asyncio.wait_for(redis.ping(), timeout=3)
     except Exception as exc:  # pragma: no cover - Redis down
         await redis.aclose()
-        pytest.skip(f"compose Redis unreachable: {exc}")
+        skip_or_fail(f"compose Redis unreachable: {exc}")
     try:
         await inject_demo_e3(migrated, seconds_ago=1)
         in_flight = await call(api, "risk_officer", "POST", f"/approvals/{DEMO_E3_PROPOSAL}/decision", APPROVE)

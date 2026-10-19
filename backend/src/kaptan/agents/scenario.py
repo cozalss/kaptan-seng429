@@ -110,6 +110,10 @@ async def build_context(
         desk=desk,
         prompt_manifest_hash=str(meta["prompt_manifest_hash"]),
     )
+    if getattr(provider, "name", "") == "live":  # kaptan.rag: "benzer geçmiş bildirimler", never in replay
+        from kaptan.rag.agent_context import attach_similar
+
+        ctx = await attach_similar(conn, ctx)
     return ctx, q.list_item(disc), texts
 
 

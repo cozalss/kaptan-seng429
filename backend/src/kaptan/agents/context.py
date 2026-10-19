@@ -13,6 +13,7 @@ from typing import Any
 from kaptan.agents.tools import Toolbox
 from kaptan.llm.provider import LLMProvider
 from kaptan.llm.replay import fingerprint
+from kaptan.rag.types import SimilarDisclosure
 from kaptan.risk.gate import GateLimits
 from kaptan.rules.params import DEFAULT_PARAMS, RuleParams
 
@@ -76,3 +77,10 @@ class RunContext:
     params: RuleParams = DEFAULT_PARAMS
     limits: GateLimits = field(default_factory=GateLimits)
     prompt_manifest_hash: str = ""
+    #: "Benzer geçmiş bildirimler" (kaptan.rag, LLM_MODE=live only; empty in replay so replay stays
+    #: byte-identical): earlier disclosures by hybrid search, `published_at < as_of`, with citations.
+    similar: tuple[SimilarDisclosure, ...] = ()
+
+    def similar_context(self) -> list[dict[str, Any]]:
+        """The TASK_CONTEXT rows of `similar` (ids, dates, codes; never the untrusted snippet text)."""
+        return [s.as_context() for s in self.similar]

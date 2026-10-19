@@ -17,11 +17,11 @@ from __future__ import annotations
 from typing import Any, Final, Literal
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
-from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Send
 
+from kaptan.agents.checkpoint import MEMORY_SAVER, current_saver
 from kaptan.agents.context import RunContext
 from kaptan.agents.nodes import analysts, decide, merge, screen
 from kaptan.agents.state import KaptanState
@@ -109,11 +109,12 @@ def build_graph() -> StateGraph[Any, RunContext, Any, Any]:
     return g
 
 
-#: One in-process checkpointer (M1: single API process). M2: AsyncPostgresSaver.
-CHECKPOINTER: Final = InMemorySaver()
+#: The in-process checkpointer (M1 default). `CHECKPOINTER=postgres` installs an AsyncPostgresSaver
+#: instead (kaptan.agents.checkpoint.open_saver); compile_graph() picks whichever is current.
+CHECKPOINTER: Final = MEMORY_SAVER
 
 
 def compile_graph(
     checkpointer: BaseCheckpointSaver[Any] | None = None,
 ) -> CompiledStateGraph[Any, RunContext, Any, Any]:
-    return build_graph().compile(checkpointer=checkpointer or CHECKPOINTER)
+    return build_graph().compile(checkpointer=checkpointer or current_saver())

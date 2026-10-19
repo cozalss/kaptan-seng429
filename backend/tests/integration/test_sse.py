@@ -27,7 +27,7 @@ from kaptan.demo.seed import SeedResult
 from kaptan.events import bus
 from kaptan.events.publish import publish
 from kaptan.settings import Settings
-from tests.conftest import bearer, login
+from tests.conftest import bearer, login, skip_or_fail
 from tests.contract.harness import assert_matches
 
 pytestmark = pytest.mark.integration
@@ -45,7 +45,7 @@ async def redis(migrated: Settings) -> AsyncIterator[aioredis.Redis]:
         await asyncio.wait_for(client.ping(), timeout=3)
     except Exception as exc:
         await client.aclose()
-        pytest.skip(f"compose Redis unreachable: {exc}")
+        skip_or_fail(f"compose Redis unreachable: {exc}")
     yield client
     await client.aclose()
 

@@ -14,6 +14,8 @@ from typing import Any, Final
 
 MAX_SHORT: Final = 64
 MAX_CANDIDATES: Final = 40
+#: The analysts that see "benzer geçmiş bildirimler" (RunContext.similar, kaptan.rag).
+SIMILAR_AGENTS: Final = frozenset({"reader", "materiality", "evidence", "skeptic"})
 
 
 def _short(value: Any) -> bool:
@@ -88,6 +90,9 @@ def task_context(agent: str, state: Mapping[str, Any], ctx: Any) -> dict[str, An
     route = state.get("route") or {}
     if route.get("sub_type_hint"):
         out["sub_type_hint"] = route["sub_type_hint"]
+    similar = getattr(ctx, "similar", ())  # kaptan.rag, live mode only (empty in replay)
+    if similar and agent in SIMILAR_AGENTS:
+        out["similar_disclosures"] = ctx.similar_context()
     if agent == "materiality":
         out["market_data"] = _market_data(ctx)
     elif agent == "evidence":

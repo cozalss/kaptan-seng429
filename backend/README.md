@@ -243,3 +243,110 @@ still stores KAP rows but invisible and publishes nothing. Note: `/demo/reset` t
 Tests are offline on recorded fixtures (`tests/fixtures/kap_json/` two days of `list/main`, one
 `byCriteria` day, the member list; `detail_text/`, `detail_pdf/`, `detail_html/`; see its `manifest.json`).
 Live smoke test (4 KAP requests): `uv run pytest -m live tests/integration/test_ingest_live.py`.
+
+## Agent feed and durable runs (M2, `kaptan.agents.feed`, `kaptan.agents.checkpoint`)
+
+New KAP disclosures reach the agent graph through a Redis stream; the graph's state can live in Postgres.
+Both are opt-in: with the defaults (`KAP_LIVE=false`, `CHECKPOINTER=memory`) M1 behaves exactly as before.
+
+```bash
+uv run alembic upgrade head                                            # 0010: ops.agent_feed + schema agent_ckpt
+KAP_LIVE=true DEMO_MODE=false uv run python -m kaptan.workers.ingest_worker      # producer
+KAP_LIVE=true DEMO_MODE=false LLM_MODE=live CHECKPOINTER=postgres \
+  uv run python -m kaptan.workers.agent_worker                                     # consumer (1 replica)
+```
+
+**Why a separate worker, not the API lifespan:** the API stays the M1 process (demo/replay, no LLM spend),
+live spend sits in one process with its own cap, and a crash/restart of the agent loop never touches a
+request. The API only opens the configured checkpointer in its lifespan (so demo runs use it too).
+
+**Feed** (`kaptan:kap.disclosures`, consumer group `agent-worker`): the poller appends `listed` for each
+new visible KAP row, the detail fetcher appends `text` once the full text is stored
+(`ingest/publish.py publish_to_agents`, `SET NX` marker per index + stage, so polls/reconciles never
+duplicate). The consumer keeps one `ops.agent_feed` row per disclosure index (idempotency key):
+
+| Status | Meaning |
+|---|---|
+| `skipped` | out of scope: not a live KAP row (`not_kap`, `backfill`), subject route not E1–E4/`llm` (`route:noise`, `route:archive_only`, `route:avoid:*`), or no ticker; no run |
+| `awaiting_text` | in scope, TR text not stored yet; the `text` entry starts the run |
+| `capped` | `hourly_cap` (more than `AGENT_MAX_RUNS_PER_HOUR`, default 6, runs that reached an LLM in the last hour; pre-gate vetoes with 0 calls do not count) or `llm_daily_cap` (every live provider over its `LLM_CAP_*` for the day); not retried |
+| `running` | started; a restart resumes it (not counted against the hour again) |
+| `waiting_approval` / `done` | the run is persisted; parked runs are settled (see below) |
+| `failed` | the run raised 3 times |
+
+A run is `run-live-<index>` (`run_set='live'`, `mode='paper'`, real published/available times) and is
+written like an injected demo run, in one transaction with its feed row: `trading.agent_runs`,
+`core.disclosures.run_id` + classification, proposal + pending card (`prop-live-<index>`), today's LLM
+counters, the audit outcome. After commit its SSE events go out at once (node/crew/classification/
+`approval.requested`/done/counters), so the panel shows it through the existing `/runs`, `/approvals`
+and `/stream/*` endpoints. The stream entry is **acknowledged only after that commit**; on start the
+worker reads its own pending entries first and `XAUTOCLAIM`s entries idle > 5 min. A redelivered entry
+of a persisted run is just acknowledged.
+
+**Checkpointer** (`CHECKPOINTER=memory|postgres`, default `memory`): `memory` stays the default because
+the unit tests compile the graph without a database and replay must stay byte-identical; nothing else
+changes with `postgres`. Postgres uses `langgraph-checkpoint-postgres`'s `AsyncPostgresSaver` on its own
+small pool with `search_path=agent_ckpt`. Migration 0010 (owner role) creates the tables with the
+library's own `setup()` statements and versions, so the app role needs no DDL; at start-up the saver only
+checks the version (a newer library version → `setup()`, or a clear "apply it as the owner" error).
+The thread id of a live run is its run id, so a run that died mid-graph continues from its last
+super-step (the analysts' LLM calls are not paid again), and a run parked at `approval` survives a
+restart. **Settling** (worker start + every minute): a parked run whose card was approved/rejected is
+resumed with that decision, one past `expires_at` (or cancelled) is resumed with `expire` and its card
+marked `expired`; then the run is `completed`. With `memory` a restart loses the thread and the run is
+closed without a resume (`reason = "<decision>:no_checkpoint"`). Still in-memory: the demo timers in the
+API (SimBIST fill 1.8 s after an approval, run animation, loss simulation, live ticker); a restart drops
+a pending fill (the order stays `accepted`).
+
+Tests: `tests/integration/test_feed.py` (fake disclosures, replay LLM: idempotency, skipping, caps,
+ack/replay after a crash, settling, the worker loop) and `tests/integration/test_checkpoint_postgres.py`
+(resume after a simulated restart, a mid-graph crash that continues without re-calling the analysts).
+
+## RAG: the disclosure archive (M2, `kaptan.rag`)
+
+Earlier KAP disclosures, found by hybrid search, for the analysts ("benzer geçmiş bildirimler").
+One table, `rag.rag_chunks` (migration 0012, 07 §9: `base_type='disclosure_archive'`; event memory and
+regulation come later), with an HNSW index (cosine) on `embedding vector(1024)`, a `turkish` `tsvector`
+and a `pg_trgm` index on `content_norm`.
+
+| Piece | What it does |
+|---|---|
+| `config/rag.yaml` | pinned embedding model **`gemini-embedding-001`** (version `001`), `outputDimensionality` **1024** (Matryoshka, then L2-normalised; bge-m3's size), chunker and RRF knobs |
+| `rag/embed.py` | `Embedder` protocol. `CachedEmbedder` = the choke point: person names masked (`mask_persons`, as in the LLM chain), Redis cache (model+version+dim+task+text hash, 30 days), daily caps `RAG_EMBED_CAP_RPD` (500 batch calls) / `RAG_EMBED_CAP_TPD` (1.5 M est. tokens), batches of `RAG_EMBED_BATCH` (16), ≥ `RAG_EMBED_MIN_INTERVAL_S` apart. Backends: Gemini `batchEmbedContents` (key in `x-goog-api-key`), and a deterministic fake (hashed Turkish 5-prefix stems, no network) for tests/replay (`RAG_EMBEDDER=fake`). |
+| `rag/chunking.py` | 07 §11.1: header `[TICKER \| date \| subject \| class \| kap:idx]` on every chunk; KAP form boilerplate dropped; ≤ 500 est. tokens = one chunk, else paragraph units packed to 400 (max 700) with a one-unit overlap; sentence splitting knows "A.Ş.", "Ltd. Şti.", "vb.", "1.234,56", "16.10.2026" |
+| `rag/index.py` | backfill CLI + ingest hook; idempotent (`content_sha256` + embedder version), stale chunks removed, each vector stores `embed_model` + `embed_version` |
+| `rag/hybrid.py` | `similar_disclosures(conn, embedder, as_of=…, text=… \| disclosure_index=…, k, ticker, event_type)`: dense + `turkish` full text (OR of the query's terms) + trigram (short queries), RRF k=60 per disclosure. **No look-ahead:** every leg filters `published_at < as_of AND available_at <= as_of`; only vectors of the running model are compared; the query disclosure is excluded |
+| `rag/agent_context.py` | `attach_similar(conn, ctx)`: fills `RunContext.similar` (agents/context.py) with `as_of` = the disclosure's `available_at`; the reader, materiality, evidence and skeptic prompts get `similar_disclosures` in TASK_CONTEXT (ref_id `doc:<idx>:<chunk>`, ticker, event type, subject, date, citation `kap:<idx> (<date>)`, score; never the snippet text). **Live mode only** (`provider.name == "live"`, `RAG_CONTEXT_K`, default 5, 0 = off); replay never calls it, so replay stays byte-identical. A failure leaves the context unchanged. |
+
+```bash
+uv run alembic upgrade head                                       # 0012: rag.rag_chunks
+uv run python -m kaptan.rag.index --since 2026-10-15 --dry-run    # chunk counts, no embedding
+uv run python -m kaptan.rag.index --since 2026-10-15              # RAG_EMBEDDER (default gemini)
+uv run python -m kaptan.rag.index --since 2025-01-01 --until 2025-02-01 --summaries --embedder fake
+```
+
+Exit codes: 0 done, 2 embedder unavailable (no key), 3 stopped by a cap or a provider error (rerun: resumes).
+
+**Ingest hook (for the KAP → worker feed):** `from kaptan.rag.index import index_new_disclosures` and
+`await index_new_disclosures(conn, [disclosure_index, ...])` after `core.disclosure_texts` is written.
+Off unless `RAG_INDEX_ON_INGEST=true`; never raises (returns `IndexStats`, errors logged without text);
+works inside the caller's transaction (savepoint). A context builder for live runs calls
+`ctx = await kaptan.rag.agent_context.attach_similar(conn, ctx)` (`agents/scenario.build_context` does).
+
+**Eval** (offline, committed fixtures: 11 recorded texts + ~430 header/summary distractors of the two
+recorded days; 13 hand-labelled queries: 9 disclosure→disclosure pairs, 4 Turkish text queries):
+`uv run python scripts/rag_eval.py [--embedder gemini --no-distractors]` (test database; ~2 embedding calls live).
+
+| Corpus / embedder | leg set | recall@1 | recall@3 | recall@5 | MRR |
+|---|---|---|---|---|---|
+| 11 texts, Gemini | hybrid | 0.718 | 0.949 | 1.000 | 1.000 |
+| 11 texts, Gemini | dense | 0.718 | 1.000 | 1.000 | 1.000 |
+| 11 texts, any embedder | fts | 0.679 | 0.833 | 1.000 | 0.962 |
+| 11 texts, fake | hybrid | 0.679 | 0.872 | 0.962 | 0.962 |
+| + distractors, fake | hybrid | 0.615 | 0.692 | 0.731 | 0.769 |
+
+recall@1 cannot exceed 0.718 (several queries have 2–3 relevant disclosures). With distractors the
+"misses" are same-subject disclosures without a fetched text (unlabelled but relevant): same-event
+precision@1 is 1.0. Tests: `tests/unit/test_rag_*.py`, `tests/integration/test_rag_db.py` (fake
+embedder; no-look-ahead to the second). Live smoke test (2 embedding calls):
+`uv run pytest -m live tests/integration/test_rag_live.py`.

@@ -88,6 +88,22 @@ class Settings(BaseSettings):
     #: Minimum gap between two price-source requests (İş Yatırım / Yahoo), seconds.
     prices_min_interval_s: float = Field(default=2.0, ge=0.5)
 
+    #: RAG (M2, kaptan.rag): embedder of the disclosure archive (model + size in config/rag.yaml).
+    rag_embedder: Literal["gemini", "fake"] = "gemini"
+    #: "Benzer geçmiş bildirimler" in the analysts' TASK_CONTEXT: LLM_MODE=live only; 0 = off.
+    rag_context_k: int = Field(default=5, ge=0, le=10)
+    #: `kaptan.rag.index.index_new_disclosures` (the ingest hook) does nothing unless this is on.
+    rag_index_on_ingest: bool = False
+    rag_embed_cap_rpd: int = Field(default=500, ge=0)  # batch calls per UTC day (gemini-embedding-001 free tier)
+    rag_embed_cap_tpd: int = Field(default=1_500_000, ge=0)  # estimated input tokens per UTC day
+    rag_embed_batch: int = Field(default=16, ge=1, le=100)
+    rag_embed_min_interval_s: float = Field(default=1.0, ge=0)
+
+    #: LangGraph checkpointer: memory (default, M1 behaviour) | postgres (AsyncPostgresSaver, migration 0010).
+    checkpointer: Literal["memory", "postgres"] = "memory"
+    #: KAP → agent worker (kaptan.workers.agent_worker): LLM-spending runs allowed per rolling hour.
+    agent_max_runs_per_hour: int = Field(default=6, ge=0)
+
     cookie_secure: bool = True
     allowed_origins: Annotated[list[str], NoDecode] = Field(default_factory=list)
 

@@ -3,7 +3,7 @@
 - Unit tests need nothing running.
 - Integration tests (`pytest.mark.integration` or the `pg` / `client` fixtures) migrate and seed the
   compose Postgres *test* database (TEST_DATABASE_URL / TEST_DATABASE_OWNER_URL); they are skipped
-  when it is unreachable. Never the dev database.
+  when it is unreachable (CI sets KAPTAN_REQUIRE_SERVICES=1 to fail instead). Never the dev database.
 - `client` is an httpx client on the ASGI app (lifespan on), base URL https so Secure cookies flow.
 - psycopg async needs a selector loop on Windows: see `pytest_asyncio_loop_factories`.
 """
@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from typing import Any
@@ -34,6 +35,13 @@ TEST_JWT_SECRET = "test-only-jwt-secret-0123456789-abcdefghijklmnop"
 DEMO_PASSPHRASE = "kaptan2026"
 
 
+def skip_or_fail(reason: str) -> None:
+    """Skip a test that needs Postgres, unless KAPTAN_REQUIRE_SERVICES=1 (CI): there a missing database fails."""
+    if os.environ.get("KAPTAN_REQUIRE_SERVICES") == "1":
+        pytest.fail(f"{reason} (KAPTAN_REQUIRE_SERVICES=1)")
+    pytest.skip(reason)
+
+
 def pytest_asyncio_loop_factories(config: pytest.Config, item: pytest.Item) -> dict[str, Any]:
     """Every async test and fixture runs on a selector loop (psycopg async refuses Proactor on Windows)."""
     return {"selector": selector_loop_factory()}
@@ -43,7 +51,7 @@ def pytest_asyncio_loop_factories(config: pytest.Config, item: pytest.Item) -> d
 def test_settings() -> Settings:
     base = get_settings()
     if base.test_database_url is None or base.test_database_owner_url is None:
-        pytest.skip("TEST_DATABASE_URL / TEST_DATABASE_OWNER_URL not configured")
+        skip_or_fail("TEST_DATABASE_URL / TEST_DATABASE_OWNER_URL not configured")
     return base.model_copy(
         update={
             "kaptan_env": "dev",
@@ -74,7 +82,7 @@ def migrated(test_settings: Settings) -> Settings:
         with psycopg.connect(owner.get_secret_value(), connect_timeout=3):
             pass
     except psycopg.OperationalError as exc:
-        pytest.skip(f"compose Postgres unreachable: {exc}")
+        skip_or_fail(f"compose Postgres unreachable: {exc}")
     cfg = Config(str(BACKEND / "alembic.ini"))
     cfg.cmd_opts = argparse.Namespace(x=["db=test"])
     command.upgrade(cfg, "head")

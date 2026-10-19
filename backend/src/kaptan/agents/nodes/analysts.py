@@ -1,11 +1,16 @@
 """The six LLM agents (05 §4): Classifier, Reader ‖ Materiality ‖ Evidence (Send fan-out), Skeptic,
 Compliance. Each asks the provider once, schema-checks the answer and returns a document; none of
 them computes a ratio or decides a trade (06 §0: "LLM hiçbir oranı hesaplamaz").
+
+Live (`kaptan.evidence.LiveToolbox`): Materiality and Evidence first run the deterministic tools; the
+models then only cite tool facts / offered past events, and the code overwrites every number they
+report. Replay never takes that branch.
 """
 
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 from typing import Any, Final
 
 from langgraph.runtime import Runtime
@@ -25,6 +30,9 @@ from kaptan.domain.schemas.agents import (
     MaterialityOutput,
     SkepticOutput,
 )
+from kaptan.evidence.card import ground_materiality, ground_selection
+from kaptan.evidence.toolbox import LiveToolbox, live_tools
+from kaptan.llm.task_context import task_context
 
 EVENT_TYPES: Final = ("E1", "E2", "E3", "E4")
 READER_SCHEMAS: Final[dict[str, type[BaseModel]]] = {
@@ -88,15 +96,36 @@ async def reader(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, 
 
 
 async def materiality(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, Any]:
+    """Picks the reference numbers; live, the tools supply them and overwrite every value it reports."""
     ctx = runtime.context
+    live = live_tools(ctx.tools)
+    if live is not None:
+        return await _live_materiality(state, ctx, live)
     out, row = await ask_or_fail(ctx, "materiality", MaterialityOutput, group=FANOUT_GROUP, state=state)
+    return {"materiality": out, "steps": [row], "llm_calls": _called(out)}
+
+
+async def _live_materiality(state: KaptanState, ctx: RunContext, live: LiveToolbox) -> dict[str, Any]:
+    event_type = str(state.get("event_type"))
+    await live.prepare(event_type)
+    view = replace(ctx, tools=live.prompt_view())  # TASK_CONTEXT.market_data = every tool fact
+    out, row = await ask_or_fail(view, "materiality", MaterialityOutput, group=FANOUT_GROUP, state=state)
+    if out is not None:
+        offered = task_context("materiality", state, view)["market_data"]
+        allowed = {r["ref_id"]: r["value"] for r in offered}
+        out = ground_materiality(out, event_type, ctx.disclosure.ticker, live.market_facts(), allowed)
     return {"materiality": out, "steps": [row], "llm_calls": _called(out)}
 
 
 async def evidence(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, Any]:
     """Selects similar past events without seeing their returns; the statistics come later (merge)."""
     ctx = runtime.context
+    live = live_tools(ctx.tools)
+    if live is not None:
+        await live.prepare(str(state.get("event_type")))
     out, row = await ask_or_fail(ctx, "evidence", EvidenceSelection, group=FANOUT_GROUP, state=state)
+    if live is not None and out is not None:
+        out = ground_selection(out, live.evidence_store(ctx.disclosure.fingerprint), ctx.disclosure.ticker)
     return {"evidence_selection": out, "steps": [row], "llm_calls": _called(out)}
 
 

@@ -24,6 +24,7 @@ from kaptan.ingest.kap_backfill import backfill, refresh_members
 from kaptan.ingest.kap_client import KapBlockedError, KapError
 from kaptan.ingest.kap_poller import KapPoller, PollConfig
 from kaptan.settings import Settings
+from tests.conftest import skip_or_fail
 from tests.ingest_support import DAY_15, DAY_16, FakeKap, list_main
 
 pytestmark = pytest.mark.integration
@@ -65,7 +66,7 @@ async def redis(migrated: Settings) -> AsyncIterator[aioredis.Redis]:
     try:
         await client.ping()
     except Exception as exc:
-        pytest.skip(f"redis unreachable: {exc}")
+        skip_or_fail(f"redis unreachable: {exc}")
     yield client
     await client.aclose()
 

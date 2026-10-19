@@ -27,6 +27,8 @@ from kaptan.ingest import repo
 from kaptan.ingest.detail_fetcher import fetch_one
 from kaptan.ingest.kap_client import KapBlockedError, KapClient, KapError
 from kaptan.ingest.kap_poller import EMPTY_BACKOFF_S, KapPoller, PollConfig, next_delay
+from kaptan.ingest.publish import publish_to_agents
+from kaptan.rag.index import index_new_disclosures
 from kaptan.settings import Settings, get_settings
 
 log = logging.getLogger("kaptan.workers.ingest")
@@ -78,10 +80,26 @@ async def poll_loop(
         await sleep(stop, next_delay(poller.now(), poller.cfg, failures, rand()))
 
 
-async def detail_loop(pool: Any, client: KapClient, stop: asyncio.Event, *, sleep: Sleep = wait_or_stop) -> None:
+async def detail_loop(
+    pool: Any,
+    client: KapClient,
+    stop: asyncio.Event,
+    *,
+    sleep: Sleep = wait_or_stop,
+    redis: Any = None,
+    rag_index: bool = False,
+) -> None:
+    async def text_ready(idx: int) -> None:
+        if rag_index:  # RAG_INDEX_ON_INGEST: index the text first, so the run the feed starts can be found later
+            async with pool.connection() as conn:
+                await index_new_disclosures(conn, [idx])
+        if redis is not None:  # the agent feed's `text` stage (outside DEMO_MODE only)
+            await publish_to_agents(redis, [idx], stage="text")
+
+    on_stored = text_ready if redis is not None or rag_index else None
     while not stop.is_set():
         try:
-            idx = await fetch_one(pool, client)
+            idx = await (fetch_one(pool, client) if on_stored is None else fetch_one(pool, client, on_stored=on_stored))
         except KapBlockedError as exc:
             log.warning("detail fetch: WAF/back-off signal (%s); pausing", exc)
             await sleep(stop, EMPTY_BACKOFF_S[-1])
@@ -116,7 +134,13 @@ async def run_worker(settings: Settings, stop: asyncio.Event | None = None) -> i
             poller = KapPoller(pool=pool, client=client, cfg=PollConfig.from_settings(settings), redis=redis)
             loops = [asyncio.create_task(poll_loop(poller, stop), name="kap-poll")]
             if settings.kap_fetch_details:
-                loops.append(asyncio.create_task(detail_loop(pool, client, stop), name="kap-detail"))
+                feed = None if settings.demo_mode else redis
+                loops.append(
+                    asyncio.create_task(
+                        detail_loop(pool, client, stop, redis=feed, rag_index=settings.rag_index_on_ingest),
+                        name="kap-detail",
+                    )
+                )
             log.info(
                 "KAP ingest worker started (demo_mode=%s, details=%s)", settings.demo_mode, settings.kap_fetch_details
             )

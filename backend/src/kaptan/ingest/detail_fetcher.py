@@ -8,7 +8,7 @@ re-queues the row for 10 min and propagates `KapBlockedError` so the worker paus
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any, Final
 
@@ -41,9 +41,14 @@ def reason_from(parsed: dict[str, Any] | None) -> str | None:
 
 
 async def fetch_one(
-    pool: Any, client: KapClient, now: Callable[[], datetime] = lambda: datetime.now(UTC)
+    pool: Any,
+    client: KapClient,
+    now: Callable[[], datetime] = lambda: datetime.now(UTC),
+    on_stored: Callable[[int], Awaitable[Any]] | None = None,
 ) -> int | None:
-    """Process the next due queue row. Returns its index, or None when nothing is due."""
+    """Process the next due queue row. Returns its index, or None when nothing is due.
+
+    `on_stored(index)` runs after the text is committed (the agent feed's `text` stage)."""
     async with pool.connection() as conn:
         async with conn.transaction():
             job = await repo.claim_detail(conn, now())
@@ -68,4 +73,6 @@ async def fetch_one(
             log.warning("detail %s: parser failed (%s)", idx, parsed.get("error") or parsed.get("kind"))
         async with conn.transaction():
             await repo.store_detail(conn, detail, parsed, reason_from(parsed))
-        return idx
+    if on_stored is not None:
+        await on_stored(idx)
+    return idx
