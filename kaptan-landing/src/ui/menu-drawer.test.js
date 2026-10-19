@@ -26,7 +26,7 @@ describe('createMenuDrawer', () => {
     return createMenuDrawer({ mount, site: SITE, lockScroll: vi.fn(), unlockScroll: vi.fn(), scrollTo, openDemo });
   }
 
-  it('renders the wordmark, the contents in chapter order and the course meta', () => {
+  it('renders the wordmark, the contents in chapter order and the meta line', () => {
     const overlay = mountDrawer();
     expect(mount.querySelector('.menu-drawer__logo use').getAttribute('href')).toBe('#kaptan-logo');
     expect(overlay.panel.getAttribute('aria-labelledby')).toBe('menu-drawer-title');
@@ -45,7 +45,7 @@ describe('createMenuDrawer', () => {
     expect(first.querySelector('.menu-drawer__leader').getAttribute('aria-hidden')).toBe('true');
     expect(first.querySelector('.menu-drawer__entry-label').textContent).toBe('Bölüm 1');
     const meta = [...mount.querySelectorAll('.menu-drawer__meta')].map((p) => p.textContent);
-    expect(meta).toEqual(['KAPtan · SENG 429 · Çankaya Üniversitesi · © 2026']);
+    expect(meta).toEqual(['KAPtan · © 2026']);
   });
 
   it('renders a "Altı adımda" pill that closes the menu and opens the demo drawer', () => {

@@ -1,5 +1,5 @@
-// The "Yasal uyarı" modal (footer): what this page is and is not — a course project, not investment
-// advice, not affiliated with KAP / Borsa İstanbul / SPK, no signals shared, no personal data.
+// The "Yasal uyarı" modal (footer): what this page is and is not — not affiliated
+// with KAP / Borsa İstanbul / SPK, no signals shared, no personal data.
 
 import { h } from './dom.js';
 import { createOverlay } from './overlay.js';
@@ -7,14 +7,6 @@ import { createOverlay } from './overlay.js';
 const TITLE_ID = 'legal-modal-title';
 
 export const LEGAL_SECTIONS = Object.freeze([
-  {
-    heading: 'Ders projesi',
-    body: 'KAPtan, Çankaya Üniversitesi SENG 429 dersi kapsamında geliştirilen bir öğrenci projesidir. Ticari bir ürün ya da hizmet değildir.',
-  },
-  {
-    heading: 'Yatırım tavsiyesi değildir',
-    body: 'Bu sitedeki hiçbir içerik yatırım tavsiyesi, alım-satım önerisi ya da getiri vaadi değildir. Otomatik emir yoktur; beklenti sıfır da olabilir.',
-  },
   {
     heading: 'Bağlantı yok',
     body: 'Proje; Kamuyu Aydınlatma Platformu (KAP), Borsa İstanbul ve Sermaye Piyasası Kurulu (SPK) ile bağlantılı değildir, onlar tarafından onaylanmamıştır.',

@@ -7,17 +7,13 @@ import { buildStructuredData, serializeJsonLd, structuredData } from './structur
 describe('buildStructuredData', () => {
   const data = buildStructuredData(SITE, AGENTS);
 
-  it('describes the project as a CreativeWork, part of the SENG 429 course', () => {
+  it('describes the project as a CreativeWork, with no course or disclaimer', () => {
     expect(data['@context']).toBe('https://schema.org');
     expect(data['@type']).toBe('CreativeWork');
     expect(data.name).toBe('KAPtan');
     expect(data.inLanguage).toBe('tr-TR');
-    expect(data.description).toMatch(/Yatırım tavsiyesi değildir/);
-    expect(data.isPartOf).toMatchObject({
-      '@type': 'Course',
-      courseCode: 'SENG 429',
-      provider: { '@type': 'CollegeOrUniversity', name: 'Çankaya Üniversitesi' },
-    });
+    expect('isPartOf' in data).toBe(false);
+    expect(JSON.stringify(data)).not.toMatch(/ders projes|öğrenci projes|SENG 429|Enterprise Application|Çankaya|Avenoğlu|Güz 2026|Pzt 13:20|MB06|yatırım tavsiyesi/i);
   });
 
   it('uses the 1280×853 og image under the site url', () => {

@@ -25,11 +25,10 @@ describe('createLegalModal', () => {
     expect(headings).toEqual(LEGAL_SECTIONS.map((section) => section.heading));
   });
 
-  it('covers the four brief red lines: course project, not advice, no affiliation, no signals', () => {
+  it('covers no affiliation, no signals and no personal data, with no course text or disclaimer', () => {
     createLegalModal({ mount });
     const text = mount.textContent;
-    expect(text).toMatch(/dersi kapsamında/);
-    expect(text).toMatch(/yatırım tavsiyesi/);
+    expect(text).not.toMatch(/ders projes|öğrenci projes|SENG 429|Enterprise Application|Çankaya|Avenoğlu|Güz 2026|Pzt 13:20|MB06|yatırım tavsiyesi/i);
     expect(text).toMatch(/KAP.*Borsa İstanbul.*SPK/s);
     expect(text).toMatch(/paylaşılmaz/);
     expect(text).toMatch(/kişisel veri toplamaz/);

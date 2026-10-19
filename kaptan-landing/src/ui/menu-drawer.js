@@ -1,6 +1,6 @@
 // "İçindekiler": the header's table of contents, set as the contents page of the book — each
 // chapter's title in Bodoni, a dotted leader, its chapter label on the right — then an ink button
-// on to the demo flow and the course meta line.
+// on to the demo flow and the meta line.
 
 import { h } from './dom.js';
 import { createOverlay } from './overlay.js';
@@ -75,7 +75,7 @@ export function createMenuDrawer({ mount, site, lockScroll, unlockScroll, scroll
     'div',
     { class: 'menu-drawer__footer' },
     ctaButton,
-    h('p', { class: 'menu-drawer__meta' }, `${site.name} · ${site.course.code} · ${site.course.university} · © 2026`),
+    h('p', { class: 'menu-drawer__meta' }, `${site.name} · © 2026`),
   );
 
   overlay.panel.appendChild(h('div', { class: 'menu-drawer__content' }, header, title, nav, footer));

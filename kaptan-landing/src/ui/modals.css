@@ -53,28 +53,6 @@
   line-height: 1.4;
 }
 
-/* Course facts: label | value on ruled rows, like the imprint page of a book. */
-.about-modal__facts {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  margin: 0;
-  font-size: var(--text-body-sm);
-  font-variant-numeric: tabular-nums;
-  border-bottom: 1.5px solid var(--color-rule-soft);
-}
-
-.about-modal__facts dt,
-.about-modal__facts dd {
-  margin: 0;
-  padding: var(--space-xs) 0;
-  border-top: 1.5px solid var(--color-rule-soft);
-}
-
-.about-modal__facts dt {
-  padding-right: var(--space-lg);
-  color: var(--color-muted);
-}
-
 /* Styled by the shared .pill (base.css); this only places it. */
 .about-modal__explore {
   align-self: flex-start;

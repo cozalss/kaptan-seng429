@@ -8,7 +8,6 @@ import { Button } from "./button";
 import { Arrow } from "./arrow";
 import { MENU_CONTENT, MENU_ITEM } from "./menu";
 import { Wordmark } from "@/components/brand/marks";
-import { Disclaimer, DISCLAIMER_TR } from "@/components/brand/disclaimer";
 
 describe("dialog", () => {
   it("opens with an accessible name and returns focus on Escape", async () => {
@@ -46,7 +45,7 @@ describe("dialog", () => {
 });
 
 describe("primitives", () => {
-  it("renders skeletons, the error box, fields, the mark and the disclaimer", () => {
+  it("renders skeletons, the error box, fields, and the mark", () => {
     const retry = vi.fn();
     render(
       <>
@@ -60,7 +59,6 @@ describe("primitives", () => {
           <a href="/x">bağlantı</a>
         </Button>
         <Wordmark />
-        <Disclaimer />
       </>,
     );
     expect(screen.getByRole("status", { name: "Yükleniyor" })).toBeInTheDocument();
@@ -69,7 +67,6 @@ describe("primitives", () => {
     expect(screen.getByRole("textbox", { name: "lot" })).toHaveValue("620");
     expect(screen.getByRole("link", { name: "bağlantı" })).toHaveAttribute("href", "/x");
     expect(screen.getByRole("img", { name: "KAPtan" })).toBeInTheDocument();
-    expect(screen.getByText(DISCLAIMER_TR, { exact: false })).toBeInTheDocument();
   });
 });
 

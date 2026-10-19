@@ -73,12 +73,12 @@ describe('#olaylar: filters and honesty', () => {
     ].forEach((fact) => expect(filters).toContain(fact));
   });
 
-  it('keeps the footnote: buy-only, no leverage, 0 to +5 %, a human approves, not investment advice', () => {
+  it('keeps the footnote: buy-only, no leverage, 0 to +5 %, a human approves, no disclaimer', () => {
     const note = squash(section.querySelector('#rules-note').textContent);
     expect(note).toContain('Yalnızca alım; kaldıraç yok.');
     expect(note).toContain('BIST-100’e göre yılda 0 ile +%5');
     expect(note).toMatch(/otomatik emir yok/i);
-    expect(note).toContain('Yatırım tavsiyesi değildir.');
+    expect(note).not.toMatch(/yatırım tavsiyesi/i);
   });
 
   it('never says "al", "kazandırır" or "garanti"', () => {

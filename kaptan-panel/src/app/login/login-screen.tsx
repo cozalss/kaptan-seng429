@@ -1,6 +1,5 @@
 import type { Role } from "@/lib/domain/role-meta";
 import { Wordmark } from "@/components/brand/marks";
-import { DISCLAIMER_TR } from "@/components/brand/disclaimer";
 import { LoginForm } from "./login-form";
 
 /** What the product does, in the words a buyer checks first. */
@@ -9,7 +8,7 @@ const ASSURANCES = ["İki imzalı onay", "Doğrulanabilir denetim defteri", "Tek
 /**
  * The sign-in screen (/login and /login/<rol>): the product on the left (logo, name, one
  * line on what it does, three assurances), the sign-in card on the right, and a small footer
- * with the way back to the landing page and the disclaimer. One column on a phone.
+ * with the way back to the landing page. One column on a phone.
  */
 export function LoginScreen({ next, initialRole }: { next: string | null; initialRole: Role }) {
   return (
@@ -52,7 +51,6 @@ export function LoginScreen({ next, initialRole }: { next: string | null; initia
             </span>
             Tanıtım sayfası
           </a>
-          <p className="max-w-[90ch] text-meta text-ink-soft">{DISCLAIMER_TR}</p>
         </div>
       </footer>
     </div>

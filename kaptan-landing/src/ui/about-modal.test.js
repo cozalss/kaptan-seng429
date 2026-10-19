@@ -3,7 +3,6 @@ import { SITE } from '../config/site.js';
 
 describe('createAboutModal', () => {
   let createAboutModal;
-  let courseFacts;
   let mount;
   let scrollTo;
 
@@ -17,33 +16,27 @@ describe('createAboutModal', () => {
     `;
     mount = document.getElementById('overlays');
     scrollTo = vi.fn();
-    ({ createAboutModal, courseFacts } = await import('./about-modal.js'));
+    ({ createAboutModal } = await import('./about-modal.js'));
   });
 
   function mountModal() {
     return createAboutModal({ mount, site: SITE, lockScroll: vi.fn(), unlockScroll: vi.fn(), scrollTo });
   }
 
-  it('renders the title, two paragraphs and the course facts', () => {
+  it('renders the title and the product paragraph, with no course facts', () => {
     mountModal();
     expect(mount.querySelector('.about-modal__title').textContent).toBe('Proje hakkında');
-    expect(mount.querySelectorAll('.about-modal__paragraph')).toHaveLength(2);
-    const terms = [...mount.querySelectorAll('.about-modal__facts dt')].map((dt) => dt.textContent);
-    expect(terms).toEqual(['Ders', 'Üniversite', 'Öğretim üyesi', 'Dönem']);
-    expect(mount.textContent).toContain('SENG 429 · Enterprise Application Development Lab');
-    expect(mount.textContent).toContain('Güz 2026 · Pzt 13:20 · MB06');
+    expect(mount.querySelectorAll('.about-modal__paragraph')).toHaveLength(1);
+    expect(mount.querySelector('.about-modal__facts')).toBeNull();
+    expect(mount.querySelector('dl')).toBeNull();
   });
 
-  it('states the principle and the disclaimer, and makes no performance claims', () => {
+  it('states the principle, carries no course text or disclaimer, and makes no performance claims', () => {
     mountModal();
     const text = mount.textContent;
     expect(text).toMatch(/kurallar karar verir, insan onaylar/);
-    expect(text).toMatch(/yatırım tavsiyesi değildir/);
+    expect(text).not.toMatch(/ders projes|öğrenci projes|SENG 429|Enterprise Application|Çankaya|Avenoğlu|Güz 2026|Pzt 13:20|MB06|yatırım tavsiyesi/i);
     expect(text.toLowerCase()).not.toMatch(/ödül|garanti|en iyi|kazandır/);
-  });
-
-  it('courseFacts pairs every label with a value', () => {
-    expect(courseFacts(SITE.course).every(([label, value]) => label && value)).toBe(true);
   });
 
   it('"Ajanları gör" closes the modal then scrolls to #ajanlar', () => {

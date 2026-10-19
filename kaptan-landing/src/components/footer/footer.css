@@ -48,13 +48,6 @@
   color: var(--color-ink);
 }
 
-.colophon__facts {
-  margin-top: 22px;
-  font-size: var(--text-body-md);
-  line-height: 1.6;
-  font-variant-numeric: tabular-nums;
-}
-
 .colophon__type {
   margin-top: 14px;
   font-size: var(--text-body-sm);

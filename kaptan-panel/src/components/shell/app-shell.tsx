@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { DEMO_MODE } from "@/lib/api/config";
 import { ApiProvider } from "@/lib/api/react";
 import { SessionProvider, type SessionUser } from "@/lib/auth/session-context";
-import { Disclaimer } from "@/components/brand/disclaimer";
 import { Toaster } from "@/components/ui/toast";
 import { GuidedDemo } from "@/components/demo/guided-demo";
 import { RiskBanner } from "./banners";
@@ -32,7 +31,7 @@ function useRouteFocus(pathname: string) {
 
 /**
  * The panel's frame: a white top bar (KAPtan · Bugün · Portföy · Denetim · account), one
- * calm column (~720 px) for the screen, the required disclaimer under it, the guided-tour bar
+ * calm column (~720 px) for the screen, the guided-tour bar
  * when it is running, and the toasts.
  */
 export function AppShell({ user, children }: { user: SessionUser; children: ReactNode }) {
@@ -55,9 +54,6 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
               </div>
             </ResetBoundary>
           </main>
-          <div className="mx-auto w-full max-w-[752px] px-4 sm:px-6">
-            <Disclaimer />
-          </div>
           {DEMO_MODE ? <GuidedDemo /> : null}
           <Toaster />
         </DeskStateProvider>

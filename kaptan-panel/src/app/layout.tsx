@@ -28,7 +28,7 @@ const inter = localFont({
 
 export const metadata: Metadata = {
   title: { default: "KAPtan Paneli", template: "%s · KAPtan Paneli" },
-  description: "KAPtan yatırım masası paneli — SENG 429 ders projesi. Yatırım tavsiyesi değildir.",
+  description: "KAPtan yatırım masası paneli.",
   robots: { index: false, follow: false },
   applicationName: "KAPtan Paneli",
 };

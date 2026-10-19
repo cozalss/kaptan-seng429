@@ -1,21 +1,11 @@
 // Vite plugin: injects schema.org JSON-LD for the project page into index.html at dev and build
-// time. KAPtan is a course project, not a product or a financial service, so it is published as a
-// CreativeWork that is part of the SENG 429 course. No ratings, offers or prices.
+// time. KAPtan is published as a CreativeWork: no ratings, offers or prices.
 
 import { SITE } from '../src/config/site.js';
 import { AGENTS } from '../src/data/agents.js';
 
 const PLACEHOLDER_URL = 'https://www.example.com/'; // PLACEHOLDER: set SITE.url before publishing
 const OG_IMAGE = '/images/generated/og-1280.jpg';
-
-function buildCourse(course) {
-  return {
-    '@type': 'Course',
-    courseCode: course.code,
-    name: course.title,
-    provider: { '@type': 'CollegeOrUniversity', name: course.university },
-  };
-}
 
 /**
  * Pure: builds the CreativeWork JSON-LD object.
@@ -36,7 +26,6 @@ export function buildStructuredData(site, agents = AGENTS) {
     image: new URL(OG_IMAGE, url).href,
     isAccessibleForFree: true,
     keywords: ['KAP', 'BIST', 'çok ajanlı yapay zekâ', 'RAG', ...agents.map((agent) => agent.name)].join(', '),
-    isPartOf: buildCourse(site.course),
     ...(sameAs.length > 0 ? { sameAs } : {}),
   };
 }

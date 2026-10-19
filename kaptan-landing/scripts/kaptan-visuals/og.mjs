@@ -159,7 +159,7 @@ function captionPanel() {
     rect(x, y, w, h, { fill: PANEL, stroke: SUMI, 'stroke-width': 2.4 }),
     text(x + 26, y + 50, 'Yapay zekâ okur, kurallar karar verir,', { family: SANS, size: 29, weight: 500, fill: SUMI }),
     text(x + 26, y + 88, 'insan onaylar.', { family: SANS, size: 29, weight: 500, fill: SUMI }),
-    text(x + 26, y + 120, 'SENG 429 ders projesi · Temsili · Yatırım tavsiyesi değildir.', { family: SANS, size: 17, fill: MUTED }),
+    text(x + 26, y + 120, 'Otomatik emir yok.', { family: SANS, size: 17, fill: MUTED }),
   ]);
 }
 

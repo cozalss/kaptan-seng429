@@ -89,7 +89,7 @@ describe("banners", () => {
 });
 
 describe("app shell", () => {
-  it("frames a screen with the top bar, disclaimer, and a slip for proposals arriving elsewhere", async () => {
+  it("frames a screen with the top bar, no course or disclaimer text, and a slip for proposals arriving elsewhere", async () => {
     const db = new MockDb(null);
     __setMockDb(db);
     nav.pathname = "/portfoy";
@@ -99,7 +99,7 @@ describe("app shell", () => {
       </AppShell>,
     );
     expect(screen.getByRole("main")).toHaveTextContent("ekran");
-    expect(screen.getByText(/yatırım tavsiyesi değildir/)).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/yatırım tavsiyesi|ders projesi|SENG 429|Çankaya/);
     await waitFor(() => expect(db.bus.listenerCount("desk")).toBeGreaterThan(0));
     act(() => {
       db.bus.emit("desk", "approval.requested", buildExplain(DEMO_E3_SPEC).approval);

@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/marks";
-import { Disclaimer } from "@/components/brand/disclaimer";
 import { HOME } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
-/** A page that does not exist: the panel's own column, one sentence, one way home, the disclaimer. */
+/** A page that does not exist: the panel's own column, one sentence, one way home. */
 export default function NotFound() {
   return (
     <div className="flex min-h-dvh flex-col bg-paper">
@@ -26,9 +25,6 @@ export default function NotFound() {
           <span aria-hidden>→</span>
         </Link>
       </main>
-      <div className="mx-auto w-full max-w-[752px] px-4 sm:px-6">
-        <Disclaimer />
-      </div>
     </div>
   );
 }

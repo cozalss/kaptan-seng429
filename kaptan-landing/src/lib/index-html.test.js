@@ -72,9 +72,10 @@ describe('index.html content', () => {
     expect(page).not.toMatch(/ÖYKÜ|oyla|oyku|Güzellik|salon|randevu|WhatsApp|wa\.me|KVKK|newsletter|<form|<input/i);
   });
 
-  it('never renders a dead "#" link and states the disclaimer', () => {
+  it('never renders a dead "#" link, keeps the legal link and carries no course text or disclaimer', () => {
     expect(page).not.toMatch(/href="#"/);
-    expect(page).toContain('Yatırım tavsiyesi değildir.');
+    expect(page).not.toMatch(/ders projes|öğrenci projes|SENG 429|Enterprise Application|Çankaya|Avenoğlu|Güz 2026|Pzt 13:20|MB06|yatırım tavsiyesi/i);
+    expect(html).not.toMatch(/ders projes|öğrenci projes|SENG 429|Enterprise Application|Çankaya|Avenoğlu|Güz 2026|Pzt 13:20|MB06|yatırım tavsiyesi/i);
     expect(page).toContain('data-action="open-legal"');
   });
 

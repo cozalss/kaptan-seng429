@@ -148,7 +148,7 @@ export function drawApprovedSlip(doc, height) {
   });
   ctx.font = `${22 * u}px ${SANS}`;
   ctx.fillStyle = INK.muted;
-  ctx.fillText('Otomatik emir yok · yatırım tavsiyesi değildir', pad, h - pad);
+  ctx.fillText('Otomatik emir yok', pad, h - pad);
   inkRect(ctx, inset, inset, w - inset * 2, h - inset * 2, { width: 5 * u, wobble: 1.2 * u, overshoot: 4 * u, seed: 5 });
   return canvas;
 }
