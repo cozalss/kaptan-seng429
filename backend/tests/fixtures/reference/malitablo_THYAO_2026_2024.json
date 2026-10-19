@@ -1,0 +1,115 @@
+{
+ "ok": true,
+ "errorCode": null,
+ "errorDescription": null,
+ "transactionId": "fixture",
+ "value": [
+  {
+   "itemCode": "1A",
+   "itemDescTr": "Dönen Varlıklar",
+   "itemDescEng": "CURRENT ASSETS",
+   "value1": "512191000000",
+   "value2": "485646000000",
+   "value3": "447533961344",
+   "value4": "338882000000"
+  },
+  {
+   "itemCode": "2N",
+   "itemDescTr": "Özkaynaklar",
+   "itemDescEng": "SHAREHOLDERS EQUITY",
+   "value1": "1018453000000",
+   "value2": "966363000000",
+   "value3": "890083542807",
+   "value4": "618691000000"
+  },
+  {
+   "itemCode": "2O",
+   "itemDescTr": "  Ana Ortaklığa Ait Özkaynaklar",
+   "itemDescEng": "Parent Shareholders Capital",
+   "value1": "1018517000000",
+   "value2": "966388000000",
+   "value3": "889919927396",
+   "value4": "618586000000"
+  },
+  {
+   "itemCode": "2OA",
+   "itemDescTr": "  Ödenmiş Sermaye",
+   "itemDescEng": "Share Capital",
+   "value1": "1380000000",
+   "value2": "1380000000",
+   "value3": "1380000000",
+   "value4": "1380000000"
+  },
+  {
+   "itemCode": "3C",
+   "itemDescTr": "Satış Gelirleri",
+   "itemDescEng": "Net Sales",
+   "value1": "585069000000",
+   "value2": "257961000000",
+   "value3": "975710686451",
+   "value4": "551928000000"
+  },
+  {
+   "itemCode": "3DF",
+   "itemDescTr": "FAALİYET KARI (ZARARI)",
+   "itemDescEng": "OPERATING PROFITS",
+   "value1": "-5098000000",
+   "value2": "-2451000000",
+   "value3": "105228269879",
+   "value4": "65355000000"
+  },
+  {
+   "itemCode": "3HCA",
+   "itemDescTr": "Vergi Öncesi Diğer Gelir ve Giderler",
+   "itemDescEng": "Other Income (Expenses) Before Tax",
+   "value1": "41962000000",
+   "value2": "18035000000",
+   "value3": "69163506529",
+   "value4": "40628000000"
+  },
+  {
+   "itemCode": "3L",
+   "itemDescTr": "DÖNEM KARI (ZARARI)",
+   "itemDescEng": "NET PROFIT AFTER TAXES",
+   "value1": "18766000000",
+   "value2": "9856000000",
+   "value3": "148375617139",
+   "value4": "88831000000"
+  },
+  {
+   "itemCode": "3Z",
+   "itemDescTr": "Ana Ortaklık Payları",
+   "itemDescEng": "Parent Shares",
+   "value1": "18864000000",
+   "value2": "9915000000",
+   "value3": "148403104528",
+   "value4": "88866000000"
+  },
+  {
+   "itemCode": "4C",
+   "itemDescTr": " İşletme Faaliyetlerinden Kaynaklanan Net Nakit",
+   "itemDescEng": " Net Cash from Operations",
+   "value1": "74326000000",
+   "value2": "43336000000",
+   "value3": "177463819365",
+   "value4": "158467000000"
+  }
+ ],
+ "_fixture": {
+  "recorded_at": "2026-10-20",
+  "request": "MaliTablo companyCode=THYAO exchange=TRY financialGroup=XI_29",
+  "periods": "2026/6,2026/3,2024/12,2024/9",
+  "trimmed_to": [
+   "1A",
+   "2N",
+   "2O",
+   "2OA",
+   "3C",
+   "3DF",
+   "3HCA",
+   "3L",
+   "3Z",
+   "4C"
+  ]
+ }
+}

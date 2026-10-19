@@ -12,6 +12,7 @@ from typing import Any, Final, Literal
 
 from psycopg import AsyncConnection
 
+from kaptan.portfolio.closing import close_position, initial_stop
 from kaptan.portfolio.marks import (
     PERSONAL_HOLD_SESSIONS,
     add_sessions,
@@ -89,7 +90,9 @@ async def list_positions(conn: AsyncConnection[Any], now: datetime, *, live: boo
 RUN_SQL: Final = """
 SELECT r.ticker, r.event_type, r.strategy_version, r.disclosure_index,
        COALESCE(i.name, r.company_name) AS company_name, i.price AS issuer_price,
-       (tp.doc->>'holding_days_min')::int AS holding_days_min
+       (tp.doc->>'holding_days_min')::int AS holding_days_min,
+       (tp.doc->>'stop_price')::float AS stop_price, (tp.doc->>'ref_price')::float AS ref_price,
+       coalesce(tp.doc->>'side', 'buy') AS side
 FROM trading.agent_runs r
 JOIN trading.trade_proposals tp ON tp.proposal_id = %s AND tp.run_id = r.run_id
 LEFT JOIN core.issuers i ON i.ticker = r.ticker
@@ -98,10 +101,11 @@ WHERE r.run_id = %s
 
 UPSERT_SQL: Final = """
 INSERT INTO trading.positions (book, ticker, company_name, qty, avg_cost, last_price, opened_at,
-  planned_exit_date, source_proposal, run_id, event_type, strategy_version, realized_pnl)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0)
+  planned_exit_date, source_proposal, run_id, event_type, strategy_version, realized_pnl, stop_price, stop_pct)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0, %s, %s)
 ON CONFLICT (book, source_proposal) DO UPDATE SET qty = EXCLUDED.qty, avg_cost = EXCLUDED.avg_cost,
-  last_price = EXCLUDED.last_price, opened_at = EXCLUDED.opened_at, planned_exit_date = EXCLUDED.planned_exit_date
+  last_price = EXCLUDED.last_price, opened_at = EXCLUDED.opened_at, planned_exit_date = EXCLUDED.planned_exit_date,
+  stop_price = EXCLUDED.stop_price, stop_pct = EXCLUDED.stop_pct, stop_moved_at = NULL
 """
 
 
@@ -134,6 +138,13 @@ async def open_position(
         run = await cur.fetchone()
         if run is None:
             raise PositionError(f"no proposal {proposal_id!r} for run {run_id!r}")
+        if run["side"] == "sell":  # an exit (X1–X4): the fill or ticket mark closes the position
+            closed = await close_position(
+                conn, book=book, exit_proposal=proposal_id, qty=qty, price=avg_cost, at=opened_at
+            )
+            if closed is None:
+                raise PositionError(f"exit {proposal_id!r} has no open {book} position")
+            return closed
         if run["event_type"] not in ("E1", "E2", "E3", "E4"):
             raise PositionError(f"run {run_id!r} has no tradable event type")
         sessions = PERSONAL_HOLD_SESSIONS if book == "personal" else int(run["holding_days_min"] or 0)
@@ -164,6 +175,7 @@ async def open_position(
                 run_id,
                 run["event_type"],
                 run["strategy_version"],
+                *initial_stop(avg_cost, run["stop_price"], run["ref_price"]),
             ),
         )
         await cur.execute(ONE_SQL, (book, proposal_id))

@@ -24,6 +24,7 @@ from kaptan.evidence.params import (
 )
 from kaptan.evidence.sessions import event_session, last_known_session
 from kaptan.evidence.study import PastEvent, Series, StudyResult, study
+from kaptan.fundamentals.reads import revenue_as_of
 from kaptan.prices.calendar import FIRST_YEAR, CalendarRangeError, add_sessions, next_session
 from kaptan.prices.reads import adv20
 
@@ -72,7 +73,10 @@ async def load_price_context(
         adv20_try=adv,
         actions=acts,
     )
-    return ctx, materiality_inputs(raw)
+    revenue = await revenue_as_of(conn, ticker, as_of)  # point in time (07 P3); None = unknown
+    return ctx, materiality_inputs(
+        raw, None if revenue is None else revenue.value, None if revenue is None else revenue.period_end
+    )
 
 
 async def study_events(
@@ -89,11 +93,13 @@ async def study_events(
     if not sessions:
         return study(events, {}, {}, as_of, horizons)
     start = _back(min(sessions), -ESTIMATION_WINDOW[0] + 1)
-    tickers = sorted({e.ticker for e in events})
+    # Materialised CARs (core.event_returns, nightly) are used as they are; only the rest is computed.
+    pre = await repo.materialised_cars(conn, events, horizons, as_of)
+    tickers = sorted({e.ticker for e in events if e.ref_id not in pre})
     series: dict[str, Series] = {t: await repo.series(conn, t, start, session) for t in tickers}
-    bench = await repo.benchmark(conn, start, session)
-    excluded = await repo.excluded_days(conn, tickers, as_of, session)
-    return study(events, series, bench, as_of, horizons, excluded)
+    bench = await repo.benchmark(conn, start, session) if tickers else {}
+    excluded = await repo.excluded_days(conn, tickers, as_of, session) if tickers else {}
+    return study(events, series, bench, as_of, horizons, excluded, precomputed=pre)
 
 
 async def scoped_study(

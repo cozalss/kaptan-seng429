@@ -65,13 +65,15 @@ class PriceContext:
 
 @dataclass(frozen=True, slots=True)
 class MaterialityInputs:
-    """Denominators 06 §3.3 names; annual revenue needs financial statements, which we do not store yet."""
+    """Denominators 06 §3.3 names. Annual revenue is the point-in-time TTM (else last annual) revenue of
+    `core.fundamentals_pit` known before `as_of` (`kaptan.fundamentals.revenue_as_of`), None when unknown."""
 
     market_cap_try: Decimal | None
     free_float_mcap_try: Decimal | None
     paid_in_capital_try: Decimal | None
     annual_revenue_try: Decimal | None = None
     unknown: tuple[str, ...] = field(default=())
+    revenue_period_end: date | None = None  # the fiscal period the revenue figure ends with
 
 
 def _ratio(series: Series, end: date, start: date) -> float | None:
@@ -153,12 +155,19 @@ def price_context(
     )
 
 
-def materiality_inputs(last_raw: Mapping[str, Any] | None) -> MaterialityInputs:
+def materiality_inputs(
+    last_raw: Mapping[str, Any] | None,
+    annual_revenue_try: Decimal | None = None,
+    revenue_period_end: date | None = None,
+) -> MaterialityInputs:
     row = last_raw or {}
     values = {
         "market_cap_try": row.get("mcap_try"),
         "free_float_mcap_try": row.get("free_float_mcap_try"),
         "paid_in_capital_try": row.get("capital_try"),
+        "annual_revenue_try": annual_revenue_try,
     }
-    unknown = (*(k for k, v in values.items() if v is None), "annual_revenue_try")
-    return MaterialityInputs(**values, unknown=unknown)
+    unknown = tuple(k for k, v in values.items() if v is None)
+    return MaterialityInputs(
+        **values, unknown=unknown, revenue_period_end=None if annual_revenue_try is None else revenue_period_end
+    )

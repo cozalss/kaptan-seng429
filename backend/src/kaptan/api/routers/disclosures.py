@@ -22,4 +22,4 @@ router = APIRouter(tags=["disclosures"])
 
 @router.get("/disclosures/counters", response_model=DayCounters)
 async def counters(user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
-    return await day_counters(conn, clock.now())
+    return await day_counters(conn, clock.now(), demo=clock.demo)

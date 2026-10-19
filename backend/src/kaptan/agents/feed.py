@@ -17,7 +17,8 @@ visible row, stage `text` after the detail fetcher stored its text). For each en
    feed row) committed. A crash before that leaves the entry pending; on restart the consumer reads its
    own pending entries first (`XREADGROUP … 0`) and claims stale ones of dead consumers (`XAUTOCLAIM`).
    A row found `running` is resumed (from its checkpoint with CHECKPOINTER=postgres) without counting
-   against the hourly cap again. A run that keeps failing is marked `failed` after `MAX_ATTEMPTS`.
+   against the hourly cap again. A run that keeps failing is marked `failed` after `MAX_ATTEMPTS` and
+   parked on the dead-letter stream `kaptan:kap.dlq` (re-drive: `python -m kaptan.ops.dlq redrive`).
 
 Run one replica (`python -m kaptan.workers.agent_worker`).
 """
@@ -73,6 +74,25 @@ SELECT count(*) AS n FROM ops.agent_feed
 FAIL_SQL: Final = (
     "UPDATE ops.agent_feed SET status = 'failed', reason = %s, updated_at = %s WHERE disclosure_index = %s"
 )
+#: Dead letters: entries whose run failed MAX_ATTEMPTS times (re-drive: `python -m kaptan.ops.dlq`).
+DLQ_STREAM: Final = "kaptan:kap.dlq"
+DLQ_MAXLEN: Final = 10_000
+
+
+async def dead_letter(redis: Any, index: int, stream_id: str | None, reason: str, attempts: int, at: datetime) -> None:
+    """Park a failed entry on `kaptan:kap.dlq` (never raises: the feed row already says `failed`)."""
+    fields = {
+        "disclosure_index": str(index),
+        "stream_id": stream_id or "",
+        "reason": reason,
+        "attempts": str(attempts),
+        "failed_at": at.isoformat(),
+    }
+    try:
+        await redis.xadd(DLQ_STREAM, fields, maxlen=DLQ_MAXLEN, approximate=True)
+    except (RedisError, OSError) as exc:
+        log.error("disclosure %s: dead letter not written (%s); feed row is failed", index, type(exc).__name__)
+
 
 Runner = Callable[[Any, int, datetime], Awaitable[LiveResult]]
 BudgetCheck = Callable[[], Awaitable[bool]]
@@ -211,6 +231,7 @@ class AgentFeed:
                 log.exception("run of disclosure %s failed %d times; giving up", index, attempts)
                 async with conn.transaction():
                     await conn.execute(FAIL_SQL, (f"{type(exc).__name__}", self.now(), index))
+                await dead_letter(self.redis, index, stream_id, type(exc).__name__, attempts, self.now())
                 return Handled(index, "failed", ack=True, reason=type(exc).__name__)
             log.exception("run of disclosure %s failed (attempt %d); left pending", index, attempts)
             return Handled(index, "running", ack=False, reason=type(exc).__name__)

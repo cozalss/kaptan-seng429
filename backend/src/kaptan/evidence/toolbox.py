@@ -2,8 +2,11 @@
 
 The graph's nodes are async but the `Toolbox` protocol is synchronous (merge and task_context read it
 inline), so the Materiality and Evidence nodes first `await prepare(event_type)`: one locked pass of
-point-in-time SQL whose results the sync accessors then serve. Everything the tools cannot compute
-(no sizing model yet, no recorded latencies) is delegated to the base toolbox.
+point-in-time SQL whose results the sync accessors then serve. The merge node awaits
+`prepare_merge` (E1/E2/E4 history, TCMB rate) and the rule engine `prepare_sizing` (kaptan.sizing:
+entry, ATR stop, costs, shrunk edge); once tried, `sizing()` answers from the live sizer only (None →
+HOLD), never from a fixture. What the tools do not compute (labels, recorded latencies) comes from
+the base toolbox.
 
 Replay mode never builds one (`toolbox_for` returns the base), so replay output stays byte-identical.
 """
@@ -14,6 +17,8 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator, Mapping
 from contextlib import asynccontextmanager
+from datetime import datetime
+from decimal import Decimal
 from typing import Any, Final
 
 from psycopg.pq import TransactionStatus
@@ -25,6 +30,9 @@ from kaptan.evidence.market import MaterialityInputs, PriceContext
 from kaptan.evidence.params import DEFAULT_HORIZONS
 from kaptan.evidence.repo import Conn
 from kaptan.evidence.service import ScopedStudy, load_price_context, scoped_study
+from kaptan.market.features import MergeInputs, load_merge_inputs
+from kaptan.sizing.load import load_sizing_inputs
+from kaptan.sizing.plan import SizingPlan, Unknown, plan_sizing
 
 log = logging.getLogger("kaptan.evidence")
 EVENT_TYPES: Final = frozenset({"E1", "E2", "E3", "E4"})
@@ -40,6 +48,9 @@ class LiveToolbox:
         self.price: tuple[PriceContext, MaterialityInputs] | None = None
         self.studies: dict[str, ScopedStudy | None] = {}
         self.event_type: str | None = None
+        self.merge_inputs: MergeInputs | None = None
+        self.sizing_plan: SizingPlan | Unknown | None = None
+        self._sizing_tried = False
 
     @property
     def fp(self) -> str:
@@ -80,6 +91,53 @@ class LiveToolbox:
                     except Exception:
                         log.exception("event study failed for %s", d.run_id)
 
+    async def prepare_merge(self, event_type: str, reader: Mapping[str, Any] | None) -> MergeInputs:
+        """E1/E2 notices, E4 fundamentals and the E3 TCMB rate, known before `available_at` (once)."""
+        if self.merge_inputs is None:
+            d = self.disclosure
+            inputs = MergeInputs()
+            try:
+                async with self._reads():
+                    inputs = await load_merge_inputs(
+                        self.conn,
+                        ticker=d.ticker,
+                        disclosure_index=d.disclosure_index,
+                        published_at=d.published_at,
+                        available_at=d.available_at,
+                        event_type=event_type,
+                        reader=reader,
+                    )
+            except Exception:  # unknown, never a crash: the rules then see no value
+                log.exception("merge inputs failed for %s", d.run_id)
+            self.merge_inputs = inputs
+        return self.merge_inputs
+
+    async def prepare_sizing(
+        self, event_type: str, *, equity_try: Decimal, upper_limit: Decimal | None, t_dec: datetime, personal: bool
+    ) -> SizingPlan | Unknown | None:
+        """Run the live sizer once for this decision; afterwards `sizing()` serves its answer."""
+        if not self._sizing_tried:
+            self._sizing_tried = True
+            d = self.disclosure
+            try:
+                async with self._reads():
+                    inputs = await load_sizing_inputs(
+                        self.conn,
+                        ticker=d.ticker,
+                        event_type=event_type,
+                        t_pub=d.published_at,
+                        t_dec=t_dec,
+                        self_index=d.disclosure_index,
+                    )
+                self.sizing_plan = plan_sizing(
+                    inputs, equity_try=equity_try, upper_limit=upper_limit, personal=personal
+                )
+            except Exception:
+                log.exception("live sizing failed for %s", d.run_id)
+            if isinstance(self.sizing_plan, Unknown):
+                log.info("no live size for %s: %s", d.run_id, self.sizing_plan.reason)
+        return self.sizing_plan
+
     # ── computed by the tools ────────────────────────────────────────────
     @property
     def study(self) -> ScopedStudy | None:
@@ -104,9 +162,14 @@ class LiveToolbox:
         """The same toolbox, but `features` answers with every market fact (for the Materiality prompt)."""
         return _FactsView(self)
 
-    # ── not computed live yet: the base toolbox answers ──────────────────
     def sizing(self, fp: str) -> Mapping[str, Any] | None:
-        return self.base.sizing(fp)
+        """The live sizer's answer once `prepare_sizing` ran (None = unknown → HOLD)."""
+        if fp != self.fp or not self._sizing_tried:
+            return self.base.sizing(fp)
+        plan = self.sizing_plan
+        return plan.tool_doc() if isinstance(plan, SizingPlan) else None
+
+    # ── not computed live: the base toolbox answers ──────────────────────
 
     def sub_type_label(self, fp: str) -> str | None:
         return self.base.sub_type_label(fp)

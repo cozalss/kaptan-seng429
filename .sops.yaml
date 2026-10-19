@@ -1,0 +1,7 @@
+# SOPS creation rules (09 §11.2). EXAMPLE public keys only: each member runs `age-keygen`, keeps the
+# secret key in ~/.config/sops/age/keys.txt and adds the printed age1… PUBLIC key here.
+creation_rules:
+  - path_regex: secrets/.*\.enc\.ya?ml$
+    age: >-
+      age1examplexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1,
+      age1examplexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2

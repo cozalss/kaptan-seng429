@@ -350,3 +350,66 @@ recall@1 cannot exceed 0.718 (several queries have 2–3 relevant disclosures). 
 precision@1 is 1.0. Tests: `tests/unit/test_rag_*.py`, `tests/integration/test_rag_db.py` (fake
 embedder; no-look-ahead to the second). Live smoke test (2 embedding calls):
 `uv run pytest -m live tests/integration/test_rag_live.py`.
+
+## The risk gate on the real desk (M3, `kaptan.risk`)
+
+Outside the demo the gate reads the desk as it is; the demo keeps its seeded desk, so replay is unchanged.
+
+- **Limits (FR-33).** Every run (`agents.context.with_active_limits`) and every at-send check reads the
+  `active` limit version (`risk/active_limits.py`); a two-signature change applies to the next run. Keys are
+  `GateLimits` field names; `risk_tolerance` (R07 lot-rounding band, default 1.05) and the other gate-only
+  keys keep their documented defaults when the version has no row. Live audit outcomes carry `limits_version`.
+- **Live desk (`risk/desk.py`, `risk/book.py`; real runs = `LLM_MODE=live`, or `LiveDeps(live_desk=True)`).**
+  Equity = `PAPER_CAPITAL_TRY` (default 1 000 000) + fill cash flows + positions × point-in-time raw marks;
+  free cash = equity − open notional − unfilled SimBIST buys; day start / peak from `trading.pnl_daily`.
+  R04 age = now − `core.restriction_refresh` (the tedbir job calls `mark_restrictions_refreshed`; no row =
+  stale = HOLD), R11 KAP delay = available − published, R09 price age (intraday orders, session open only;
+  `core.prices_intraday` when filled), P7 entries today, P3/P4 sector/group exposure (`core.issuer_groups`,
+  else `core.issuers.group_name`; unknown group = the sector's exposure), `schema_ok` = the proposal
+  validates as `TradeProposal`. `GET /risk/status` shows the marked book when `DEMO_MODE=false`.
+- **R16 before the order (FR-28).** Approving a real run's card (`run_set='live'`) re-runs R01–R04, R09, R12,
+  R13 inside the decision transaction; a failure is audited (`risk.rejected`, `system:risk_gate`), the card
+  stays pending and the API answers 409 `kill_switch` / `halted` / `conflict` with the R16 text.
+- **Jobs (the scheduler comes later; all skip under `DEMO_MODE`):** `risk.monitor.run_risk_monitor(conn, now)`
+  every 5 min in session (−1 % daily → `halted_today` + SSE `halt`, lifted at the next session; −5 % from the
+  peak → kill switch by `system:risk_monitor` + SSE `kill_switch`; after a restart the peak stays, −4.9 % floor
+  until a further −3 %); `risk.pnl_eod.run_pnl_eod(conn, day)` after 18:30 (strategy + `baseline:xu100_bh` +
+  `baseline:ew_universe`); `risk.regime.run_regime(conn, day)` (06 §9, `trading.regime_daily`, 5-session exit).
+- **Personal mode (`KAPTAN_MODE=personal`):** the kill-switch restart needs ≥ 24 h between the two signatures
+  and ≥ 5 sessions since the kill (409 `conflict` until then).
+
+## Deploy-ready backend (M3 A5, `kaptan.ops`) — runs anywhere with Docker, no provider config
+
+**From scratch** (the image serves `api | ingest_worker | agent_worker | scheduler | migrate | bootstrap | dlq`):
+
+```bash
+cd backend
+cp prod.env.example prod.env          # fill in (hex passwords; PASSPHRASE_HASH in single quotes); gitignored
+docker compose -f docker-compose.prod.yml --env-file prod.env up -d --build
+curl -s http://127.0.0.1:8000/readyz  # {"status":"ready","checks":{"db":"ok","redis":"ok","migrations":"ok"},…}
+```
+
+Order: postgres/redis healthy → `db-roles` (`python -m kaptan.bootstrap roles`: app role, extensions — the SQL
+of `db/init/00_roles.sh`, for a managed Postgres too) → `migrate` (`python -m kaptan.ops.migrate`, owner role,
+the only process that needs `DATABASE_OWNER_URL`) → `bootstrap` (`python -m kaptan.bootstrap`: team users,
+limits v1 `rules-v1.0`, `risk_state`, quota rows, `live_arm` all off; idempotent; `--users team.yaml` with
+`password_env` per person, argon2id, never printed) → api + workers. Workers exit 0 unless `KAP_LIVE=true`.
+
+| Concern | What |
+|---|---|
+| Image | `Dockerfile`: multi-stage uv (`uv sync --locked --no-dev`), non-root uid 10001, read-only rootfs in compose, `HEALTHCHECK` = `python -m kaptan.ops.healthcheck` (API `/healthz`, workers their Redis heartbeat), no secrets (`.dockerignore`) |
+| Prod checks (NFR-08) | `KAPTAN_ENV=prod` refuses to start with `DEMO_MODE=true`, `COOKIE_SECURE=false`, empty `ALLOWED_ORIGINS`, a Redis URL without password, `LLM_MODE=live` without a key, a weak `JWT_SECRET`, a non-argon2 `PASSPHRASE_HASH` (all listed at once; never a value) |
+| Health | `/healthz` liveness, `/readyz` 503 on DB/Redis down or schema ≠ alembic head (migration 0017 lets the app role read `alembic_version`); the API logs an error at startup when the schema is behind; `/api/v1/health` unchanged |
+| Logs | `ops/logs.py`: text in dev, JSON lines in prod (`LOG_FORMAT`), `request_id` (`X-Request-ID`), `run_id`, `disclosure_index`; redaction of URL passwords, Bearer/JWT, provider keys, argon2 hashes, the configured secrets, and disclosure texts in `extra=`; own access log without query strings |
+| Workers | `ops/runtime.py`: SIGTERM → stop event, the unit in flight finishes and is acked (45 s drain, then cancel), heartbeat `kaptan:hb:<component>`, Postgres advisory-lock leader guard (a 2nd instance waits) |
+| Security headers | nosniff, `X-Frame-Options: DENY`, CSP `frame-ancestors 'none'`, `Referrer-Policy: no-referrer`, HSTS in prod; plain ASGI so SSE streams untouched |
+| Rate limits (NFR-09) | login `LOGIN_RATE_PER_MINUTE`/IP, mutations `MUTATION_RATE_PER_MINUTE`/user (raised with the e2e override); Redis sliding window in prod (`RATE_LIMIT_BACKEND`), in-process fallback; `TRUSTED_PROXIES` for `X-Forwarded-For` |
+| Refresh grace | `REFRESH_GRACE_S` (default 0 = M1 behaviour, compose prod 10): a just-rotated token may be presented again inside the window |
+| Metrics | `/metrics` (`METRICS_TOKEN` Bearer or loopback): KAP lag/WAF, agent stream pending/DLQ, graph duration, LLM tokens/quota, risk rejects, approvals pending, audit_chain_ok, heartbeats |
+| DLQ | feed entries failing 3× → `kaptan:kap.dlq`; `python -m kaptan.ops.dlq list` / `redrive --all\|--index N [--dry-run]` |
+| Backups | `ops/backup.sh` (pg_dump -Fc, optional `AGE_RECIPIENTS`, retention) via `--profile backup run --rm backup` (cron nightly); `ops/restore.sh <file>` into an empty DB; `python -m kaptan.ops.backup verify --url …` walks the audit chain |
+| Secrets | SOPS/age: `../docs/ops/SOPS-AGE.md`, `../.sops.yaml` (placeholders); gitleaks CI job + `../.gitleaks.toml` |
+
+**Coverage gates (NFR-14).** CI reports risk 100 %, ingest 85 %, brokers+domain 90 % (line+branch) after the
+suite; they are **warn-only** (`continue-on-error`) while other M3 packages change those modules. To enforce,
+remove `continue-on-error: true` from the three "Coverage gate" steps in `.github/workflows/ci.yml`.

@@ -21,15 +21,16 @@ from typing import Any, Final
 import redis.asyncio as aioredis
 from psycopg import Error as PgError
 
-from kaptan.api.loop import run
 from kaptan.db import create_pool
 from kaptan.ingest import repo
 from kaptan.ingest.detail_fetcher import fetch_one
 from kaptan.ingest.kap_client import KapBlockedError, KapClient, KapError
 from kaptan.ingest.kap_poller import EMPTY_BACKOFF_S, KapPoller, PollConfig, next_delay
 from kaptan.ingest.publish import publish_to_agents
+from kaptan.ops.metrics import incr_waf
+from kaptan.ops.runtime import run_worker_process
 from kaptan.rag.index import index_new_disclosures
-from kaptan.settings import Settings, get_settings
+from kaptan.settings import Settings
 
 log = logging.getLogger("kaptan.workers.ingest")
 
@@ -58,6 +59,9 @@ async def poll_loop(
         except KapBlockedError as exc:
             failures += 1
             log.warning("kap poll: WAF/back-off signal (%s); failures=%d", exc, failures)
+            redis = getattr(poller, "redis", None)
+            if redis is not None:
+                await incr_waf(redis, "poll")
         except (KapError, PgError, OSError) as exc:
             failures += 1
             log.warning("kap poll failed: %s: %s; failures=%d", type(exc).__name__, exc, failures)
@@ -102,6 +106,8 @@ async def detail_loop(
             idx = await (fetch_one(pool, client) if on_stored is None else fetch_one(pool, client, on_stored=on_stored))
         except KapBlockedError as exc:
             log.warning("detail fetch: WAF/back-off signal (%s); pausing", exc)
+            if redis is not None:
+                await incr_waf(redis, "detail")
             await sleep(stop, EMPTY_BACKOFF_S[-1])
             continue
         except (KapError, PgError, OSError) as exc:
@@ -158,11 +164,8 @@ async def run_worker(settings: Settings, stop: asyncio.Event | None = None) -> i
 
 
 def main() -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-    try:
-        return run(run_worker(get_settings()))
-    except KeyboardInterrupt:
-        return 0
+    """JSON logs in prod, SIGTERM drain, heartbeat, and a leader lock: a second instance waits (kaptan.ops)."""
+    return run_worker_process("ingest_worker", run_worker)
 
 
 if __name__ == "__main__":

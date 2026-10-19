@@ -12,7 +12,7 @@ from psycopg.rows import dict_row
 
 from kaptan.evidence.params import BENCHMARK, EXCLUDED_ACTION_KINDS, MAX_EVENTS
 from kaptan.evidence.sessions import event_session
-from kaptan.evidence.study import Bar, PastEvent, Series
+from kaptan.evidence.study import Bar, MarketModel, ModelKind, PastEvent, Precomputed, Series
 from kaptan.prices.calendar import CalendarRangeError
 from kaptan.prices.reads import adjusted_series
 
@@ -39,18 +39,21 @@ SELECT primary_ticker AS ticker, published_at FROM core.disclosures
  WHERE origin = 'kap' AND primary_ticker = ANY(%s::text[]) AND available_at < %s
    AND (subject_route = ANY(%s::text[]) OR classification ->> 'event_type' = ANY(%s::text[]))
 """
+#: Corporate actions are stored under the price source's code; `core.ticker_codes` maps a renamed
+#: company's old code to it (core.ticker_history, e.g. KOZAL → TRALT).
 ACTION_DATES_SQL: Final = """
-SELECT ticker, ex_date FROM core.corporate_actions
- WHERE ticker = ANY(%s::text[]) AND kind = ANY(%s::text[]) AND ex_date <= %s
+SELECT t.ticker, ca.ex_date FROM unnest(%s::text[]) AS t(ticker)
+  JOIN core.corporate_actions ca ON ca.ticker = ANY(core.ticker_codes(t.ticker))
+ WHERE ca.kind = ANY(%s::text[]) AND ca.ex_date <= %s
 """
 ACTIONS_SQL: Final = """
-SELECT ex_date, kind, factor, announced_at FROM core.corporate_actions
- WHERE ticker = %s AND ex_date >= %s ORDER BY ex_date, kind
+SELECT DISTINCT ON (ex_date, kind) ex_date, kind, factor, announced_at FROM core.corporate_actions
+ WHERE ticker = ANY(core.ticker_codes(%(t)s)) AND ex_date >= %(since)s ORDER BY ex_date, kind, ticker <> %(t)s
 """
 LAST_RAW_SQL: Final = """
 SELECT d, close, mcap_try, free_float_mcap_try, capital_try FROM core.prices_daily
- WHERE ticker = %s AND source = 'isyatirim' AND price_basis = 'raw' AND d <= %s
- ORDER BY d DESC LIMIT 1
+ WHERE ticker = ANY(core.ticker_codes(%(t)s)) AND source = 'isyatirim' AND price_basis = 'raw' AND d <= %(d)s
+ ORDER BY d DESC, ticker <> %(t)s LIMIT 1
 """
 SECTOR_SQL: Final = "SELECT sector FROM core.issuers WHERE ticker = %s"
 
@@ -118,14 +121,55 @@ async def excluded_days(conn: Conn, tickers: Sequence[str], as_of: datetime, unt
 
 
 async def actions(conn: Conn, ticker: str, since: date) -> list[dict[str, Any]]:
-    return await rows(conn, ACTIONS_SQL, (ticker, since))
+    return await rows(conn, ACTIONS_SQL, {"t": ticker, "since": since})
 
 
 async def last_raw(conn: Conn, ticker: str, session: date) -> dict[str, Any] | None:
-    found = await rows(conn, LAST_RAW_SQL, (ticker, session))
+    found = await rows(conn, LAST_RAW_SQL, {"t": ticker, "d": session})
     return found[0] if found else None
 
 
 async def sector_of(conn: Conn, ticker: str) -> str | None:
     found = await rows(conn, SECTOR_SQL, (ticker,))
     return None if not found else found[0]["sector"] or None
+
+
+#: Materialised CARs (core.event_returns, `run_event_returns`), point in time: `available_at < as_of`.
+EVENT_RETURNS_SQL: Final = """
+SELECT e.event_id, e.disclosure_index, r.horizon, r.model, r.t0, r.car, r.alpha, r.beta, r.n_obs
+  FROM core.events e JOIN core.event_returns r USING (event_id)
+ WHERE e.source_kind = 'kap' AND e.disclosure_index = ANY(%s::bigint[]) AND r.horizon = ANY(%s::int[])
+   AND r.available_at < %s
+ ORDER BY e.disclosure_index, e.event_id, r.horizon
+"""
+REF_PREFIX: Final = "evt:kap:"
+
+
+async def materialised_cars(
+    conn: Conn, events: Sequence[PastEvent], horizons: Sequence[int], as_of: datetime
+) -> dict[str, Precomputed]:
+    """ref_id → the stored CARs of every event whose requested horizons were all known before `as_of`.
+
+    Events not in the table (or with a horizon still missing) are absent: the study computes them."""
+    indices = [int(e.ref_id.removeprefix(REF_PREFIX)) for e in events if e.ref_id.startswith(REF_PREFIX)]
+    if not indices:
+        return {}
+    wanted = sorted(set(horizons))
+    first_event: dict[int, int] = {}
+    rows_of: dict[int, list[dict[str, Any]]] = {}
+    for r in await rows(conn, EVENT_RETURNS_SQL, (indices, wanted, as_of)):
+        idx = int(r["disclosure_index"])
+        if first_event.setdefault(idx, int(r["event_id"])) == int(r["event_id"]):
+            rows_of.setdefault(idx, []).append(r)
+    out: dict[str, Precomputed] = {}
+    for idx, rs in rows_of.items():
+        cars = {int(r["horizon"]): float(r["car"]) for r in rs}
+        if sorted(cars) != wanted or len({r["t0"] for r in rs}) != 1:
+            continue
+        r0 = rs[-1]
+        kind: ModelKind = "market_model" if r0["model"] == "market_model" else "market_adj"
+        model = MarketModel(
+            float(r0["alpha"] or 0.0), float(r0["beta"] if r0["beta"] is not None else 1.0), int(r0["n_obs"] or 0), kind
+        )
+        out[f"{REF_PREFIX}{idx}"] = Precomputed(rs[0]["t0"], cars, model)
+    return out

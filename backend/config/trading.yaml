@@ -1,0 +1,23 @@
+# KAPtan execution config (kaptan.brokers). Read once per process; a change is a reviewed PR (09 §8 K1).
+version: 1
+
+# K1 of the three live keys (09 §8): "paper" | "live". Live also needs K2 (env KAPTAN_LIVE_ENABLED=true)
+# and K3 (the two-signature UI arm, POST /admin/live/arm), and a real broker adapter. There is none
+# for BIST (Algolab closed 31.12.2025), so every order goes to SimBIST and a live request is audited
+# as a fallback to paper.
+mode: paper
+
+# SimBIST cost model, base scenario (06 §8.1, 04 §8.2). Ratios per side.
+costs:
+  c_broker: 0.0005          # commission %0,05 / side (sensitivity scenario: 0.002)
+  bsmv: 0.05                # BSMV on the commission
+  fees_side: 0.0000254      # Borsa payı 0,25 bp + Takasbank 0,04 bp, booked with the commission
+  slip_floor_bps: 5         # slippage never below 5 bps (04 §8.2)
+  impact_y: 0.7             # impact = Y × σ_daily × sqrt(Q / ADV20_shares) (square-root law)
+  default_half_spread: 0.001  # when the 20-session Corwin–Schultz estimate cannot be computed
+  window: 20                # sessions for ADV20, σ_daily and the Corwin–Schultz median
+  price_limit_pct: 0.10     # BIST ±10 % daily price limit, on the raw previous close
+
+# GuardedBroker per-order hard cap (FR-28): an order above min(this, max_position_pct × equity) is
+# refused at send. null = only the limits' position cap applies.
+hard_cap_try: null

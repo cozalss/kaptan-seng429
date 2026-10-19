@@ -1,0 +1,31 @@
+# gitleaks configuration (NFR-08, 09 §11.3). Default rules + KAPtan specifics.
+title = "KAPtan gitleaks config"
+
+[extend]
+useDefault = true
+
+# age secret keys are always a leak (age1… public keys are fine).
+[[rules]]
+id = "age-secret-key"
+description = "age secret key"
+regex = '''AGE-SECRET-KEY-1[0-9A-Z]{58}'''
+keywords = ["AGE-SECRET-KEY-1"]
+
+[allowlist]
+description = "Committed test fixtures, examples and recorded public data"
+paths = [
+  '''backend/tests/fixtures/''',
+  '''backend/tests/unit/test_ops_logs\.py''',
+  '''backend/tests/unit/test_settings_prod\.py''',
+  '''backend/tests/unit/llm_support\.py''',
+  '''backend/tests/contract/schemas/''',
+  '''kaptan-panel/src/mocks/''',
+  '''(^|/)\.env\.example$''',
+  '''backend/prod\.env\.example$''',
+  '''(^|/)package-lock\.json$''',
+  '''backend/uv\.lock$''',
+]
+regexes = [
+  '''test-only-jwt-secret-[0-9a-z-]+''',
+  '''<[a-z0-9 -]+>''',
+]

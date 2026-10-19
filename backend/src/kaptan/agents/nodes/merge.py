@@ -4,6 +4,11 @@ Computes with Decimal what no model may compute: the amount the Reader extracted
 against the text (R14), the annualised amount over the Materiality agent's denominator, price limits,
 and the evidence card (selection + event-study statistics). Point-in-time market/history features
 come from the toolbox snapshot; computed fields always win over it.
+
+LLM_MODE=live (a `LiveToolbox`): price limits are base ±10 % on the BIST tick grid
+(`kaptan.market.ticks`), E1/E2/E4 features come from point-in-time history (`kaptan.market.features`)
+and a USD/EUR E3 amount is converted at the TCMB rate published before `available_at` (unknown rate →
+unknown amount). Replay keeps `last × 1.1` and the recorded snapshot, byte for byte.
 """
 
 from __future__ import annotations
@@ -19,6 +24,8 @@ from kaptan.agents.nodes._common import step
 from kaptan.agents.state import KaptanState
 from kaptan.domain.schemas._base import iso_ms
 from kaptan.domain.schemas.rules import MergedFeatures
+from kaptan.evidence.toolbox import LiveToolbox, live_tools
+from kaptan.market.features import MergeInputs, amount_try, fx_text_amounts, limits_of, live_features
 from kaptan.rules.params import BINDING_STATUSES
 
 AMOUNT_RE: Final = re.compile(r"(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d+))?\s*(?:TL|₺)")
@@ -115,7 +122,46 @@ def empty_features() -> dict[str, Any]:
     return out | {"agent_confidence": {}, "agent_status": {}, "degraded": False, "any_injection_flag": False}
 
 
-def build_features(state: KaptanState, ctx: RunContext, card: dict[str, Any] | None) -> dict[str, Any]:
+def live_overrides(
+    state: KaptanState, ctx: RunContext, live: LiveToolbox, inputs: MergeInputs, base: dict[str, Any]
+) -> dict[str, Any]:
+    """What the live tools compute instead of the replay rules (limits, E1/E2/E4 features, FX)."""
+    d, reader, event = ctx.disclosure, state.get("reader"), str(state.get("event_type"))
+    mi = None if live.price is None else live.price[1]
+    lower, upper = limits_of(Decimal(str(base["last_price"])))
+    out: dict[str, Any] = {"lower_limit": lower, "upper_limit": upper}
+    out |= live_features(
+        inputs,
+        event_type=event,
+        ticker=d.ticker,
+        disclosure_index=d.disclosure_index,
+        published_at=d.published_at,
+        available_at=d.available_at,
+        reader=reader,
+        paid_in_capital=None if mi is None else mi.paid_in_capital_try,
+        free_float_mcap=None if mi is None else mi.free_float_mcap_try,
+    )
+    amount = reader_amount(reader)
+    if event != "E3" or reader is None or amount is None:
+        return out
+    duration = reader.get("duration_months")
+    amounts = [*regex_amounts(d.text_tr, duration)]
+    amounts += [a for a in fx_text_amounts(d.text_tr, inputs.currency) if a not in amounts]
+    tl = amount_try(inputs, reader, amount)
+    ratio, denominator = e3_ratio(reader, state.get("materiality"), tl) if tl is not None else (None, None)
+    return out | {
+        "regex_amounts": [_num(a) for a in amounts],
+        "amount_in_text": amount_in_text(amount, amounts),
+        "amount_try": _num(tl),
+        "amount_to_revenue_annualized": _num(ratio) if denominator == "annual_revenue" else None,
+        "amount_to_mcap": _num(ratio) if denominator == "market_cap" else None,
+        "e3_denominator": denominator,
+    }
+
+
+def build_features(
+    state: KaptanState, ctx: RunContext, card: dict[str, Any] | None, inputs: MergeInputs | None = None
+) -> dict[str, Any]:
     d, desk = ctx.disclosure, ctx.desk
     reader, mat = state.get("reader"), state.get("materiality")
     event = str(state.get("event_type"))
@@ -164,13 +210,20 @@ def build_features(state: KaptanState, ctx: RunContext, card: dict[str, Any] | N
             "amount_to_mcap": _num(ratio) if denominator == "market_cap" else None,
             "e3_denominator": denominator,
         }
+    live = live_tools(ctx.tools)
+    if live is not None and inputs is not None:
+        computed |= live_overrides(state, ctx, live, inputs, computed)
     return {**empty_features(), **snapshot, **computed}
 
 
 async def merge(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, Any]:
     ctx = runtime.context
     card, events = evidence_card(ctx, state.get("evidence_selection"))
-    merged = build_features(state, ctx, card)
+    live = live_tools(ctx.tools)
+    inputs = None
+    if live is not None:  # LLM_MODE=live, a real disclosure: point-in-time history first
+        inputs = await live.prepare_merge(str(state.get("event_type")), state.get("reader"))
+    merged = build_features(state, ctx, card, inputs)
     note = "Tutar metinde yok ✗" if merged.get("amount_in_text") is False else "Oranlar Decimal ile hesaplandı"
     return {
         "merged": merged,

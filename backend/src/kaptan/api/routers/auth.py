@@ -22,11 +22,12 @@ from kaptan.api.deps import CurrentUser, SettingsDep
 from kaptan.api.errors import ApiError, unauthenticated
 from kaptan.auth import sessions
 from kaptan.auth.passphrase import verify_passphrase
-from kaptan.auth.ratelimit import SlidingWindowLimiter
+from kaptan.auth.ratelimit import Limiter
 from kaptan.auth.tokens import create_access_token
 from kaptan.db import Conn
 from kaptan.domain.roles import DEFAULT_ROLE, Role, is_role, member_for_role
 from kaptan.domain.schemas import KModel, Me, SessionOut, TokenOut
+from kaptan.ops.http import app_limiter, request_ip
 from kaptan.settings import Settings
 
 router = APIRouter(tags=["auth"])
@@ -57,12 +58,11 @@ def _role_or_400(value: str | None, default: Role | None = None) -> Role:
     return value
 
 
-def _limiter(request: Request, settings: Settings) -> SlidingWindowLimiter:
-    limiter: SlidingWindowLimiter | None = getattr(request.app.state, "login_limiter", None)
-    if limiter is None:
-        limiter = SlidingWindowLimiter(limit=settings.login_rate_per_minute)
-        request.app.state.login_limiter = limiter
-    return limiter
+def _limiter(request: Request, settings: Settings) -> Limiter:
+    """LOGIN_RATE_PER_MINUTE per client IP: in-process in dev/test, Redis (all API processes) in prod."""
+    if getattr(request.app.state, "settings", None) is None:
+        request.app.state.settings = settings
+    return app_limiter(request.app, "login", settings.login_rate_per_minute)
 
 
 def _set_refresh_cookie(response: Response, settings: Settings, session: sessions.RefreshSession) -> None:
@@ -94,8 +94,9 @@ def _session_out(settings: Settings, *, role: Role, family: str) -> dict[str, An
 async def login(
     request: Request, response: Response, body: Annotated[LoginBody, Body()], settings: SettingsDep, conn: Conn
 ) -> dict[str, Any]:
-    client = request.client.host if request.client else "unknown"
-    if not _limiter(request, settings).allow(f"login:{client}"):
+    peer = request.client.host if request.client else None
+    client = request_ip(request.app, peer, request.headers.get("x-forwarded-for"))
+    if not await _limiter(request, settings).hit(f"login:{client}"):
         raise ApiError(429, "rate_limited", "Çok fazla deneme. Bir dakika sonra yeniden deneyin.")
     role = _role_or_400(body.role, DEFAULT_ROLE)
     if not verify_passphrase(settings, body.passphrase):
@@ -134,7 +135,7 @@ async def refresh(request: Request, response: Response, settings: SettingsDep, c
         raise unauthenticated()
     try:
         async with conn.transaction():
-            session = await sessions.rotate(conn, token, _wall_now())
+            session = await sessions.rotate(conn, token, _wall_now(), grace_s=settings.refresh_grace_s)
     except sessions.RefreshRejectedError as exc:
         # A reused token revoked its family inside rotate(); that revocation must persist.
         if exc.reason == "reused":

@@ -56,8 +56,12 @@ async def revoke_family(conn: AsyncConnection[Any], family: str, now: datetime) 
     )
 
 
-async def rotate(conn: AsyncConnection[Any], token: str, now: datetime) -> RefreshSession:
-    """Swap a refresh token for its successor. Must run in a transaction (row lock)."""
+async def rotate(conn: AsyncConnection[Any], token: str, now: datetime, *, grace_s: int = 0) -> RefreshSession:
+    """Swap a refresh token for its successor. Must run in a transaction (row lock).
+
+    `grace_s` (REFRESH_GRACE_S): a token rotated at most that many seconds ago, in a family that is still
+    live, gets one more successor instead of revoking the family, so two tabs refreshing at the same
+    moment both stay signed in. Outside the window a reuse is still treated as theft."""
     async with conn.cursor() as cur:
         await cur.execute(
             "SELECT family_id, uid, role, expires_at, used_at, revoked_at FROM auth.refresh_tokens "
@@ -68,19 +72,43 @@ async def rotate(conn: AsyncConnection[Any], token: str, now: datetime) -> Refre
     if row is None:
         raise RefreshRejectedError("unknown")
     family = str(_col(row, 0, "family_id"))
-    if _col(row, 4, "used_at") is not None or _col(row, 5, "revoked_at") is not None:
+    used_at: datetime | None = _col(row, 4, "used_at")
+    expires_at: datetime = _col(row, 3, "expires_at")
+    in_grace = (
+        used_at is not None
+        and _col(row, 5, "revoked_at") is None
+        and grace_s > 0
+        and now - used_at <= timedelta(seconds=grace_s)
+        and expires_at > now
+    )
+    if not in_grace and (used_at is not None or _col(row, 5, "revoked_at") is not None):
         await revoke_family(conn, family, now)
         raise RefreshRejectedError("reused")
-    expires_at: datetime = _col(row, 3, "expires_at")
     if expires_at <= now:
         raise RefreshRejectedError("expired")
-    await conn.execute(
-        "UPDATE auth.refresh_tokens SET used_at = %s WHERE token_hash = %s", (now, refresh_token_hash(token))
-    )
+    if not in_grace:
+        await conn.execute(
+            "UPDATE auth.refresh_tokens SET used_at = %s WHERE token_hash = %s", (now, refresh_token_hash(token))
+        )
     successor = new_refresh_token()
     uid, role = str(_col(row, 1, "uid")), _col(row, 2, "role")
+    if in_grace:  # the family's live token carries the current role (/auth/role after the rotation)
+        uid, role = await _live_role(conn, family, uid, role)
     await conn.execute(_INSERT, (refresh_token_hash(successor), family, uid, role, now, expires_at))
     return RefreshSession(token=successor, family=family, uid=uid, role=role, expires_at=expires_at)
+
+
+async def _live_role(conn: AsyncConnection[Any], family: str, uid: str, role: Role) -> tuple[str, Role]:
+    async with conn.cursor() as cur:
+        await cur.execute(
+            "SELECT uid, role FROM auth.refresh_tokens WHERE family_id = %s AND used_at IS NULL "
+            "AND revoked_at IS NULL ORDER BY issued_at DESC LIMIT 1",
+            (family,),
+        )
+        live = await cur.fetchone()
+    if live is None:
+        return uid, role
+    return str(_col(live, 0, "uid")), _col(live, 1, "role")
 
 
 async def set_family_role(conn: AsyncConnection[Any], *, family: str, uid: str, role: Role) -> None:

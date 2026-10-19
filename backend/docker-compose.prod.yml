@@ -1,0 +1,154 @@
+# KAPtan backend, production-shaped stack (not tied to any host or cloud provider).
+#
+#   cp prod.env.example prod.env                      # fill in; never commit prod.env
+#   docker compose -f docker-compose.prod.yml --env-file prod.env up -d --build
+#   curl -s http://127.0.0.1:8000/readyz
+#
+# Order: postgres/redis healthy → db-roles (app role, extensions) → migrate (owner role, alembic head)
+# → bootstrap (team, limits v1, risk_state, quotas, live_arm off) → api + workers.
+# Only the API is published, on 127.0.0.1 (put a TLS proxy / tunnel in front; set TRUSTED_PROXIES).
+# Nightly backup: docker compose -f docker-compose.prod.yml --env-file prod.env --profile backup run --rm backup
+name: kaptan-prod
+
+x-app-env: &app-env
+  KAPTAN_ENV: prod
+  DATABASE_URL: postgresql://kaptan_app:${KAPTAN_APP_PASSWORD:?set KAPTAN_APP_PASSWORD}@postgres:5432/${POSTGRES_DB:-kaptan}
+  REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379/0
+  JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+  PASSPHRASE_HASH: ${PASSPHRASE_HASH:?set PASSPHRASE_HASH}
+  ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?set ALLOWED_ORIGINS}
+  COOKIE_SECURE: "true"
+  DEMO_MODE: "false"
+  LLM_MODE: ${LLM_MODE:-replay}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+  GROQ_API_KEY: ${GROQ_API_KEY:-}
+  KAP_LIVE: ${KAP_LIVE:-false}
+  PRICES_LIVE: ${PRICES_LIVE:-false}
+  CHECKPOINTER: ${CHECKPOINTER:-postgres}
+  REFRESH_GRACE_S: ${REFRESH_GRACE_S:-10}
+  TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+  METRICS_TOKEN: ${METRICS_TOKEN:-}
+  LOG_FORMAT: json
+  TZ: UTC
+
+x-app: &app
+  image: ${KAPTAN_IMAGE:-kaptan-backend:local}
+  build: .
+  read_only: true
+  tmpfs: ["/tmp"]
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: ["ALL"]
+  environment: *app-env
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kaptan}
+      POSTGRES_USER: kaptan_owner
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+      TZ: UTC
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kaptan_owner -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD}"]
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  # The SQL of db/init/00_roles.sh, as the bootstrap does it on a managed Postgres.
+  db-roles:
+    <<: *app
+    command: ["bootstrap", "roles"]
+    environment:
+      <<: *app-env
+      BOOTSTRAP_ADMIN_URL: postgresql://kaptan_owner:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-kaptan}
+      KAPTAN_APP_PASSWORD: ${KAPTAN_APP_PASSWORD}
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
+  migrate:
+    <<: *app
+    command: ["migrate"]
+    environment:
+      <<: *app-env
+      DATABASE_OWNER_URL: postgresql://kaptan_owner:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-kaptan}
+    depends_on:
+      db-roles: { condition: service_completed_successfully }
+    restart: "no"
+
+  bootstrap:
+    <<: *app
+    command: ["bootstrap"]
+    environment:
+      <<: *app-env
+      DATABASE_OWNER_URL: postgresql://kaptan_owner:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-kaptan}
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    restart: "no"
+
+  api:
+    <<: *app
+    command: ["api"]
+    ports: ["127.0.0.1:${API_PORT:-8000}:8000"]
+    depends_on:
+      bootstrap: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    stop_grace_period: 20s
+    restart: unless-stopped
+
+  ingest_worker:
+    <<: *app
+    command: ["ingest_worker"]
+    depends_on:
+      bootstrap: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    stop_grace_period: 60s
+    restart: on-failure
+
+  agent_worker:
+    <<: *app
+    command: ["agent_worker"]
+    depends_on:
+      bootstrap: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    stop_grace_period: 60s
+    restart: on-failure
+
+  backup:
+    image: pgvector/pgvector:pg16
+    profiles: ["backup"]
+    entrypoint: ["sh", "/ops/backup.sh"]
+    environment:
+      BACKUP_DATABASE_URL: postgresql://kaptan_owner:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-kaptan}
+      BACKUP_DIR: /backups
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      AGE_RECIPIENTS: ${AGE_RECIPIENTS:-}
+    volumes:
+      - ./ops:/ops:ro
+      - ${BACKUP_HOST_DIR:-./backups}:/backups
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
+volumes:
+  pgdata: {}
+  redisdata: {}

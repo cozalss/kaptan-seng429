@@ -22,10 +22,11 @@ from kaptan.agents.checkpoint import open_saver
 from kaptan.agents.feed import AgentFeed, FeedConfig, llm_budget_left
 from kaptan.agents.feed_run import LiveDeps, LiveResult, run_disclosure, settle_waiting
 from kaptan.agents.tools import ReplayToolbox, Toolbox
-from kaptan.api.loop import run
 from kaptan.db import create_pool
 from kaptan.llm import get_provider
-from kaptan.settings import Settings, get_settings
+from kaptan.ops.logs import bind_log_context
+from kaptan.ops.runtime import run_worker_process
+from kaptan.settings import Settings
 
 log = logging.getLogger("kaptan.workers.agents")
 
@@ -38,7 +39,8 @@ def toolbox_for(settings: Settings) -> Toolbox:
 
 def feed_for(settings: Settings, pool: Any, redis: Any, deps: LiveDeps) -> AgentFeed:
     async def runner(conn: Any, index: int, now: datetime) -> LiveResult:
-        return await run_disclosure(conn, index, now, deps)
+        with bind_log_context(run_id=f"run-live-{index}", disclosure_index=index):
+            return await run_disclosure(conn, index, now, deps)
 
     async def budget_ok() -> bool:
         return await llm_budget_left(deps.provider)
@@ -79,11 +81,8 @@ async def run_worker(settings: Settings, stop: asyncio.Event | None = None) -> i
 
 
 def main() -> int:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
-    try:
-        return run(run_worker(get_settings()))
-    except KeyboardInterrupt:
-        return 0
+    """JSON logs in prod, SIGTERM drain (the run in flight finishes and is acked), heartbeat, leader lock."""
+    return run_worker_process("agent_worker", run_worker)
 
 
 if __name__ == "__main__":

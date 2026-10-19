@@ -170,6 +170,15 @@ def window_closed(t0: date, horizon: int, as_of: datetime) -> bool:
     return close_known_at(add_sessions(t0, horizon - 1)) < as_of
 
 
+@dataclass(frozen=True, slots=True)
+class Precomputed:
+    """A materialised result of one event (core.event_returns, `available_at < as_of`): used as is."""
+
+    t0: date
+    cars: dict[int, float]
+    model: MarketModel
+
+
 def study(
     events: Sequence[PastEvent],
     series: Mapping[str, Series],
@@ -177,8 +186,12 @@ def study(
     as_of: datetime,
     horizons: Sequence[int],
     excluded: Mapping[str, Collection[date]] | None = None,
+    precomputed: Mapping[str, Precomputed] | None = None,
 ) -> StudyResult:
-    """CARs of every usable past event and their cross-sectional statistics per horizon."""
+    """CARs of every usable past event and their cross-sectional statistics per horizon.
+
+    `precomputed` (ref_id → materialised CARs) skips the computation of an event whose every horizon
+    is there; the point-in-time filters and the clustering are applied exactly as for computed ones."""
     hs = tuple(sorted(set(horizons)))
     if not hs or hs[0] < 1:
         raise ValueError("horizons must be positive session counts")
@@ -203,6 +216,10 @@ def study(
             t0, session = entry_session(ev.published_at), event_session(ev.published_at)
             if not window_closed(t0, hs[-1], as_of):
                 dropped["window_open"] += 1
+                continue
+            pre = (precomputed or {}).get(ev.ref_id)
+            if pre is not None and pre.t0 == t0 and all(h in pre.cars for h in hs):
+                results.append(EventResult(ev, t0, {h: pre.cars[h] for h in hs}, pre.model))
                 continue
             stock = series.get(ev.ticker, {})
             days = estimation_days(session, (excluded or {}).get(ev.ticker, ()))

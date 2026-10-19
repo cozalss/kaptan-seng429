@@ -27,10 +27,14 @@ CENT: Final = Decimal("0.01")
 
 @dataclass(frozen=True, slots=True)
 class GateLimits:
-    """The active limit version (trading.limits keys; canonical defaults)."""
+    """The active limit version (trading.limits keys = field names; canonical defaults).
+
+    Loaded per run by `kaptan.risk.active_limits`; a key without a row keeps the default here.
+    """
 
     risk_per_trade_pct: Decimal = Decimal("0.005")
-    risk_tolerance: Decimal = Decimal("1.05")  # lot rounding band on the per-trade risk budget
+    #: Limit key `risk_tolerance` (default 1.05): R07's lot-rounding band on the per-trade risk budget.
+    risk_tolerance: Decimal = Decimal("1.05")
     max_position_pct: Decimal = Decimal("0.10")
     max_concurrent_positions: int = 10
     target_concurrent_positions: int = 8

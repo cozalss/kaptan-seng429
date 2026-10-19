@@ -173,3 +173,44 @@ ya da `{"mark":"unfilled"}` / `{"mark":"canceled"}`. Kurallar: `filled_qty ≤ q
 | feed | `counters` | `DayCounters` | Bugün'deki tayfa cümlesi; Denetim listesi yenilenir |
 
 Rol değişikliği olay değildir: her istemci kendi rolüyle bakar; sunucu yetkiyi her istekte JWT'deki role göre denetler.
+
+## 5. Yalnızca backend (panel henüz çağırmıyor)
+
+Panelin bugünkü ekranları bu uçları kullanmaz; şekilleri yukarıdaki sözleşmeyi değiştirmez, yalnızca ekler.
+
+### 5.1 Canlı mod anahtarları (M3 A3, `09` §8)
+
+| # | Yöntem | Yol | İstek | Yanıt | Rol |
+|---|---|---|---|---|---|
+| B1 | GET | `/admin/live` | — | `LiveView` | admin, risk_officer, auditor |
+| B2 | POST | `/admin/live/arm` | `{"action":"start\|confirm\|disarm","reason":"…"}` (10–500) | `LiveView` | start: admin (1/2) · confirm: risk_officer (2/2, başlatandan farklı kişi) · disarm: admin, risk_officer |
+
+- `LiveView` = `LiveArmState` (`config_live, env_enabled, ui_key, armed, expires_at|null`) + `started: Signature|null`
+  (bekleyen 1/2 imza), `armed_by: Signature|null`, `missing: string[]` (canlı gönderimi engelleyenler, sırayla
+  `config`, `env`, `ui_armed`, `kill_switch_off`, `real_broker`), `real_broker: bool`, `effective_mode: "paper"|"live"`.
+  `armed` yalnızca `missing` boşsa `true` olur.
+- Üç anahtar: K1 `config/trading.yaml` `mode: live` (ya da `KAPTAN_MODE=live`), K2 `KAPTAN_LIVE_ENABLED=true`, K3 bu iki imza.
+  K3 18:30'da (İstanbul) kendiliğinden düşer; kill switch açıkken başlatılamaz/onaylanamaz.
+- BIST için gerçek aracı kurum adaptörü yok: silahlandırmak yalnızca anahtarları kaydeder, `real_broker` hep `false`,
+  emirler SimBIST'te (paper) kalır. Canlı istenip paper'a düşülen her gönderim audit'e `broker.live_fallback` olarak yazılır.
+- Hatalar: `403 forbidden` ("Bunu Yönetici yapar." …), `403 same_person`, `409 kill_switch`, `409 not_started`
+  ("Önce Yönetici silahlandırmayı başlatmalı (1/2)."), `409 already_on`, `409 conflict` (18:30 sonrası), `422 validation`.
+- Audit eylemleri: `live.arm_started`, `live.armed` (`payload.missing`), `live.disarmed`; emir yolunda ayrıca
+  `order.refused` (GuardedBroker: `kill_switch`, `halted`, `cooldown`, `hard_cap`), `order.missed` (açılış limit dışı,
+  tavan/taban, fiyat yok), `proposal.created` (çıkış önerisi, `rule` X1–X4), `position.stop_moved` (X6).
+
+### 5.2 İşletim uçları ve çalıştırma akışı (M3 A5)
+
+| Yöntem | Yol | Yanıt | Erişim |
+|---|---|---|---|
+| GET | `/healthz` (kök, `/api/v1` dışında) | `{"status":"ok"}` (canlılık, G/Ç yok) | herkes |
+| GET | `/readyz` | 200/503 `{"status":"ready\|not_ready","checks":{"db","redis","migrations"},"workers":{…}}` — DB/Redis yanıt vermezse ya da şema alembic başında değilse 503; işçi nabızları yalnızca bilgi | herkes |
+| GET | `/metrics` | Prometheus metni (`kaptan_*`) | `METRICS_TOKEN` varsa `Authorization: Bearer`, yoksa yalnızca 127.0.0.1 |
+| GET | `/api/v1/stream/runs/{run_id}?ticket=…&last_event_id=…` | `text/event-stream`: tek koşunun `RUN_EVENTS` olayları (`node`, `crew`, `classification`, `done` …; Redis `kaptan:run:<id>`, 24 sa) | `/sse/ticket` bileti (tüm roller) |
+
+Tüm yanıtlarda `X-Request-ID` (gönderilen geçerliyse aynısı), `X-Content-Type-Options: nosniff`,
+`X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'`, `Referrer-Policy: no-referrer`; prod'da
+HSTS. Mutasyon uçları (POST/PUT/PATCH/DELETE) kullanıcı başına dakikada `MUTATION_RATE_PER_MINUTE` (60; giriş hız
+sınırı yükseltilirse onunla birlikte yükselir): aşımda `429 {"detail":"Çok fazla istek. Biraz sonra yeniden deneyin.","code":"rate_limited"}` + `Retry-After: 60`.
+`REFRESH_GRACE_S` (prod 10): az önce döndürülmüş yenileme çerezi bu süre içinde yeniden gelirse aile iptal edilmez
+(iki sekme aynı anda yeniler).

@@ -12,6 +12,14 @@ no timer writes into a database that is being reseeded.
 
 The callback opens its own pooled connection (`app.state.pool.connection()`): the request's
 connection is gone by the time a timer fires. Errors are logged, never raised into the loop.
+
+Single-process assumption: the registry lives in the API process's memory, so DEMO_MODE runs exactly
+one API process (one uvicorn worker). A restart drops the pending timers; what must survive is
+rebuilt from the database at startup and is idempotent: `kaptan.approvals.execute.resume_pending_fills()`
+settles every `accepted` SimBIST order without a fill (the fill re-checks the order under a row
+lock, so a double schedule is a no-op). The ticker and the loss simulation are not resumed: a demo
+restart is followed by `/demo/reset`. Outside DEMO_MODE nothing depends on these timers (fills are
+scheduler jobs, kaptan.brokers.fills).
 """
 
 from __future__ import annotations

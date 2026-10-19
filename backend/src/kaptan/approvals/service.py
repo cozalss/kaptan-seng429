@@ -22,6 +22,8 @@ from kaptan.audit.writer import append
 from kaptan.domain.schemas import ApprovalDecision, iso_ms
 from kaptan.domain.schemas.trading import TicketMarkEntered, TicketMarkInput
 from kaptan.portfolio.positions import open_position
+from kaptan.risk.at_send import check_at_send
+from kaptan.settings import get_settings
 
 NOT_FOUND_PROPOSAL: Final = "Öneri bulunamadı."
 NOT_FOUND_TICKET: Final = "Fiş bulunamadı."
@@ -46,13 +48,15 @@ async def _card_or_404(
 
 
 def _check_decision(card: dict[str, Any], d: ApprovalDecision, *, kill_on: bool, halted: bool) -> None:
-    if kill_on:
+    # The stops block new entries only: a SELL exit keeps managing the position (06 X5).
+    is_buy = card.get("side", "buy") == "buy"
+    if kill_on and is_buy:
         raise ApiError(409, "kill_switch", "Her şey durduruldu: yeni emir onaylanamaz.")
     if card["status"] != "pending":
         raise ApiError(409, "conflict", "Bu öneri zaten karara bağlandı ya da süresi doldu.")
     if d.approved_notional_try is not None and d.approved_notional_try > card["final_notional_try"]:
         raise ApiError(422, "grow_not_allowed", "Tutar yalnızca küçültülebilir; büyütme yok.")
-    if d.decision == "approve" and halted:
+    if d.decision == "approve" and halted and is_buy:
         raise ApiError(409, "halted", "Günlük −%1 durdurması: bugün yeni emir verilemez.")
 
 
@@ -70,43 +74,95 @@ INSERT INTO trading.approval_decisions (proposal_id, uid, name, role, decision, 
 async def decide(
     conn: AsyncConnection[Any], proposal_id: str, d: ApprovalDecision, actor: Actor, *, now: datetime, wall: datetime
 ) -> Outcome:
-    """decideApproval(): approve (optionally smaller) or reject; an approval executes right away."""
+    """decideApproval(): approve (optionally smaller) or reject; an approval executes right away.
+
+    A real run's approval first passes R16 at send time (`_at_send_block`); a failure is audited and
+    committed, the card stays pending and the caller gets 409 (kill_switch / halted / conflict)."""
+    blocked: ApiError | None = None
     async with conn.transaction():
         card, flags = await _card_or_404(conn, proposal_id, now=now, wall=wall, lock=True)
         _check_decision(card, d, kill_on=flags.kill_on, halted=flags.halted)
-        approve = d.decision == "approve"
-        notional = d.approved_notional_try if approve else None
-        comment = d.comment or None
-        updated = {
-            **card,
-            "status": "approved" if approve else "rejected",
-            "decided_by": actor.uid,
-            "decided_role": actor.role,
-            "decided_at": iso_ms(now),
-            "decision_comment": comment,
-            "approved_notional_try": notional,
-        }
-        async with conn.cursor() as cur:
-            await cur.execute(
-                DECIDE_SQL, (updated["status"], actor.uid, actor.role, now, comment, notional, proposal_id)
-            )
-            await cur.execute(
-                DECISION_LOG_SQL, (proposal_id, actor.uid, actor.name, actor.role, d.decision, notional, comment, now)
-            )
-        payload = {
-            "ticker": card["ticker"],
-            "company": card["company_name"],
-            "decision": d.decision,
-            "role": actor.role,
-            "note": len(d.comment) > 0,
-        }
-        draft = run_audit(actor.audit_actor, "approval.decided", "trade_proposal", proposal_id, payload, card["run_id"])
-        await append(conn, [draft], now=now)
-        events: list[Event] = [("approval.decided", updated)]
-        fill = None
-        if approve:
-            more, fill = await execute_approved(conn, updated, now)
-            events += more
+        if d.decision == "approve":
+            blocked = await _at_send_block(conn, card, actor, now)
+        if blocked is None:
+            outcome = await _record_decision(conn, proposal_id, card, d, actor, now)
+    if blocked is not None:
+        raise blocked
+    return outcome
+
+
+LIVE_RUN_SQL: Final = "SELECT run_set FROM trading.agent_runs WHERE run_id = %s"
+AT_SEND_CODES: Final = {"R01": "kill_switch", "R02": "halted"}
+
+
+async def _at_send_block(
+    conn: AsyncConnection[Any], card: dict[str, Any], actor: Actor, now: datetime
+) -> ApiError | None:
+    """R16 with the desk as it is now, for cards of real runs only (demo cards: M1's path, unchanged)."""
+    async with conn.cursor() as cur:
+        await cur.execute(LIVE_RUN_SQL, (card["run_id"],))
+        run = await cur.fetchone()
+    if run is None or run["run_set"] != "live":
+        return None
+    check = await check_at_send(conn, card, now, capital=get_settings().paper_capital_try)
+    if check.ok:
+        return None
+    payload = {
+        "ticker": card["ticker"],
+        "company": card["company_name"],
+        "rule_code": "R16",
+        "failed_rule": check.failed_rule,
+        "detail_tr": check.result.detail_tr,
+        "role": actor.role,
+        "limits_version": check.limits_version,
+    }
+    draft = run_audit(
+        "system:risk_gate", "risk.rejected", "trade_proposal", card["proposal_id"], payload, card["run_id"]
+    )
+    await append(conn, [draft], now=now)
+    return ApiError(409, AT_SEND_CODES.get(check.failed_rule or "", "conflict"), check.result.detail_tr)
+
+
+async def _record_decision(
+    conn: AsyncConnection[Any],
+    proposal_id: str,
+    card: dict[str, Any],
+    d: ApprovalDecision,
+    actor: Actor,
+    now: datetime,
+) -> Outcome:
+    """The decision itself (state + audit `approval.decided`) and, for an approval, the order."""
+    approve = d.decision == "approve"
+    notional = d.approved_notional_try if approve else None
+    comment = d.comment or None
+    updated = {
+        **card,
+        "status": "approved" if approve else "rejected",
+        "decided_by": actor.uid,
+        "decided_role": actor.role,
+        "decided_at": iso_ms(now),
+        "decision_comment": comment,
+        "approved_notional_try": notional,
+    }
+    async with conn.cursor() as cur:
+        await cur.execute(DECIDE_SQL, (updated["status"], actor.uid, actor.role, now, comment, notional, proposal_id))
+        await cur.execute(
+            DECISION_LOG_SQL, (proposal_id, actor.uid, actor.name, actor.role, d.decision, notional, comment, now)
+        )
+    payload = {
+        "ticker": card["ticker"],
+        "company": card["company_name"],
+        "decision": d.decision,
+        "role": actor.role,
+        "note": len(d.comment) > 0,
+    }
+    draft = run_audit(actor.audit_actor, "approval.decided", "trade_proposal", proposal_id, payload, card["run_id"])
+    await append(conn, [draft], now=now)
+    events: list[Event] = [("approval.decided", updated)]
+    fill = None
+    if approve:
+        more, fill = await execute_approved(conn, updated, now)
+        events += more
     return Outcome(updated, events, fill)
 
 

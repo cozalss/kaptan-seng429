@@ -59,13 +59,23 @@ def ticket_number(created: datetime, seq: int) -> str:
     return f"T-{d.year:04d}-{d.month:02d}{d.day:02d}-{seq:03d}"
 
 
-def personal_qty(card: dict[str, Any]) -> int:
+def personal_qty(
+    card: dict[str, Any],
+    *,
+    account_equity_try: float = PERSONAL_ACCOUNT_TRY,
+    paper_equity_try: float = PAPER_EQUITY_TRY,
+) -> int:
     """The approved notional scaled from the paper desk to the personal account, in whole lots."""
     approved = card["approved_notional_try"]
     notional: float = approved if approved is not None else card["final_notional_try"]
-    scaled = (notional * PERSONAL_ACCOUNT_TRY) / PAPER_EQUITY_TRY
+    scaled = (notional * account_equity_try) / paper_equity_try
     limit: float = card["limit_price"]
     return max(1, math.floor(scaled / limit))
+
+
+def _num(x: float) -> float | int:
+    """Whole lira stay ints in the JSON (350000, not 350000.0), like the mock."""
+    return int(x) if float(x).is_integer() else float(x)
 
 
 def _first(items: list[dict[str, Any]], pred: Any, default: str) -> str:
@@ -92,10 +102,22 @@ def _edge_cost_lines(proposal: dict[str, Any] | None) -> tuple[str, str]:
     return cost_line, edge_line
 
 
-def build_ticket(card: dict[str, Any], explain: dict[str, Any], *, seq: int, decided_at: str) -> dict[str, Any]:
-    """buildTicket(card, explain, {seq, decidedAt, stage: CURRENT_STAGE}) — `entry` is EMPTY_ENTRY."""
+def build_ticket(
+    card: dict[str, Any],
+    explain: dict[str, Any],
+    *,
+    seq: int,
+    decided_at: str,
+    account_equity_try: float = PERSONAL_ACCOUNT_TRY,
+    paper_equity_try: float = PAPER_EQUITY_TRY,
+    mode_keys: dict[str, bool] | None = None,
+) -> dict[str, Any]:
+    """buildTicket(card, explain, {seq, decidedAt, stage: CURRENT_STAGE}) — `entry` is EMPTY_ENTRY.
+
+    The defaults are the demo's (350.000 TL account, 1.016.480 TL paper desk, no live key); outside
+    DEMO_MODE the caller passes the configured account, the desk's equity and the live_arm keys."""
     created = parse_iso(decided_at) + TICKET_CREATED_AFTER
-    qty = personal_qty(card)
+    qty = personal_qty(card, account_equity_try=account_equity_try, paper_equity_try=paper_equity_try)
     p: dict[str, Any] | None = explain.get("proposal")
     checks: list[dict[str, Any]] = explain.get("risk_checks") or []
     trace: list[dict[str, Any]] = card["rule_trace_summary"]
@@ -114,7 +136,7 @@ def build_ticket(card: dict[str, Any], explain: dict[str, Any], *, seq: int, dec
         "approval_deadline": card["expires_at"],
         "created_at": iso_ms(created),
         "valid_until": iso_ms(ticket_valid_until(created)),
-        "mode_keys": {"config": False, "env": False, "ui": False},
+        "mode_keys": dict(mode_keys) if mode_keys is not None else {"config": False, "env": False, "ui": False},
         "side": "buy",
         "ticker": card["ticker"],
         "company_name": card["company_name"],
@@ -128,7 +150,7 @@ def build_ticket(card: dict[str, Any], explain: dict[str, Any], *, seq: int, dec
         "ref_price": p["ref_price"] if p else card["limit_price"],
         "upper_limit": js_round(card["limit_price"] * 1.1 * 100) / 100,
         "est_notional_try": js_round(qty * card["limit_price"]),
-        "account_equity_try": PERSONAL_ACCOUNT_TRY,
+        "account_equity_try": _num(account_equity_try),
         "event_line_tr": f"{card['event_type']} — {card['sub_type_tr']}",
         "kap_line_tr": f"idx {card['disclosure_index']} · {card['headline_tr']}",
         "materiality_line_tr": _first(trace, lambda r: r["passed"], "Kural izi: Neden ekranında"),

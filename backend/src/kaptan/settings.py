@@ -10,9 +10,10 @@ from __future__ import annotations
 import secrets
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Final, Literal
+from urllib.parse import urlsplit
 
-from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic import Field, SecretStr, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -87,6 +88,11 @@ class Settings(BaseSettings):
     prices_live: bool = False
     #: Minimum gap between two price-source requests (İş Yatırım / Yahoo), seconds.
     prices_min_interval_s: float = Field(default=2.0, ge=0.5)
+    #: Reference data jobs (M3, kaptan.reference / kaptan.fundamentals / kaptan.dq). The intraday quote
+    #: delay (Yahoo/BIST free data is ~15 min late): a bar counts as known only this long after it ends.
+    quote_delay_s: int = Field(default=15 * 60, ge=0)
+    #: tedbir_sync: also parse the SPK bulletin PDF at this URL (off when empty; KAP notices always run).
+    tedbir_bulletin_url: str | None = None
 
     #: RAG (M2, kaptan.rag): embedder of the disclosure archive (model + size in config/rag.yaml).
     rag_embedder: Literal["gemini", "fake"] = "gemini"
@@ -104,6 +110,17 @@ class Settings(BaseSettings):
     #: KAP → agent worker (kaptan.workers.agent_worker): LLM-spending runs allowed per rolling hour.
     agent_max_runs_per_hour: int = Field(default=6, ge=0)
 
+    #: KAPTAN_MODE (04 §env): paper | personal | live | backtest. `personal` turns on the one-person
+    #: kill-switch restart rule (06 §11: ≥ 24 h between the two signatures and ≥ 5 sessions since the kill).
+    kaptan_mode: Literal["paper", "personal", "live", "backtest"] = "paper"
+    #: Starting capital of the paper desk (kaptan.risk.book): equity = capital + fills' cash flows + marks.
+    paper_capital_try: float = Field(default=1_000_000.0, gt=0)
+    #: M3 A3 (kaptan.brokers): the personal account the order tickets size for (12 §4; the demo's 350.000 TL).
+    personal_account_try: float = Field(default=350_000.0, gt=0)
+    #: K2 of the three live keys (09 §8): true only on the production host. Without a real broker
+    #: adapter every order still goes to SimBIST (paper) and the fallback is audited.
+    kaptan_live_enabled: bool = False
+
     cookie_secure: bool = True
     allowed_origins: Annotated[list[str], NoDecode] = Field(default_factory=list)
 
@@ -111,7 +128,25 @@ class Settings(BaseSettings):
     db_pool_min: int = Field(default=1, ge=1)
     db_pool_max: int = Field(default=10, ge=1)
 
-    @field_validator("allowed_origins", mode="before")
+    # ── ops (M3 A5: deploy-ready backend; kaptan.ops) ─────────────────────────
+    #: Mutating endpoints (POST/PUT/PATCH/DELETE) per user (or client IP) per minute (09 §6, NFR-09).
+    #: Never below LOGIN_RATE_PER_MINUTE, so the e2e override (600) raises both.
+    mutation_rate_per_minute: int = Field(default=60, gt=0)
+    #: auto = Redis in prod (shared by every API process), in-process otherwise; memory | redis force one.
+    rate_limit_backend: Literal["auto", "memory", "redis"] = "auto"
+    #: Reverse proxies whose X-Forwarded-For is believed (IPs or CIDRs, comma separated). Empty = none.
+    trusted_proxies: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    #: A refresh token rotated at most this many seconds ago may be presented again (two tabs refreshing
+    #: at once) without revoking its family. 0 = off (M1 behaviour); docker-compose.prod.yml uses 10.
+    refresh_grace_s: int = Field(default=0, ge=0, le=60)
+    #: GET /metrics: Bearer token. Unset = loopback clients only.
+    metrics_token: SecretStr | None = None
+    #: auto = text in dev/test, JSON in prod.
+    log_format: Literal["auto", "text", "json"] = "auto"
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    hsts_max_age_s: int = Field(default=365 * 24 * 3600, ge=0)
+
+    @field_validator("allowed_origins", "trusted_proxies", mode="before")
     @classmethod
     def _split_origins(cls, v: object) -> object:
         if isinstance(v, str):
@@ -124,6 +159,7 @@ class Settings(BaseSettings):
         "database_owner_url",
         "test_database_url",
         "test_database_owner_url",
+        "metrics_token",
         mode="before",
     )
     @classmethod
@@ -161,4 +197,80 @@ def _dev_jwt_key() -> str:
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return Settings()  # values come from the environment
+    try:
+        return Settings()  # values come from the environment
+    except ValidationError as exc:
+        # pydantic's message repeats the raw input (secrets included); keep only the reasons.
+        reasons = "; ".join(f"{'.'.join(map(str, e['loc'])) or 'settings'}: {e['msg']}" for e in exc.errors())
+        raise ConfigError(f"invalid configuration: {reasons}") from None
+
+
+# ── production readiness (NFR-08) ─────────────────────────────────────────────
+
+#: Text that marks a JWT_SECRET as a placeholder or a test value.
+WEAK_SECRET_MARKERS: Final = ("change", "example", "placeholder", "<", "test-only", "dev-", "secret", "password")
+MIN_SECRET_DISTINCT_CHARS: Final = 12
+Component = Literal["api", "ingest_worker", "agent_worker", "scheduler", "migrate", "bootstrap", "ops"]
+
+
+class ConfigError(RuntimeError):
+    """The configuration cannot start this process. The message never contains a secret value."""
+
+
+def weak_jwt_secret(secret: SecretStr | None) -> str | None:
+    """Why the signing key is weak (None = fine). Reasons only, never the value."""
+    if secret is None:
+        return "JWT_SECRET is not set"
+    value = secret.get_secret_value()
+    if len(value.encode()) < MIN_JWT_SECRET_BYTES:
+        return f"JWT_SECRET is shorter than {MIN_JWT_SECRET_BYTES} bytes"
+    if len(set(value)) < MIN_SECRET_DISTINCT_CHARS:
+        return "JWT_SECRET has too few distinct characters (not random)"
+    lowered = value.lower()
+    if any(marker in lowered for marker in WEAK_SECRET_MARKERS):
+        return "JWT_SECRET looks like a placeholder or a test value"
+    return None
+
+
+def redis_has_password(url: SecretStr) -> bool:
+    try:
+        return bool(urlsplit(url.get_secret_value()).password)
+    except ValueError:
+        return False
+
+
+def production_problems(settings: Settings, component: Component = "api") -> list[str]:
+    """Every reason this configuration must not run in KAPTAN_ENV=prod (empty = ready)."""
+    problems: list[str] = []
+    if settings.demo_mode:
+        problems.append("DEMO_MODE=true (the demo endpoints, clock and reset must be off in prod)")
+    if not settings.cookie_secure:
+        problems.append("COOKIE_SECURE=false (the refresh cookie must be Secure in prod)")
+    if not settings.allowed_origins:
+        problems.append("ALLOWED_ORIGINS is empty (list the panel's origin)")
+    if not redis_has_password(settings.redis_url):
+        problems.append("REDIS_URL has no password (use redis://:<password>@host:6379/0)")
+    has_key = any(k is not None for k in (settings.gemini_api_key, settings.deepseek_api_key, settings.groq_api_key))
+    if settings.llm_mode == "live" and not has_key:
+        problems.append("LLM_MODE=live but no GEMINI_API_KEY / DEEPSEEK_API_KEY / GROQ_API_KEY is set")
+    weak = weak_jwt_secret(settings.jwt_secret)
+    if weak is not None:
+        problems.append(weak)
+    if settings.passphrase_hash is None or not settings.passphrase_hash.get_secret_value().startswith("$argon2"):
+        problems.append("PASSPHRASE_HASH is not an argon2 hash (scripts/hash_passphrase.py)")
+    if component == "migrate" and settings.database_owner_url is None:
+        problems.append("DATABASE_OWNER_URL is not set (the migrate job runs as the owner role)")
+    return problems
+
+
+def ensure_production_ready(settings: Settings, component: Component = "api") -> None:
+    """Refuse to start in prod with an unsafe configuration; outside prod only the migrate job checks
+    for its owner URL."""
+    if settings.kaptan_env != "prod":
+        if component == "migrate" and settings.database_owner_url is None:
+            raise ConfigError("DATABASE_OWNER_URL is not set (the migrate job runs as the owner role)")
+        return
+    problems = production_problems(settings, component)
+    if problems:
+        listed = "\n".join(f"  - {p}" for p in problems)
+        raise ConfigError(f"KAPTAN_ENV=prod: {component} refuses to start:\n{listed}")

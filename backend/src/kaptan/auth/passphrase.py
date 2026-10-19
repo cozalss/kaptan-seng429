@@ -46,3 +46,11 @@ def verify_passphrase(settings: Settings, passphrase: str) -> bool:
         return _hasher().verify(passphrase, expected_hash(settings))
     except UnknownHashError:
         return False
+
+
+def verify_hash(secret: str, hashed: str) -> bool:
+    """A password against a stored argon2 hash (False for an unknown hash format)."""
+    try:
+        return _hasher().verify(secret, hashed)
+    except UnknownHashError:
+        return False

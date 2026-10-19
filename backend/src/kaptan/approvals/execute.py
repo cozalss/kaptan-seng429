@@ -1,161 +1,163 @@
-"""After an approval: the order ticket, the SimBIST paper order and (intraday) its fill 1.8 s later.
+"""After an approval: the order ticket, the SimBIST paper order and (intraday, DEMO_MODE) its fill 1.8 s later.
 
-Port of kaptan-panel/src/lib/api/mock/scenarios.ts executeApproved(). `execute_approved()` runs
-inside the decision's transaction and returns the SSE events to publish after commit; the fill is
-a demo timer (`schedule_fill` → kaptan.demo.timers.later) that re-checks the order in its own transaction, so a kill
-switch (order cancelled) or a demo reset (order gone) in the meantime turns it into a no-op.
+Port of kaptan-panel/src/lib/api/mock/scenarios.ts executeApproved(), now behind the broker layer
+(kaptan.brokers): the ticket goes through `OrderTicketBroker`, the paper order through
+`GuardedBroker(SimBistBroker)`, both via the Broker protocol. `execute_approved()` runs inside the
+decision's transaction and returns the SSE events to publish after commit.
+
+DEMO_MODE: an intraday order fills at limit × 0.995 (6 bps, the demo E3 run at 48.32) as a demo
+timer (`schedule_fill` → kaptan.demo.timers.later) that re-checks the order in its own transaction,
+so a kill switch (order cancelled) or a demo reset (order gone) in the meantime makes it a no-op.
+The timer is in memory; `resume_pending_fills()` settles any fill a restart dropped (single API
+process assumed, see kaptan.demo.timers). Tickets exist from the demo day on.
+Outside DEMO_MODE: no timer; next-open orders wait for `run_open_fill`, intraday ones for the next
+available price (kaptan.brokers.fills); every approval gets its ticket.
 """
 
 from __future__ import annotations
 
 import asyncio
-import math
-from dataclasses import dataclass
+import logging
 from datetime import datetime
-from functools import cache
+from decimal import Decimal
 from typing import Any, Final
 
 from psycopg import AsyncConnection
-from psycopg.types.json import Jsonb
 
 from kaptan.approvals.fmt_tr import ist_date
-from kaptan.approvals.reads import ticket_from_row, ticket_rows
-from kaptan.approvals.ticket_doc import TICKET_SEQ_BASE, build_ticket, parse_iso
-from kaptan.audit.writer import AuditDraft, append
+from kaptan.approvals.ticket_doc import parse_iso
+from kaptan.audit.writer import append
+from kaptan.brokers import config as broker_config
+from kaptan.brokers.base import BrokerError, OrderIntent, OrderRefused
+from kaptan.brokers.config import ExecConfig
+from kaptan.brokers.guarded import GuardedBroker, route
+from kaptan.brokers.ledger import RUN_STRATEGY_VERSION, run_audit
+from kaptan.brokers.simbist import (
+    BSMV_RATE,
+    COMMISSION_RATE,
+    SLIPPAGE_BPS,
+    FillJob,
+    FillTerms,
+    SimBistBroker,
+    book_fill,
+    fill_doc,
+    lock_order,
+    paper_order,
+)
+from kaptan.brokers.ticket import OrderTicketBroker, ticket_seq
 from kaptan.clock import DEMO_DAY
-from kaptan.demo.fixtures import DemoFixtures
 from kaptan.demo.timers import later
-from kaptan.domain.schemas import iso_ms
 from kaptan.events.publish import publish
 from kaptan.portfolio.marks import js_round
-from kaptan.portfolio.positions import open_position
+
+log = logging.getLogger("kaptan.approvals.execute")
 
 #: Real time between an intraday order and its SimBIST fill (scenarios.ts `later(1_800, …)`).
 FILL_DELAY_S: float = 1.8
 DEMO_E3_RUN: Final = "run-demo-e3-ornek"
 DEMO_E3_FILL_PRICE: Final = 48.32
-#: Mock db.audit(): entries tied to a run carry the live strategy version.
-RUN_STRATEGY_VERSION: Final = "v1.1-fwd"
-COMMISSION_RATE: Final = 0.0005
-BSMV_RATE: Final = 0.05
-SLIPPAGE_BPS: Final = 6
+DEMO_FILL_FACTOR: Final = 0.995
 
 Event = tuple[str, dict[str, Any]]
 _TASKS: set[asyncio.Task[None]] = set()
 
-
-@dataclass(frozen=True, slots=True)
-class FillJob:
-    order_id: str
-    run_id: str
-    proposal_id: str
-    ticker: str
-    company_name: str
-    qty: int
-    price: float
-
-
-@cache
-def _fixture_run_ids() -> tuple[str, ...]:
-    return tuple(r["explain"]["run"]["run_id"] for r in DemoFixtures().runs if r["set"] != "demo")
+__all__ = [
+    "BSMV_RATE",
+    "COMMISSION_RATE",
+    "RUN_STRATEGY_VERSION",
+    "SLIPPAGE_BPS",
+    "FillJob",
+    "execute_approved",
+    "fill_doc",
+    "paper_order",
+    "run_audit",
+    "ticket_seq",
+]
 
 
-@cache
-def _demo_ticket() -> dict[str, Any]:
-    doc: dict[str, Any] = DemoFixtures().json("demo_order_ticket.json")
-    return doc
+def _wants_ticket(card: dict[str, Any], cfg: ExecConfig) -> bool:
+    """selectors.ts ticketFor(): in DEMO_MODE one ticket per approval decided on or after the demo day.
+    Outside it every approved buy gets one (tickets are buy-only in the contract)."""
+    if card.get("side", "buy") != "buy":
+        return False
+    return not cfg.demo_mode or ist_date(parse_iso(card["decided_at"])) >= DEMO_DAY
 
 
-async def ticket_seq(conn: AsyncConnection[Any], run_id: str) -> int:
-    """10 + the run's index in allSpecs() (day runs, then history; anything else after them)."""
-    ids = _fixture_run_ids()
-    if run_id in ids:
-        return TICKET_SEQ_BASE + ids.index(run_id)
-    async with conn.cursor() as cur:
-        await cur.execute("SELECT count(*) AS n FROM trading.order_tickets")
-        row = await cur.fetchone()
-    return TICKET_SEQ_BASE + len(ids) + int(row["n"] if row else 0)
+def _intent(order: dict[str, Any], card: dict[str, Any]) -> OrderIntent:
+    return OrderIntent(
+        client_order_id=order["client_order_id"],
+        ticker=order["ticker"],
+        side=order["side"],
+        order_type="limit",
+        time_in_force=order["tif"],
+        qty=int(order["qty"]),
+        limit_price=Decimal(str(order["limit_price"])),
+        context={"order": order, "card": card},
+    )
 
 
-def run_audit(
-    actor: str, action: str, entity_type: str, entity_id: str, payload: dict[str, Any], run_id: str
-) -> AuditDraft:
-    return AuditDraft(actor, action, entity_type, entity_id, payload, run_id, RUN_STRATEGY_VERSION)
-
-
-async def _issue_ticket(conn: AsyncConnection[Any], card: dict[str, Any], now: datetime) -> dict[str, Any] | None:
-    """selectors.ts ticketFor(): one ticket per approval decided on or after the demo day."""
-    decided_at: str = card["decided_at"]
-    if ist_date(parse_iso(decided_at)) < DEMO_DAY:
+async def _issue_ticket(
+    conn: AsyncConnection[Any], card: dict[str, Any], now: datetime, cfg: ExecConfig
+) -> dict[str, Any] | None:
+    if not _wants_ticket(card, cfg):
         return None
-    if card["run_id"] == DEMO_E3_RUN:
-        raw = {k: v for k, v in _demo_ticket().items() if k != "entry"}
-    else:
-        async with conn.cursor() as cur:
-            await cur.execute("SELECT explain FROM trading.agent_runs WHERE run_id = %s", (card["run_id"],))
-            run = await cur.fetchone()
-        explain = run["explain"] if run else {}
-        seq = await ticket_seq(conn, card["run_id"])
-        raw = {k: v for k, v in build_ticket(card, explain, seq=seq, decided_at=decided_at).items() if k != "entry"}
+    order = {**paper_order(card, now), "client_order_id": f"fis-{card['proposal_id']}"}
+    ack = await OrderTicketBroker(conn, now, cfg).submit_order(_intent(order, card))
+    return dict(ack.raw) if ack.status == "awaiting_manual_entry" else None
+
+
+async def _held_paper_qty(conn: AsyncConnection[Any], card: dict[str, Any]) -> int | None:
+    """An exit sells at most what the paper book holds of the position it was raised for."""
+    if card.get("side", "buy") != "sell":
+        return None
     async with conn.cursor() as cur:
         await cur.execute(
             """
-            INSERT INTO trading.order_tickets (ticket_no, order_id, proposal_id, run_id, doc, created_at, valid_until)
-            VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING""",
-            (
-                raw["ticket_no"],
-                raw["order_id"],
-                raw["proposal_id"],
-                raw["run_id"],
-                Jsonb(raw),
-                parse_iso(raw["created_at"]),
-                parse_iso(raw["valid_until"]),
-            ),
+            SELECT p.qty FROM trading.exit_signals s
+            JOIN trading.positions p ON p.book = 'paper' AND p.source_proposal = s.source_proposal
+            WHERE s.proposal_id = %s""",
+            (card["proposal_id"],),
         )
-    rows = await ticket_rows(conn, ticket_no=raw["ticket_no"])
-    return ticket_from_row(rows[0], now) if rows else None
+        row = await cur.fetchone()
+    return int(row["qty"]) if row else 0
 
 
-def paper_order(card: dict[str, Any], now: datetime) -> dict[str, Any]:
-    order_id = "ord-s-" + card["run_id"].removeprefix("run-")
-    auction = card["entry"] == "next_open_auction"
-    approved = card["approved_notional_try"]
-    qty = max(1, math.floor(approved / card["limit_price"])) if approved else card["qty"]
-    return {
-        "id": order_id,
-        "client_order_id": f"kaptan-{order_id}",
-        "proposal_id": card["proposal_id"],
-        "run_id": card["run_id"],
-        "ticker": card["ticker"],
-        "company_name": card["company_name"],
-        "side": "buy",
-        "order_type": "limit",
-        "tif": "opg" if auction else "day",
-        "qty": qty,
-        "limit_price": card["limit_price"],
-        "status": "pending_open" if auction else "accepted",
-        "broker": "simbist",
-        "created_at": iso_ms(now),
-        "fills": [],
-        "is_fixture": card["is_fixture"],
-    }
+async def _refuse(conn: AsyncConnection[Any], order: dict[str, Any], exc: BrokerError, now: datetime) -> dict[str, Any]:
+    """GuardedBroker said no: the order is stored as rejected and the refusal is audited."""
+    code = exc.code if isinstance(exc, OrderRefused) else "live_not_armed"
+    rejected = {**order, "status": "rejected"}
+    await SimBistBroker(conn, now).submit_order(_intent(rejected, {}))
+    payload = {"ticker": order["ticker"], "company": order["company_name"], "code": code}
+    draft = run_audit("system:guarded_broker", "order.refused", "order", order["id"], payload, order["run_id"])
+    await append(conn, [draft], now=now)
+    return rejected
 
 
-ORDER_UPSERT: Final = """
-INSERT INTO trading.orders (id, client_order_id, proposal_id, run_id, ticker, company_name, side, order_type, tif,
-  qty, limit_price, status, broker, cancel_reason, is_fixture, created_at, updated_at)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NULL, %s, %s, %s)
-ON CONFLICT (id) DO UPDATE SET qty = EXCLUDED.qty, tif = EXCLUDED.tif, status = EXCLUDED.status,
-  cancel_reason = NULL, created_at = EXCLUDED.created_at, updated_at = EXCLUDED.updated_at
-"""
+async def _send_paper(
+    conn: AsyncConnection[Any], card: dict[str, Any], now: datetime, cfg: ExecConfig
+) -> dict[str, Any] | None:
+    held = await _held_paper_qty(conn, card)
+    if held == 0:
+        return None  # an exit for a position only the personal book holds: nothing to sell on paper
+    order = paper_order(card, now, held_qty=held)
+    _mode, fallback = await route(conn, cfg, now, order_id=order["id"], run_id=card["run_id"])
+    if fallback is not None:
+        await append(conn, [fallback], now=now)
+    broker = GuardedBroker(SimBistBroker(conn, now), conn, now, cfg)
+    try:
+        await broker.submit_order(_intent(order, card))
+    except BrokerError as exc:
+        return await _refuse(conn, order, exc, now)
+    return order
 
 
 async def execute_approved(
     conn: AsyncConnection[Any], card: dict[str, Any], now: datetime
 ) -> tuple[list[Event], FillJob | None]:
     """Ticket (audit `ticket.issued`) and paper order for an approved card; returns (events, fill job)."""
+    cfg = broker_config.current()
     events: list[Event] = []
-    ticket = await _issue_ticket(conn, card, now)
+    ticket = await _issue_ticket(conn, card, now, cfg)
     if ticket is not None:
         payload = {"qty": ticket["qty"], "limit_price": ticket["limit_price"], "stage": ticket["stage"]}
         draft = run_audit(
@@ -163,83 +165,34 @@ async def execute_approved(
         )
         await append(conn, [draft], now=now)
         events.append(("ticket", ticket))
-    order = paper_order(card, now)
-    async with conn.cursor() as cur:
-        await cur.execute("DELETE FROM trading.fills WHERE order_id = %s", (order["id"],))
-        await cur.execute(
-            ORDER_UPSERT,
-            (
-                *(order[k] for k in ("id", "client_order_id", "proposal_id", "run_id", "ticker", "company_name")),
-                *(order[k] for k in ("side", "order_type", "tif", "qty", "limit_price", "status", "broker")),
-                order["is_fixture"],
-                now,
-                now,
-            ),
-        )
-    events.append(("order", order))
-    if order["status"] != "accepted":
+    order = await _send_paper(conn, card, now, cfg)
+    if order is None:
         return events, None
-    price = DEMO_E3_FILL_PRICE if card["run_id"] == DEMO_E3_RUN else js_round(card["limit_price"] * 0.995 * 100) / 100
-    job = FillJob(
-        order["id"], card["run_id"], card["proposal_id"], card["ticker"], card["company_name"], order["qty"], price
+    events.append(("order", order))
+    if order["status"] != "accepted" or not cfg.demo_mode:
+        return events, None
+    return events, demo_fill_job(order)
+
+
+def demo_fill_price(run_id: str, limit_price: float) -> float:
+    return DEMO_E3_FILL_PRICE if run_id == DEMO_E3_RUN else js_round(limit_price * DEMO_FILL_FACTOR * 100) / 100
+
+
+def demo_fill_job(order: dict[str, Any]) -> FillJob:
+    price = demo_fill_price(order["run_id"], float(order["limit_price"]))
+    return FillJob(
+        order["id"], order["run_id"], order["proposal_id"], order["ticker"], order["company_name"], order["qty"], price
     )
-    return events, job
-
-
-def fill_doc(job: FillJob, now: datetime) -> dict[str, Any]:
-    commission = js_round(job.price * job.qty * COMMISSION_RATE * 100) / 100
-    return {
-        "id": "fill-" + job.order_id.removeprefix("ord-"),
-        "order_id": job.order_id,
-        "qty": job.qty,
-        "price": job.price,
-        "commission": commission,
-        "bsmv": js_round(commission * BSMV_RATE * 100) / 100,
-        "slippage_bps": SLIPPAGE_BPS,
-        "filled_at": iso_ms(now),
-        "source": "simbist",
-    }
 
 
 async def apply_fill(conn: AsyncConnection[Any], job: FillJob, now: datetime) -> dict[str, Any] | None:
-    """The fill, in the caller's transaction; None when the order is no longer `accepted`."""
-    async with conn.cursor() as cur:
-        await cur.execute("SELECT status FROM trading.orders WHERE id = %s FOR UPDATE", (job.order_id,))
-        row = await cur.fetchone()
-        if row is None or row["status"] != "accepted":
-            return None
-        fill = fill_doc(job, now)
-        await cur.execute(
-            "INSERT INTO trading.fills VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-            (
-                fill["id"],
-                job.order_id,
-                job.qty,
-                job.price,
-                fill["commission"],
-                fill["bsmv"],
-                SLIPPAGE_BPS,
-                now,
-                "simbist",
-            ),
-        )
-        await cur.execute(
-            "UPDATE trading.orders SET status = 'filled', updated_at = %s WHERE id = %s", (now, job.order_id)
-        )
-    payload = {"ticker": job.ticker, "company": job.company_name, "qty": job.qty, "price": job.price}
-    await append(
-        conn, [run_audit("system:simbist", "order.filled", "order", job.order_id, payload, job.run_id)], now=now
-    )
-    await open_position(
-        conn,
-        book="paper",
-        proposal_id=job.proposal_id,
-        run_id=job.run_id,
-        qty=job.qty,
-        avg_cost=job.price,
-        opened_at=now,
-    )
-    return {**fill, "ticker": job.ticker}
+    """The demo fill, in the caller's transaction; None when the order is no longer `accepted`."""
+    order = await lock_order(conn, job.order_id)
+    if order is None or order["status"] != "accepted":
+        return None
+    doc = fill_doc(job, now)
+    terms = FillTerms(price=job.price, commission=doc["commission"], bsmv=doc["bsmv"], slippage_bps=SLIPPAGE_BPS)
+    return await book_fill(conn, {**order, "qty": job.qty}, terms, now, filled_by="demo_timer")
 
 
 async def run_fill(app: Any, job: FillJob) -> None:
@@ -257,6 +210,35 @@ def schedule_fill(app: Any, job: FillJob, delay_s: float | None = None) -> async
     _TASKS.add(task)
     task.add_done_callback(_TASKS.discard)
     return task
+
+
+PENDING_DEMO_FILLS_SQL: Final = """
+SELECT o.id, o.run_id, o.proposal_id, o.ticker, o.company_name, o.qty, o.limit_price, o.created_at
+FROM trading.orders o
+WHERE o.broker = 'simbist' AND o.status = 'accepted' AND NOT o.is_fixture
+  AND NOT EXISTS (SELECT 1 FROM trading.fills f WHERE f.order_id = o.id)
+ORDER BY o.created_at, o.id
+"""
+
+
+async def resume_pending_fills(app: Any) -> int:
+    """Startup (DEMO_MODE): re-schedule every demo fill a restart dropped (an `accepted` SimBIST order
+    without a fill) for what is left of its 1.8 s, at once if that has passed. Idempotent: the fill
+    re-checks the order under a row lock, so a second schedule of the same order is a no-op."""
+    try:
+        async with app.state.pool.connection() as conn, conn.cursor() as cur:
+            await cur.execute(PENDING_DEMO_FILLS_SQL)
+            rows = await cur.fetchall()
+    except Exception:
+        log.exception("demo fills: pending orders could not be read; none resumed")
+        return 0
+    now = app.state.clock.now()
+    for row in rows:
+        waited = (now - row["created_at"]).total_seconds()
+        schedule_fill(app, demo_fill_job(dict(row)), delay_s=max(0.0, FILL_DELAY_S - waited))
+    if rows:
+        log.info("demo fills: %d pending fill(s) resumed after restart", len(rows))
+    return len(rows)
 
 
 async def wait_for_fills() -> None:

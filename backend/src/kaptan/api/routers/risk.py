@@ -34,17 +34,23 @@ from kaptan.risk.status import risk_status
 router = APIRouter(tags=["risk"])
 
 
+def _live(request: Request) -> bool:
+    """Outside DEMO_MODE the status is the paper book marked to market (kaptan.risk.book)."""
+    settings = getattr(request.app.state, "settings", None)
+    return settings is not None and not settings.demo_mode
+
+
 async def _status_after_write(request: Request, conn: Conn, clock: ClockDep) -> dict[str, Any]:
     """The new RiskStatus (read after the commit), published on SSE desk `kill_switch`."""
-    status = await risk_status(conn, clock.now())
+    status = await risk_status(conn, clock.now(), live=_live(request))
     await conn.commit()
     await publish(request.app, "desk", "kill_switch", status)
     return status
 
 
 @router.get("/risk/status", response_model=RiskStatus)
-async def status(user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
-    return await risk_status(conn, clock.now())
+async def status(user: CurrentUser, conn: Conn, clock: ClockDep, request: Request) -> Any:
+    return await risk_status(conn, clock.now(), live=_live(request))
 
 
 @router.post("/risk/kill-switch", response_model=RiskStatus)
@@ -79,5 +85,7 @@ async def reset_confirm(
     clock: ClockDep,
     request: Request,
 ) -> Any:
-    await ks.confirm_reset(conn, uid=actor.uid, role=actor.role, reason=body.reason, now=clock.now())
+    settings = getattr(request.app.state, "settings", None)
+    personal = settings is not None and settings.kaptan_mode == "personal"
+    await ks.confirm_reset(conn, uid=actor.uid, role=actor.role, reason=body.reason, now=clock.now(), personal=personal)
     return await _status_after_write(request, conn, clock)

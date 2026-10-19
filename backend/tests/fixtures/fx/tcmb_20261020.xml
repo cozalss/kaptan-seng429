@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="isokur.xsl"?>
+<!-- Test fixture shaped like a TCMB indicative-rates bulletin (kurlar/YYYYMM/DDMMYYYY.xml); values are synthetic. -->
+<Tarih_Date Tarih="20.10.2026" Date="10/20/2026" Bulten_No="2026/199" >
+	<Currency CrossOrder="0" Kod="USD" CurrencyCode="USD">
+		<Unit>1</Unit>
+		<Isim>ABD DOLARI</Isim>
+		<CurrencyName>US DOLLAR</CurrencyName>
+		<ForexBuying>41.8123</ForexBuying>
+		<ForexSelling>41.8877</ForexSelling>
+		<BanknoteBuying>41.7830</BanknoteBuying>
+		<BanknoteSelling>41.9505</BanknoteSelling>
+		<CrossRateUSD/>
+		<CrossRateOther/>
+	</Currency>
+	<Currency CrossOrder="9" Kod="EUR" CurrencyCode="EUR">
+		<Unit>1</Unit>
+		<Isim>EURO</Isim>
+		<CurrencyName>EURO</CurrencyName>
+		<ForexBuying>48.6510</ForexBuying>
+		<ForexSelling>48.7387</ForexSelling>
+		<BanknoteBuying>48.6169</BanknoteBuying>
+		<BanknoteSelling>48.8118</BanknoteSelling>
+		<CrossRateUSD/>
+		<CrossRateOther>1.1636</CrossRateOther>
+	</Currency>
+	<Currency CrossOrder="12" Kod="JPY" CurrencyCode="JPY">
+		<Unit>100</Unit>
+		<Isim>JAPON YENİ</Isim>
+		<CurrencyName>JAPENESE YEN</CurrencyName>
+		<ForexBuying>27.5310</ForexBuying>
+		<ForexSelling>27.7135</ForexSelling>
+		<BanknoteBuying>27.3594</BanknoteBuying>
+		<BanknoteSelling>27.8173</BanknoteSelling>
+		<CrossRateUSD>151.82</CrossRateUSD>
+		<CrossRateOther/>
+	</Currency>
+	<Currency CrossOrder="18" Kod="XDR" CurrencyCode="XDR">
+		<Unit>1</Unit>
+		<Isim>ÖZEL ÇEKME HAKKI (SDR)</Isim>
+		<CurrencyName>SPECIAL DRAWING RIGHT (SDR)</CurrencyName>
+		<ForexBuying>57.1022</ForexBuying>
+		<ForexSelling/>
+		<BanknoteBuying/>
+		<BanknoteSelling/>
+		<CrossRateUSD/>
+		<CrossRateOther/>
+	</Currency>
+	<Currency CrossOrder="19" Kod="IRR" CurrencyCode="IRR">
+		<Unit>100</Unit>
+		<Isim>İRAN RİYALİ</Isim>
+		<CurrencyName>IRANIAN RIAL</CurrencyName>
+		<ForexBuying></ForexBuying>
+		<ForexSelling/>
+		<BanknoteBuying/>
+		<BanknoteSelling/>
+		<CrossRateUSD/>
+		<CrossRateOther/>
+	</Currency>
+</Tarih_Date>

@@ -66,8 +66,8 @@ class PoliteClient:
                 return min(float(header), MAX_RETRY_AFTER_S)
         return float(self._backoff * 2**attempt + random.uniform(0, self._jitter))  # noqa: S311
 
-    async def get_json(self, url: str, *, params: Mapping[str, str] | None = None) -> Any:
-        """GET → parsed JSON. 404 returns None (unknown/delisted symbol); other errors raise SourceError."""
+    async def _get(self, url: str, params: Mapping[str, str] | None) -> httpx.Response | None:
+        """GET with pacing and retries → the response (None on 404); other errors raise SourceError."""
         async with self._lock:
             last_error = "no attempt"
             for attempt in range(self._retries + 1):
@@ -84,10 +84,7 @@ class PoliteClient:
                     if response.status_code not in RETRY_STATUSES:
                         if response.is_error:
                             raise SourceError(f"{url}: HTTP {response.status_code}")
-                        try:
-                            return response.json()
-                        except ValueError as exc:
-                            raise SourceError(f"{url}: response is not JSON") from exc
+                        return response
                     last_error = f"HTTP {response.status_code}"
                 if attempt < self._retries:
                     delay = self._retry_delay(attempt, response)
@@ -96,6 +93,21 @@ class PoliteClient:
                     )
                     await self._sleep(delay)
             raise SourceError(f"{url}: giving up after {self._retries + 1} attempts ({last_error})")
+
+    async def get_json(self, url: str, *, params: Mapping[str, str] | None = None) -> Any:
+        """GET → parsed JSON. 404 returns None (unknown/delisted symbol); other errors raise SourceError."""
+        response = await self._get(url, params)
+        if response is None:
+            return None
+        try:
+            return response.json()
+        except ValueError as exc:
+            raise SourceError(f"{url}: response is not JSON") from exc
+
+    async def get_text(self, url: str, *, params: Mapping[str, str] | None = None) -> str | None:
+        """GET → decoded body (HTML pages, e.g. İş Yatırım's stock list). 404 returns None."""
+        response = await self._get(url, params)
+        return None if response is None else response.text
 
 
 def make_http_client(

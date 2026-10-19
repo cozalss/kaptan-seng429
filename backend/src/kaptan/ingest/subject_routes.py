@@ -30,6 +30,9 @@ _ROUTES: Final[dict[str, str]] = {
 
 #: Subjects whose full text is fetched (E candidates + the free-text ÖDA the Classifier reads).
 DETAIL_ROUTES: Final = frozenset({"E1", "E2", "E3", "E4", "llm"})
+#: Restriction notices: their text is fetched too, for `kaptan.reference.tedbir` (start/end dates of the
+#: measure), but they never reach the agents (`agents.feed` reads DETAIL_ROUTES, not this set).
+RESTRICTION_ROUTES: Final = frozenset({"avoid:spk_tedbir"})
 
 
 def route_for(subject: str) -> str:
@@ -38,4 +41,4 @@ def route_for(subject: str) -> str:
 
 
 def wants_detail(route: str) -> bool:
-    return route in DETAIL_ROUTES
+    return route in DETAIL_ROUTES or route in RESTRICTION_ROUTES

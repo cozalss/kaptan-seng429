@@ -23,21 +23,28 @@ from kaptan.prices.models import Mark, PriceBasis
 Conn = AsyncConnection[Any]
 SeriesSource = Literal["isyatirim", "yfinance"]
 
+#: Renamed codes (core.ticker_history, e.g. KOZAL → TRALT): every read below matches all codes of the
+#: chain (`core.ticker_codes`), so an old code finds the history İş Yatırım/Yahoo serve under the new one;
+#: on a day both codes have a row, the requested code's row wins.
 RAW_SQL: Final = """
 SELECT open, close FROM core.prices_daily
-WHERE ticker = %s AND d = %s AND source = 'isyatirim' AND price_basis = 'raw'
+WHERE ticker = ANY(core.ticker_codes(%(t)s)) AND d = %(d)s AND source = 'isyatirim' AND price_basis = 'raw'
+ORDER BY ticker <> %(t)s LIMIT 1
 """
 ISY_ADJ_SQL: Final = """
-SELECT d, adj_open AS open, adj_close AS close FROM core.prices_daily_adj
-WHERE ticker = %s AND source = 'isyatirim' AND d BETWEEN %s AND %s ORDER BY d
+SELECT DISTINCT ON (d) d, adj_open AS open, adj_close AS close FROM core.prices_daily_adj
+WHERE ticker = ANY(core.ticker_codes(%(t)s)) AND source = 'isyatirim' AND d BETWEEN %(lo)s AND %(hi)s
+ORDER BY d, ticker <> %(t)s
 """
 YF_ADJ_SQL: Final = """
-SELECT d, open, close FROM core.prices_daily
-WHERE ticker = %s AND source = 'yfinance' AND d BETWEEN %s AND %s ORDER BY d
+SELECT DISTINCT ON (d) d, open, close FROM core.prices_daily
+WHERE ticker = ANY(core.ticker_codes(%(t)s)) AND source = 'yfinance' AND d BETWEEN %(lo)s AND %(hi)s
+ORDER BY d, ticker <> %(t)s
 """
 ADV_SQL: Final = """
-SELECT d, turnover_try, close, volume FROM core.prices_daily
-WHERE ticker = %s AND source = 'isyatirim' AND d >= %s AND d < %s
+SELECT DISTINCT ON (d) d, turnover_try, close, volume FROM core.prices_daily
+WHERE ticker = ANY(core.ticker_codes(%(t)s)) AND source = 'isyatirim' AND d >= %(lo)s AND d < %(hi)s
+ORDER BY d, ticker <> %(t)s
 """
 MARKS_SQL: Final = """
 SELECT t.ticker, p.d, p.open, p.close
@@ -53,7 +60,7 @@ ORDER BY t.ticker, p.d DESC
 Bars = dict[date, tuple[Decimal | None, Decimal]]
 
 
-async def _rows(conn: Conn, sql: str, params: Sequence[Any]) -> list[dict[str, Any]]:
+async def _rows(conn: Conn, sql: str, params: Sequence[Any] | dict[str, Any]) -> list[dict[str, Any]]:
     async with conn.cursor(row_factory=dict_row) as cur:
         await cur.execute(sql, params)
         return await cur.fetchall()
@@ -66,7 +73,7 @@ async def adjusted_series(
     for src, sql in (("isyatirim", ISY_ADJ_SQL), ("yfinance", YF_ADJ_SQL)):
         if source is not None and src != source:
             continue
-        rows = await _rows(conn, sql, (ticker, start, end))
+        rows = await _rows(conn, sql, {"t": ticker, "lo": start, "hi": end})
         if rows:
             return src, {r["d"]: (r["open"], r["close"]) for r in rows}  # type: ignore[return-value]
     return None, {}
@@ -75,7 +82,7 @@ async def adjusted_series(
 async def close_on(conn: Conn, ticker: str, d: date, *, basis: PriceBasis = "raw") -> Decimal | None:
     """The session close of `d` (raw İş Yatırım level by default), None when there is no bar."""
     if basis == "raw":
-        rows = await _rows(conn, RAW_SQL, (ticker, d))
+        rows = await _rows(conn, RAW_SQL, {"t": ticker, "d": d})
         return rows[0]["close"] if rows else None
     _, bars = await adjusted_series(conn, ticker, d, d)
     return bars[d][1] if d in bars else None
@@ -84,7 +91,7 @@ async def close_on(conn: Conn, ticker: str, d: date, *, basis: PriceBasis = "raw
 async def open_on(conn: Conn, ticker: str, d: date, *, basis: PriceBasis = "raw") -> Decimal | None:
     """The session open of `d` (the SimBIST `opg` fill level), None when unknown."""
     if basis == "raw":
-        rows = await _rows(conn, RAW_SQL, (ticker, d))
+        rows = await _rows(conn, RAW_SQL, {"t": ticker, "d": d})
         return rows[0]["open"] if rows else None
     _, bars = await adjusted_series(conn, ticker, d, d)
     return bars[d][0] if d in bars else None
@@ -98,7 +105,7 @@ async def adv(conn: Conn, ticker: str, asof: date, *, window: int = 20) -> Decim
     falling back to close × volume.
     """
     lo = add_sessions(asof, -window)
-    rows = await _rows(conn, ADV_SQL, (ticker, lo, asof))
+    rows = await _rows(conn, ADV_SQL, {"t": ticker, "lo": lo, "hi": asof})
     if len(rows) * 2 < window:
         return None
     total = Decimal(0)

@@ -5,7 +5,7 @@ Nothing here is checkpointed; the state (agents/state.py) holds only JSON-able d
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from decimal import Decimal
 from typing import Any
@@ -66,6 +66,15 @@ class DeskState:
     quota_ok: bool = True
     mode: str = "paper"
     live_armed: bool = False
+    #: Live desk inputs (kaptan.risk.desk; set only for real runs, the demo keeps these defaults).
+    live: bool = False
+    cash_free_try: Decimal | None = None  # None: the equity (the demo's M1 behaviour)
+    restrictions_age_h: float = 0.0
+    kap_delay_s: float = 0.0
+    price_age_s: float = 0.0
+    daily_entries: int = 0
+    sector_exposure_pct: Decimal = Decimal(0)
+    group_exposure_pct: Decimal = Decimal(0)
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,6 +85,8 @@ class RunContext:
     desk: DeskState
     params: RuleParams = DEFAULT_PARAMS
     limits: GateLimits = field(default_factory=GateLimits)
+    #: The trading.limit_versions version `limits` came from (None: canonical defaults).
+    limits_version: int | None = None
     prompt_manifest_hash: str = ""
     #: "Benzer geçmiş bildirimler" (kaptan.rag, LLM_MODE=live only; empty in replay so replay stays
     #: byte-identical): earlier disclosures by hybrid search, `published_at < as_of`, with citations.
@@ -84,3 +95,11 @@ class RunContext:
     def similar_context(self) -> list[dict[str, Any]]:
         """The TASK_CONTEXT rows of `similar` (ids, dates, codes; never the untrusted snippet text)."""
         return [s.as_context() for s in self.similar]
+
+
+async def with_active_limits(conn: Any, ctx: RunContext) -> RunContext:
+    """`ctx` with the limit version that is active now (FR-33: an approved change applies to the next run)."""
+    from kaptan.risk.active_limits import active_limits
+
+    active = await active_limits(conn)
+    return replace(ctx, limits=active.limits, limits_version=active.version)

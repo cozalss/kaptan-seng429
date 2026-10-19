@@ -60,6 +60,21 @@ jobs:
       - run: npm ci
       - run: npm test
 
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # Pinned by commit SHA (v2.3.9); the rules and the allowed test fixtures are in .gitleaks.toml.
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+
   backend:
     name: Backend (lint, types, tests on Postgres + Redis)
     runs-on: ubuntu-latest
@@ -110,6 +125,18 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy
       - run: uv run pytest --cov-fail-under=90
+      # NFR-14 per-module gates (line + branch: [tool.coverage.run] branch = true). WARN-ONLY this wave:
+      # risk/, ingest/, brokers/ and domain/ are being changed by other M3 packages. To enforce, drop
+      # `continue-on-error` (see backend/README.md "Coverage gates").
+      - name: "Coverage gate: risk 100 %"
+        continue-on-error: true
+        run: uv run coverage report --include="src/kaptan/risk/*" --fail-under=100 --skip-covered
+      - name: "Coverage gate: ingest 85 %"
+        continue-on-error: true
+        run: uv run coverage report --include="src/kaptan/ingest/*" --fail-under=85 --skip-covered
+      - name: "Coverage gate: brokers + domain 90 %"
+        continue-on-error: true
+        run: uv run coverage report --include="src/kaptan/brokers/*,src/kaptan/domain/*" --fail-under=90 --skip-covered
       - name: Service logs on failure
         if: failure()
         run: docker compose -f docker-compose.yml logs --tail=200

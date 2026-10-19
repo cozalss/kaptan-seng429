@@ -33,10 +33,15 @@ from kaptan.api.routers import (
     sse,
     tickets,
 )
+from kaptan.approvals.execute import resume_pending_fills
+from kaptan.brokers import config as broker_config
 from kaptan.clock import Clock
 from kaptan.db import create_pool
 from kaptan.demo import control as demo_control
-from kaptan.settings import Settings, get_settings
+from kaptan.ops.health import health_router, log_migration_state
+from kaptan.ops.http import RateLimitMiddleware, RequestContextMiddleware, SecurityHeadersMiddleware
+from kaptan.ops.metrics import metrics_router
+from kaptan.settings import Settings, ensure_production_ready, get_settings
 
 API_PREFIX: Final = "/api/v1"
 log = logging.getLogger("kaptan.api")
@@ -72,6 +77,7 @@ async def load_demo_started_at(app: FastAPI) -> datetime | None:
 def _lifespan(settings: Settings) -> Any:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        ensure_production_ready(settings, "api")  # KAPTAN_ENV=prod: refuse an unsafe configuration
         app.state.settings = settings
         app.state.pool = create_pool(
             settings.database_url.get_secret_value(), min_size=settings.db_pool_min, max_size=settings.db_pool_max
@@ -81,7 +87,11 @@ def _lifespan(settings: Settings) -> Any:
         app.state.clock = Clock(demo=settings.demo_mode)
         if settings.demo_mode:
             app.state.clock.started_at = await load_demo_started_at(app)
+        await log_migration_state(app.state.pool)  # says clearly when the schema is not at head
         demo_control.on_startup(app, settings)  # demo timers + live ticker (package C)
+        broker_config.install(settings)  # the order path's mode, costs, live keys (M3 A3)
+        if settings.demo_mode:
+            await resume_pending_fills(app)  # demo fills a restart dropped (M3 A3)
         try:
             async with open_saver(settings):  # CHECKPOINTER=postgres: graph threads in agent_ckpt.*
                 yield
@@ -135,6 +145,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redoc_url=None,
     )
     install_error_handlers(app)
+    # Plain ASGI middleware (SSE streams pass through): the last added runs first.
+    app.add_middleware(RateLimitMiddleware, prefix=API_PREFIX)
+    app.add_middleware(
+        SecurityHeadersMiddleware, hsts_max_age_s=settings.hsts_max_age_s if settings.kaptan_env == "prod" else None
+    )
+    app.add_middleware(RequestContextMiddleware)
+    app.include_router(health_router())  # /healthz, /readyz (M3 A5)
+    app.include_router(metrics_router())  # /metrics (METRICS_TOKEN or loopback)
     app.include_router(_health_router(), prefix=API_PREFIX)
     for router in ROUTERS:
         app.include_router(router, prefix=API_PREFIX)

@@ -4,7 +4,7 @@ Visible disclosures = the 212 rows of 13:40 + the rows the live ticker released 
 An injected run is "in flight" for DEMO_RUN_MS (7.5 s of wall time) after `ops.demo_injections.real_at`:
 until then its card does not count and its disclosure has no classification yet (a pre-gate veto
 keeps its subject-map class), exactly as the mock's runProgress() < 1. LLM usage comes from
-`core.day_counters`; tokens never show less than the mock's floor (meta.json counters_base).
+`core.day_counters`; in DEMO_MODE tokens never show less than the mock's floor (meta.json counters_base).
 
 Also used to publish SSE `counters` (feed) after every change that moves them.
 """
@@ -78,13 +78,14 @@ def counters_from_row(row: dict[str, Any], now: datetime, floor: int) -> dict[st
     }
 
 
-async def day_counters(conn: AsyncConnection[Any], now: datetime) -> dict[str, Any]:
-    """DayCounters as of `now` (the demo clock)."""
+async def day_counters(conn: AsyncConnection[Any], now: datetime, *, demo: bool = False) -> dict[str, Any]:
+    """DayCounters as of `now` (the demo clock in DEMO_MODE). The mock's token floor applies only with
+    `demo=True` (DEMO_MODE); a real day shows its real token count."""
     async with conn.cursor() as cur:
         await cur.execute(COUNTERS_SQL, {"run_s": DEMO_RUN_MS / 1000, "day": istanbul_date(now)})
         row = await cur.fetchone()
     assert row is not None
-    return counters_from_row(dict(row), now, tokens_floor())
+    return counters_from_row(dict(row), now, tokens_floor() if demo else 0)
 
 
 async def publish_counters(app: Any) -> None:
@@ -92,5 +93,5 @@ async def publish_counters(app: Any) -> None:
     from kaptan.demo.ports import publish
 
     async with app.state.pool.connection() as conn:
-        data = await day_counters(conn, app.state.clock.now())
+        data = await day_counters(conn, app.state.clock.now(), demo=app.state.clock.demo)
     await publish(app, "feed", "counters", data)

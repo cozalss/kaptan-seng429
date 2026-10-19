@@ -21,7 +21,7 @@ from psycopg import AsyncConnection
 from psycopg.pq import TransactionStatus
 
 from kaptan.agents import db as q
-from kaptan.agents.context import DeskState, DisclosureInput, Restriction, RunContext
+from kaptan.agents.context import DeskState, DisclosureInput, Restriction, RunContext, with_active_limits
 from kaptan.agents.explain import assemble
 from kaptan.agents.graph import compile_graph
 from kaptan.agents.state import KaptanState
@@ -110,6 +110,7 @@ async def build_context(
         desk=desk,
         prompt_manifest_hash=str(meta["prompt_manifest_hash"]),
     )
+    ctx = await with_active_limits(conn, ctx)  # FR-33: v1 = the canonical defaults; a signed change applies here
     if getattr(provider, "name", "") == "live":  # kaptan.rag: "benzer geçmiş bildirimler", never in replay
         from kaptan.rag.agent_context import attach_similar
 

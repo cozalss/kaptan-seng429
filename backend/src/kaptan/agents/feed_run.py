@@ -18,8 +18,8 @@ checkpointer a restart loses the thread; the run is then closed without a resume
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, replace
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any, Final, cast
 
@@ -29,7 +29,7 @@ from psycopg import AsyncConnection
 from psycopg.types.json import Jsonb
 
 from kaptan.agents import db as q
-from kaptan.agents.context import DeskState, DisclosureInput, Restriction, RunContext
+from kaptan.agents.context import DeskState, DisclosureInput, Restriction, RunContext, with_active_limits
 from kaptan.agents.explain import assemble
 from kaptan.agents.graph import compile_graph
 from kaptan.agents.scenario import AUDIT_STRATEGY_VERSION, _audit_outcome
@@ -45,6 +45,7 @@ from kaptan.events.publish import publish
 from kaptan.evidence.toolbox import live_tools
 from kaptan.llm.provider import LLMProvider
 from kaptan.llm.usage import sync_usage
+from kaptan.settings import get_settings
 
 log = logging.getLogger("kaptan.agents.feed_run")
 
@@ -91,6 +92,9 @@ class LiveDeps:
     provider: LLMProvider
     tools: Toolbox
     redis: Any = None  # SSE after commit; None = no events (tests, scripts)
+    #: The gate reads the real desk (kaptan.risk.desk: marked equity, cash, R04/R09/R11/P7/P3/P4 inputs).
+    #: None = only on the live LLM chain; replay runs keep the demo desk.
+    live_desk: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -110,15 +114,23 @@ def _config(thread_id: str) -> RunnableConfig:
     return {"configurable": {"thread_id": thread_id}}
 
 
-async def desk_for(conn: AsyncConnection[Any], ticker: str) -> DeskState:
-    """Desk state as the demo builds it; a ticker outside core.issuers is outside the universe (pre-gate veto)."""
+async def desk_for(
+    conn: AsyncConnection[Any],
+    ticker: str,
+    *,
+    live: bool = False,
+    disclosure: DisclosureInput | None = None,
+    now: datetime | None = None,
+) -> DeskState:
+    """Desk state as the demo builds it; a ticker outside core.issuers is outside the universe (pre-gate veto).
+    `live`: equity, cash, P&L and the gate's freshness/exposure inputs from the real book (kaptan.risk.desk)."""
     try:
         issuer = await q.issuer(conn, ticker)
     except LookupError:
         issuer = {"in_universe": False, "price": 1, "adv20_try": 0, "free_float": 0}
     risk = await q.risk_state(conn)
     book = await q.book(conn, ticker)
-    return DeskState(
+    desk = DeskState(
         in_universe=bool(issuer["in_universe"]),
         last_price=Decimal(str(issuer["price"])),
         adv20_try=Decimal(str(issuer["adv20_try"])),
@@ -135,10 +147,41 @@ async def desk_for(conn: AsyncConnection[Any], ticker: str) -> DeskState:
         quota_ok=await q.quota_ok(conn),
         live_armed=await q.live_armed(conn),
     )
+    if not live:
+        return desk
+    from kaptan.risk.desk import live_desk
+
+    at = now or datetime.now(UTC)
+    d = disclosure
+    real = await live_desk(
+        conn,
+        ticker,
+        at,
+        published_at=d.published_at if d else at,
+        available_at=d.available_at if d else at,
+        capital=get_settings().paper_capital_try,
+    )
+    return replace(
+        desk,
+        live=True,
+        equity_try=real.equity_try,
+        cash_free_try=real.cash_free_try,
+        daily_pnl_pct=real.daily_pnl_pct,
+        drawdown_pct=real.drawdown_pct,
+        n_open_positions=real.n_open_positions,
+        holds_ticker=real.holds_ticker,
+        last_price=real.last_price or desk.last_price,
+        price_age_s=real.price_age_s,
+        restrictions_age_h=real.restrictions_age_h,
+        kap_delay_s=real.kap_delay_s,
+        daily_entries=real.daily_entries,
+        sector_exposure_pct=real.sector_exposure_pct,
+        group_exposure_pct=real.group_exposure_pct,
+    )
 
 
 async def build_live_context(
-    conn: AsyncConnection[Any], index: int, deps: LiveDeps
+    conn: AsyncConnection[Any], index: int, deps: LiveDeps, now: datetime | None = None
 ) -> tuple[RunContext, dict[str, Any], list[dict[str, str]]]:
     disc = await q.disclosure(conn, index)
     texts = await q.texts(conn, index)
@@ -171,9 +214,12 @@ async def build_live_context(
         provider=deps.provider,
         tools=tools,
         disclosure=d,
-        desk=await desk_for(conn, ticker),
+        desk=await desk_for(
+            conn, ticker, live=live if deps.live_desk is None else deps.live_desk, disclosure=d, now=now
+        ),
         prompt_manifest_hash=str(DemoFixtures().meta["prompt_manifest_hash"]),
     )
+    ctx = await with_active_limits(conn, ctx)  # FR-33: the limit version active now
     if live:  # "benzer geçmiş bildirimler" (kaptan.rag), as scenario.build_context does
         from kaptan.rag.agent_context import attach_similar
 
@@ -218,7 +264,9 @@ async def run_or_resume(ctx: RunContext, thread_id: str) -> KaptanState:
     return cast(KaptanState, dict(snapshot.values))
 
 
-async def persist_live(conn: AsyncConnection[Any], explain: dict[str, Any], now: datetime) -> str:
+async def persist_live(
+    conn: AsyncConnection[Any], explain: dict[str, Any], now: datetime, *, limits_version: int | None = None
+) -> str:
     """Run, link, card, counters, audit outcome and the feed row in one transaction; returns the feed status."""
     run, disc, card = explain["run"], explain["disclosure"], explain["approval"]
     feed_status = "waiting_approval" if card is not None else "done"
@@ -253,6 +301,8 @@ async def persist_live(conn: AsyncConnection[Any], explain: dict[str, Any], now:
             await conn.execute(q.ADD_CALLS_SQL, (istanbul_date(now), run["llm_calls"], tokens))
         draft = _audit_outcome(explain, now)
         if draft is not None:
+            if limits_version is not None:  # which four-eyes limit version the gate used (FR-33)
+                draft = replace(draft, payload={**draft.payload, "limits_version": limits_version})
             await append(conn, [draft], now=now)
         await conn.execute(
             FEED_DONE_SQL,
@@ -277,11 +327,11 @@ async def announce(redis: Any, conn: AsyncConnection[Any], explain: dict[str, An
 
 async def run_disclosure(conn: AsyncConnection[Any], index: int, now: datetime, deps: LiveDeps) -> LiveResult:
     """Build → run (or resume) → persist → usage → SSE. Raises on a missing text/ticker or a DB error."""
-    ctx, doc, texts = await build_live_context(conn, index, deps)
+    ctx, doc, texts = await build_live_context(conn, index, deps, now)
     await conn.commit()  # no read snapshot held while the models answer
     state = await run_or_resume(ctx, ctx.disclosure.run_id)
     explain = assemble(state, ctx, doc, texts)
-    feed_status = await persist_live(conn, explain, now)
+    feed_status = await persist_live(conn, explain, now, limits_version=ctx.limits_version)
     await sync_usage(conn, deps.provider)
     if deps.redis is not None:
         await announce(deps.redis, conn, explain, now)
@@ -310,7 +360,7 @@ async def settle_one(conn: AsyncConnection[Any], row: dict[str, Any], decision: 
                      now: datetime) -> bool:  # fmt: skip
     """Resume (or, without a checkpoint, just close) one parked run. Returns True if the graph resumed."""
     index, run_id = int(row["disclosure_index"]), str(row["run_id"])
-    ctx, _doc, _texts = await build_live_context(conn, index, deps)
+    ctx, _doc, _texts = await build_live_context(conn, index, deps, now)
     await conn.commit()
     graph = compile_graph()
     snapshot = await graph.aget_state(_config(run_id))
