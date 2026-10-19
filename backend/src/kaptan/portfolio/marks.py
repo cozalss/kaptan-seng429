@@ -1,6 +1,6 @@
 """JavaScript-compatible rounding, the BIST session calendar and the M1 replay quotes.
 
-All three reproduce the panel mock exactly (kaptan-panel/src/mocks/rng.ts `round`, lib/time.ts,
+All three reproduce the panel mock exactly in DEMO_MODE (kaptan-panel/src/mocks/rng.ts `round`, lib/time.ts,
 api/mock/selectors.ts `positions()`), because positions and risk numbers must match it to the lira.
 
 Replay quotes: M1 has no market-data feed, so a position's last price is the mock's deterministic
@@ -11,11 +11,16 @@ mark (the issuer's reference price moved by the disclosure index; the demo E3 ru
 from __future__ import annotations
 
 import math
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from typing import Final
 
-#: Exchange holidays the panel calendar knows (lib/time.ts HOLIDAYS).
-HOLIDAYS: Final = frozenset({date(2026, 10, 29), date(2027, 1, 1)})
+from kaptan.rules.calendar import HOLIDAYS as PANEL_HOLIDAYS
+from kaptan.rules.calendar import is_trading_day as is_trading_day  # re-exported (#32)
+from kaptan.rules.calendar import next_trading_day as next_trading_day
+
+#: The panel calendar's holidays (lib/time.ts HOLIDAYS). Trading days come from the one market
+#: calendar (`kaptan.rules.calendar`: BIST outside DEMO_MODE, this list in DEMO_MODE, #32).
+HOLIDAYS: Final = PANEL_HOLIDAYS
 DAY_MS: Final = 86_400_000
 #: The demo E3 run's mark (selectors.ts positions()).
 DEMO_E3_RUN: Final = "run-demo-e3-ornek"
@@ -33,17 +38,6 @@ def round_to(value: float, decimals: int = 2) -> float:
     """rng.ts `round(value, decimals)` = Math.round(value * 10^d) / 10^d."""
     f = int(10**decimals)
     return js_round(value * f) / f
-
-
-def is_trading_day(d: date) -> bool:
-    return d.weekday() < 5 and d not in HOLIDAYS
-
-
-def next_trading_day(d: date) -> date:
-    nxt = d + timedelta(days=1)
-    while not is_trading_day(nxt):
-        nxt += timedelta(days=1)
-    return nxt
 
 
 def add_sessions(d: date, sessions: int) -> date:

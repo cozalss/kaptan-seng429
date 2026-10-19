@@ -32,6 +32,7 @@ from kaptan.agents import db as q
 from kaptan.agents.context import DeskState, DisclosureInput, Restriction, RunContext, with_active_limits
 from kaptan.agents.explain import assemble
 from kaptan.agents.graph import compile_graph
+from kaptan.agents.run_rows import write_run_rows
 from kaptan.agents.scenario import AUDIT_STRATEGY_VERSION, _audit_outcome
 from kaptan.agents.state import KaptanState
 from kaptan.agents.timeline import plan
@@ -41,6 +42,7 @@ from kaptan.clock import istanbul_date
 from kaptan.demo.fixtures import DemoFixtures
 from kaptan.disclosures.counters import day_counters
 from kaptan.domain.schemas._base import iso_ms
+from kaptan.eval.manifest import manifest_hash_for
 from kaptan.events.publish import publish
 from kaptan.evidence.toolbox import live_tools
 from kaptan.llm.provider import LLMProvider
@@ -217,7 +219,8 @@ async def build_live_context(
         desk=await desk_for(
             conn, ticker, live=live if deps.live_desk is None else deps.live_desk, disclosure=d, now=now
         ),
-        prompt_manifest_hash=str(DemoFixtures().meta["prompt_manifest_hash"]),
+        # NFR-07: the live chain is stamped with <prompt manifest>@<git sha>; replay keeps meta.json's value
+        prompt_manifest_hash=manifest_hash_for(deps.provider, str(DemoFixtures().meta["prompt_manifest_hash"])),
     )
     ctx = await with_active_limits(conn, ctx)  # FR-33: the limit version active now
     if live:  # "benzer geçmiş bildirimler" (kaptan.rag), as scenario.build_context does
@@ -265,7 +268,12 @@ async def run_or_resume(ctx: RunContext, thread_id: str) -> KaptanState:
 
 
 async def persist_live(
-    conn: AsyncConnection[Any], explain: dict[str, Any], now: datetime, *, limits_version: int | None = None
+    conn: AsyncConnection[Any],
+    explain: dict[str, Any],
+    now: datetime,
+    *,
+    limits_version: int | None = None,
+    manifest_hash: str = "",
 ) -> str:
     """Run, link, card, counters, audit outcome and the feed row in one transaction; returns the feed status."""
     run, disc, card = explain["run"], explain["disclosure"], explain["approval"]
@@ -304,6 +312,7 @@ async def persist_live(
             if limits_version is not None:  # which four-eyes limit version the gate used (FR-33)
                 draft = replace(draft, payload={**draft.payload, "limits_version": limits_version})
             await append(conn, [draft], now=now)
+        await write_run_rows(conn, explain, manifest_hash)  # FR-19: per-node outputs + gate checks
         await conn.execute(
             FEED_DONE_SQL,
             (feed_status, run["run_id"], run["llm_calls"], run["outcome"], now, now, run["disclosure_index"]),
@@ -331,7 +340,9 @@ async def run_disclosure(conn: AsyncConnection[Any], index: int, now: datetime, 
     await conn.commit()  # no read snapshot held while the models answer
     state = await run_or_resume(ctx, ctx.disclosure.run_id)
     explain = assemble(state, ctx, doc, texts)
-    feed_status = await persist_live(conn, explain, now, limits_version=ctx.limits_version)
+    feed_status = await persist_live(
+        conn, explain, now, limits_version=ctx.limits_version, manifest_hash=ctx.prompt_manifest_hash
+    )
     await sync_usage(conn, deps.provider)
     if deps.redis is not None:
         await announce(deps.redis, conn, explain, now)

@@ -413,3 +413,46 @@ limits v1 `rules-v1.0`, `risk_state`, quota rows, `live_arm` all off; idempotent
 **Coverage gates (NFR-14).** CI reports risk 100 %, ingest 85 %, brokers+domain 90 % (line+branch) after the
 suite; they are **warn-only** (`continue-on-error`) while other M3 packages change those modules. To enforce,
 remove `continue-on-error: true` from the three "Coverage gate" steps in `.github/workflows/ci.yml`.
+
+## Scheduler (M3 B1, `kaptan.workers.scheduler`)
+
+One process (`docker-entrypoint.sh scheduler`, or `uv run python -m kaptan.workers.scheduler`) under the ops
+runtime: leader lock (one instance), heartbeat `kaptan:hb:scheduler`, SIGTERM drain. Times are Europe/Istanbul;
+"trading" days come from the BIST calendar (`prices/calendar.py`), so holidays and weekends are skipped. Every run is a
+row in `ops.job_runs` (migration 0018: job, slot, trigger `schedule|catchup|manual`, start/finish, ok, a small summary
+JSON, the error class only). A finished row for (job, slot) = done: a restart later the same day runs a missed daily
+job once (`catchup`), a missed day is not replayed, a failed slot is not retried by the loop. Each job has its own
+connection and timeout; one failure never stops the others. Under `DEMO_MODE` only `audit_anchor` runs (verify only,
+no anchor written).
+
+| When (Istanbul) | Job | Calls |
+|---|---|---|
+| Mon 07:30 | `issuer_profiles` | `reference.profiles.run_issuer_profiles` |
+| daily 08:20 | `market_changes` | `reference.profiles.sync_market_changes` |
+| trading 08:30 | `universe` | `reference.universe.run_universe` |
+| every 30 min | `tedbir_sync` | `reference.tedbir.run_tedbir_sync` (+ SPK bulletin when `TEDBIR_BULLETIN_URL`) |
+| trading 08:45 | `morning_brief` | `brief.run_morning_brief` → `ops.morning_briefs`, `GET /brief/today\|{date}` |
+| trading 10:16 | `open_fill` | `brokers.fills.run_open_fill` |
+| in session, every 5 min | `risk_monitor` | `risk.monitor.run_risk_monitor` (SSE `halt` / `kill_switch`) |
+| in session, every 4 min | `quotes` | `prices.intraday.refresh_quotes` for held + pending-order tickers |
+| trading 18:30 | `eod_prices` | `prices.ingest.fetch_ticker` + `store_fetched` (bars + corporate actions) for the day's universe, held/pending tickers, XU100 |
+| after `eod_prices` | `eod_fills` | `brokers.fills.run_eod_fills` (its docstring: after the 18:30 EOD prices, not 18:15) |
+| after `eod_fills` | `exits` | `portfolio.exits.run_exits` (SSE `approval.requested` per exit card + `counters`) |
+| 18:45, after `exits` | `pnl_eod` | `risk.pnl_eod.run_pnl_eod` |
+| after `pnl_eod` | `regime` | `risk.regime.run_regime` |
+| trading 19:00 | `intraday_archive` | `prices.intraday.run_intraday_archive` |
+| trading 20:00 | `event_returns` | `reference.event_returns.run_event_returns` |
+| trading 20:15 | `shadow_returns` | `portfolio.shadow.run_shadow_returns` |
+| trading 20:30 | `fundamentals` | `fundamentals.run_fundamentals` |
+| trading 21:00 | `dq` | `dq.run_dq` |
+| daily 23:30 | `audit_anchor` | `audit.anchor.anchor_chain`: verify, head → `audit.anchors` (+ JSON line in `AUDIT_ANCHOR_FILE`); broken chain → ERROR log, audit `audit.verify_failed`, Redis `kaptan:audit:chain_ok=0` |
+| daily 03:30 | `retention` | `dq.run_retention` |
+
+```bash
+uv run python -m kaptan.workers.scheduler list                       # the table
+uv run python -m kaptan.workers.scheduler run eod_prices --day 2026-10-20   # one job by hand (trigger=manual)
+```
+
+**One market calendar (#32).** `rules/calendar.py` (R15 approval expiry) and `portfolio/marks.py` (ticket TTL, planned
+exit dates) use the BIST calendar outside `DEMO_MODE`; in `DEMO_MODE` they keep the panel's two-holiday list
+(lib/time.ts), so the demo day stays byte-identical to the panel mock.

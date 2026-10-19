@@ -89,6 +89,7 @@ addopts = "-q --strict-markers -m 'not live' --cov=kaptan --cov-report=term-miss
 markers = [
     "integration: needs the compose Postgres (skipped when it is unreachable)",
     "node: needs node + the panel's node_modules (skipped when missing)",
+    "redteam: the red-team gate (FR-38): adversarial fixture disclosures through the real graph, offline",
     "live: calls real external services (LLM providers, KAP); opt-in with `pytest -m live`, costs quota/money",
 ]
 

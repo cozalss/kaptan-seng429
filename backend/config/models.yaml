@@ -33,7 +33,16 @@ providers:
     max_retries: 2
     response_format: json_schema   # best-effort structured outputs (strict: false) on gpt-oss
     reasoning_effort: low
-  # TODO(M3): azure (Azure for Students) and ollama (local Qwen) slots of the canonical chain.
+  ollama:
+    # Local model, off unless OLLAMA_BASE_URL is set (M3 B3, FR-21). `base_url` below is only the
+    # documented default; the setting overrides it. Appended after every chain (… → Groq → Ollama → HOLD).
+    kind: openai
+    base_url: http://127.0.0.1:11434/v1
+    model: qwen3:8b
+    timeout_s: 120
+    max_retries: 1
+    response_format: json_object
+  # TODO(M3): azure (Azure for Students) slot of the canonical chain; needs an account.
 
 guard:
   provider: groq

@@ -37,6 +37,7 @@ COPY --from=build /app/.venv /app/.venv
 # settings.BACKEND_DIR = /app: config/, migrations/, alembic.ini and the demo fixtures (replay LLM) live here.
 COPY src ./src
 COPY config ./config
+COPY data ./data
 COPY migrations ./migrations
 COPY alembic.ini pyproject.toml ./
 COPY tests/__init__.py ./tests/__init__.py

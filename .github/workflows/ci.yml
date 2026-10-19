@@ -124,6 +124,9 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy
+      # FR-38 / NFR-10: any malicious fixture that reaches PROPOSE fails the build (report: reports/redteam.json).
+      - name: "Red-team gate: no malicious case proposes"
+        run: uv run pytest -m redteam --no-cov -p no:cacheprovider
       - run: uv run pytest --cov-fail-under=90
       # NFR-14 per-module gates (line + branch: [tool.coverage.run] branch = true). WARN-ONLY this wave:
       # risk/, ingest/, brokers/ and domain/ are being changed by other M3 packages. To enforce, drop
@@ -140,3 +143,77 @@ jobs:
       - name: Service logs on failure
         if: failure()
         run: docker compose -f docker-compose.yml logs --tail=200
+
+  # NFR-15: the panel's Playwright suite in http mode against the real FastAPI backend (replay, DEMO_MODE).
+  # NON-BLOCKING for now (continue-on-error): first runs on GitHub runners, timing still being tuned.
+  # Drop `continue-on-error` once it has been green for a week.
+  e2e-api:
+    name: Panel e2e against the backend (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    env:
+      DEMO_MODE: "true"
+      LLM_MODE: replay
+      KAP_LIVE: "false"
+      PRICES_LIVE: "false"
+      LOGIN_RATE_PER_MINUTE: "600"
+      E2E_BROWSER_CHANNEL: chromium
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0 (no floating major tag)
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: kaptan-panel/package-lock.json
+      - name: Generate service credentials
+        run: |
+          for name in POSTGRES_PASSWORD KAPTAN_APP_PASSWORD REDIS_PASSWORD; do
+            value="$(openssl rand -hex 24)"
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
+      - name: Start Postgres (pgvector) and Redis
+        working-directory: backend
+        run: docker compose -f docker-compose.yml up -d --wait
+      - name: Point the backend at the services
+        run: |
+          {
+            echo "DATABASE_URL=postgresql://kaptan_app:${KAPTAN_APP_PASSWORD}@127.0.0.1:5432/kaptan"
+            echo "DATABASE_OWNER_URL=postgresql://kaptan_owner:${POSTGRES_PASSWORD}@127.0.0.1:5432/kaptan"
+            echo "REDIS_URL=redis://:${REDIS_PASSWORD}@127.0.0.1:6379/0"
+          } >> "$GITHUB_ENV"
+      - name: Migrate and seed the demo day
+        working-directory: backend
+        run: |
+          uv sync --locked
+          uv run alembic upgrade head
+          uv run python scripts/seed_demo.py
+      - name: Start the API
+        working-directory: backend
+        run: |
+          nohup uv run python -m kaptan.api --port 8000 > "$RUNNER_TEMP/api.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            curl -fsS http://127.0.0.1:8000/api/v1/health > /dev/null && exit 0
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/api.log"; exit 1
+      - name: Install the panel and Chromium
+        working-directory: kaptan-panel
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Playwright (http mode)
+        working-directory: kaptan-panel
+        run: npm run e2e:api
+      - name: API log and service logs on failure
+        if: failure()
+        run: |
+          cat "$RUNNER_TEMP/api.log" || true
+          docker compose -f backend/docker-compose.yml logs --tail=200

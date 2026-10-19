@@ -24,11 +24,13 @@ from kaptan.agents import db as q
 from kaptan.agents.context import DeskState, DisclosureInput, Restriction, RunContext, with_active_limits
 from kaptan.agents.explain import assemble
 from kaptan.agents.graph import compile_graph
+from kaptan.agents.run_rows import write_run_rows
 from kaptan.agents.state import KaptanState
 from kaptan.agents.tools import ReplayToolbox, Toolbox
 from kaptan.audit.writer import AuditDraft, append
 from kaptan.clock import Clock, istanbul_date
 from kaptan.demo.fixtures import DemoFixtures
+from kaptan.eval.manifest import manifest_hash_for
 from kaptan.llm import get_provider
 from kaptan.llm.provider import LLMProvider
 from kaptan.llm.usage import sync_usage
@@ -108,7 +110,7 @@ async def build_context(
         tools=tools,
         disclosure=d,
         desk=desk,
-        prompt_manifest_hash=str(meta["prompt_manifest_hash"]),
+        prompt_manifest_hash=manifest_hash_for(provider, str(meta["prompt_manifest_hash"])),  # replay: meta.json
     )
     ctx = await with_active_limits(conn, ctx)  # FR-33: v1 = the canonical defaults; a signed change applies here
     if getattr(provider, "name", "") == "live":  # kaptan.rag: "benzer geçmiş bildirimler", never in replay
@@ -175,7 +177,9 @@ def _audit_outcome(explain: dict[str, Any], now: datetime) -> AuditDraft | None:
     return None
 
 
-async def persist(conn: AsyncConnection[Any], explain: dict[str, Any], now: datetime, first: bool) -> None:
+async def persist(
+    conn: AsyncConnection[Any], explain: dict[str, Any], now: datetime, first: bool, *, manifest_hash: str = ""
+) -> None:
     run, disc, card = explain["run"], explain["disclosure"], explain["approval"]
     async with conn.transaction():
         await q.show_disclosure(conn, disc)
@@ -187,6 +191,7 @@ async def persist(conn: AsyncConnection[Any], explain: dict[str, Any], now: date
         draft = _audit_outcome(explain, now)
         if draft is not None:
             await append(conn, [draft], now=now)
+        await write_run_rows(conn, explain, manifest_hash)  # FR-19: per-node outputs + gate checks
 
 
 async def run_scenario(
@@ -215,7 +220,7 @@ async def run_scenario(
     await conn.commit()  # release the read snapshot before the graph runs
     state = await run_graph(ctx, thread_id=f"{run['run_id']}@{now.isoformat()}")
     explain = assemble(state, ctx, disc_doc, texts)
-    await persist(conn, explain, now, first)
+    await persist(conn, explain, now, first, manifest_hash=ctx.prompt_manifest_hash)
     await sync_usage(conn, llm)  # live mode: per-call usage rows + real quota counters (no-op in replay)
     scheduled = 0
     if app is not None:

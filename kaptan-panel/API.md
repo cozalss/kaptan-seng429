@@ -214,3 +214,58 @@ HSTS. Mutasyon uçları (POST/PUT/PATCH/DELETE) kullanıcı başına dakikada `M
 sınırı yükseltilirse onunla birlikte yükselir): aşımda `429 {"detail":"Çok fazla istek. Biraz sonra yeniden deneyin.","code":"rate_limited"}` + `Retry-After: 60`.
 `REFRESH_GRACE_S` (prod 10): az önce döndürülmüş yenileme çerezi bu süre içinde yeniden gelirse aile iptal edilmez
 (iki sekme aynı anda yeniler).
+
+### Sabah özeti (M3 B1, FR-35)
+
+| Yöntem | Yol | Yanıt | Rol |
+|---|---|---|---|
+| GET | `/brief/today` | `MorningBrief` (bugün = sunucu saatinin İstanbul günü) | tüm roller |
+| GET | `/brief/{date}` | `MorningBrief` (`YYYY-MM-DD`) | tüm roller |
+
+- `MorningBrief` = `domain/reports.ts`: `date`, `generated_at`, `important_disclosures` (son seans kapanışından bu yana
+  bilinen, gürültü olmayan KAP bildirimleri), `orders_for_open` (açılışı bekleyen SimBIST emirleri), `pending_approvals`,
+  `open_positions`, `expiring_today` (planlanan çıkışı bugün), `risk_warnings` (`info|warn|critical`), `restriction_changes`
+  (`added|removed`), `summary_tr` (veriden kurulan düz Türkçe metin, model yok), `is_sample: false`.
+- Zamanlayıcı her seans günü 08:45'te (İstanbul) kurar ve `ops.morning_briefs`'e yazar; aynı gün yeniden kurulursa
+  yerine geçer. O gün için yoksa `404 {"detail":"Bu gün için sabah özeti yok.","code":"not_found"}`; bozuk tarih `422`.
+
+### 5.4 Yönetim, değerlendirme ve kişisel aşama (M3 B3, `04` §11, `08` §4, `12` §1)
+
+| Yöntem | Yol | İstek | Yanıt | Rol |
+|---|---|---|---|---|
+| GET | `/admin/restricted` | — | `RestrictedView` = `{entries: RestrictedSecurity[], pending_removals: {id, ticker, requested_by: {uid,name,role,at,reason}}[]}` | admin, risk_officer, auditor |
+| POST | `/admin/restricted` | `{"ticker":"ASELS","kind":"team_insider\|other","source_ref":null,"reason":"…"}` (10–500) | `RestrictedView` | admin (hemen etkili) |
+| POST | `/admin/restricted/{id}/removal` | `{"reason":"…"}` | `RestrictedView` | admin (1/2) |
+| POST | `/admin/restricted/{id}/removal/confirm` | `{"reason":"…"}` | `RestrictedView` | risk_officer (2/2, başlatandan farklı kişi) |
+| GET | `/admin/universe?d=YYYY-MM-DD` | — | `AdminUniverseView` = `{d\|null, rule_version\|null, rows: AdminUniverseRow[], unmatched_overrides[]}` | admin, auditor |
+| PUT | `/admin/universe/overrides/{ticker}` | `{"mode":"include\|exclude","reason":"…"}` | `AdminUniverseView` | admin |
+| DELETE | `/admin/universe/overrides/{ticker}?reason=…` | — | `AdminUniverseView` | admin |
+| GET | `/admin/config` | — | `{view: ConfigView, settings: {…}, limits: {version, values: LimitValue[]}}` | admin, auditor |
+| GET | `/eval/summary` | — | `EvalSummary` | tüm roller |
+| GET | `/reports/forward/weekly?week=YYYY-Www` | — | `ForwardWeeklyReport` (varsayılan: geçen hafta) | tüm roller |
+| GET | `/personal/stage` | — | `PersonalStageStatus` | tüm roller |
+
+- **Engel listesi (R13, `09` RBAC):** ekleme hemen etkilidir (`tb:<hex>` kimliği, `added_by: "user:<uid>"`); çıkarma iki
+  imzalıdır. Tedbir eşitlemesinin satırları (`ts:` öneki, `system:` ekleyen) ve SPK/VBTS türleri elle çıkarılamaz.
+  Hatalar: `409 already_listed`, `409 synced` ("Bu kayıt tedbir eşitlemesinden geliyor; elle çıkarılamaz."),
+  `409 pending_exists`, `409 not_started` ("Önce Yönetici çıkarmayı başlatmalı (1/2)."), `403 same_person`, `404 not_found`.
+  Audit: `restricted.added`, `restricted.removal_requested`, `restricted.removed`.
+- **Evren:** `AdminUniverseRow` = `UniverseEntry` alanları + `is_eligible` (kuralların cevabı), `reasons` (geçilemeyen U
+  kodları), `override: {mode, reason, set_by, set_at}|null`. `in_universe` istisna uygulanmış sonuçtur (exclude her
+  zaman kazanır; include yalnızca o gün satırı olan hisse için). Ajanların okuduğu evren de istisnaları uygular.
+  Audit: `universe.override_set` (`from`, `mode`), `universe.override_cleared`.
+- **Config:** `settings` gizli olmayan ayarlardır: her `SecretStr` ve adı key/secret/token/password/hash/url/dsn içeren
+  ayar düşülür (maskelenmez). `fallback_chain` OLLAMA_BASE_URL verilince `ollama` halkasını da gösterir.
+- **EvalSummary:** L4 (`pnl_daily`), gölge getiriler (`trading.shadow_signals`, 20 günlük getirisi olanlar), gecikme
+  (canlı koşuların p50/p95'i) ve bugünkü LLM maliyeti tablolardan gelir; L1/L2/L3, ablation ve red-team çevrimdışı
+  değerlendirmeler tabloya yazılana kadar boştur (sıfır, boş liste). `is_sample` = `DEMO_MODE`.
+- **ForwardWeeklyReport** (`08` §4.2 şablonunun 1–5. bölümleri, İstanbul Pazartesi 00:00 → sonraki Pazartesi):
+  `{week, start, end, generated_at, config_hash, audit_head|null, pipeline: {disclosures, noise, classified,
+  by_event: {E1..E4, X}, quarantined, signals, to_approval, approved, rejected, expired}, portfolio: {strategy,
+  week_return|null, cumulative|null, max_dd}[], trades: {version, ticker, event_type, opened_at, closed_at, exit_rule,
+  return, realized_pnl_try}[], shadow: {version, ticker, event_type, rejected_by, excess_5d|null, excess_20d|null}[],
+  agent_health: {runs, p50_s|null, p95_s|null, tokens_per_run, hold_rate, quota_holds}}`. 6–7. bölümler (olaylar,
+  yorum) insan yazar. `422 validation` geçersiz hafta.
+- **PersonalStageStatus:** aşama takvimden (9 Kas 2026 öncesi Kanıt, sonrası Paper); Gölge ve Küçük gerçek paraya
+  geçiş yazılı kişi kararıdır, otomatik değildir. Ölçütler ölçülür: holdout (`core.event_returns`, 20 seans CAR,
+  t ≥ 2, n ≥ 30), kapanmış işlem (≥ 50), paper süresi (≥ 90 gün), en büyük düşüş (≤ %10, kişisel).

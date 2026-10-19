@@ -24,6 +24,13 @@ from kaptan.llm.structured import StructuredProvider
 from kaptan.settings import Settings
 
 HTTP_LIMITS: Final = httpx.Limits(max_connections=20, max_keepalive_connections=10)
+#: The local Ollama slot (OpenAI-compatible `/chat/completions`, no key; the bearer is a placeholder).
+OLLAMA: Final = "ollama"
+
+
+def ollama_spec(spec: ProviderSpec, base_url: str) -> ProviderSpec:
+    """The registry's ollama entry pointed at OLLAMA_BASE_URL (no reasoning flags, JSON mode)."""
+    return spec.model_copy(update={"base_url": base_url.strip().rstrip("/")})
 
 
 def usable_key(value: SecretStr | None) -> SecretStr | None:
@@ -69,6 +76,8 @@ def build_live_provider(
     providers: dict[str, LLMProvider] = {}
     for name, spec in models.providers.items():
         key = keys.get(name)
+        if name == OLLAMA and settings.ollama_base_url:
+            spec, key = ollama_spec(spec, settings.ollama_base_url), SecretStr(OLLAMA)
         if key is None:
             continue
         pricing = spec.price_usd_per_mtok

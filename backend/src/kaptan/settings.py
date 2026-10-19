@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     gemini_api_key: SecretStr | None = None
     deepseek_api_key: SecretStr | None = None
     groq_api_key: SecretStr | None = None
+    #: M3 B3 (FR-21): a local Ollama (OpenAI-compatible, e.g. http://127.0.0.1:11434/v1) as the last link
+    #: of every live chain, after Groq. Empty = off (the default). Model in config/models.yaml `ollama`.
+    ollama_base_url: str | None = None
     #: Live LLM hard caps per UTC day (kaptan.llm.budget); model IDs live in config/models.yaml.
     llm_cap_gemini_rpd: int = Field(default=400, ge=0)  # Flash-Lite free tier ~500 RPD (measured)
     llm_cap_groq_rpd: int = Field(default=900, ge=0)  # gpt-oss free ~1K RPD
@@ -93,11 +96,16 @@ class Settings(BaseSettings):
     quote_delay_s: int = Field(default=15 * 60, ge=0)
     #: tedbir_sync: also parse the SPK bulletin PDF at this URL (off when empty; KAP notices always run).
     tedbir_bulletin_url: str | None = None
+    #: Nightly audit anchor (scheduler 23:30, kaptan.audit.anchor): also append each anchor as a JSON line
+    #: to this local file (off when empty; audit.anchors is always written outside DEMO_MODE).
+    audit_anchor_file: str | None = None
 
     #: RAG (M2, kaptan.rag): embedder of the disclosure archive (model + size in config/rag.yaml).
     rag_embedder: Literal["gemini", "fake"] = "gemini"
     #: "Benzer geçmiş bildirimler" in the analysts' TASK_CONTEXT: LLM_MODE=live only; 0 = off.
     rag_context_k: int = Field(default=5, ge=0, le=10)
+    #: Regulation paragraphs (SPK II-15.1 / II-22.1, kaptan.rag.bases) in the compliance agent's context; live only.
+    rag_regulation_k: int = Field(default=3, ge=0, le=10)
     #: `kaptan.rag.index.index_new_disclosures` (the ingest hook) does nothing unless this is on.
     rag_index_on_ingest: bool = False
     rag_embed_cap_rpd: int = Field(default=500, ge=0)  # batch calls per UTC day (gemini-embedding-001 free tier)
@@ -250,7 +258,9 @@ def production_problems(settings: Settings, component: Component = "api") -> lis
         problems.append("ALLOWED_ORIGINS is empty (list the panel's origin)")
     if not redis_has_password(settings.redis_url):
         problems.append("REDIS_URL has no password (use redis://:<password>@host:6379/0)")
-    has_key = any(k is not None for k in (settings.gemini_api_key, settings.deepseek_api_key, settings.groq_api_key))
+    has_key = bool(settings.ollama_base_url) or any(
+        k is not None for k in (settings.gemini_api_key, settings.deepseek_api_key, settings.groq_api_key)
+    )
     if settings.llm_mode == "live" and not has_key:
         problems.append("LLM_MODE=live but no GEMINI_API_KEY / DEEPSEEK_API_KEY / GROQ_API_KEY is set")
     weak = weak_jwt_secret(settings.jwt_secret)

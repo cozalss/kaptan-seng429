@@ -112,4 +112,7 @@ def task_context(agent: str, state: Mapping[str, Any], ctx: Any) -> dict[str, An
             "restrictions": [{"kind": r.kind, "ref_id": r.source_ref} for r in ctx.desk.restrictions],
             "mode": ctx.desk.mode,
         }
+        regulation = getattr(ctx, "regulation", ())  # kaptan.rag.bases, live mode only (empty in replay)
+        if regulation:
+            out["regulation"] = list(regulation)
     return out

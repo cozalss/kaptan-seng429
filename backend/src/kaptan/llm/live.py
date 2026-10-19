@@ -5,7 +5,8 @@ Every request goes through one choke point:
    names the caller knows travel in `context["persons"]` and are stripped before any provider sees it;
 2. **cache** lookup (agent, prompt version + template hash, schema, inputs, text hash, context);
 3. `guard` → `GuardProvider` (Prompt Guard 2 + Turkish rules); every other agent → its chain from
-   `config/models.yaml` (default Gemini Flash-Lite → DeepSeek → Groq gpt-oss; Azure/Ollama slots are TODO),
+   `config/models.yaml` (default Gemini Flash-Lite → DeepSeek → Groq gpt-oss), then a local Ollama when
+   OLLAMA_BASE_URL is set (Azure is TODO),
    each link behind the daily budget; an exhausted chain raises `ProviderError` → the node HOLDs;
 4. store the validated answer and queue a usage row (`drain_usage()` → `llm.usage.sync_usage`).
 """
@@ -22,7 +23,7 @@ from kaptan.llm.budget import Budget, DayUsage
 from kaptan.llm.cache import ResponseCache, cache_key
 from kaptan.llm.mask_persons import mask_persons
 from kaptan.llm.provider import LLMProvider, LLMRequest, LLMResult, ProviderChain, ProviderError
-from kaptan.llm.registry import ModelsConfig
+from kaptan.llm.registry import LOCAL_TAIL, ModelsConfig
 from kaptan.llm.structured import prompt_for
 
 GUARD_AGENT: Final = "guard"
@@ -68,7 +69,9 @@ class LiveProvider:
         return tuple(self._providers)
 
     def chain_for(self, agent: str) -> Sequence[LLMProvider]:
-        return [self._providers[p] for p in self.models.chain_for(agent) if p in self._providers]
+        chain = self.models.chain_for(agent)
+        names = [*chain, *(p for p in LOCAL_TAIL if p not in chain)]
+        return [self._providers[p] for p in names if p in self._providers]
 
     def _prepare(self, request: LLMRequest) -> tuple[LLMRequest, int]:
         persons = request.context.get(PERSONS_KEY) or ()

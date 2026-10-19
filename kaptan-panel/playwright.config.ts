@@ -13,6 +13,9 @@ const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
  * 3100 when running the http suite (and vice versa).
  */
 const IS_API = process.env.E2E_API === "1";
+/** Local runs use Edge (msedge); CI sets E2E_BROWSER_CHANNEL=chromium for Playwright's bundled Chromium. */
+const CHANNEL = process.env.E2E_BROWSER_CHANNEL ?? "msedge";
+const channel = CHANNEL === "chromium" ? undefined : CHANNEL;
 const API_ORIGIN = process.env.KAPTAN_API_ORIGIN ?? "http://127.0.0.1:8000";
 
 const panelServer = {
@@ -42,13 +45,13 @@ export default defineConfig({
   globalSetup: IS_API ? "./e2e/global-setup.api.ts" : undefined,
   use: {
     baseURL: BASE_URL,
-    channel: "msedge",
+    channel,
     locale: "tr-TR",
     timezoneId: "Europe/Istanbul",
     trace: "retain-on-failure",
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Edge"], channel: "msedge", viewport: { width: 1440, height: 900 } } },
+    { name: "desktop", use: { ...devices["Desktop Edge"], channel, viewport: { width: 1440, height: 900 } } },
   ],
   webServer: process.env.E2E_BASE_URL ? undefined : IS_API ? [backendServer, panelServer] : panelServer,
 });

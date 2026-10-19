@@ -16,7 +16,9 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from kaptan.settings import BACKEND_DIR
 
 MODELS_FILE: Final = BACKEND_DIR / "config" / "models.yaml"
-ProviderKey = Literal["gemini", "deepseek", "groq"]
+ProviderKey = Literal["gemini", "deepseek", "groq", "ollama"]
+#: Local fallbacks appended to every live chain when configured (M3 B3, FR-21: … → Groq → Ollama → HOLD).
+LOCAL_TAIL: tuple[ProviderKey, ...] = ("ollama",)
 
 
 class _Strict(BaseModel):

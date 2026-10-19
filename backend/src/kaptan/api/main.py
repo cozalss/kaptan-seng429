@@ -24,9 +24,12 @@ from kaptan.api.routers import (
     approvals,
     audit,
     auth,
+    brief,
     demo,
     disclosures,
+    eval,
     limits,
+    personal,
     portfolio,
     risk,
     runs,
@@ -59,6 +62,9 @@ ROUTERS: Final = (
     admin.router,
     demo.router,
     sse.router,
+    brief.router,  # backend-only: GET /brief/today|{date} (M3 B1)
+    eval.router,  # backend-only: GET /eval/summary, /reports/forward/weekly (M3 B3)
+    personal.router,  # backend-only: GET /personal/stage (M3 B3)
 )
 
 

@@ -66,9 +66,15 @@ class RuleHit:
     excerpt: str
 
 
+def fold_obfuscation(text: str) -> str:
+    """NFKC (full-width ｉｇｎｏｒｅ → ignore) without invisible format characters (zero-width space, soft
+    hyphen, bidi marks: Unicode category Cf), so a hidden instruction cannot dodge the rules (red-team enc-*)."""
+    return "".join(ch for ch in unicodedata.normalize("NFKC", text) if unicodedata.category(ch) != "Cf")
+
+
 def rule_hits(text: str) -> list[RuleHit]:
     """Every rule that matches, with the matched excerpt (≤ 80 chars, lower-cased)."""
-    lowered = tr_lower(text)
+    lowered = tr_lower(fold_obfuscation(text))
     hits: list[RuleHit] = []
     for rule, pattern in RULES:
         m = pattern.search(lowered)

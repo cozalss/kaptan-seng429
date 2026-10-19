@@ -91,6 +91,9 @@ class RunContext:
     #: "Benzer geçmiş bildirimler" (kaptan.rag, LLM_MODE=live only; empty in replay so replay stays
     #: byte-identical): earlier disclosures by hybrid search, `published_at < as_of`, with citations.
     similar: tuple[SimilarDisclosure, ...] = ()
+    #: Regulation paragraphs in force at the decision time for the compliance agent (kaptan.rag.bases,
+    #: LLM_MODE=live only; empty in replay). Trusted text from backend/data/regulation (M3 B3).
+    regulation: tuple[dict[str, Any], ...] = ()
 
     def similar_context(self) -> list[dict[str, Any]]:
         """The TASK_CONTEXT rows of `similar` (ids, dates, codes; never the untrusted snippet text)."""

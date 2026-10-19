@@ -205,9 +205,15 @@ async def run_universe(
     return UniverseStats(day, len(rows), eligible, len(iss))
 
 
-UNIVERSE_SQL: Final = "SELECT ticker FROM core.universe_daily WHERE d = %s AND is_eligible ORDER BY ticker"
+#: The rules' answer with the Yönetici's overrides on top (core.universe_overrides, migration 0020; M3 B3).
+UNIVERSE_SQL: Final = """
+SELECT u.ticker FROM core.universe_daily u
+  LEFT JOIN core.universe_overrides o ON o.ticker = u.ticker
+ WHERE u.d = %s AND (o.mode IS NULL AND u.is_eligible OR o.mode = 'include')
+ ORDER BY u.ticker
+"""
 
 
 async def universe_on(conn: Conn, day: date) -> list[str]:
-    """The eligible tickers of `day` (empty when the job has not run for it)."""
+    """The eligible tickers of `day` after the manual overrides (empty when the job has not run for it)."""
     return [r["ticker"] for r in await fetch_all(conn, UNIVERSE_SQL, (day,))]
