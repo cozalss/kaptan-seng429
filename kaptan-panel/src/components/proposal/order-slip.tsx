@@ -9,7 +9,7 @@ import { ROUTES } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { dative, locative, titleTr } from "@/components/story/turkish";
 import { shortName } from "@/components/story/plain";
-import { ENTRY_LABEL, isMarkable, ticketPhase, validFrom } from "@/components/tickets/ticket-logic";
+import { ENTRY_LABEL, SIDE_LABEL, SIDE_VERB, isMarkable, ticketPhase, validFrom } from "@/components/tickets/ticket-logic";
 import { SlipActions } from "./slip-actions";
 import "./oneri.css";
 
@@ -62,7 +62,16 @@ export function OrderSlip({
       </div>
       <div className="space-y-4 px-5 pt-3 pb-5 sm:px-6">
         <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-ink">
-          <span className="bg-gain px-2 py-0.5 text-[14px] leading-5 font-semibold tracking-[0.06em] text-on-dark">AL</span>
+          <span
+            data-side={t.side}
+            aria-label={SIDE_LABEL[t.side]}
+            className={cn(
+              "px-2 py-0.5 text-[14px] leading-5 font-semibold tracking-[0.06em] text-on-dark",
+              t.side === "sell" ? "bg-loss" : "bg-gain",
+            )}
+          >
+            {SIDE_VERB[t.side]}
+          </span>
           <span className="code text-[22px] leading-none font-semibold">{t.ticker}</span>
           <span className="text-dense text-muted">{titleTr(shortName(t.company_name))}</span>
         </p>

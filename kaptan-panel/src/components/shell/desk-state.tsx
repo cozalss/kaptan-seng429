@@ -87,6 +87,7 @@ export function DeskStateProvider({ children }: { children: ReactNode }) {
       if (r.kill_switch === "on") setPending([]);
     },
     halt: (r) => setLiveRisk(r),
+    regime: (r) => setLiveRisk(r),
   });
 
   const resetView = useCallback(() => {

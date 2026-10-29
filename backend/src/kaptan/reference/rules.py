@@ -1,4 +1,5 @@
-"""The universe rules U1–U8 (06 §2) as one pure function, plus the BIST price-tick table (U6).
+"""The universe rules U1–U8 (06 §2) as one pure function, using the BIST price-tick table of
+`kaptan.market.ticks` (U6, the one source of truth for ticks).
 
     verdict = evaluate(UniverseInputs(...), UNIVERSE_PARAMS)
     verdict.eligible, verdict.reasons            # ('U2', 'U4') = the rules that failed
@@ -15,34 +16,13 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any, Final
 
-RULE_VERSION: Final = "universe.v1"
+from kaptan.market.ticks import tick_size as tick_size  # re-exported: U6 uses the one tick table
 
-#: BIST equity price ticks (lower bound of the price band → tick), 06 §2 U6 [U]: from the BIST
-#: pay piyasası procedure as we know it; verify against the current procedure before the holdout run.
-TICK_TABLE: Final[tuple[tuple[Decimal, Decimal], ...]] = (
-    (Decimal("0"), Decimal("0.01")),
-    (Decimal("20"), Decimal("0.02")),
-    (Decimal("50"), Decimal("0.05")),
-    (Decimal("100"), Decimal("0.10")),
-    (Decimal("250"), Decimal("0.25")),
-    (Decimal("500"), Decimal("0.50")),
-    (Decimal("1000"), Decimal("1.00")),
-    (Decimal("2500"), Decimal("2.50")),
-)
+RULE_VERSION: Final = "universe.v1"
 
 #: Markets U1 excludes (06 §2): Alt Pazar, Yakın İzleme Pazarı, GİP, Nitelikli Yatırımcı, PÖİP.
 EXCLUDED_MARKETS: Final = frozenset({"alt", "yip", "gip", "nitelikli", "poip"})
 KNOWN_MARKETS: Final = frozenset({"yildiz", "ana"}) | EXCLUDED_MARKETS
-
-
-def tick_size(price: Decimal) -> Decimal:
-    if price <= 0:
-        raise ValueError("price must be positive")
-    tick = TICK_TABLE[0][1]
-    for lower, step in TICK_TABLE:
-        if price >= lower:
-            tick = step
-    return tick
 
 
 @dataclass(frozen=True, slots=True)

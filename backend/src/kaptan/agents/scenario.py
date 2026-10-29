@@ -34,6 +34,7 @@ from kaptan.eval.manifest import manifest_hash_for
 from kaptan.llm import get_provider
 from kaptan.llm.provider import LLMProvider
 from kaptan.llm.usage import sync_usage
+from kaptan.risk.cooldown import cooldown_active
 
 log = logging.getLogger("kaptan.agents")
 
@@ -104,6 +105,7 @@ async def build_context(
         holds_ticker=bool(book["holds_ticker"]),
         quota_ok=await q.quota_ok(conn),
         live_armed=await q.live_armed(conn),
+        in_cooldown=await cooldown_active(conn, d.ticker, now),
     )
     ctx = RunContext(
         provider=provider,

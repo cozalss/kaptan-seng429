@@ -1,6 +1,7 @@
 """Wiring of the live chain from settings + `config/models.yaml` (keys from env, never from files).
 
-A provider without a key is simply left out of every chain; Prompt Guard needs the Groq key (without it
+A provider without a key is simply left out of every chain (Azure needs its endpoint, key and deployment);
+Prompt Guard needs the Groq key (without it
 the guard is rules-only). Counters and the cache use Redis when a client is given, memory otherwise.
 """
 
@@ -14,7 +15,7 @@ from redis.asyncio import Redis
 
 from kaptan.llm.budget import Budget, Caps
 from kaptan.llm.cache import ResponseCache
-from kaptan.llm.clients import GeminiClient, ModelClient, OpenAICompatClient
+from kaptan.llm.clients import AzureOpenAIClient, GeminiClient, ModelClient, OpenAICompatClient
 from kaptan.llm.guard import GUARD_PROVIDER, GuardProvider, PromptGuardClient
 from kaptan.llm.live import LiveProvider
 from kaptan.llm.provider import LLMProvider
@@ -26,11 +27,21 @@ from kaptan.settings import Settings
 HTTP_LIMITS: Final = httpx.Limits(max_connections=20, max_keepalive_connections=10)
 #: The local Ollama slot (OpenAI-compatible `/chat/completions`, no key; the bearer is a placeholder).
 OLLAMA: Final = "ollama"
+AZURE: Final = "azure"
 
 
 def ollama_spec(spec: ProviderSpec, base_url: str) -> ProviderSpec:
     """The registry's ollama entry pointed at OLLAMA_BASE_URL (no reasoning flags, JSON mode)."""
     return spec.model_copy(update={"base_url": base_url.strip().rstrip("/")})
+
+
+def azure_spec(spec: ProviderSpec, settings: Settings) -> ProviderSpec | None:
+    """The registry's azure entry pointed at the configured endpoint + deployment (None: Azure is off)."""
+    endpoint = (settings.azure_openai_endpoint or "").strip().rstrip("/")
+    deployment = (settings.azure_openai_deployment or "").strip()
+    if not endpoint or not deployment or usable_key(settings.azure_openai_api_key) is None:
+        return None
+    return spec.model_copy(update={"base_url": endpoint, "model": deployment})
 
 
 def usable_key(value: SecretStr | None) -> SecretStr | None:
@@ -42,6 +53,7 @@ def caps_from(settings: Settings) -> dict[str, Caps]:
         "gemini": Caps(requests_per_day=settings.llm_cap_gemini_rpd),
         "deepseek": Caps(requests_per_day=settings.llm_cap_deepseek_rpd, usd_per_day=settings.llm_cap_deepseek_usd),
         "groq": Caps(requests_per_day=settings.llm_cap_groq_rpd, tokens_per_day=settings.llm_cap_groq_tpd),
+        AZURE: Caps(requests_per_day=settings.llm_cap_azure_rpd),
         GUARD_PROVIDER: Caps(requests_per_day=settings.llm_cap_guard_rpd),
     }
 
@@ -51,10 +63,13 @@ def _keys(settings: Settings) -> dict[str, SecretStr | None]:
         "gemini": usable_key(settings.gemini_api_key),
         "deepseek": usable_key(settings.deepseek_api_key),
         "groq": usable_key(settings.groq_api_key),
+        AZURE: usable_key(settings.azure_openai_api_key),
     }
 
 
-def _client(name: str, spec: ProviderSpec, key: SecretStr, http: httpx.AsyncClient) -> ModelClient:
+def _client(name: str, spec: ProviderSpec, key: SecretStr, http: httpx.AsyncClient, settings: Settings) -> ModelClient:
+    if spec.kind == "azure":
+        return AzureOpenAIClient(name, spec, key, http, api_version=settings.azure_openai_api_version)
     if spec.kind == "gemini":
         return GeminiClient(name, spec, key, http)
     return OpenAICompatClient(name, spec, key, http)
@@ -78,10 +93,15 @@ def build_live_provider(
         key = keys.get(name)
         if name == OLLAMA and settings.ollama_base_url:
             spec, key = ollama_spec(spec, settings.ollama_base_url), SecretStr(OLLAMA)
+        if name == AZURE:
+            configured = azure_spec(spec, settings)
+            if configured is None:
+                continue
+            spec = configured
         if key is None:
             continue
         pricing = spec.price_usd_per_mtok
-        providers[name] = StructuredProvider(_client(name, spec, key, http), budget, pricing=pricing)
+        providers[name] = StructuredProvider(_client(name, spec, key, http, settings), budget, pricing=pricing)
     guard_key = keys.get(models.guard.provider)
     guard_client = (
         None

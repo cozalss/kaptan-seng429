@@ -208,7 +208,11 @@ async def add_note(
 def _check_entered(ticket: dict[str, Any], m: TicketMarkEntered) -> None:
     if m.filled_qty > ticket["qty"]:
         raise ApiError(422, "over_qty", "Gerçekleşen adet fişteki adetten büyük olamaz.")
-    if m.avg_price > ticket["limit_price"]:
+    if ticket.get("side", "buy") == "sell":
+        # A sell limit is a floor: the average may not fall under it (06 R09 SELL: limit ≥ taban).
+        if m.avg_price < ticket["limit_price"]:
+            raise ApiError(422, "under_limit", "Limit satışta ortalama fiyat limit fiyatın altında olamaz.")
+    elif m.avg_price > ticket["limit_price"]:
         raise ApiError(422, "over_limit", "Limit emirde ortalama fiyat limit fiyatı aşamaz.")
     if m.filled_at > parse_iso(ticket["valid_until"]):
         raise ApiError(422, "after_ttl", "Fişin geçerlilik süresinden sonra girilen emir sayılmaz (R16).")
@@ -248,7 +252,9 @@ async def mark_ticket(
             await cur.execute(
                 MARK_SQL, (m.mark, entry["filled_qty"], entry["avg_price"], filled_at, note, now, ticket_no)
             )
-        payload = {"qty": entered.filled_qty, "price": entered.avg_price} if entered else {}
+        payload: dict[str, Any] = {"qty": entered.filled_qty, "price": entered.avg_price} if entered else {}
+        if ticket.get("side") == "sell":
+            payload = {**payload, "side": "sell"}
         draft = run_audit(actor.audit_actor, f"ticket.{m.mark}", "order_ticket", ticket_no, payload, ticket["run_id"])
         await append(conn, [draft], now=now)
         if entered is not None:

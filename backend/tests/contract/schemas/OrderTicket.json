@@ -59,7 +59,10 @@
   },
   "side": {
    "type": "string",
-   "const": "buy"
+   "enum": [
+    "buy",
+    "sell"
+   ]
   },
   "ticker": {
    "type": "string",

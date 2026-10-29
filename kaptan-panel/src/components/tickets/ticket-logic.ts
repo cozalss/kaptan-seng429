@@ -59,10 +59,15 @@ export function accountShare(t: Pick<OrderTicket, "est_notional_try" | "account_
  * Plain spaces only: the screen's no-break spaces ("48,40 TL") paste as odd characters into
  * a broker's price box.
  */
+/** Alış / Satış, said plainly on every slip and card (sell = an exit from what you hold). */
+export const SIDE_LABEL = { buy: "Alış", sell: "Satış" } as const;
+/** The word you key into a broker app. */
+export const SIDE_VERB = { buy: "AL", sell: "SAT" } as const;
+
 export function ticketCopyText(t: OrderTicket): string {
   return [
     `KAPtan emir fişi ${t.ticket_no}`,
-    `AL ${t.ticker} · LİMİT ${fmtPrice(t.limit_price)} · ${fmtInt(t.qty)} lot`,
+    `${SIDE_VERB[t.side]} ${t.ticker} · LİMİT ${fmtPrice(t.limit_price)} · ${fmtInt(t.qty)} lot`,
     `Seans: ${t.session_tr}`,
     `Tahmini tutar: ${fmtInt(t.est_notional_try)} TL (${fmtPct(accountShare(t), 1)} hesap)`,
     `Geçerli: ${fmtTime(validFrom(t))}–${fmtTime(t.valid_until)} · ${fmtDateTime(t.valid_until).slice(0, 10)}`,
@@ -142,7 +147,10 @@ export function initialDraft(kind: MarkKind, t: OrderTicket, nowMs: number): Mar
 }
 
 /** Client-side check with the API's own rules (SPEC §2.2). */
-export function markErrors(d: MarkDraft, t: Pick<OrderTicket, "qty" | "limit_price" | "created_at" | "valid_until">): MarkErrors {
+export function markErrors(
+  d: MarkDraft,
+  t: Pick<OrderTicket, "qty" | "limit_price" | "created_at" | "valid_until"> & Partial<Pick<OrderTicket, "side">>,
+): MarkErrors {
   const note = d.note.trim().length > NOTE_MAX ? `Not en çok ${NOTE_MAX} karakter.` : null;
   if (d.kind !== "entered") return { qty: null, price: null, time: null, note };
   const qty = parseQty(d.qty);
@@ -150,7 +158,16 @@ export function markErrors(d: MarkDraft, t: Pick<OrderTicket, "qty" | "limit_pri
   const clock = parseClock(d.time);
   return {
     qty: qty === null || qty < 1 ? "Adedi tam sayı olarak yaz." : qty > t.qty ? `Fişteki adetten (${fmtInt(t.qty)} lot) fazla olamaz.` : null,
-    price: price === null || price <= 0 ? "Ortalama fiyatı yaz (ör. 48,32)." : price > t.limit_price ? `Limit fiyatı (${fmtPrice(t.limit_price)}) aşamaz.` : null,
+    price:
+      price === null || price <= 0
+        ? "Ortalama fiyatı yaz (ör. 48,32)."
+        : t.side === "sell"
+          ? price < t.limit_price
+            ? `Satışta limit fiyatın (${fmtPrice(t.limit_price)}) altında olamaz.`
+            : null
+          : price > t.limit_price
+            ? `Limit fiyatı (${fmtPrice(t.limit_price)}) aşamaz.`
+            : null,
     time:
       clock === null
         ? "Saati SS:DD olarak yaz (ör. 13:52)."

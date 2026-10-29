@@ -77,6 +77,7 @@ DESK_EVENTS: Final[dict[str, type[KModel]]] = {
     "fill": FillWithTicker,
     "kill_switch": RiskStatus,
     "halt": RiskStatus,
+    "regime": RiskStatus,  # the daily regime changed (06 §9: normal ↔ crisis)
     "limits.changed": LimitsView,
     "ticket": OrderTicket,
     "crew": CrewEvent,

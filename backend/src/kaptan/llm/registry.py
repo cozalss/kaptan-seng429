@@ -16,9 +16,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from kaptan.settings import BACKEND_DIR
 
 MODELS_FILE: Final = BACKEND_DIR / "config" / "models.yaml"
-ProviderKey = Literal["gemini", "deepseek", "groq", "ollama"]
-#: Local fallbacks appended to every live chain when configured (M3 B3, FR-21: … → Groq → Ollama → HOLD).
-LOCAL_TAIL: tuple[ProviderKey, ...] = ("ollama",)
+ProviderKey = Literal["gemini", "deepseek", "groq", "azure", "ollama"]
+#: Fallbacks appended to every live chain when configured (FR-21, 05 §1.4 Rev. 3:
+#: … → Groq → Azure for Students → Ollama → HOLD).
+LOCAL_TAIL: tuple[ProviderKey, ...] = ("azure", "ollama")
 
 
 class _Strict(BaseModel):
@@ -38,7 +39,7 @@ class Pricing(_Strict):
 
 
 class ProviderSpec(_Strict):
-    kind: Literal["gemini", "openai"]
+    kind: Literal["gemini", "openai", "azure"]
     base_url: str
     model: str
     timeout_s: float = Field(default=45, gt=0)

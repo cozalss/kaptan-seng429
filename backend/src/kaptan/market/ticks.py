@@ -1,7 +1,10 @@
 """BIST equity price steps (fiyat adımı) and daily price limits (06 R09, U6; 07 §6 "Tavan/taban"). Pure, Decimal.
 
-Tick table of the BIST Pay Piyasası (price range in TL → step). 06 §2 U6 marks the table [U] ("BIST
-prosedüründen alınacak"); these are the steps in force on Borsa İstanbul's equity market since 2019:
+Tick table of the BIST Pay Piyasası (price range in TL → step), 06 §2 U6 [V]: Borsa İstanbul Pay Piyasası
+Prosedürü (02.PRO.01, rev. 54 / sürüm 3.34, 21/09/2026) §5.1.9, Tablo-7 "Paylarda ve Yeni Pay Alma Haklarında
+Geçerli Fiyat Adımları", https://www.borsaistanbul.com/files/pay-piyasasi-proseduru.pdf (accessed 2026-10-29).
+The step depends on the price level, not on the base price (§5.1.9). This module is the one source of truth;
+`kaptan.reference.rules` (universe rule U6) imports it.
 
     0.01 – 19.99 → 0.01      100.00 – 249.90 → 0.10     1 000.00 – 2 499.00 → 1.00
     20.00 – 49.98 → 0.02     250.00 – 499.75 → 0.25     2 500.00 +          → 2.50
@@ -17,7 +20,7 @@ from __future__ import annotations
 from decimal import ROUND_CEILING, ROUND_FLOOR, Decimal
 from typing import Final
 
-#: (lower bound of the range, step) in ascending order (06 U6 [U]).
+#: (lower bound of the range, step) in ascending order (06 U6 [V], Prosedür Tablo-7).
 TICK_TABLE: Final[tuple[tuple[Decimal, Decimal], ...]] = (
     (Decimal("0"), Decimal("0.01")),
     (Decimal("20"), Decimal("0.02")),

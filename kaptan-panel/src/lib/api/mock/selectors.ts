@@ -203,7 +203,7 @@ function ticketOrder(t: OrderTicket, decidedAt: string | null): Order {
     run_id: t.run_id,
     ticker: t.ticker,
     company_name: t.company_name,
-    side: "buy",
+    side: t.side,
     order_type: "limit",
     tif: "day",
     qty: t.qty,

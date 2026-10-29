@@ -92,10 +92,8 @@ async def test_llm_predictor_maps_answers_and_failures() -> None:
     assert await llm_predictor(_Fake(None))(item) == ABSTAIN
 
 
-def test_ragas_is_a_clean_stub_without_setting_or_key() -> None:
-    from kaptan.eval.ragas_eval import evaluate_rag, unavailable_reason
+def test_ragas_is_skipped_without_the_flag() -> None:
+    from kaptan.eval.ragas_eval import unavailable_reason
 
-    assert evaluate_rag([{"question": "q"}], env={}) == {"skipped": "KAPTAN_RAGAS is not 1", "n": 1}
-    assert unavailable_reason({"KAPTAN_RAGAS": "1"}) == "no judge key (RAGAS_JUDGE_API_KEY)"
-    reason = unavailable_reason({"KAPTAN_RAGAS": "1", "RAGAS_JUDGE_API_KEY": "x"})
-    assert reason in (None, "the optional ragas package is not installed")
+    assert unavailable_reason({}) == "KAPTAN_RAGAS is not 1"
+    assert unavailable_reason({"KAPTAN_RAGAS": "1"}) == "no judge key (DEEPSEEK_API_KEY / GEMINI_API_KEY)"

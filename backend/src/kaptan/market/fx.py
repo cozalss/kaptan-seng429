@@ -2,10 +2,13 @@
 
 Sources (no key needed): `https://www.tcmb.gov.tr/kurlar/today.xml` and the archive
 `https://www.tcmb.gov.tr/kurlar/YYYYMM/DDMMYYYY.xml` (404 on weekends and holidays). Each file is the
-bulletin TCMB announces at 15:30 Istanbul on its `Tarih`; we store ForexBuying (döviz alış) per unit
-(JPY is quoted per 100) with `available_at = Tarih 15:30 Istanbul`, so a rate is used only for
-decisions made after it was published (no look-ahead). The publication hour is a conservative
-[U]: TCMB states "15.30" for the indicative bulletin.
+bulletin TCMB fixes at 15:30 Istanbul on its `Tarih`; we store ForexBuying (döviz alış) per unit
+(JPY is quoted per 100) with `available_at = Tarih 16:30 Istanbul`, so a rate is used only for
+decisions made after it was published (no look-ahead). [V] TCMB: the rates are "saat 15.30'da belirlenip,
+gerekli kontroller yapıldıktan sonra 16.00-16.30 saatleri arasında İnternet sitesinde yayımlanır" (Sıkça
+Sorulan Sorular › Döviz Kuru Politikası ve Rezerv Yönetimi, https://www.tcmb.gov.tr/wps/wcm/connect/TR/TCMB+TR/
+Main+Menu/Banka+Hakkinda/Sikca+Sorulan+Sorular/Doviz+Kuru+Politikasi+ve+Rezerv+Yonetimi/, accessed 2026-10-29),
+so the XML we read is available at the end of that window, not at the 15:30 fixing.
 
     async with make_http_client() as http:
         bulletin = await fetch_day(http, date(2026, 10, 20))      # None: no bulletin that day
@@ -31,8 +34,9 @@ log = logging.getLogger("kaptan.market.fx")
 
 TODAY_URL: Final = "https://www.tcmb.gov.tr/kurlar/today.xml"
 ARCHIVE_URL: Final = "https://www.tcmb.gov.tr/kurlar/{ym}/{dmy}.xml"
-#: The bulletin is announced at 15:30 Istanbul on its date (06 §3.3: "karar anında yayımlanmış son TCMB kuru").
-PUBLISH_TIME: Final = time(15, 30)
+#: Fixed at 15:30, published on the site between 16:00 and 16:30 Istanbul [V] (TCMB SSS, see above);
+#: the latest end of the window (06 §3.3: "karar anında yayımlanmış son TCMB kuru").
+PUBLISH_TIME: Final = time(16, 30)
 #: A bulletin is a few kB; anything far larger is not one (and is not parsed).
 MAX_BYTES: Final = 512 * 1024
 RETRIES: Final = 2

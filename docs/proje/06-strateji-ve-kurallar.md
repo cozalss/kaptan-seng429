@@ -39,15 +39,15 @@ Değişmez ilke: **kural motoru ve risk kapısı saf fonksiyondur** (`f(proposal
 | Konu | Değer | Kaynak / etiket |
 |---|---|---|
 | Seans akışı (pay piyasası) | Açılış seansı emir toplama 09:40–09:55, eşleştirme/fiyat belirleme 09:55–10:00 · Sürekli işlem 10:00–18:00 · Kapanış seansı emir toplama 18:00/18:01–18:05, kapanış fiyatı belirleme 18:05–18:08 · Kapanış fiyatından işlemler 18:08–18:10 | [S] [ÜNLÜ](https://www.unlumenkul.com/borsa-istanbul-seanslar-ve-islem-saatleri/), [Enuygun 2026](https://www.enuygunfinans.com/finans-rehberi/borsa-saat-kacta-aciliyor-ve-kapaniyor-borsa-islem-saatleri/), [BIST işlem saatleri](https://www.borsaistanbul.com/en/trading-hours) |
-| Gün ortası tek fiyat seansı (13:00–14:00) | Bir kaynak hâlâ listeliyor, diğerleri sürekli işlemi 10:00–18:00 kesintisiz veriyor | **[U]** — W1'de BIST sayfasından teyit; config'de `midday_break: false` varsayılan |
-| Günlük fiyat marjı | Önceki kapanışa göre **±%10** (2020 düzenlemesiyle tüm gruplarda) | [S] [Hürriyet](https://www.hurriyet.com.tr/ekonomi/borsa-istanbuldan-marjlara-tedbir-41467941) · 2026 geçerliliği **[U]**, BIST Pay Piyasası Prosedürü'nden teyit |
-| Pay bazlı devre kesici | Tetik %5; sonrası emir toplama süresi 15–30 dk (kaynaklar farklı) | [S] **[U]** süre |
+| Gün ortası tek fiyat seansı (13:00–14:00) | Sürekli işlem 10:00–18:00 **kesintisiz** (Prosedür §9 seans çizelgesi). 13:00–14:00 tek fiyat süreci yalnızca **tek fiyat yöntemiyle işlem gören** paylarda var (YİP/PÖİP, VBTS 3. kademe "tek fiyat"; günde 5 fiyat belirleme, Tablo-10) | **[V]** [BIST Pay Piyasası Prosedürü rev.54, 21/09/2026](https://www.borsaistanbul.com/files/pay-piyasasi-proseduru.pdf) (erişim 2026-10-29) · `midday_break: false` doğru |
+| Günlük fiyat marjı | Baz fiyata (önceki kapanış) göre **Yıldız Pazar ±%20, Ana Pazar ±%15; Alt Pazar, YİP, PÖİP ±%10**; limitler içeri doğru fiyat adımına yuvarlanır (§5.1.11) | **[V]** [BIST Pay Piyasası Prosedürü rev.54, 21/09/2026](https://www.borsaistanbul.com/files/pay-piyasasi-proseduru.pdf) (erişim 2026-10-29) · ⚠ kod (`market/ticks.py` `DAILY_LIMIT_PCT`, `daily_limit_pct: 0.10`) hâlâ tek ±%10 kullanıyor — pazar bazlı marj açık iş (M4 V raporu) |
+| Pay bazlı devre kesici | Eşik: ilgili pazarın marjı (Tablo-4) devre kesici referans fiyatına uygulanır; tetiklenince **10 dk emir toplama + 2 dk eşleşme** (17:45–18:00 arasında 15 dk, kapanış seansına devreder) (§5.3.4.1) | **[V]** [BIST Pay Piyasası Prosedürü rev.54, 21/09/2026](https://www.borsaistanbul.com/files/pay-piyasasi-proseduru.pdf) (erişim 2026-10-29) · eşik oranı Tablo-4'ten okunmadı **[U]** |
 | Borsa payı (pay piyasası) | İşlem hacminin **0,25 baz puanı** (%0,0025), taraf başına | [V] [BIST Ücretlendirme Tablosu](https://www.borsaistanbul.com/files/borsa-istanbul-ucretlendirme-tablosu.pdf) |
 | Takasbank takas komisyonu | İşlem hacminin **milyonda 4** (%0,0004) | [V] [Takasbank tarife](https://www.takasbank.com.tr/documents/mevzuat/pay-piyasasi-ucret-tarifesi-23012025.pdf) |
 | Aracı kurum komisyonu | Banka kökenli kurumlar ~**binde 1,9–2,0** (%0,19–0,20) taraf başına [V, Rev. 3]; Deniz/QNB binde 5 (liste tarifeleri); **Midas ve Enpara Yatırım BIST komisyonu %0** [V/ikincil, Rev. 3] | [S] [hisse.net 2026](https://www.hisse.net/haber/bankalarin-borsa-istanbul-da-bakim-ve-komisyon-ucretleri-2026-48274), [Midas](https://www.getmidas.com/ucretler/) |
 | BSMV | Banka aracı kurumlarında komisyon üzerinden %5 (komisyon %0 ise BSMV de 0) | [V, Rev. 3] |
 | Pay kazancı vergisi | GVK geçici 67: BIST'te işlem gören paylarda **%0 stopaj**, beyan yok (Mart 2026 değişikliği TEFAS dışı hisse yoğun serbest fonları etkiledi) | [S] [PwC 2026](https://www.pwc.com.tr/tr/sektorler/bankacilik-sermaye-piyasalari/bultenler/2026/gvk-gecici-67nci-madde-uyarinca-uygulanan-stopaj-oranlarinda-degisiklikler.html), [Alomaliye 11107](https://www.alomaliye.com/2026/03/27/gvk-gecici-67-nci-maddesinde-yer-alan-tevkifat-oranlari-karar-sayisi-11107/) |
-| VBTS | Kademeli: (1) açığa satış + kredili işlem yasağı, (2) brüt takas, (3) tek fiyat; kademe başına tipik süre ~15 gün (kaynaklar 15 gün / 1 ay arasında değişiyor) | [S] [BIST VBTS](https://www.borsaistanbul.com/tr/sayfa/334/volatilite-bazli-tedbir-sistemivbts), [QNB](https://www.qnbinvest.com.tr/investodak/qnbarastirma/volatilite-bazli-tedbir-sistemi-vbts-nedir), [Fintables](https://fintables.com/arastirma/yazilar/yatirim-stratejileri/volatilite-bazli-tedbir-sistemi-nedir) · süreler **[U]** |
+| VBTS | Kademeli: (1) açığa satış + kredili işlem yasağı, (2) brüt takas, (3) tek fiyat; + emir paketi / internet emir yasağı; **her kademe 1 ay** (15/11/2021'den beri, önce 15 gün); sonraki kademe öncekilerin bitişini kendi sonuna uzatır | **[V]** [BIST KAP duyurusu](https://kap.org.tr/tr/api/BildirimPdf/976897) md.4 (erişim 2026-10-29) → `VBTS_DEFAULT_MONTHS = 1` |
 | SPK işlem yasakları | Kişi bazlı işlem yasakları SPK bülteni + idari yaptırımlar sayfası | [V] [SPK İşlem Yasakları](https://idariyaptirimlar.spk.gov.tr/IslemYasaklari) |
 
 **Kurala etkisi:** Tek fiyat ve brüt takas altındaki paylar zaten evren dışıdır (§2), bu yüzden tek fiyat seans saatlerinin kesin bilgisine kural motoru bağımlı değildir.
@@ -94,7 +94,7 @@ Evren her **Pazartesi 08:30**'da (ve günlük olarak VBTS/tedbir değişiklikler
 | U3 | Halka açıklık | MKK fiili dolaşımdaki pay oranı (FDPO) ≥ **%25** | [K] |
 | U4 | Halka açık piyasa değeri | FDPO × piyasa değeri ≥ **1.500.000.000 TL** | [K] |
 | U5 | Geçmiş | Borsada ≥ **250 seans** işlem görmüş (tahmin penceresi için) | [K] |
-| U6 | Fiyat adımı | `tick_size(price) / price ≤ %0,25` (çok düşük fiyatlı paylarda adım maliyeti) | [K]; fiyat adımı tablosu **[U]**, BIST prosedüründen alınacak |
+| U6 | Fiyat adımı | `tick_size(price) / price ≤ %0,25` (çok düşük fiyatlı paylarda adım maliyeti) | [K]; fiyat adımı tablosu **[V]** Prosedür §5.1.9 Tablo-7 ([BIST Pay Piyasası Prosedürü rev.54, 21/09/2026](https://www.borsaistanbul.com/files/pay-piyasasi-proseduru.pdf) (erişim 2026-10-29)): <20→0,01 · <50→0,02 · <100→0,05 · <250→0,10 · <500→0,25 · <1000→0,50 · <2500→1,00 · ≥2500→2,50; tek kaynak `market/ticks.py` |
 | U7 | Tedbir geçmişi | Son **20 seansta** VBTS tedbiri, SPK/BIST tedbiri veya işlem durdurma **yok** | [K] |
 | U8 | Varlık türü | Yalnızca paylar. Varant, sertifika, BYF, yatırım fonu, rüçhan kuponu **hariç** | [K] |
 
@@ -172,7 +172,7 @@ E2_strong  = E2_trigger AND (cluster_30 ≥ 2 OR float_share ≥ 0,10% OR drawdo
 
 **Önemlilik formülü (Birleştirme düğümü; tutar Okuyucu'dan + R14 regex doğrulaması, hasılat/piyasa değeri/kur Önemlilik ajanının getirdiği ham sayılardan):**
 ```
-value_TL        = contract_value × TCMB_döviz_alış(karar_tarihi)   # TL ise 1; karar anında yayımlanmış son TCMB kuru
+value_TL        = contract_value × TCMB_döviz_alış(karar_tarihi)   # TL ise 1; karar anında yayımlanmış son TCMB kuru (15:30 belirlenir, 16:00–16:30 yayımlanır → available_at 16:30 [V] TCMB SSS, erişim 2026-10-29)
 annual_value_TL = value_TL / max(1, duration_months / 12)           # süre belirtilmemişse duration yok → toplam tutar
 revenue_TTM     = son 4 çeyrek hasılat, fundamentals_pit'ten available_at < karar_anı
                   (TMS 29'lu tablolar raporlama tarihinin satın alma gücündedir)
@@ -830,7 +830,7 @@ session:
   continuous: ["10:00", "18:00"]
   closing_collect: ["18:00", "18:05"]
   closing_price_trades: ["18:08", "18:10"]
-  midday_break: false            # [U] teyit edilecek
+  midday_break: false            # [V] Prosedür §9: sürekli işlem 10:00–18:00 kesintisiz
   daily_limit_pct: 0.10
 universe:
   markets: ["YILDIZ", "ANA"]

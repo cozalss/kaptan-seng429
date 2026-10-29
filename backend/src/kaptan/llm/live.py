@@ -5,8 +5,8 @@ Every request goes through one choke point:
    names the caller knows travel in `context["persons"]` and are stripped before any provider sees it;
 2. **cache** lookup (agent, prompt version + template hash, schema, inputs, text hash, context);
 3. `guard` → `GuardProvider` (Prompt Guard 2 + Turkish rules); every other agent → its chain from
-   `config/models.yaml` (default Gemini Flash-Lite → DeepSeek → Groq gpt-oss), then a local Ollama when
-   OLLAMA_BASE_URL is set (Azure is TODO),
+   `config/models.yaml` (default Gemini Flash-Lite → DeepSeek → Groq gpt-oss), then Azure OpenAI when
+   AZURE_OPENAI_* are set and a local Ollama when OLLAMA_BASE_URL is set,
    each link behind the daily budget; an exhausted chain raises `ProviderError` → the node HOLDs;
 4. store the validated answer and queue a usage row (`drain_usage()` → `llm.usage.sync_usage`).
 """

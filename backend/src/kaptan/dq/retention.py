@@ -7,6 +7,9 @@
   skipped, or `trading.agent_runs` completed). Parked runs (waiting for approval) are never pruned here;
   the agent worker's settling closes them first. The decision record stays in `trading.*` and the audit
   ledger, which are kept forever.
+- `ops.job_runs` (the scheduler's run log, migration 0018): rows started more than `JOB_RUNS_KEEP_DAYS`
+  days ago (default 90, setting `JOB_RUNS_KEEP_DAYS`, never below 7) go. The scheduler only reads the last
+  two days of it (`done_slots`), so pruning never makes a finished slot run again.
 """
 
 from __future__ import annotations
@@ -19,6 +22,8 @@ from kaptan.reference._sql import Conn, execute, fetch_one
 
 RAW_KEEP: Final = timedelta(days=180)
 CHECKPOINT_KEEP: Final = timedelta(days=90)
+JOB_RUNS_KEEP_DAYS: Final = 90
+MIN_JOB_RUNS_KEEP_DAYS: Final = 7
 CKPT_TABLES: Final = ("checkpoint_writes", "checkpoint_blobs", "checkpoints")
 
 PRUNE_RAW_SQL: Final = """
@@ -37,6 +42,7 @@ SELECT array_agg(DISTINCT run_id) AS ids FROM (
   SELECT run_id FROM trading.agent_runs WHERE status = 'completed' AND finished_at < %(cut)s
 ) f
 """
+PRUNE_JOB_RUNS_SQL: Final = "DELETE FROM ops.job_runs WHERE started_at < %s"
 CKPT_EXISTS_SQL: Final = "SELECT to_regclass('agent_ckpt.checkpoints') IS NOT NULL AS ok"
 
 
@@ -45,11 +51,15 @@ class RetentionStats:
     ingest_raw: int
     checkpoint_rows: int
     threads: int
+    job_runs: int = 0
 
 
-async def run_retention(conn: Conn, now: datetime) -> RetentionStats:
+async def run_retention(conn: Conn, now: datetime, *, job_runs_keep_days: int = JOB_RUNS_KEEP_DAYS) -> RetentionStats:
+    if job_runs_keep_days < MIN_JOB_RUNS_KEEP_DAYS:
+        raise ValueError(f"job_runs_keep_days must be >= {MIN_JOB_RUNS_KEEP_DAYS}")
     async with conn.transaction():
         raw = await execute(conn, PRUNE_RAW_SQL, (now - RAW_KEEP,))
+        job_runs = await execute(conn, PRUNE_JOB_RUNS_SQL, (now - timedelta(days=job_runs_keep_days),))
         ckpt, threads = 0, 0
         exists = await fetch_one(conn, CKPT_EXISTS_SQL)
         row = await fetch_one(conn, FINISHED_SQL, {"cut": now - CHECKPOINT_KEEP}) if exists and exists["ok"] else None
@@ -58,4 +68,4 @@ async def run_retention(conn: Conn, now: datetime) -> RetentionStats:
             threads = len(ids)
             for table in CKPT_TABLES:  # constant table names; the ids are bound parameters
                 ckpt += await execute(conn, f"DELETE FROM agent_ckpt.{table} WHERE thread_id = ANY(%s::text[])", (ids,))  # noqa: S608
-    return RetentionStats(raw, ckpt, threads)
+    return RetentionStats(raw, ckpt, threads, job_runs)

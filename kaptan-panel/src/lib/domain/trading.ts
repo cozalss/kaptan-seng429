@@ -235,7 +235,8 @@ export const OrderTicket = z.object({
   created_at: IsoDateTime,
   valid_until: IsoDateTime,
   mode_keys: z.object({ config: z.boolean(), env: z.boolean(), ui: z.boolean() }),
-  side: z.literal("buy"),
+  /** buy = Alış; sell = Satış, an exit from what you hold (no short selling). */
+  side: z.enum(["buy", "sell"]),
   ticker: Ticker,
   company_name: z.string(),
   market: z.string(),

@@ -66,6 +66,10 @@ class DeskState:
     quota_ok: bool = True
     mode: str = "paper"
     live_armed: bool = False
+    #: P8 stop cooldown of this ticker (kaptan.risk.cooldown; the same check GuardedBroker runs at send).
+    in_cooldown: bool = False
+    #: 06 §11 step 4: a kill-switch restart is in force → new entries at m_reset (live runs only).
+    reset_active: bool = False
     #: Live desk inputs (kaptan.risk.desk; set only for real runs, the demo keeps these defaults).
     live: bool = False
     cash_free_try: Decimal | None = None  # None: the equity (the demo's M1 behaviour)

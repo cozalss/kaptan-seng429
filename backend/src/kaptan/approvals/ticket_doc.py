@@ -111,13 +111,20 @@ def build_ticket(
     account_equity_try: float = PERSONAL_ACCOUNT_TRY,
     paper_equity_try: float = PAPER_EQUITY_TRY,
     mode_keys: dict[str, bool] | None = None,
+    qty: int | None = None,
 ) -> dict[str, Any]:
     """buildTicket(card, explain, {seq, decidedAt, stage: CURRENT_STAGE}) — `entry` is EMPTY_ENTRY.
 
     The defaults are the demo's (350.000 TL account, 1.016.480 TL paper desk, no live key); outside
-    DEMO_MODE the caller passes the configured account, the desk's equity and the live_arm keys."""
+    DEMO_MODE the caller passes the configured account, the desk's equity and the live_arm keys.
+    A SELL (an exit) sells what your personal book holds: the caller passes that as `qty` (no short
+    selling); a buy is sized from the approved notional."""
     created = parse_iso(decided_at) + TICKET_CREATED_AFTER
-    qty = personal_qty(card, account_equity_try=account_equity_try, paper_equity_try=paper_equity_try)
+    if qty is None:
+        qty = personal_qty(card, account_equity_try=account_equity_try, paper_equity_try=paper_equity_try)
+    elif qty <= 0:
+        raise ValueError("a ticket needs a positive qty")
+    side = "sell" if card.get("side") == "sell" else "buy"
     p: dict[str, Any] | None = explain.get("proposal")
     checks: list[dict[str, Any]] = explain.get("risk_checks") or []
     trace: list[dict[str, Any]] = card["rule_trace_summary"]
@@ -137,7 +144,7 @@ def build_ticket(
         "created_at": iso_ms(created),
         "valid_until": iso_ms(ticket_valid_until(created)),
         "mode_keys": dict(mode_keys) if mode_keys is not None else {"config": False, "env": False, "ui": False},
-        "side": "buy",
+        "side": side,
         "ticker": card["ticker"],
         "company_name": card["company_name"],
         "market": "Ana Pazar",
@@ -196,7 +203,7 @@ def ticket_order(ticket: dict[str, Any], decided_at: str | None) -> dict[str, An
         "run_id": ticket["run_id"],
         "ticker": ticket["ticker"],
         "company_name": ticket["company_name"],
-        "side": "buy",
+        "side": ticket.get("side", "buy"),
         "order_type": "limit",
         "tif": "day",
         "qty": ticket["qty"],

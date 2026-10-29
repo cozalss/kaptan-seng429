@@ -22,9 +22,8 @@ from kaptan.brokers import live_arm
 from kaptan.brokers.base import Broker, BrokerMode, LiveNotArmed, OrderAck, OrderIntent, OrderRefused
 from kaptan.brokers.config import ExecConfig
 from kaptan.brokers.ledger import run_audit
-from kaptan.portfolio.closing import in_cooldown
 from kaptan.portfolio.pnl import last_live_point
-from kaptan.prices.calendar import istanbul_date
+from kaptan.risk.cooldown import COOLDOWN_TR, cooldown_active
 
 #: The demo desk's equity (explain-builder.ts) when there is no P&L series.
 DEMO_EQUITY_TRY: Final = Decimal(1_016_480)
@@ -72,8 +71,8 @@ class GuardedBroker:
                 raise OrderRefused("kill_switch", "Her şey durduruldu: emir gönderilmedi.")
             if risk is not None and risk["halted_today"]:
                 raise OrderRefused("halted", "Günlük −%1 durdurması: bugün yeni emir verilemez.")
-            if await in_cooldown(self._conn, intent.ticker, istanbul_date(self._now)):
-                raise OrderRefused("cooldown", "Stop sonrası bekleme: bu hisseye 10 seans yeni giriş yok (P8).")
+            if await cooldown_active(self._conn, intent.ticker, self._now):
+                raise OrderRefused("cooldown", COOLDOWN_TR)
             cap = await hard_cap(self._conn, self._cfg)
             if intent.notional > cap:
                 raise OrderRefused("hard_cap", "Emir tutarı emir başına sert tavanı aşıyor: gönderilmedi.")

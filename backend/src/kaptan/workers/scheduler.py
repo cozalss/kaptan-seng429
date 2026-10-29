@@ -17,7 +17,7 @@ failing or hanging job never stops the others. A failed slot is not retried by t
 
 DEMO_MODE: only jobs marked demo-safe run (the nightly audit verify, which then writes no anchor); the
 demo day keeps its seeded state. SSE: exits publish `approval.requested` per new exit card plus
-`counters`; the risk monitor publishes `halt` / `kill_switch` itself.
+`counters`; the risk monitor publishes `halt` / `kill_switch` itself; a regime change publishes `regime`.
 """
 
 from __future__ import annotations
@@ -221,9 +221,20 @@ async def job_pnl_eod(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
 
 
 async def job_regime(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
+    """06 §9 after the EOD prices; a change goes out as SSE desk `regime` (the new RiskStatus) after commit."""
+    from kaptan.events.publish import publish
     from kaptan.risk.regime import run_regime
+    from kaptan.risk.status import risk_status
 
-    return await run_regime(conn, day)
+    result = await run_regime(conn, day)
+    if result is None:
+        return None  # DEMO_MODE, not a session or no XU100 close: nothing written
+    await conn.commit()
+    if result.changed:
+        status = await risk_status(conn, now, live=not ctx.settings.demo_mode)
+        await conn.rollback()
+        await publish(ctx.redis, "desk", "regime", status)
+    return result
 
 
 async def job_intraday_archive(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
@@ -269,7 +280,7 @@ async def job_audit_anchor(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any
 async def job_retention(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
     from kaptan.dq.retention import run_retention
 
-    return await run_retention(conn, now)
+    return await run_retention(conn, now, job_runs_keep_days=ctx.settings.job_runs_keep_days)
 
 
 #: The day, Europe/Istanbul (README "Scheduler"). Order matters only for readability.
@@ -287,7 +298,7 @@ JOBS: Final[tuple[Job, ...]] = (
     Job("eod_fills", job_eod_fills, at=time(18, 30), days="trading", after="eod_prices", timeout_s=10 * 60),
     Job("exits", job_exits, at=time(18, 30), days="trading", after="eod_fills", timeout_s=10 * 60, own_tx=True),
     Job("pnl_eod", job_pnl_eod, at=time(18, 45), days="trading", after="exits", timeout_s=10 * 60),
-    Job("regime", job_regime, at=time(18, 45), days="trading", after="pnl_eod", timeout_s=5 * 60),
+    Job("regime", job_regime, at=time(18, 45), days="trading", after="pnl_eod", timeout_s=5 * 60, own_tx=True),
     Job("intraday_archive", job_intraday_archive, at=time(19, 0), days="trading", timeout_s=60 * 60),
     Job("event_returns", job_event_returns, at=time(20, 0), days="trading", timeout_s=30 * 60),
     Job("shadow_returns", job_shadow_returns, at=time(20, 15), days="trading", timeout_s=10 * 60),

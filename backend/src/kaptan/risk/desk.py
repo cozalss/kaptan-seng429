@@ -67,6 +67,8 @@ class LiveDesk:
     daily_entries: int
     sector_exposure_pct: Decimal
     group_exposure_pct: Decimal
+    #: 06 §11 step 4: a confirmed restart still in force (the monitor clears reset_at back inside −2.5 %).
+    reset_active: bool = False
 
 
 def is_session_open(now: datetime) -> bool:
@@ -173,4 +175,5 @@ async def live_desk(
         daily_entries=await daily_entries(conn, now),
         sector_exposure_pct=sector_pct,
         group_exposure_pct=group_pct,
+        reset_active=reset["reset_at"] is not None,
     )

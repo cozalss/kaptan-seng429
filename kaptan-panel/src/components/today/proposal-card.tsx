@@ -7,6 +7,7 @@ import { dayWordTr } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { plainEvent, shortName } from "@/components/story/plain";
 import { titleTr } from "@/components/story/turkish";
+import { SIDE_LABEL } from "@/components/tickets/ticket-logic";
 
 /** "yarın 09:50" (or just "09:50" before the clock is known). */
 function deadline(card: Pick<ApprovalCard, "expires_at">, nowIso: string | null): string {
@@ -46,6 +47,12 @@ export function ProposalCard({
     >
       <div className="min-w-0">
         <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+          <span
+            data-side={card.side}
+            className={cn("px-1.5 text-meta font-semibold text-on-dark", card.side === "sell" ? "bg-loss" : "bg-gain")}
+          >
+            {SIDE_LABEL[card.side]}
+          </span>
           <span className="text-body font-semibold text-ink">{titleTr(name)}</span>
           <span className="text-meta text-ink-soft">{kind}</span>
           {fresh ? <span className="bg-brand px-1.5 text-meta font-semibold text-on-dark">yeni</span> : null}

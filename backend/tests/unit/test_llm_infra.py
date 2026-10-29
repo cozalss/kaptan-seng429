@@ -117,7 +117,7 @@ def test_registry_loads_and_validates(tmp_path: Path) -> None:
     assert models.chain_for("classifier")[0] == "groq"
     assert models.max_output_tokens("classifier", 2_048) == 600 and models.max_output_tokens("other", 77) == 77
     raw = MODELS_FILE.read_text(encoding="utf-8").replace("default_chain: [gemini, deepseek, groq]",
-                                                          "default_chain: [gemini, azure]")  # fmt: skip
+                                                          "default_chain: [gemini, openrouter]")  # fmt: skip
     bad = tmp_path / "models.yaml"
     bad.write_text(raw, encoding="utf-8")
     with pytest.raises(ValueError):

@@ -127,3 +127,14 @@ describe("the mark form", () => {
     expect(buildMarkInput(draft({ qty: "x", price: "y", time: "z" }), T)).toMatchObject({ filled_qty: 0, avg_price: 0 });
   });
 });
+
+describe("sell tickets (Satış: an exit, no short selling)", () => {
+  const S: OrderTicket = { ...T, side: "sell" };
+  it("reads SAT on the copy and checks the limit as a floor", () => {
+    expect(ticketCopyText(S)).toMatch(/^SAT /m);
+    expect(ticketCopyText(T)).toMatch(/^AL /m);
+    expect(markErrors(draft({ price: "48,39" }), S).price).toMatch(/altında olamaz/);
+    expect(markErrors(draft({ price: "48,45" }), S).price).toBeNull();
+    expect(markErrors(draft({ qty: "621", price: "48,40" }), S).qty).toMatch(/620 lot/);
+  });
+});

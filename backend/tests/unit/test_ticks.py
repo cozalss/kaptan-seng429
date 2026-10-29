@@ -79,3 +79,21 @@ def test_tick_ratio_and_limit_up_lock() -> None:
     assert limit_up_locked(D("110.00"), D("110.00"), D("110.00"), D("110.00"))
     assert not limit_up_locked(D("110.00"), D("104.00"), D("110.00"), D("110.00"))
     assert not limit_up_locked(None, None, D("110.00"), D("110.00"))
+
+
+def test_one_tick_table_matches_the_bist_procedure() -> None:
+    """Prosedür rev. 54 (21/09/2026) Tablo-7, verified 2026-10-29; the universe rules use the same table."""
+    from kaptan.market import ticks
+    from kaptan.reference import rules
+
+    assert rules.tick_size is ticks.tick_size
+    assert [(str(lo), str(step)) for lo, step in ticks.TICK_TABLE] == [
+        ("0", "0.01"),
+        ("20", "0.02"),
+        ("50", "0.05"),
+        ("100", "0.10"),
+        ("250", "0.25"),
+        ("500", "0.50"),
+        ("1000", "1.00"),
+        ("2500", "2.50"),
+    ]

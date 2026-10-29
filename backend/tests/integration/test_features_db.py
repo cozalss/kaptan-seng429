@@ -81,9 +81,9 @@ async def test_fx_rate_is_the_one_published_before_as_of(pg: DictConn) -> None:
     ]
     assert await upsert_rates(pg, rates) == 3
     assert await upsert_rates(pg, rates[:1]) == 1  # idempotent upsert
-    assert await rate_at(pg, "USD", datetime(2026, 10, 20, 15, 29, tzinfo=IST)) == Decimal("41.70")
-    assert await rate_at(pg, "USD", datetime(2026, 10, 20, 15, 30, tzinfo=IST)) == Decimal("41.70")  # strict <
-    assert await rate_at(pg, "USD", datetime(2026, 10, 20, 15, 31, tzinfo=IST)) == Decimal("41.81")
+    assert await rate_at(pg, "USD", datetime(2026, 10, 20, 16, 29, tzinfo=IST)) == Decimal("41.70")
+    assert await rate_at(pg, "USD", datetime(2026, 10, 20, 16, 30, tzinfo=IST)) == Decimal("41.70")  # strict <
+    assert await rate_at(pg, "USD", datetime(2026, 10, 20, 16, 31, tzinfo=IST)) == Decimal("41.81")
     assert await rate_at(pg, "USD", datetime(2026, 11, 5, 12, tzinfo=IST)) is None  # older than 10 days: stale
     assert await rate_at(pg, "GBP", datetime(2026, 10, 21, 12, tzinfo=IST)) is None
     assert await rate_at(pg, "TRY", datetime(2026, 10, 21, 12, tzinfo=IST)) == 1

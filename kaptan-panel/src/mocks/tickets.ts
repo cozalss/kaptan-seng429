@@ -49,7 +49,8 @@ export function personalQty(card: ApprovalCard): number {
 
 export function buildTicket(card: ApprovalCard, e: Explain, opts: { seq: number; decidedAt: string; stage: StageId }): OrderTicket {
   const created = new Date(Date.parse(opts.decidedAt) + 20_000).toISOString();
-  const qty = personalQty(card);
+  // A sell (an exit) sells the lots held, never more (no short selling).
+  const qty = card.side === "sell" ? Math.max(1, card.qty) : personalQty(card);
   const p = e.proposal;
   const gate = e.risk_checks.map((c) => ({ code: c.rule_code, passed: c.outcome === "pass" || c.outcome === "resize" || c.outcome === "approval_required" }));
   const edge = p ? p.expected_edge_bps / 100 / 100 : null;
@@ -68,7 +69,7 @@ export function buildTicket(card: ApprovalCard, e: Explain, opts: { seq: number;
     created_at: created,
     valid_until: ticketValidUntil(created),
     mode_keys: { config: false, env: false, ui: false },
-    side: "buy",
+    side: card.side,
     ticker: card.ticker,
     company_name: card.company_name,
     market: "Ana Pazar",

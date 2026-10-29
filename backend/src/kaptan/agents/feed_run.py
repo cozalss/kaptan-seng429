@@ -47,6 +47,8 @@ from kaptan.events.publish import publish
 from kaptan.evidence.toolbox import live_tools
 from kaptan.llm.provider import LLMProvider
 from kaptan.llm.usage import sync_usage
+from kaptan.risk.cooldown import cooldown_active
+from kaptan.risk.security_kill import check_security_kill
 from kaptan.settings import get_settings
 
 log = logging.getLogger("kaptan.agents.feed_run")
@@ -132,6 +134,7 @@ async def desk_for(
         issuer = {"in_universe": False, "price": 1, "adv20_try": 0, "free_float": 0}
     risk = await q.risk_state(conn)
     book = await q.book(conn, ticker)
+    at = now or datetime.now(UTC)
     desk = DeskState(
         in_universe=bool(issuer["in_universe"]),
         last_price=Decimal(str(issuer["price"])),
@@ -148,12 +151,12 @@ async def desk_for(
         holds_ticker=bool(book["holds_ticker"]),
         quota_ok=await q.quota_ok(conn),
         live_armed=await q.live_armed(conn),
+        in_cooldown=await cooldown_active(conn, ticker, at),
     )
     if not live:
         return desk
     from kaptan.risk.desk import live_desk
 
-    at = now or datetime.now(UTC)
     d = disclosure
     real = await live_desk(
         conn,
@@ -179,6 +182,7 @@ async def desk_for(
         daily_entries=real.daily_entries,
         sector_exposure_pct=real.sector_exposure_pct,
         group_exposure_pct=real.group_exposure_pct,
+        reset_active=real.reset_active,
     )
 
 
@@ -313,6 +317,7 @@ async def persist_live(
                 draft = replace(draft, payload={**draft.payload, "limits_version": limits_version})
             await append(conn, [draft], now=now)
         await write_run_rows(conn, explain, manifest_hash)  # FR-19: per-node outputs + gate checks
+        await check_security_kill(conn, now)  # 06 §11 (c): the day's 3rd R11 reject → kill switch
         await conn.execute(
             FEED_DONE_SQL,
             (feed_status, run["run_id"], run["llm_calls"], run["outcome"], now, now, run["disclosure_index"]),

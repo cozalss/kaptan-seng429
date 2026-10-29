@@ -107,6 +107,7 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
 
 - `ApprovalCard` — önceki alanlar + `decided_by` (`uid`) ve **`decided_role`** (`"risk_officer"` ya da `null`). Panel "ne oldu" cümlesini `event_type` + ailenin **ilk** kuralının `observed` değerinden kurar (`E3.materiality` → "Yıllık gelirinin %18'i kadar yeni iş aldı.").
 - `Signature` = `{uid, name, role, at, reason|null}` — her imza.
+- `OrderTicket.side` = `"buy" | "sell"` (M4). `sell` = elindeki pozisyondan çıkış (X1–X4 önerisi, aynı iki imzalı onaydan geçer); açığa satış yok: satış fişinin `qty`'si kişisel defterde tutulan adettir. Fiş yalnız kişisel defter o pozisyonu tutuyorsa basılır; kâğıt defter SimBIST üzerinden satar. Satış fişinde `limit_price` bir **taban**dır: `girildi` işaretinde `avg_price ≥ limit_price` (aksi `422 under_limit`); girilen satış kişisel pozisyonu kapatır. Denetimde `ticket.issued` / `ticket.entered` payload'ında `side: "sell"`. Türetilmiş `Order.side` fişinkiyle aynıdır. Panel: fiş ve kartta **Alış / Satış** (fişte `AL` / `SAT`).
 - `RiskStatus.reset` = `{"started": Signature|null}` (kill switch açıkken), kapalıyken `null`. `kill_by` = `user:<uid>` ya da `system:risk_monitor`.
 - `LimitVersion` = `{version, status: proposed|active|superseded|rejected, reason, created_at, effective_from|null, values: LimitValue[], proposed_by: Signature, decided_by: Signature|null}`; `LimitsView` = `{active, pending|null, history}` (history yeni → eski, `proposed` hariç).
 - `LimitProposalInput` = `{key: LimitKey, value: number, reason (≥ 10)}` — tek sınır; yalnızca sıkılaştırır (`limitViolations`).
@@ -132,7 +133,7 @@ Gövde `{"detail":"Türkçe, gösterilebilir mesaj","code":"makine_kodu"}`. Pane
 | 403 | `same_person` | ikinci imza ilk imzayı atan kişiden · "Başlatan kişi onaylayamaz; ikinci imza başka birinden gelir." / "Öneren kişi onaylayamaz; …" |
 | 404 | `not_found` | öneri, koşu ya da fiş yok |
 | 409 | `conflict`, `kill_switch`, `halted`, `already_marked`, `already_on`, `not_on`, `not_started`, `already_started`, `pending_exists` | durum uymuyor · ör. "Önce Yönetici yeniden başlatmayı başlatmalı (1/2)." |
-| 422 | `validation`, `over_qty`, `over_limit`, `after_ttl`, `grow_not_allowed`, `looser`, `no_change` | doğrulama · ör. "Pozisyon tavanı: kanonik sınırdan gevşek olamaz (R07)." |
+| 422 | `validation`, `over_qty`, `over_limit`, `under_limit` (satış fişi), `after_ttl`, `grow_not_allowed`, `looser`, `no_change` | doğrulama · ör. "Pozisyon tavanı: kanonik sınırdan gevşek olamaz (R07)." |
 | 429 | — | hız sınırı |
 
 ### 3.3 Örnekler
@@ -169,6 +170,7 @@ ya da `{"mark":"unfilled"}` / `{"mark":"canceled"}`. Kurallar: `filled_qty ≤ q
 | desk | `ticket` | `OrderTicket` | Öneri'de emir fişi; Portföy yenilenir |
 | desk | `order`, `fill` | `Order`, `Fill & {ticker}` | Portföy yenilenir |
 | desk | `kill_switch`, `halt` | `RiskStatus` | bant, Durdur bölümü, iki damga (`reset.started` dahil); Denetim yenilenir |
+| desk | `regime` | `RiskStatus` | günlük piyasa rejimi değişti (06 §9, `normal` ↔ `crisis`; 18:45 `regime` işi, commit sonrası); Portföy'de "Piyasa: Normal / Kriz" satırı canlı güncellenir |
 | desk | `limits.changed` | `LimitsView` | Ayarlar → Sınırlar (1/2 → 2/2); Denetim yenilenir |
 | feed | `counters` | `DayCounters` | Bugün'deki tayfa cümlesi; Denetim listesi yenilenir |
 

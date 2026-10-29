@@ -303,7 +303,7 @@ class OrderTicket(KModel):
     created_at: IsoDateTime
     valid_until: IsoDateTime
     mode_keys: ModeKeys
-    side: Literal["buy"]
+    side: Side  # sell = an exit from a position you hold (no short selling)
     ticker: Ticker
     company_name: str
     market: str

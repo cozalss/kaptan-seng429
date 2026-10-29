@@ -34,6 +34,8 @@ export const DeskEvent = z.discriminatedUnion("event", [
   z.object({ event: z.literal("fill"), data: Fill.extend({ ticker: z.string() }) }),
   z.object({ event: z.literal("kill_switch"), data: RiskStatus }),
   z.object({ event: z.literal("halt"), data: RiskStatus }),
+  /** The daily market regime changed (06 §9): Normal ↔ Kriz. */
+  z.object({ event: z.literal("regime"), data: RiskStatus }),
   /** A limit change was proposed (1/2), approved (2/2) or rejected. */
   z.object({ event: z.literal("limits.changed"), data: LimitsView }),
   /** A ticket was created (after your approval) or marked (girildi / dolmadı / iptal / süresi doldu). */

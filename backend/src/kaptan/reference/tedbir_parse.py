@@ -15,7 +15,9 @@ Matching is on `join_key` (Turkish lower case without diacritics), so "BRÜT TAK
 
 Dates: "dd.mm.yyyy tarihinden itibaren" (start), "… tarihine kadar" / a "dd.mm.yyyy - dd.mm.yyyy" range
 (end), "N ay/gün/iş günü/seans/hafta/yıl süreyle" (duration); a VBTS measure without any of them lasts
-`VBTS_DEFAULT_MONTHS` [U] (BIST applies VBTS measures for a month as we know it; verify). The start
+`VBTS_DEFAULT_MONTHS` [V]: every VBTS stage lasts "1 ay" since 15/11/2021 (was 15 gün), and a later stage
+extends the earlier ones to its own end (Borsa İstanbul KAP notice, https://kap.org.tr/tr/api/BildirimPdf/976897,
+item 4; accessed 2026-10-29; the 08/07/2026–07/08/2026 KGYO/PASEU/MARKA/SAFKR notice matches). The start
 defaults to the Istanbul date the notice became available (earlier = more conservative for a veto).
 """
 

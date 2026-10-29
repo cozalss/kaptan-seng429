@@ -15,6 +15,8 @@ DAY = date(2026, 10, 20)
 
 
 async def test_every_check_runs_and_is_stored(pg: DictConn) -> None:
+    # The scheduler-job tests commit dq rows and the reseed keeps them; count only this run's rows.
+    await pg.execute("DELETE FROM ops.dq_results")
     results = await run_dq(pg, DAY)
     assert [r.code for r in results] == list(CHECKS)
     by = {r.code: r for r in results}
@@ -68,3 +70,26 @@ async def test_retention_prunes_old_raw_payloads_and_checkpoints(pg: DictConn) -
     async with pg.cursor() as cur:
         await cur.execute("SELECT thread_id FROM agent_ckpt.checkpoints WHERE thread_id LIKE 'run-live-%%'")
         assert [r["thread_id"] for r in await cur.fetchall()] == ["run-live-2"]
+
+
+async def test_retention_prunes_old_job_runs_with_the_configured_window(pg: DictConn) -> None:
+    from kaptan.dq import run_retention
+
+    now = datetime(2026, 10, 20, 3, 30, tzinfo=UTC)
+    async with pg.cursor() as cur:
+        await cur.executemany(
+            "INSERT INTO ops.job_runs (job, slot, trigger, started_at, finished_at, ok)"
+            " VALUES (%s, %s, 'schedule', %s, %s, true)",
+            [
+                ("dq", "2026-06-01", now - timedelta(days=141), now - timedelta(days=141)),  # past 90 d: goes
+                ("dq", "2026-09-01", now - timedelta(days=49), now - timedelta(days=49)),  # past 30 d only
+                ("dq", "2026-10-19", now - timedelta(days=1), now - timedelta(days=1)),  # recent: kept
+            ],
+        )
+    assert (await run_retention(pg, now)).job_runs == 1
+    assert (await run_retention(pg, now, job_runs_keep_days=30)).job_runs == 1
+    async with pg.cursor() as cur:
+        await cur.execute("SELECT slot FROM ops.job_runs WHERE job = 'dq' ORDER BY slot")
+        assert [r["slot"] for r in await cur.fetchall()] == ["2026-10-19"]
+    with pytest.raises(ValueError, match=">= 7"):
+        await run_retention(pg, now, job_runs_keep_days=3)

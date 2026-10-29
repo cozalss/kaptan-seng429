@@ -111,7 +111,9 @@ export function createMockApi(opts: MockApiOptions): KaptanApi {
       }
       if (m.mark === "entered") {
         if (m.filled_qty > ticket.qty) throw new ApiError(422, "over_qty", "Gerçekleşen adet fişteki adetten büyük olamaz.");
-        if (m.avg_price > ticket.limit_price) throw new ApiError(422, "over_limit", "Limit emirde ortalama fiyat limit fiyatı aşamaz.");
+        if (ticket.side === "sell") {
+          if (m.avg_price < ticket.limit_price) throw new ApiError(422, "under_limit", "Limit satışta ortalama fiyat limit fiyatın altında olamaz.");
+        } else if (m.avg_price > ticket.limit_price) throw new ApiError(422, "over_limit", "Limit emirde ortalama fiyat limit fiyatı aşamaz.");
         if (Date.parse(m.filled_at) > Date.parse(ticket.valid_until)) {
           throw new ApiError(422, "after_ttl", "Fişin geçerlilik süresinden sonra girilen emir sayılmaz (R16).");
         }

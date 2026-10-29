@@ -23,6 +23,8 @@ HARD_RESTRICTIONS: Final = frozenset(
 )
 AT_SEND_RULES: Final[tuple[RiskRuleCode, ...]] = ("R01", "R02", "R03", "R04", "R09", "R12", "R13")
 CENT: Final = Decimal("0.01")
+#: P8 (06 §7.2): the one refusal text, shared with GuardedBroker (kaptan.brokers.guarded).
+COOLDOWN_TR: Final = "Stop sonrası bekleme: bu hisseye 10 seans yeni giriş yok (P8)."
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +51,10 @@ class GateLimits:
     max_sector_pct: Decimal = Decimal("0.25")
     max_group_pct: Decimal = Decimal("0.20")
     max_daily_entries: int = 3
+    #: 06 §9: in the crisis regime at most one new entry per day.
+    max_daily_entries_crisis: int = 1
+    #: 06 §11 step 4: `m_reset`, the size multiplier after a kill-switch restart (until back within −2.5 %).
+    reset_size_mult: Decimal = Decimal("0.5")
     min_evidence_n: int = 5
     amount_tolerance: Decimal = Decimal("0.005")
     max_kap_delay_s: int = 300
@@ -105,6 +111,10 @@ class GateContext:
     n_open_positions: int = 0
     holds_ticker: bool = False
     daily_entries: int = 0
+    #: P8 (06 §7.2): the ticker is inside a stop (X2) cooldown (kaptan.risk.cooldown).
+    in_cooldown: bool = False
+    #: 06 §11 step 4: a confirmed kill-switch restart is still in force (risk_state.reset_at).
+    reset_active: bool = False
     sector_exposure_pct: Decimal = Decimal(0)
     group_exposure_pct: Decimal = Decimal(0)
     regime: Literal["normal", "crisis"] = "normal"
@@ -176,6 +186,11 @@ def r01(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
     if o.side == "buy" and (c.kill_switch_on or c.drawdown_pct <= lim.kill_drawdown_pct):
         why = "Kill switch açık" if c.kill_switch_on else "Zirveden düşüş −%5 sınırında"
         return _no("R01", ph, "reject", f"{why}; yeni alım yok.", observed=obs, limit=cap)
+    if o.side == "buy" and c.reset_active and ph == "pre_trade":  # 06 §11 step 4: m_reset (sizing only)
+        mult = fmt_dec(_f(lim.reset_size_mult), 1)
+        why = f"Kill switch yeniden başlatması sonrası boyut ×{mult}."
+        res = _no("R01", ph, "resize", why, observed=obs, limit=cap)
+        return replace(res, new_qty=_floor_qty(Decimal(o.qty) * lim.reset_size_mult))
     return _ok("R01", ph, f"Kill switch kapalı; zirveden düşüş {obs}.", observed=obs, limit=cap)
 
 
@@ -292,8 +307,13 @@ def r08(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
         return _no("R08", ph, "reject", "Aynı hissede açık pozisyon var (piramit yok).")
     if c.n_open_positions >= lim.max_concurrent_positions:
         return _no("R08", ph, "reject", "En çok 10 eşzamanlı pozisyon sınırı dolu.")
-    if c.daily_entries >= lim.max_daily_entries:
-        return _no("R08", ph, "reject", "Günlük yeni giriş sınırı (3) dolu.")
+    crisis = c.regime == "crisis"
+    max_entries = lim.max_daily_entries_crisis if crisis else lim.max_daily_entries
+    if c.daily_entries >= max_entries:
+        where = "Kriz rejiminde günlük" if crisis else "Günlük"
+        return _no("R08", ph, "reject", f"{where} yeni giriş sınırı ({max_entries}) dolu.")
+    if o.side == "buy" and c.in_cooldown:
+        return _no("R08", ph, "reject", COOLDOWN_TR)
     room = min(lim.max_sector_pct - c.sector_exposure_pct, lim.max_group_pct - c.group_exposure_pct)
     if room <= 0:
         return _no("R08", ph, "reject", "Sektör veya grup sınırı dolu.")

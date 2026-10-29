@@ -19,5 +19,14 @@ Paragraphs are separated by a blank line; each paragraph becomes one chunk. `val
 force; a repealed text drops out of retrieval after that date. Index with
 `uv run python -m kaptan.rag.bases --regulation` (and `--events` for the event memory).
 
-`sample-spk-ii-22.1.md` is **not** the official text: it is a short paragraph we wrote to exercise the
-loader (`sample: true`). Replace it with the real communiqué texts from spk.gov.tr / mevzuat.gov.tr.
+Shipped (accessed 2026-10-29, consolidated texts from mevzuat.gov.tr, `sample: false`):
+
+- `spk-ii-22.1.md`: Geri Alınan Paylar Tebliği, RG 3/1/2014-28871, in force on publication; no amendments
+  in the consolidated text (SPK Kurul/ilke kararları on buybacks are not part of the file).
+- `spk-ii-15.1.md`: Özel Durumlar Tebliği, RG 23/1/2014-28891, in force one month later (2014-02-23);
+  amended by RG 10/2/2017-29975, 13/2/2018-30331, 17/11/2018-30598 (marks kept inline, e.g. `(Değişik:RG-...)`).
+
+One paragraph per fıkra, each prefixed with its article (`MADDE 12 (Başlık) – (4) ...`), so every chunk cites
+itself; section headings are `#` lines (skipped). The annex forms (EK) are left out (tables, no rule text).
+Extra front-matter keys (`source`, `published`, `amendments`, `excluded`) are notes for people; the loader
+ignores them. To refresh: download the mevzuat.gov.tr PDF, `pdftotext -layout`, and rebuild the paragraphs.

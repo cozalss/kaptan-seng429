@@ -4,6 +4,8 @@
   the URL), JSON mode with `responseJsonSchema` (the agent's schema), thinking level from the registry.
 - `OpenAICompatClient`: `/chat/completions` of DeepSeek and Groq (`Authorization: Bearer`), JSON mode
   (`json_object`, schema in the system prompt) or Groq's best-effort `json_schema`.
+- `AzureOpenAIClient`: the same body against an Azure OpenAI deployment
+  (`{endpoint}/openai/deployments/{deployment}/chat/completions?api-version=…`, key in the `api-key` header).
 """
 
 from __future__ import annotations
@@ -116,6 +118,12 @@ class OpenAICompatClient:
         self._spec, self._key, self._http = spec, key, http
         self._sleep: Sleep = sleep or asyncio.sleep
 
+    def _url(self) -> str:
+        return f"{self._spec.base_url.rstrip('/')}/chat/completions"
+
+    def _headers(self) -> dict[str, str]:
+        return {"Authorization": f"Bearer {self._key.get_secret_value()}", "Content-Type": "application/json"}
+
     def _payload(
         self, system: str, messages: Sequence[Message], schema: Mapping[str, Any] | None, max_tokens: int
     ) -> dict[str, Any]:
@@ -144,13 +152,11 @@ class OpenAICompatClient:
     async def generate(
         self, system: str, messages: Sequence[Message], schema: Mapping[str, Any] | None, max_tokens: int
     ) -> RawAnswer:
-        url = f"{self._spec.base_url.rstrip('/')}/chat/completions"
-        headers = {"Authorization": f"Bearer {self._key.get_secret_value()}", "Content-Type": "application/json"}
         reply = await post_json(
             self._http,
-            url,
+            self._url(),
             provider=self.name,
-            headers=headers,
+            headers=self._headers(),
             payload=self._payload(system, messages, schema, max_tokens),
             timeout_s=self._spec.timeout_s,
             max_retries=self._spec.max_retries,
@@ -173,3 +179,27 @@ class OpenAICompatClient:
             latency_ms=reply.latency_ms,
             cache_hit_in=_int(usage.get("prompt_cache_hit_tokens")),
         )
+
+
+class AzureOpenAIClient(OpenAICompatClient):
+    """Azure OpenAI: `spec.base_url` is the resource endpoint and `spec.model` the deployment name."""
+
+    def __init__(
+        self,
+        name: str,
+        spec: ProviderSpec,
+        key: SecretStr,
+        http: httpx.AsyncClient,
+        *,
+        api_version: str,
+        sleep: Sleep | None = None,
+    ) -> None:
+        super().__init__(name, spec, key, http, sleep=sleep)
+        self._api_version = api_version
+
+    def _url(self) -> str:
+        base = self._spec.base_url.rstrip("/")
+        return f"{base}/openai/deployments/{self._spec.model}/chat/completions?api-version={self._api_version}"
+
+    def _headers(self) -> dict[str, str]:
+        return {"api-key": self._key.get_secret_value(), "Content-Type": "application/json"}

@@ -42,7 +42,16 @@ providers:
     timeout_s: 120
     max_retries: 1
     response_format: json_object
-  # TODO(M3): azure (Azure for Students) slot of the canonical chain; needs an account.
+  azure:
+    # Azure OpenAI (Azure for Students), off unless AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_API_KEY +
+    # AZURE_OPENAI_DEPLOYMENT are set. The endpoint and the deployment name come from those settings (the
+    # values below are placeholders). Appended after every chain, before Ollama (… → Groq → Azure → Ollama).
+    kind: azure
+    base_url: https://example-resource.openai.azure.com
+    model: gpt-4o-mini
+    timeout_s: 60
+    max_retries: 2
+    response_format: json_object
 
 guard:
   provider: groq
@@ -63,3 +72,6 @@ agents:
   evidence: {max_output_tokens: 1000}
   skeptic: {chain: [groq, gemini, deepseek], max_output_tokens: 900}
   compliance: {max_output_tokens: 1200}
+  # RAGAS-style judge (kaptan.eval.ragas_eval, 08 §2; offline eval only, never in the graph). DeepSeek first:
+  # a different family from the Gemini-first analysts and it leaves the free tiers to the live desk.
+  judge: {chain: [deepseek, gemini], max_output_tokens: 700}

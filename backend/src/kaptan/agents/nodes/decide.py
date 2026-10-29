@@ -193,6 +193,7 @@ def live_gate_fields(p: dict[str, Any], desk: DeskState) -> dict[str, Any]:
         # R09 staleness matters for an order into the running session; an auction order is banded on the close.
         "price_age_s": desk.price_age_s if p.get("entry") == "intraday_limit" else 0.0,
         "daily_entries": desk.daily_entries,
+        "reset_active": desk.reset_active,
         "sector_exposure_pct": desk.sector_exposure_pct,
         "group_exposure_pct": desk.group_exposure_pct,
         "schema_ok": schema_ok,
@@ -235,6 +236,7 @@ def gate_inputs(state: KaptanState, ctx: RunContext, qty: int | None = None) -> 
         injection_flag=bool((state.get("guard") or {}).get("quarantined")),
         n_open_positions=desk.n_open_positions,
         holds_ticker=desk.holds_ticker,
+        in_cooldown=desk.in_cooldown,
         regime="crisis" if desk.regime == "crisis" else "normal",
         mode=desk.mode,
         live_armed=desk.live_armed,

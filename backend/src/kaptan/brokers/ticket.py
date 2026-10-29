@@ -2,7 +2,8 @@
 
 `submit_order()` takes the approved card in `intent.context` and stores the ticket (30-minute TTL,
 limit price, the account it sizes for); you key it into your own broker app and mark it later
-(POST /tickets/{no}/mark). Tickets are BUY only: the contract's OrderTicket.side is "buy".
+(POST /tickets/{no}/mark). A buy ticket is sized from the approved notional; a SELL ticket (an exit)
+sells what your personal book holds (`intent.context["personal_qty"]`, no short selling).
 """
 
 from __future__ import annotations
@@ -79,7 +80,7 @@ class OrderTicketBroker:
         self._now = now
         self._cfg = cfg
 
-    async def _raw_ticket(self, card: dict[str, Any]) -> dict[str, Any]:
+    async def _raw_ticket(self, card: dict[str, Any], qty: int | None = None) -> dict[str, Any]:
         decided_at: str = card["decided_at"]
         if card["run_id"] == DEMO_E3_RUN and self._cfg.demo_mode:
             return {k: v for k, v in _demo_ticket().items() if k != "entry"}
@@ -89,12 +90,13 @@ class OrderTicketBroker:
         explain = run["explain"] if run else {}
         seq = await ticket_seq(self._conn, card["run_id"])
         extra = {} if self._cfg.demo_mode else await _live_sizing(self._conn, self._cfg)
-        doc = build_ticket(card, explain, seq=seq, decided_at=decided_at, **extra)
+        doc = build_ticket(card, explain, seq=seq, decided_at=decided_at, qty=qty, **extra)
         return {k: v for k, v in doc.items() if k != "entry"}
 
     async def submit_order(self, intent: OrderIntent) -> OrderAck:
         """Store the ticket for `intent.context["card"]`; `raw` is the OrderTicket document."""
-        raw = await self._raw_ticket(dict(intent.context["card"]))
+        qty = intent.context.get("personal_qty")
+        raw = await self._raw_ticket(dict(intent.context["card"]), None if qty is None else int(qty))
         async with self._conn.cursor() as cur:
             await cur.execute(
                 INSERT_SQL,

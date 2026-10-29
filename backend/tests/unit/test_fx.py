@@ -37,7 +37,7 @@ def test_parse_bulletin_reads_forex_buying_per_unit() -> None:
     assert set(rates) == {"USD", "EUR", "JPY", "XDR"}  # IRR has no ForexBuying: skipped
     assert rates["USD"].rate == D("41.8123") and rates["EUR"].rate == D("48.6510")
     assert rates["JPY"].rate == D("0.275310")  # quoted per 100 yen
-    assert rates["USD"].d == DAY and rates["USD"].available_at == datetime(2026, 10, 20, 15, 30, tzinfo=IST)
+    assert rates["USD"].d == DAY and rates["USD"].available_at == datetime(2026, 10, 20, 16, 30, tzinfo=IST)
     assert archive_url(DAY) == "https://www.tcmb.gov.tr/kurlar/202610/20102026.xml"
 
 

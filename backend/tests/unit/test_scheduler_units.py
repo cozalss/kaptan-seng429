@@ -118,3 +118,65 @@ def test_cli_refuses_a_non_demo_safe_job_in_demo_mode(
     monkeypatch.setattr(s, "get_settings", lambda: settings)
     assert s.main(["run", "eod_prices"]) == 2
     assert "DEMO_MODE" in capsys.readouterr().err
+
+
+class _Conn:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    async def commit(self) -> None:
+        self.calls.append("commit")
+
+    async def rollback(self) -> None:
+        self.calls.append("rollback")
+
+
+@pytest.mark.parametrize(("changed", "published"), [(True, ["regime"]), (False, [])])
+async def test_regime_job_publishes_a_change_after_commit(
+    monkeypatch: pytest.MonkeyPatch, changed: bool, published: list[str]
+) -> None:
+    from kaptan.events import publish as pub
+    from kaptan.risk import regime, status
+    from kaptan.settings import get_settings
+
+    conn = _Conn()
+    sent: list[tuple[str, str, dict[str, str]]] = []
+    result = regime.RegimeResult(
+        regime.RegimeSignal(date(2026, 9, 16), 100.0, None, None, None, -0.055, True), "crisis", 0, changed
+    )
+
+    async def fake_run(c: object, day: date) -> regime.RegimeResult:
+        return result
+
+    async def fake_status(c: object, now: datetime, *, live: bool = False) -> dict[str, str]:
+        conn.calls.append("status")
+        return {"regime": "crisis"}
+
+    async def fake_publish(target: object, stream: str, event: str, data: dict[str, str]) -> str:
+        assert conn.calls[0] == "commit"  # never before the write is durable
+        sent.append((stream, event, data))
+        return "1-0"
+
+    monkeypatch.setattr(regime, "run_regime", fake_run)
+    monkeypatch.setattr(status, "risk_status", fake_status)
+    monkeypatch.setattr(pub, "publish", fake_publish)
+    ctx = s.Ctx(settings=get_settings(), pool=None, redis=object(), http=lambda: None)
+    assert await s.job_regime(conn, ctx, date(2026, 9, 16), datetime(2026, 9, 16, 16, 0, tzinfo=UTC)) is result
+    assert [e for _, e, _ in sent] == published
+    assert s.BY_NAME["regime"].own_tx
+    if changed:
+        assert sent[0][:2] == ("desk", "regime") and conn.calls == ["commit", "status", "rollback"]
+
+
+async def test_regime_job_without_a_result_writes_and_commits_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
+    from kaptan.risk import regime
+    from kaptan.settings import get_settings
+
+    async def fake_run(c: object, day: date) -> None:
+        return None
+
+    monkeypatch.setattr(regime, "run_regime", fake_run)
+    conn = _Conn()
+    ctx = s.Ctx(settings=get_settings(), pool=None, redis=None, http=lambda: None)
+    assert await s.job_regime(conn, ctx, date(2026, 9, 16), datetime(2026, 9, 16, 16, 0, tzinfo=UTC)) is None
+    assert conn.calls == []

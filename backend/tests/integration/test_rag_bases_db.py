@@ -73,7 +73,8 @@ async def test_event_memory_is_point_in_time(pg: DictConn) -> None:
 async def test_regulation_loader_and_validity(pg: DictConn, tmp_path: Path) -> None:
     await pg.execute("DELETE FROM rag.rag_chunks")
     shipped = load_regulation_docs()
-    assert shipped and all(d.metadata["sample"] for d in shipped)  # only the marked sample is in the repo
+    assert {d.doc_ref for d in shipped} == {"spk:II-15.1", "spk:II-22.1"}  # the official texts, no sample
+    assert not any(d.metadata["sample"] for d in shipped)
     assert (REGULATION_DIR / "README.md").exists()
     old = tmp_path / "old.md"
     old.write_text(
@@ -86,8 +87,8 @@ async def test_regulation_loader_and_validity(pg: DictConn, tmp_path: Path) -> N
     await index_base(pg, fake(), [*shipped, repealed])
     now = datetime(2027, 1, 11, tzinfo=UTC)
     found = await regulation_passages(pg, fake(), as_of=now, text="pay geri alım bildirimi KAP", k=5)
-    assert found and all(p["ref_id"].startswith("sample:spk-ii-22.1#") for p in found)
-    assert found[0]["sample"] is True
+    assert found and all(p["ref_id"].startswith("spk:II-") for p in found)
+    assert found[0]["sample"] is False
     in_2012 = await regulation_passages(pg, fake(), as_of=datetime(2012, 1, 1, tzinfo=UTC), text="geri alım", k=5)
     assert [p["ref_id"] for p in in_2012] == ["test:repealed#0"]
     with pytest.raises(ValueError, match="front matter"):
@@ -101,7 +102,7 @@ async def test_compliance_sees_regulation_in_live_mode_only(pg: DictConn, migrat
     await index_base(pg, fake(), load_regulation_docs())
     ctx = _ctx(datetime(2027, 1, 11, tzinfo=UTC), "Şirketimiz pay geri alım programı kapsamında işlem yaptı.")
     live = await attach_similar(pg, ctx, settings=migrated, embedder=fake())
-    assert live.regulation and live.regulation[0]["ref_id"].startswith("sample:")
+    assert live.regulation and live.regulation[0]["ref_id"].startswith("spk:II-")
     state: dict[str, object] = {}
     assert task_context("compliance", state, live)["regulation"] == list(live.regulation)
     assert "regulation" not in task_context("skeptic", state, live)

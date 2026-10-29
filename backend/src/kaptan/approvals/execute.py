@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from dataclasses import replace
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Final
@@ -77,10 +78,23 @@ __all__ = [
 
 def _wants_ticket(card: dict[str, Any], cfg: ExecConfig) -> bool:
     """selectors.ts ticketFor(): in DEMO_MODE one ticket per approval decided on or after the demo day.
-    Outside it every approved buy gets one (tickets are buy-only in the contract)."""
-    if card.get("side", "buy") != "buy":
-        return False
+    Outside it every approval gets one (a SELL only when your personal book holds the position)."""
     return not cfg.demo_mode or ist_date(parse_iso(card["decided_at"])) >= DEMO_DAY
+
+
+PERSONAL_HELD_SQL: Final = """
+SELECT p.qty FROM trading.exit_signals s
+JOIN trading.positions p ON p.book = 'personal' AND p.source_proposal = s.source_proposal
+WHERE s.proposal_id = %s
+"""
+
+
+async def _held_personal_qty(conn: AsyncConnection[Any], card: dict[str, Any]) -> int:
+    """An exit's ticket sells what the personal book holds of that position (06 R12: no short selling)."""
+    async with conn.cursor() as cur:
+        await cur.execute(PERSONAL_HELD_SQL, (card["proposal_id"],))
+        row = await cur.fetchone()
+    return int(row["qty"]) if row else 0
 
 
 def _intent(order: dict[str, Any], card: dict[str, Any]) -> OrderIntent:
@@ -101,8 +115,16 @@ async def _issue_ticket(
 ) -> dict[str, Any] | None:
     if not _wants_ticket(card, cfg):
         return None
-    order = {**paper_order(card, now), "client_order_id": f"fis-{card['proposal_id']}"}
-    ack = await OrderTicketBroker(conn, now, cfg).submit_order(_intent(order, card))
+    held: int | None = None
+    if card.get("side", "buy") == "sell":
+        held = await _held_personal_qty(conn, card)
+        if held <= 0:
+            return None  # only the paper book holds it: the exit goes to SimBIST alone
+    order = {**paper_order(card, now, held_qty=held), "client_order_id": f"fis-{card['proposal_id']}"}
+    intent = _intent(order, card)
+    if held is not None:
+        intent = replace(intent, context={**intent.context, "personal_qty": held})
+    ack = await OrderTicketBroker(conn, now, cfg).submit_order(intent)
     return dict(ack.raw) if ack.status == "awaiting_manual_entry" else None
 
 
@@ -159,7 +181,12 @@ async def execute_approved(
     events: list[Event] = []
     ticket = await _issue_ticket(conn, card, now, cfg)
     if ticket is not None:
-        payload = {"qty": ticket["qty"], "limit_price": ticket["limit_price"], "stage": ticket["stage"]}
+        payload = {
+            "qty": ticket["qty"],
+            "limit_price": ticket["limit_price"],
+            "stage": ticket["stage"],
+            "side": ticket["side"],
+        }
         draft = run_audit(
             "system:order_ticket", "ticket.issued", "order_ticket", ticket["ticket_no"], payload, card["run_id"]
         )
