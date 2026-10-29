@@ -33,7 +33,10 @@ export const AUDIT_TAMPER_POS = 3_907;
 
 /* Pre-existing runs of the day that reached the approval queue. */
 export const PENDING_RUNS = ["run-day-e1-krgcl", "run-day-e2-orncm", "run-day-e4-tmspz"] as const;
-export const PENDING_PROPOSALS = ["prop-day-e1-krgcl", "prop-day-e2-orncm", "prop-day-e4-tmspz"] as const;
+export const PENDING_PROPOSALS = ["prop-day-e1-krgcl", "prop-day-e2-orncm", "prop-day-e4-tmspz", "prop-exit-x1-krgsg"] as const;
+/** The seeded sell: an X1 time exit on the KRGSG position (mocks/runs-day.ts EXIT_SPECS). */
+export const EXIT_RUN = "run-exit-x1-krgsg";
+export const EXIT_PROPOSAL = "prop-exit-x1-krgsg";
 
 export type DemoScenario = "e3_contract" | "redteam_injection" | "restricted_r04" | "loss_simulation";
 

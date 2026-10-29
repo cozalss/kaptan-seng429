@@ -34,12 +34,12 @@ export function ProposalSummary({
           Öneri
         </h2>
         <p className="mt-1 text-[24px] leading-8 font-semibold tracking-[-0.01em] text-ink tabular-nums sm:text-[28px] sm:leading-9">
-          {fmtInt(card.qty)} lot al <span className="font-normal text-muted">·</span> limit {fmtPrice(card.limit_price)}
+          {fmtInt(card.qty)} lot {card.side === "sell" ? "sat" : "al"} <span className="font-normal text-muted">·</span> limit {fmtPrice(card.limit_price)}
         </p>
       </div>
       <dl className="grid grid-cols-2 border-t border-hairline sm:grid-cols-4">
         <Figure label="Toplam tutar" value={`≈ ${fmtTry(card.final_notional_try)}`} />
-        <Figure label="Tutma süresi" value={a === b ? `${a} gün` : `${a}–${b} gün`} className="border-l border-hairline" />
+        <Figure label="Tutma süresi" value={card.side === "sell" ? "Bugün kapanır" : a === b ? `${a} gün` : `${a}–${b} gün`} className="border-l border-hairline" />
         <Figure
           label="Zarar durdurma"
           value={risk ? fmtPrice(risk.stopPrice) : riskHint}

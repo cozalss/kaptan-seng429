@@ -49,12 +49,12 @@ def _to_tick(price: Decimal, rounding: str) -> Decimal:
 
 
 def limit_up(prev_close: Decimal, pct: Decimal) -> Decimal:
-    """Tavan: prev close × (1 + 10 %), rounded down to the tick."""
+    """Tavan: prev close × (1 + pct), rounded down to the tick (pct = the market's band)."""
     return _to_tick(prev_close * (1 + pct), ROUND_FLOOR)
 
 
 def limit_down(prev_close: Decimal, pct: Decimal) -> Decimal:
-    """Taban: prev close × (1 − 10 %), rounded up to the tick."""
+    """Taban: prev close × (1 − pct), rounded up to the tick (pct = the market's band)."""
     return _to_tick(prev_close * (1 - pct), ROUND_CEILING)
 
 
@@ -129,20 +129,22 @@ def decide_fill(
     liq: Liquidity,
     costs: Costs,
     at_open: bool,
+    market: str | None = None,
 ) -> FillQuote | Miss:
     """One limit order against one observed raw price (the open, or the next available price).
 
     No price → miss. At the open: a buy that opens locked at the upper limit (tavan) or a sell at the
     lower limit (taban) does not fill. A buy whose price is above its limit (a sell below) is missed;
     there is no retry (06 §5). Otherwise the fill is the price moved by slippage + impact against us,
-    never through the limit.
+    never through the limit. The tavan/taban band is the one of the stock's `market` (unknown → ±10 %).
     """
     if observed is None:
         return Miss("no_price")
     if at_open and prev_close is not None:
-        if side == "buy" and observed >= limit_up(prev_close, costs.price_limit_pct):
+        pct = costs.limit_pct(market)
+        if side == "buy" and observed >= limit_up(prev_close, pct):
             return Miss("limit_up_open")
-        if side == "sell" and observed <= limit_down(prev_close, costs.price_limit_pct):
+        if side == "sell" and observed <= limit_down(prev_close, pct):
             return Miss("limit_down_open")
     if side == "buy" and observed > limit:
         return Miss("open_above_limit")

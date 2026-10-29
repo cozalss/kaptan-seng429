@@ -16,7 +16,9 @@ export function mainRule(card: Pick<ApprovalCard, "event_type" | "rule_trace_sum
 }
 
 /** What happened, in one sentence: "Yıllık gelirinin %18'i kadar yeni iş aldı." */
-export function plainEvent(card: Card): string {
+export function plainEvent(card: Card & Partial<Pick<ApprovalCard, "side">>): string {
+  // A sell is an exit (X1–X4): say why the position closes, not the event that opened it.
+  if (card.side === "sell") return card.headline_tr;
   const obs = mainRule(card)?.observed ?? null;
   const pct = obs && /%/.test(obs) ? obs : null;
   switch (card.event_type) {
@@ -72,9 +74,17 @@ export function plainHistory(e: ApprovalCard["evidence_summary"], events?: Reado
   return `Benzer ${fmtInt(e.n)} olayın ${possessiveLocative(fmtInt(rose))} hisse 5 gün içinde yükseldi.`;
 }
 
-/** "560 lot al · tanesi en fazla 77,67 TL" */
-export function suggestionLine(card: Pick<ApprovalCard, "qty" | "limit_price">): string {
-  return `${fmtInt(card.qty)} lot al · tanesi en fazla ${fmtPrice(card.limit_price)}`;
+type Side = Partial<Pick<ApprovalCard, "side">>;
+
+/** "al" / "sat", and the limit as a cap (buy) or a floor (sell: an exit, never below the limit). */
+function sideWords(card: Side): { verb: string; cap: string } {
+  return card.side === "sell" ? { verb: "sat", cap: "en az" } : { verb: "al", cap: "en fazla" };
+}
+
+/** "560 lot al · tanesi en fazla 77,67 TL" (a sell: "1.800 lot sat · tanesi en az 26,36 TL") */
+export function suggestionLine(card: Pick<ApprovalCard, "qty" | "limit_price"> & Side): string {
+  const w = sideWords(card);
+  return `${fmtInt(card.qty)} lot ${w.verb} · tanesi ${w.cap} ${fmtPrice(card.limit_price)}`;
 }
 
 /** "5 gün tut" / "20–40 gün tut" */
@@ -84,12 +94,14 @@ export function holdLine(card: Pick<ApprovalCard, "holding_days">): string {
 }
 
 /** The proposal in one plain line: "Öneri: 560 lot al, tanesi en fazla 77,67 TL — toplam ≈ 43.495 TL. 5–10 gün tut." */
-export function proposalLine(card: Pick<ApprovalCard, "qty" | "limit_price" | "final_notional_try" | "holding_days">): string {
-  return `Öneri: ${fmtInt(card.qty)} lot al, tanesi en fazla ${fmtPrice(card.limit_price)} — toplam ≈ ${fmtTry(card.final_notional_try)}. ${holdLine(card)}.`;
+export function proposalLine(card: Pick<ApprovalCard, "qty" | "limit_price" | "final_notional_try" | "holding_days"> & Side): string {
+  const w = sideWords(card);
+  const tail = card.side === "sell" ? "Elindeki pozisyon kapanır" : holdLine(card);
+  return `Öneri: ${fmtInt(card.qty)} lot ${w.verb}, tanesi ${w.cap} ${fmtPrice(card.limit_price)} — toplam ≈ ${fmtTry(card.final_notional_try)}. ${tail}.`;
 }
 
 /** A Bugün card's footer: "560 lot al · tanesi en fazla 77,67 TL · yarın 09:50’ye kadar". */
-export function cardFooterLine(card: Pick<ApprovalCard, "qty" | "limit_price" | "expires_at">, nowIso: string | null): string {
+export function cardFooterLine(card: Pick<ApprovalCard, "qty" | "limit_price" | "expires_at"> & Side, nowIso: string | null): string {
   const at = dative(fmtTime(card.expires_at));
   const when = nowIso ? `${dayWordTr(card.expires_at, nowIso)} ${at}` : at;
   return `${suggestionLine(card)} · ${when} kadar`;

@@ -1,4 +1,4 @@
-"""BIST tick table and ±10 % price limits (06 R09, U6; kaptan.market.ticks)."""
+"""BIST tick table and per-market daily price limits (06 R09, U6; kaptan.market.ticks)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,10 @@ from decimal import Decimal as D  # noqa: N817
 import pytest
 
 from kaptan.market.ticks import (
+    DAILY_LIMIT_BY_MARKET,
+    DAILY_LIMIT_FALLBACK_PCT,
     ceil_to_tick,
+    daily_limit_pct,
     floor_to_tick,
     limit_up_locked,
     price_limits,
@@ -97,3 +100,25 @@ def test_one_tick_table_matches_the_bist_procedure() -> None:
         ("1000", "1.00"),
         ("2500", "2.50"),
     ]
+
+
+@pytest.mark.parametrize(
+    ("market", "pct"),
+    [("yildiz", "0.20"), ("ana", "0.15"), ("alt", "0.10"), ("yip", "0.10"), ("poip", "0.10"), (" YILDIZ ", "0.20")],
+)
+def test_daily_limit_pct_per_market(market: str, pct: str) -> None:
+    assert daily_limit_pct(market) == D(pct)  # 06 §2 [V], Prosedür §5.1.11
+
+
+@pytest.mark.parametrize("market", [None, "", "gip", "nitelikli", "bilinmiyor"])
+def test_daily_limit_pct_unknown_market_is_the_narrowest_band(market: str | None) -> None:
+    assert daily_limit_pct(market) == DAILY_LIMIT_FALLBACK_PCT == D("0.10")
+    assert min(DAILY_LIMIT_BY_MARKET.values()) == DAILY_LIMIT_FALLBACK_PCT
+    assert daily_limit_pct(market, {}, D("0.05")) == D("0.05")
+
+
+def test_price_limits_per_market_band() -> None:
+    assert price_limits(D(100), daily_limit_pct("yildiz")) == (D("80.00"), D("120.00"))
+    assert price_limits(D(100), daily_limit_pct("ana")) == (D("85.00"), D("115.00"))
+    assert price_limits(D("47.40"), daily_limit_pct("ana")) == (D("40.30"), D("54.50"))  # tick grid, inwards
+    assert price_limits(D(100), daily_limit_pct(None)) == (D("90.00"), D("110.00"))

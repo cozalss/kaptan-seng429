@@ -59,7 +59,7 @@ describe("mock API · session and roles", () => {
 });
 
 describe("mock API · proposals", () => {
-  it("lists the three seeded pending proposals", async () => {
+  it("lists the four seeded pending proposals (three buys, one sell)", async () => {
     const { api } = setup();
     const pending = await api.listApprovals("pending");
     expect(pending.map((c) => c.proposal_id).sort()).toEqual([...PENDING_PROPOSALS].sort());

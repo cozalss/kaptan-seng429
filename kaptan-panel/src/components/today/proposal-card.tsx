@@ -65,7 +65,7 @@ export function ProposalCard({
         <p className="tabular-nums">
           <span className="block text-body font-semibold text-ink">{fmtTry(card.final_notional_try)}</span>
           <span className="block text-meta text-ink-soft">
-            {fmtInt(card.qty)} lot · en fazla {fmtPrice(card.limit_price)}
+            {fmtInt(card.qty)} lot · {card.side === "sell" ? "en az" : "en fazla"} {fmtPrice(card.limit_price)}
           </span>
           <span className="block text-meta text-ink-soft">Son saat {deadline(card, nowIso)}</span>
         </p>

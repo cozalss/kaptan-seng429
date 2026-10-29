@@ -2,20 +2,26 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
 import pytest
+import redis.asyncio as aioredis
 from psycopg.types.json import Jsonb
 
 from kaptan.agents.feed_run import desk_for
 from kaptan.db import DictConn
+from kaptan.events import bus
 from kaptan.risk.cooldown import cooldown_active
 from kaptan.risk.desk import live_desk
 from kaptan.risk.gate import COOLDOWN_TR, GateContext, GateOrder, evaluate
 from kaptan.risk.kill_switch import confirm_reset, start_reset
-from kaptan.risk.security_kill import SECURITY_MONITOR, check_security_kill, r11_rejected_runs
+from kaptan.risk.security_kill import SECURITY_MONITOR, announce_kill, check_security_kill, r11_rejected_runs
+from kaptan.settings import Settings
+from tests.conftest import skip_or_fail
 
 pytestmark = pytest.mark.integration
 
@@ -130,3 +136,26 @@ async def test_demo_runs_never_count(pg: DictConn) -> None:
     runs = await r11_rejected_runs(pg, NOW)
     demo = await rows(pg, "SELECT run_id FROM trading.agent_runs WHERE run_set <> 'live' AND outcome = 'QUARANTINED'")
     assert not set(runs) & {r["run_id"] for r in demo}
+
+
+async def test_security_kill_is_announced_on_sse_desk(pg: DictConn, migrated: Settings) -> None:
+    """06 §11 (c): the panel hears the security kill at once, as `kill_switch` on desk (like the manual stop)."""
+    redis = aioredis.from_url(migrated.redis_url.get_secret_value(), decode_responses=True)
+    try:
+        await asyncio.wait_for(redis.ping(), timeout=3)
+    except Exception as exc:  # pragma: no cover - Redis down
+        await redis.aclose()
+        skip_or_fail(f"compose Redis unreachable: {exc}")
+    try:
+        await pg.execute("UPDATE trading.risk_state SET kill_switch = 'off', reset_started = NULL WHERE id = 1")
+        for i in range(3):
+            await add_live_run(pg, f"run-live-sse{i}", NOW - timedelta(minutes=10 - i), outcome="QUARANTINED")
+        assert await check_security_kill(pg, NOW)
+        before = await bus.latest_id(redis, bus.stream_key("desk"))
+        assert await announce_kill(redis, pg, NOW, live=True) is not None
+        events = await redis.xrange(bus.stream_key("desk"), min=f"({before}", max="+")
+        assert [f["event"] for _, f in events] == ["kill_switch"]
+        status = json.loads(events[0][1]["data"])
+        assert status["kill_switch"] == "on"
+    finally:
+        await redis.aclose()

@@ -159,3 +159,18 @@ async def test_animation_plan() -> None:
 def test_virtual_clock_of_an_empty_run() -> None:
     start = datetime(2027, 1, 11, tzinfo=UTC)
     assert elapsed_until_now([], start) == start
+
+
+async def test_gate_inputs_carry_regime_applied_from_the_sizer() -> None:
+    """06 R10: a proposal sized with m_regime < 1 tells the gate not to halve it again."""
+    from kaptan.agents.nodes.decide import gate_inputs
+
+    ctx = context_for("run-demo-e3-ornek")
+    state = await run_graph(ctx, "e3-regime-flag")
+    order, _ = gate_inputs(state, ctx)
+    assert not order.regime_applied  # demo desk is normal: m_regime = 1
+    proposal = state["proposal"]
+    assert proposal is not None
+    sized = {**proposal, "multipliers": {**proposal["multipliers"], "regime": 0.5}}
+    order, _ = gate_inputs({**state, "proposal": sized}, ctx)
+    assert order.regime_applied

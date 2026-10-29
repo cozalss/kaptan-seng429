@@ -80,6 +80,8 @@ class GateOrder:
     est_cost_bps: Decimal = Decimal(0)
     escalate_required: bool = False
     degraded: bool = False
+    #: 06 R10: the rule engine already sized with m_regime (crisis ×0,5), so R10 must not shrink again.
+    regime_applied: bool = False
 
     @property
     def notional(self) -> Decimal:
@@ -329,6 +331,8 @@ def r10(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
         return _ok("R10", ph)
     if o.event_type == "E3":
         return _no("R10", ph, "reject", "Kriz rejiminde yeni E3 yok.")
+    if o.regime_applied:  # 06 R10 case 4: no double shrink
+        return _ok("R10", ph, "Kriz rejimi: boyut kural motorunda ×0,5 küçültüldü (çift küçültme yok).")
     res = _no("R10", ph, "resize", "Kriz rejimi: maruziyet ×0,5.")
     return replace(res, new_qty=_floor_qty(Decimal(o.qty) * lim.crisis_exposure_mult))
 

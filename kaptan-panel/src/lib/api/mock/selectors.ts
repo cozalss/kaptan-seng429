@@ -23,7 +23,7 @@ import { AUDIT_TAMPER_POS, DAY_BY_ANCHOR, DEMO_E3_RUN, type DemoScenario } from 
 import { CURRENT_STAGE } from "@/mocks/personal";
 import { buildTicket, effectiveEntry } from "@/mocks/tickets";
 import { issuer } from "@/mocks/issuers";
-import { DAY_SPECS, HISTORY_SPECS } from "@/mocks/runs-day";
+import { DAY_SPECS, EXIT_SPECS, HISTORY_SPECS } from "@/mocks/runs-day";
 import { DEMO_E3_SPEC, DEMO_INJ_SPEC, DEMO_R04_SPEC } from "@/mocks/runs-demo";
 import type { RunSpec } from "@/mocks/run-spec";
 import type { MockState } from "./state";
@@ -51,7 +51,7 @@ export function injectedSpecs(state: MockState): RunSpec[] {
 }
 
 export function allSpecs(state: MockState): RunSpec[] {
-  return [...DAY_SPECS, ...HISTORY_SPECS, ...injectedSpecs(state)];
+  return [...DAY_SPECS, ...HISTORY_SPECS, ...EXIT_SPECS, ...injectedSpecs(state)];
 }
 
 export function specById(state: MockState, runId: string): RunSpec | undefined {
@@ -263,7 +263,11 @@ export function allOrders(state: MockState, realNow: number = Date.now()): Order
 
 export function positions(state: MockState, realNow: number = Date.now()): Position[] {
   const out: Position[] = [];
-  for (const s of allSpecs(state)) {
+  const specs = allSpecs(state);
+  // A filled sell (exit) closes the paper position in that ticker; it never opens one.
+  const exited = new Set(specs.filter((s) => s.side === "sell" && (explainFor(state, s.run_id, realNow)?.fills.length ?? 0) > 0).map((s) => s.ticker));
+  for (const s of specs) {
+    if (s.side === "sell" || exited.has(s.ticker)) continue;
     const e = explainFor(state, s.run_id, realNow);
     const fill = e?.fills[0];
     if (!e?.proposal || !fill || !s.event) continue;

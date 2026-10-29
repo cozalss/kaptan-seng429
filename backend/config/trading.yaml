@@ -16,7 +16,16 @@ costs:
   impact_y: 0.7             # impact = Y × σ_daily × sqrt(Q / ADV20_shares) (square-root law)
   default_half_spread: 0.001  # when the 20-session Corwin–Schultz estimate cannot be computed
   window: 20                # sessions for ADV20, σ_daily and the Corwin–Schultz median
-  price_limit_pct: 0.10     # BIST ±10 % daily price limit, on the raw previous close
+  # BIST daily price band per market, on the raw previous close (06 §2 [V]: Pay Piyasası Prosedürü
+  # rev. 54, 21/09/2026, §5.1.11). A market not listed (unknown, GİP, Nitelikli) gets the fallback:
+  # the narrowest band, so a tavan/taban check can only be stricter than the exchange's.
+  price_limit_pct_by_market:
+    yildiz: 0.20
+    ana: 0.15
+    alt: 0.10
+    yip: 0.10
+    poip: 0.10
+  price_limit_pct_fallback: 0.10
 
 # GuardedBroker per-order hard cap (FR-28): an order above min(this, max_position_pct × equity) is
 # refused at send. null = only the limits' position cap applies.

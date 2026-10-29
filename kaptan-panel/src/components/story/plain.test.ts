@@ -97,6 +97,11 @@ describe("why, history and the suggestion", () => {
     expect(holdLine(e1.card)).toBe("20–40 gün tut");
     expect(proposalLine(e4.card)).toBe("Öneri: 560 lot al, tanesi en fazla 77,67\u00a0TL — toplam ≈ 43.495\u00a0TL. 5–10 gün tut.");
   });
+  it("says a sell plainly: sat, the limit as a floor, the exit reason as the headline", () => {
+    expect(suggestionLine({ qty: 1800, limit_price: 26.36, side: "sell" })).toBe("1.800 lot sat · tanesi en az 26,36 TL");
+    expect(proposalLine({ ...e4.card, side: "sell" })).toMatch(/^Öneri: 560 lot sat, tanesi en az 77,67\sTL — .* Elindeki pozisyon kapanır\.$/);
+    expect(plainEvent({ ...e4.card, side: "sell", headline_tr: "Tutma süresi doldu." })).toBe("Tutma süresi doldu.");
+  });
   it("says until when a card can be signed, and how much of the portfolio it is", () => {
     const exp = "2027-01-12T06:50:00.000Z";
     const card = { qty: 560, limit_price: 77.67, expires_at: exp, final_notional_try: 43_495 };

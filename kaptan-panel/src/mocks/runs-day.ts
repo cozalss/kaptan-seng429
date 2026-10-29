@@ -1,6 +1,6 @@
 import { istanbulIso } from "@/lib/time";
 import { DEMO_DAY } from "./clock";
-import { DAY_INDEX_BASE } from "./ids";
+import { DAY_INDEX_BASE, EXIT_RUN } from "./ids";
 import { slotTime } from "./day-times";
 import { issuer } from "./issuers";
 import { commonTrace, e1Reader, e2Reader, e3Reader, e4Reader, trace } from "./readers";
@@ -270,6 +270,34 @@ function forTodaysOpen(h: RunSpec, publishedHhmm: string, approvedHhmm: string, 
     },
   };
 }
+
+/**
+ * A sell: the X1 time exit on the KRGSG position (E4, bought 2027-01-04, hold 5–10 trading
+ * days). The minimum hold ends today, so the desk asks you to approve closing it.
+ * A sell only closes lots you hold; it is never a short sale.
+ */
+export const EXIT_SPECS: readonly RunSpec[] = [
+  {
+    ...mk({
+      ...NONE,
+      slot: 5, run_id: EXIT_RUN, ticker: "KRGSG", event: "E4", classifiedAs: "E4", classifierConfidence: 0.99, method: "subject_map",
+      route: "E4", subject: "Pozisyon Çıkışı", kind: "propose",
+      headline: "Tutma süresi doldu: elinizdeki KRGSG paylarını satın (X1)",
+      body: "04.01.2027'de alınan 1.800 lot KRGSG için planlanan en kısa tutma süresi (5 işlem günü) bugün doldu. Çıkış kuralı X1 gereği pozisyonun kapatılması öneriliyor.",
+      sub_type: "position_exit", sub_type_tr: "Pozisyon çıkışı (X1 zaman)",
+      reader: e4Reader("kâr artmıştır"),
+      leakage5d: 0,
+      evidence: { n: 40, nSameTicker: 1, mean5: 0.01, median5: 0.008, hit5: 0.59, mean20: 0.02, median20: 0.013, hit20: 0.59, ci20: [0.003, 0.036] },
+      skeptic: { multiplier: 1, flags: [], counter_tr: "Çıkışı geciktirecek yeni bir gelişme yok." },
+      ruleTrace: [trace("X1.time_exit", true, "5 işlem günü", "≥ 5 gün", "Planlanan en kısa tutma süresi doldu.")],
+      reasonCodes: ["X1_TIME_EXIT"], compliance: "pass", guardScore: 0.01,
+      proposal: { refPrice: 26.9, qty: 1_800, stopPct: 0.09, holding: [0, 0], edgeBps: 0, costBps: 30, requestedNotional: 48_420, entry: "intraday_limit" },
+      side: "sell",
+      decision: { status: "pending" }, llmCalls: 0, tokens: [0, 0],
+    }),
+    disclosure_index: 1_640_205,
+  },
+];
 
 export const HISTORY_SPECS: readonly RunSpec[] = [
   hist("101", "DMOKM", "E1", "2026-12-14", 47.9, 1_000, 48.1, [20, 40], "v1.0-fwd"),

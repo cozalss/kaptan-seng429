@@ -93,6 +93,8 @@ export interface RunSpec {
   preGateReasons?: string[];
   riskOverrides?: Partial<Record<RiskCheck["rule_code"], Pick<RiskCheck, "outcome" | "detail_tr"> & { observed?: string; limit?: string }>>;
   proposal: ProposalSpec | null;
+  /** Default buy. `sell` = an exit (X1–X4) from a held position; never a short sale. */
+  side?: "buy" | "sell";
   decision: DecisionSpec | null;
   strategy_version: string;
   is_fixture: boolean;

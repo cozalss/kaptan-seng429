@@ -217,6 +217,7 @@ def gate_inputs(state: KaptanState, ctx: RunContext, qty: int | None = None) -> 
         est_cost_bps=_dec(p["est_cost_bps"]),
         escalate_required=bool(p["escalate_required"]),
         degraded=bool(p["degraded"]),
+        regime_applied=_dec((p.get("multipliers") or {}).get("regime", 1)) < 1,  # 06 R10: m_regime already in qty
     )
     compliance = (state.get("compliance") or {}).get("decision", "pass")
     gctx = GateContext(

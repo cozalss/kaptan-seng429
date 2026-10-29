@@ -27,6 +27,7 @@ from kaptan.brokers import config as broker_config
 from kaptan.brokers.config import Costs
 from kaptan.brokers.costs import Liquidity, Miss, corwin_schultz, daily_sigma, decide_fill
 from kaptan.brokers.simbist import FilledBy, FillTerms, book_fill, book_miss
+from kaptan.market.segment import market_of
 from kaptan.prices.calendar import IST, SESSION_CLOSE, SESSION_OPEN, is_trading_day, next_session, prev_session
 from kaptan.prices.reads import close_on, open_on
 
@@ -107,6 +108,7 @@ async def _settle(
     observed: Decimal | None = await (open_on if f == "open" else close_on)(conn, ticker, d)
     prev = await close_on(conn, ticker, prev_session(d)) if f == "open" else None
     liq = await liquidity(conn, ticker, d, costs)
+    at = at_market(d, f)
     outcome = decide_fill(
         side=order["side"],
         qty=int(order["qty"]),
@@ -116,8 +118,8 @@ async def _settle(
         liq=liq,
         costs=costs,
         at_open=f == "open",
+        market=await market_of(conn, ticker, at),
     )
-    at = at_market(d, f)
     if isinstance(outcome, Miss):
         await book_miss(conn, order, outcome.reason, at)
         report.missed.append((order["id"], outcome.reason))

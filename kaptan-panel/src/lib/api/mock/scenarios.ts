@@ -142,7 +142,7 @@ export function executeApproved(db: MockDb, proposalId: string): void {
     run_id: card.run_id,
     ticker: card.ticker,
     company_name: card.company_name,
-    side: "buy",
+    side: card.side,
     order_type: "limit",
     tif: isOpenAuction ? "opg" : "day",
     qty,

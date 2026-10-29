@@ -108,6 +108,28 @@ def test_misses_open_above_limit_tavan_taban_and_no_price() -> None:
     assert isinstance(intraday, FillQuote)  # the tavan check is the opening auction's
 
 
+def test_tavan_check_uses_the_market_band() -> None:
+    # prev 33.48: ±10 % tavan 36.82; Ana Pazar ±15 % tavan 38.50; Yıldız ±20 % tavan 40.16
+    assert _fill(observed=D("36.82"), limit=D("40")) == Miss("limit_up_open")  # unknown market → ±10 %
+    assert _fill(observed=D("36.82"), limit=D("40"), market="gip") == Miss("limit_up_open")
+    assert isinstance(_fill(observed=D("36.82"), limit=D("40"), market="ana"), FillQuote)
+    assert _fill(observed=D("38.50"), limit=D("40"), market="ana") == Miss("limit_up_open")
+    assert isinstance(_fill(observed=D("38.50"), limit=D("40"), market="yildiz"), FillQuote)
+    sell = {"side": "sell", "limit": D("26")}
+    assert _fill(observed=D("30.14"), **sell) == Miss("limit_down_open")
+    assert isinstance(_fill(observed=D("30.14"), market="yildiz", **sell), FillQuote)
+    assert COSTS.limit_pct("YILDIZ") == D("0.20") and COSTS.limit_pct(None) == D("0.10")
+
+
+def test_parse_trading_limit_table() -> None:
+    cfg = parse_trading({"costs": {"price_limit_pct_by_market": {"Ana": 0.12}, "price_limit_pct_fallback": 0.05}})
+    assert cfg.costs.limit_pct("ana") == D("0.12")
+    assert cfg.costs.limit_pct("yildiz") == D("0.05")  # not in the configured table → fallback
+    assert parse_trading({}).costs.limit_pct("yildiz") == D("0.20")
+    with pytest.raises(ValueError, match="price_limit_pct_by_market"):
+        parse_trading({"costs": {"price_limit_pct_by_market": [0.1]}})
+
+
 def test_parse_trading_and_the_repo_file(tmp_path: Path) -> None:
     cfg = parse_trading({"mode": "live", "costs": {"c_broker": 0.002}, "hard_cap_try": 50_000})
     assert (cfg.mode, cfg.costs.c_broker, cfg.hard_cap_try) == ("live", D("0.002"), D(50_000))
@@ -116,6 +138,7 @@ def test_parse_trading_and_the_repo_file(tmp_path: Path) -> None:
         parse_trading({"mode": "yolo"})
     repo = bc.load_trading()
     assert repo.mode == "paper" and repo.costs == Costs() and repo.hard_cap_try is None
+    assert dict(repo.costs.price_limit_pct_by_market) == dict(Costs().price_limit_pct_by_market)  # yaml = code
     assert bc.load_trading(tmp_path / "missing.yaml") == TradingConfig()
 
 

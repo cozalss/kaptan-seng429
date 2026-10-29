@@ -48,7 +48,7 @@ from kaptan.evidence.toolbox import live_tools
 from kaptan.llm.provider import LLMProvider
 from kaptan.llm.usage import sync_usage
 from kaptan.risk.cooldown import cooldown_active
-from kaptan.risk.security_kill import check_security_kill
+from kaptan.risk.security_kill import announce_kill, check_security_kill
 from kaptan.settings import get_settings
 
 log = logging.getLogger("kaptan.agents.feed_run")
@@ -278,8 +278,9 @@ async def persist_live(
     *,
     limits_version: int | None = None,
     manifest_hash: str = "",
-) -> str:
-    """Run, link, card, counters, audit outcome and the feed row in one transaction; returns the feed status."""
+) -> tuple[str, bool]:
+    """Run, link, card, counters, audit outcome and the feed row in one transaction. Returns the feed
+    status and whether this run engaged the security kill (06 §11 c)."""
     run, disc, card = explain["run"], explain["disclosure"], explain["approval"]
     feed_status = "waiting_approval" if card is not None else "done"
     run_params = (
@@ -317,12 +318,12 @@ async def persist_live(
                 draft = replace(draft, payload={**draft.payload, "limits_version": limits_version})
             await append(conn, [draft], now=now)
         await write_run_rows(conn, explain, manifest_hash)  # FR-19: per-node outputs + gate checks
-        await check_security_kill(conn, now)  # 06 §11 (c): the day's 3rd R11 reject → kill switch
+        killed = await check_security_kill(conn, now)  # 06 §11 (c): the day's 3rd R11 reject → kill switch
         await conn.execute(
             FEED_DONE_SQL,
             (feed_status, run["run_id"], run["llm_calls"], run["outcome"], now, now, run["disclosure_index"]),
         )
-    return feed_status
+    return feed_status, killed
 
 
 async def announce(redis: Any, conn: AsyncConnection[Any], explain: dict[str, Any], now: datetime) -> int:
@@ -345,13 +346,16 @@ async def run_disclosure(conn: AsyncConnection[Any], index: int, now: datetime, 
     await conn.commit()  # no read snapshot held while the models answer
     state = await run_or_resume(ctx, ctx.disclosure.run_id)
     explain = assemble(state, ctx, doc, texts)
-    feed_status = await persist_live(
+    feed_status, killed = await persist_live(
         conn, explain, now, limits_version=ctx.limits_version, manifest_hash=ctx.prompt_manifest_hash
     )
     await sync_usage(conn, deps.provider)
     if deps.redis is not None:
         await announce(deps.redis, conn, explain, now)
         await conn.commit()
+        if killed:  # after the commit, like POST /risk/kill-switch
+            await announce_kill(deps.redis, conn, now, live=not get_settings().demo_mode)
+            await conn.commit()
     run = explain["run"]
     return LiveResult(run["run_id"], feed_status, run["outcome"], int(run["llm_calls"]), explain)
 

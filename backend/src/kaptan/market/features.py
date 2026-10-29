@@ -16,7 +16,8 @@ from typing import Any, Final
 
 from kaptan.market import fundamentals, notices
 from kaptan.market.fx_store import currency_code, rate_at
-from kaptan.market.ticks import price_limits
+from kaptan.market.segment import market_of
+from kaptan.market.ticks import daily_limit_pct, price_limits
 
 Conn = notices.Conn
 DIGITS: Final = Decimal("0.000001")
@@ -36,6 +37,7 @@ class MergeInputs:
     fundamentals: tuple[fundamentals.FundamentalRow, ...] | None = None
     currency: str | None = None
     fx_rate: Decimal | None = None  # TRY per unit of `currency`; None = unknown (or not needed)
+    market: str | None = None  # BIST market at `available_at` (daily band, 06 §2); None = unknown → ±10 %
 
 
 async def load_merge_inputs(
@@ -61,7 +63,7 @@ async def load_merge_inputs(
         currency = currency_code(reader.get("currency"))
         if currency is not None and currency != "TRY":
             rate = await rate_at(conn, currency, available_at)
-    return MergeInputs(rows, fund, currency, rate)
+    return MergeInputs(rows, fund, currency, rate, await market_of(conn, ticker, available_at))
 
 
 def _f(x: Decimal | None) -> float | None:
@@ -138,7 +140,7 @@ def fx_text_amounts(text: str, currency: str | None) -> list[Decimal]:
     return found
 
 
-def limits_of(base: Decimal) -> tuple[float | int | None, float | int | None]:
-    """(lower, upper) of the next/current session from the last known close (BIST ±10 %, tick grid)."""
-    lower, upper = price_limits(base)
+def limits_of(base: Decimal, market: str | None = None) -> tuple[float | int | None, float | int | None]:
+    """(lower, upper) of the next/current session from the last known close (the market's band, tick grid)."""
+    lower, upper = price_limits(base, daily_limit_pct(market))
     return _money(lower), _money(upper)

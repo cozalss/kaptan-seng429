@@ -2,25 +2,37 @@
 
 Filled from data: L4 (pnl_daily series, closed trades), the shadow returns (trading.shadow_signals with a
 20-day return), latency (p50/p95 of finished live agent runs) and today's LLM cost (core.day_counters).
-L1 (gold test set), L2 (RAGAS), L3 (holdout, run once), ablations and the red-team set are offline
-evaluations with no table yet: they stay empty (zeros, no rows) until those runs write their results.
+L2 comes from the RAGAS judge's report file (`python -m kaptan.eval.ragas_eval --out reports/ragas.json`):
+faithfulness and context_precision, plus one trend point dated by the file; a missing, unreadable or
+`{"skipped": ...}` file means "not run" (zeros, no trend). The panel shape has no answer_relevancy or sample
+count (`questions` is the fixed 50 of the target set), so those stay in the file.
+L1 (gold test set), L3 (holdout, run once), ablations and the red-team set are offline evaluations with no
+table yet: they stay empty (zeros, no rows) until those runs write their results.
 `is_sample` follows DEMO_MODE (the demo day's series is the seed's, labelled as such).
 """
 
 from __future__ import annotations
 
+import json
+import logging
 import math
 from datetime import date, datetime
+from pathlib import Path
 from typing import Any, Final
 
 from kaptan.db import DictConn
 from kaptan.domain.schemas.reports import SAMPLE_LABEL
 from kaptan.portfolio.pnl import list_pnl
 from kaptan.reference._sql import fetch_all, fetch_one
+from kaptan.text.turkish import IST
+
+log = logging.getLogger("kaptan.evalreports")
 
 REAL_LABEL: Final = "ileri dönük paper · kendi kayıtlarımızdan ölçüldü"
 V1_0_START: Final = date(2026, 11, 9)
 V1_1_START: Final = date(2026, 11, 23)
+#: Where `python -m kaptan.eval.ragas_eval --out reports/ragas.json` writes (relative to the backend dir).
+RAGAS_REPORT: Final = Path("reports/ragas.json")
 
 SHADOW_SQL: Final = """
 SELECT coalesce(proposal_id, signal_id) AS proposal_id, ticker, reason_source || ':' || reason_code AS rejected_by,
@@ -82,7 +94,35 @@ def empty_layers() -> dict[str, Any]:
     }
 
 
-async def eval_summary(conn: DictConn, *, now: datetime, today: date, is_sample: bool) -> dict[str, Any]:
+def _metric(metrics: dict[str, Any], name: str) -> float:
+    v = metrics.get(name)
+    return round(float(v), 4) if isinstance(v, int | float) and not isinstance(v, bool) else 0.0
+
+
+def ragas_layer(path: Path = RAGAS_REPORT) -> dict[str, Any] | None:
+    """The L2 fields the RAGAS report fills, or None when it has not run (no file, skipped, unreadable)."""
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"))
+        mtime = path.stat().st_mtime
+    except FileNotFoundError:
+        return None
+    except (OSError, ValueError):
+        log.warning("ragas report unreadable: %s", path)
+        return None
+    if not isinstance(report, dict) or "skipped" in report or not isinstance(report.get("metrics"), dict):
+        return None
+    if not report.get("scored"):
+        return None
+    m = report["metrics"]
+    faith, precision = _metric(m, "faithfulness"), _metric(m, "context_precision")
+    d = datetime.fromtimestamp(mtime, IST).date()
+    point = {"d": d, "faithfulness": faith, "context_precision": precision, "context_recall": 0.0}
+    return {"faithfulness": faith, "context_precision": precision, "trend": [point]}
+
+
+async def eval_summary(
+    conn: DictConn, *, now: datetime, today: date, is_sample: bool, ragas_path: Path = RAGAS_REPORT
+) -> dict[str, Any]:
     series = await list_pnl(conn, None, None)
     shadow = await fetch_all(conn, SHADOW_SQL)
     closed = await fetch_one(conn, CLOSED_SQL)
@@ -91,11 +131,15 @@ async def eval_summary(conn: DictConn, *, now: datetime, today: date, is_sample:
     decisions = await fetch_one(conn, DECISIONS_SQL) or {}
     calls, tokens = int(cost.get("llm_calls") or 0), int(cost.get("llm_tokens") or 0)
     n_dec = int(decisions.get("n") or 0)
+    layers = empty_layers()
+    l2 = ragas_layer(ragas_path)
+    if l2 is not None:
+        layers = {**layers, "l2": {**layers["l2"], **l2}}
     return {
         "is_sample": is_sample,
         "label": SAMPLE_LABEL if is_sample else REAL_LABEL,
         "as_of": now,
-        **empty_layers(),
+        **layers,
         "l4": {
             "series": series,
             "since": {"v1_0": V1_0_START, "v1_1": V1_1_START},

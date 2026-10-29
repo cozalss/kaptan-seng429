@@ -149,3 +149,22 @@ def test_r16_at_send() -> None:
     killed = evaluate_at_send(ORDER, replace(CTX, kill_switch_on=True), GateLimits())
     assert killed.outcome == "reject"
     assert "R01" in killed.detail_tr
+
+
+@pytest.mark.parametrize(
+    ("regime", "event_type", "regime_applied", "outcome", "qty"),
+    [
+        ("normal", "E3", False, "pass", 1240),  # 06 R10 table #1
+        ("crisis", "E3", False, "reject", 0),  # #2
+        ("crisis", "E1", False, "resize", 620),  # #3: ×0,5
+        ("crisis", "E1", True, "pass", 1240),  # #4: the rule engine already applied m_regime, no double shrink
+    ],
+)
+def test_r10_spec_table(regime: str, event_type: str, regime_applied: bool, outcome: str, qty: int) -> None:
+    order = replace(ORDER, event_type=event_type, regime_applied=regime_applied)
+    verdict = evaluate(order, replace(CTX, regime=regime))  # type: ignore[arg-type]
+    r10 = next(r for r in verdict.results if r.rule_code == "R10")
+    assert r10.outcome == outcome
+    assert verdict.final_qty == qty
+    if regime_applied:
+        assert "çift küçültme yok" in r10.detail_tr

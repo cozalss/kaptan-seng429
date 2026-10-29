@@ -40,7 +40,7 @@ Değişmez ilke: **kural motoru ve risk kapısı saf fonksiyondur** (`f(proposal
 |---|---|---|
 | Seans akışı (pay piyasası) | Açılış seansı emir toplama 09:40–09:55, eşleştirme/fiyat belirleme 09:55–10:00 · Sürekli işlem 10:00–18:00 · Kapanış seansı emir toplama 18:00/18:01–18:05, kapanış fiyatı belirleme 18:05–18:08 · Kapanış fiyatından işlemler 18:08–18:10 | [S] [ÜNLÜ](https://www.unlumenkul.com/borsa-istanbul-seanslar-ve-islem-saatleri/), [Enuygun 2026](https://www.enuygunfinans.com/finans-rehberi/borsa-saat-kacta-aciliyor-ve-kapaniyor-borsa-islem-saatleri/), [BIST işlem saatleri](https://www.borsaistanbul.com/en/trading-hours) |
 | Gün ortası tek fiyat seansı (13:00–14:00) | Sürekli işlem 10:00–18:00 **kesintisiz** (Prosedür §9 seans çizelgesi). 13:00–14:00 tek fiyat süreci yalnızca **tek fiyat yöntemiyle işlem gören** paylarda var (YİP/PÖİP, VBTS 3. kademe "tek fiyat"; günde 5 fiyat belirleme, Tablo-10) | **[V]** [BIST Pay Piyasası Prosedürü rev.54, 21/09/2026](https://www.borsaistanbul.com/files/pay-piyasasi-proseduru.pdf) (erişim 2026-10-29) · `midday_break: false` doğru |
-| Günlük fiyat marjı | Baz fiyata (önceki kapanış) göre **Yıldız Pazar ±%20, Ana Pazar ±%15; Alt Pazar, YİP, PÖİP ±%10**; limitler içeri doğru fiyat adımına yuvarlanır (§5.1.11) | **[V]** [BIST Pay Piyasası Prosedürü rev.54, 21/09/2026](https://www.borsaistanbul.com/files/pay-piyasasi-proseduru.pdf) (erişim 2026-10-29) · ⚠ kod (`market/ticks.py` `DAILY_LIMIT_PCT`, `daily_limit_pct: 0.10`) hâlâ tek ±%10 kullanıyor — pazar bazlı marj açık iş (M4 V raporu) |
+| Günlük fiyat marjı | Baz fiyata (önceki kapanış) göre **Yıldız Pazar ±%20, Ana Pazar ±%15; Alt Pazar, YİP, PÖİP ±%10**; limitler içeri doğru fiyat adımına yuvarlanır (§5.1.11) | **[V]** [BIST Pay Piyasası Prosedürü rev.54, 21/09/2026](https://www.borsaistanbul.com/files/pay-piyasasi-proseduru.pdf) (erişim 2026-10-29) · kod: `market/ticks.py` `daily_limit_pct(market)` + `config/trading.yaml` `price_limit_pct_by_market`; pazar bilinmiyorsa ±%10 (en dar bant, muhafazakâr) |
 | Pay bazlı devre kesici | Eşik: ilgili pazarın marjı (Tablo-4) devre kesici referans fiyatına uygulanır; tetiklenince **10 dk emir toplama + 2 dk eşleşme** (17:45–18:00 arasında 15 dk, kapanış seansına devreder) (§5.3.4.1) | **[V]** [BIST Pay Piyasası Prosedürü rev.54, 21/09/2026](https://www.borsaistanbul.com/files/pay-piyasasi-proseduru.pdf) (erişim 2026-10-29) · eşik oranı Tablo-4'ten okunmadı **[U]** |
 | Borsa payı (pay piyasası) | İşlem hacminin **0,25 baz puanı** (%0,0025), taraf başına | [V] [BIST Ücretlendirme Tablosu](https://www.borsaistanbul.com/files/borsa-istanbul-ucretlendirme-tablosu.pdf) |
 | Takasbank takas komisyonu | İşlem hacminin **milyonda 4** (%0,0004) | [V] [Takasbank tarife](https://www.takasbank.com.tr/documents/mevzuat/pay-piyasasi-ucret-tarifesi-23012025.pdf) |
@@ -831,7 +831,7 @@ session:
   closing_collect: ["18:00", "18:05"]
   closing_price_trades: ["18:08", "18:10"]
   midday_break: false            # [V] Prosedür §9: sürekli işlem 10:00–18:00 kesintisiz
-  daily_limit_pct: 0.10
+  daily_limit_pct: {YILDIZ: 0.20, ANA: 0.15, ALT: 0.10, YIP: 0.10, POIP: 0.10}  # [V] §5.1.11; bilinmeyen pazar → 0.10
 universe:
   markets: ["YILDIZ", "ANA"]
   adv20_median_min_tl: 50_000_000

@@ -6,14 +6,17 @@ configuration, so code that runs without the app (tests, scripts) keeps the M1 d
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from decimal import Decimal
 from functools import cache
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, Final, Literal
 
 import yaml
 
+from kaptan.market.ticks import DAILY_LIMIT_BY_MARKET, DAILY_LIMIT_FALLBACK_PCT, daily_limit_pct
 from kaptan.settings import BACKEND_DIR, Settings
 
 TRADING_FILE: Final = BACKEND_DIR / "config" / "trading.yaml"
@@ -32,7 +35,13 @@ class Costs:
     impact_y: Decimal = Decimal("0.7")
     default_half_spread: Decimal = Decimal("0.001")
     window: int = 20
-    price_limit_pct: Decimal = Decimal("0.10")
+    #: Daily price band per market (06 §2 [V], Prosedür §5.1.11); unknown market → the fallback (±10 %).
+    price_limit_pct_by_market: Mapping[str, Decimal] = field(default_factory=lambda: DAILY_LIMIT_BY_MARKET)
+    price_limit_pct_fallback: Decimal = DAILY_LIMIT_FALLBACK_PCT
+
+    def limit_pct(self, market: str | None) -> Decimal:
+        """The daily price band of `market` (`kaptan.market.ticks.daily_limit_pct` over this config)."""
+        return daily_limit_pct(market, self.price_limit_pct_by_market, self.price_limit_pct_fallback)
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +74,15 @@ def _dec(value: Any, default: Decimal) -> Decimal:
     return default if value is None else Decimal(str(value))
 
 
+def _limit_table(value: Any, default: Mapping[str, Decimal]) -> Mapping[str, Decimal]:
+    """`price_limit_pct_by_market` ({market: pct}) → a read-only map; missing → the verified default."""
+    if value is None:
+        return default
+    if not isinstance(value, dict):
+        raise ValueError("trading.yaml: costs.price_limit_pct_by_market must be a {market: pct} map")
+    return MappingProxyType({str(k).strip().lower(): Decimal(str(v)) for k, v in value.items()})
+
+
 def parse_trading(raw: dict[str, Any]) -> TradingConfig:
     """trading.yaml → TradingConfig; unknown keys are ignored, a bad mode is an error."""
     mode = raw.get("mode", "paper")
@@ -80,7 +98,8 @@ def parse_trading(raw: dict[str, Any]) -> TradingConfig:
         impact_y=_dec(c.get("impact_y"), base.impact_y),
         default_half_spread=_dec(c.get("default_half_spread"), base.default_half_spread),
         window=int(c.get("window", base.window)),
-        price_limit_pct=_dec(c.get("price_limit_pct"), base.price_limit_pct),
+        price_limit_pct_by_market=_limit_table(c.get("price_limit_pct_by_market"), base.price_limit_pct_by_market),
+        price_limit_pct_fallback=_dec(c.get("price_limit_pct_fallback"), base.price_limit_pct_fallback),
     )
     cap = raw.get("hard_cap_try")
     return TradingConfig(mode=mode, costs=costs, hard_cap_try=None if cap is None else Decimal(str(cap)))

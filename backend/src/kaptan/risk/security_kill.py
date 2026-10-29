@@ -6,6 +6,8 @@ QUARANTINED: the injection brake that stops the run before the gate). Only runs 
 (`kill_switch.reset` in the audit log) count, so a same-day restart starts a fresh count. The kill itself is
 the ordinary one (`kill_switch.engage`: open orders cancelled, audit `kill_switch.on` with the run ids);
 it is lifted only by the two-key restart of 06 §11 (`kill_switch.start_reset` / `confirm_reset`).
+After the commit the caller publishes the new RiskStatus on SSE desk `kill_switch` (`announce_kill`), the
+same event the manual kill-switch endpoint sends, so the panel sees the stop at once.
 """
 
 from __future__ import annotations
@@ -15,8 +17,10 @@ from typing import Any, Final
 
 from psycopg import AsyncConnection
 
+from kaptan.events.publish import Target, publish
 from kaptan.risk.desk import istanbul_day_bounds
 from kaptan.risk.kill_switch import engage
+from kaptan.risk.status import risk_status
 
 #: 06 §11 (c): three R11 rejects on the same day.
 SECURITY_KILL_THRESHOLD: Final = 3
@@ -67,3 +71,9 @@ async def check_security_kill(conn: AsyncConnection[Any], now: datetime) -> bool
         conn, by=SECURITY_MONITOR, reason=SECURITY_KILL_REASON, role=None, now=now, check_off=False, extra=extra
     )
     return True
+
+
+async def announce_kill(target: Target, conn: AsyncConnection[Any], now: datetime, *, live: bool) -> str | None:
+    """SSE desk `kill_switch` with the new RiskStatus, as POST /risk/kill-switch sends it. Call after commit."""
+    status = await risk_status(conn, now, live=live)
+    return await publish(target, "desk", "kill_switch", status)

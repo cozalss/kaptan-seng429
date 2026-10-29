@@ -26,6 +26,7 @@ from kaptan.audit.writer import append
 from kaptan.brokers import config as broker_config
 from kaptan.brokers.costs import limit_down
 from kaptan.brokers.ledger import run_audit
+from kaptan.market.segment import market_of
 from kaptan.portfolio import exit_docs
 from kaptan.portfolio.exit_facts import PositionRow, gather_facts
 from kaptan.portfolio.exit_rules import ExitRule, evaluate
@@ -110,7 +111,8 @@ async def _raise_exit(
     held: int, last_close: float, escalate: bool,
 ) -> dict[str, Any] | None:  # fmt: skip
     costs = broker_config.current().trading.costs
-    limit = float(limit_down(Decimal(str(last_close)), costs.price_limit_pct))
+    pct = costs.limit_pct(await market_of(conn, pos["ticker"], now))
+    limit = float(limit_down(Decimal(str(last_close)), pct))
     async with conn.cursor() as cur:
         await cur.execute(RESTRICTED_SQL, (pos["ticker"],))
         restricted = await cur.fetchone() is not None

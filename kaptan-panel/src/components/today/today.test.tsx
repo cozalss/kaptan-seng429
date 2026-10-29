@@ -19,10 +19,12 @@ afterEach(() => {
 describe("Bugün", () => {
   it("says how many proposals wait and lists them as cards", async () => {
     renderWithDesk(<TodayScreen />);
-    expect(await screen.findByRole("heading", { level: 1, name: "Bugün 3 öneri var." })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Bugün 4 öneri var." })).toBeInTheDocument();
     const list = screen.getByRole("list", { name: "Bekleyen öneriler" });
     const cards = within(list).getAllByRole("article");
-    expect(cards).toHaveLength(3);
+    expect(cards).toHaveLength(4);
+    // The seeded sell (an X1 exit) is tagged Satış; the buys are tagged Alış.
+    expect(within(list).getAllByText("Satış")).toHaveLength(1);
     // Each row: amount, lots and price cap, the deadline, and where it stands in the two signatures.
     expect(cards[0]).toHaveTextContent(/\d[\d.]* TL\d+ lot · en fazla [\d.,]+ TLSon saat (bugün|yarın|\d+ \S+) 09:50/);
     expect(cards[0]).toHaveTextContent("İmzalar: kurallar imzaladı;İmza 1/2 · ikinci imza senin");
@@ -36,20 +38,20 @@ describe("Bugün", () => {
 
   it("shows nothing under Seni bekleyenler for a Denetçi", async () => {
     renderWithDesk(<TodayScreen />, new MockDb(null), "auditor");
-    await screen.findByRole("heading", { level: 1, name: "Bugün 3 öneri var." });
+    await screen.findByRole("heading", { level: 1, name: "Bugün 4 öneri var." });
     expect(screen.queryByRole("heading", { name: "Seni bekleyenler" })).toBeNull();
   });
 
   it("inks in a proposal that arrives live", async () => {
     const { db } = renderWithDesk(<TodayScreen />);
-    await screen.findByRole("heading", { level: 1, name: "Bugün 3 öneri var." });
+    await screen.findByRole("heading", { level: 1, name: "Bugün 4 öneri var." });
     const card = buildExplain(DEMO_E3_SPEC).approval;
     act(() => {
       db.bus.emit("desk", "approval.requested", card);
     });
     const arrived = await screen.findByRole("article", { name: "ÖRNEK ENERJİ" });
     expect(within(arrived).getByText("yeni")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Bugün 4 öneri var.");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Bugün 5 öneri var.");
   });
 
   it("says plainly when you have stopped everything", async () => {

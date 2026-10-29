@@ -14,14 +14,13 @@ from typing import Any, Final
 
 from psycopg import AsyncConnection
 
+from kaptan.market.segment import limit_pct_of
+from kaptan.market.ticks import price_limits
 from kaptan.prices.calendar import istanbul_date, prev_session
 from kaptan.prices.reads import close_on
 from kaptan.risk.active_limits import active_limits
 from kaptan.risk.desk import live_desk
 from kaptan.risk.gate import AT_SEND_RULES, CHECKS, GateContext, GateOrder, RiskResult, evaluate_at_send
-
-#: BIST daily price limit (06 §1): ±10 % around the previous close.
-DAILY_LIMIT: Final = Decimal("0.10")
 
 ISSUER_SQL: Final = "SELECT in_universe, price, adv20_try FROM core.issuers WHERE ticker = %s"
 RESTRICTIONS_SQL: Final = "SELECT kind FROM core.restricted_securities WHERE ticker = %s ORDER BY added_at, id"
@@ -51,8 +50,11 @@ async def _one(conn: AsyncConnection[Any], sql: str, params: tuple[Any, ...] = (
 
 
 async def _upper_limit(conn: AsyncConnection[Any], ticker: str, now: datetime) -> Decimal | None:
+    """R09's tavan: the previous close + the band of the stock's market (06 §2 [V]; unknown → ±10 %)."""
     prev = await close_on(conn, ticker, prev_session(istanbul_date(now)))
-    return None if prev is None else (Decimal(str(prev)) * (1 + DAILY_LIMIT)).quantize(Decimal("0.01"))
+    if prev is None:
+        return None
+    return price_limits(Decimal(str(prev)), await limit_pct_of(conn, ticker, now))[1]
 
 
 async def check_at_send(

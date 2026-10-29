@@ -340,7 +340,8 @@ function riskChecksOf(spec: RunSpec, proposalNotional: number): RiskCheck[] {
 function proposalOf(spec: RunSpec, card: EvidenceCard | null): TradeProposal | null {
   const p = spec.proposal;
   if (!p || !spec.event) return null;
-  const limit = round(p.refPrice * 1.02, 2);
+  // A sell (exit) limits 2% below the reference price; a buy 2% above it.
+  const limit = round(p.refPrice * (spec.side === "sell" ? 0.98 : 1.02), 2);
   return {
     proposal_id: spec.run_id.replace(/^run-/, "prop-"),
     run_id: spec.run_id,
@@ -350,7 +351,7 @@ function proposalOf(spec: RunSpec, card: EvidenceCard | null): TradeProposal | n
     disclosure_index: spec.disclosure_index,
     ticker: spec.ticker,
     venue: "BIST",
-    side: "buy",
+    side: spec.side ?? "buy",
     event_type: spec.event,
     rule_ids: spec.ruleTrace.filter((t) => t.passed).map((t) => t.rule),
     entry: p.entry,
@@ -385,7 +386,7 @@ function approvalOf(spec: RunSpec, proposal: TradeProposal, card: EvidenceCard |
     run_id: spec.run_id,
     ticker: spec.ticker,
     company_name: issuer(spec.ticker).name,
-    side: "buy",
+    side: spec.side ?? "buy",
     event_type: proposal.event_type,
     sub_type_tr: spec.sub_type_tr,
     headline_tr: spec.headline_tr,
@@ -455,7 +456,7 @@ function ordersOf(spec: RunSpec, proposal: TradeProposal): { orders: Order[]; fi
     run_id: spec.run_id,
     ticker: spec.ticker,
     company_name: issuer(spec.ticker).name,
-    side: "buy",
+    side: spec.side ?? "buy",
     order_type: "limit",
     tif: proposal.entry === "next_open_auction" ? "opg" : "day",
     qty,

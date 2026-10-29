@@ -128,7 +128,7 @@ def live_overrides(
     """What the live tools compute instead of the replay rules (limits, E1/E2/E4 features, FX)."""
     d, reader, event = ctx.disclosure, state.get("reader"), str(state.get("event_type"))
     mi = None if live.price is None else live.price[1]
-    lower, upper = limits_of(Decimal(str(base["last_price"])))
+    lower, upper = limits_of(Decimal(str(base["last_price"])), inputs.market)
     out: dict[str, Any] = {"lower_limit": lower, "upper_limit": upper}
     out |= live_features(
         inputs,

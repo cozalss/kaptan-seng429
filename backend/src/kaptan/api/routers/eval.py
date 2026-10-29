@@ -3,7 +3,8 @@
     GET /eval/summary                         -> EvalSummary          (all roles)
     GET /reports/forward/weekly?week=YYYY-Www -> ForwardWeeklyReport  (all roles; default: the last full week)
 
-Both are reads of the desk's own tables (kaptan.evalreports); a layer without data comes back empty.
+Both are reads of the desk's own tables (kaptan.evalreports; L2 from reports/ragas.json); a layer without
+data comes back empty.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from kaptan.api.deps import ClockDep, CurrentUser, SettingsDep
 from kaptan.db import Conn
 from kaptan.domain.schemas.forward import ForwardWeeklyReport
 from kaptan.domain.schemas.reports import EvalSummary
-from kaptan.evalreports.eval_summary import eval_summary
+from kaptan.evalreports import eval_summary as es
 from kaptan.evalreports.forward import forward_weekly, iso_week
 from kaptan.text.turkish import IST
 
@@ -28,7 +29,8 @@ router = APIRouter(tags=["eval"])
 @router.get("/eval/summary", response_model=EvalSummary)
 async def summary(user: CurrentUser, conn: Conn, clock: ClockDep, settings: SettingsDep) -> Any:
     now = clock.now()
-    return await eval_summary(conn, now=now, today=now.astimezone(IST).date(), is_sample=settings.demo_mode)
+    today = now.astimezone(IST).date()
+    return await es.eval_summary(conn, now=now, today=today, is_sample=settings.demo_mode, ragas_path=es.RAGAS_REPORT)
 
 
 @router.get("/reports/forward/weekly", response_model=ForwardWeeklyReport)

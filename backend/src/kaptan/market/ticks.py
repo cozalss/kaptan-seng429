@@ -10,14 +10,21 @@ The step depends on the price level, not on the base price (§5.1.9). This modul
     20.00 – 49.98 → 0.02     250.00 – 499.75 → 0.25     2 500.00 +          → 2.50
     50.00 – 99.95 → 0.05     500.00 – 999.50 → 0.50
 
-Daily limits: base price ±10 % (`session.daily_limit_pct`, 06 §13), put on the tick grid *inwards*
-(ceiling rounded down, floor rounded up), so a limit never lies outside ±10 % of the base.
-Replay keeps the M1 rule `last × 1.1` (merge), so the demo values do not change.
+Daily limits depend on the stock's market (06 §2 [V]: Prosedür §5.1.11, same source): Yıldız Pazar ±20 %,
+Ana Pazar ±15 %, Alt Pazar / Yakın İzleme Pazarı / PÖİP ±10 % of the base price, put on the tick grid
+*inwards* (ceiling rounded down, floor rounded up), so a limit never lies outside the band.
+`daily_limit_pct(market)` is the one place that maps a market to its band. An unknown market (no
+`core.market_changes` / issuer row, or GİP / Nitelikli whose band we have not verified) gets the
+narrowest band, ±10 %: a too-narrow band can only make R09 / the tavan check stricter (a missed fill,
+never an order the exchange would reject), while a too-wide one would let an order through at a price
+the exchange cannot trade. Replay keeps the M1 rule `last × 1.1` (merge), so the demo values do not change.
 """
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from decimal import ROUND_CEILING, ROUND_FLOOR, Decimal
+from types import MappingProxyType
 from typing import Final
 
 #: (lower bound of the range, step) in ascending order (06 U6 [V], Prosedür Tablo-7).
@@ -31,8 +38,18 @@ TICK_TABLE: Final[tuple[tuple[Decimal, Decimal], ...]] = (
     (Decimal("1000"), Decimal("1.00")),
     (Decimal("2500"), Decimal("2.50")),
 )
-#: ±10 % of the base price (06 §13 `daily_limit_pct`, 07 §6).
-DAILY_LIMIT_PCT: Final = Decimal("0.10")
+#: Daily price band per market code (core.market_changes / core.issuers.market), 06 §2 [V], Prosedür §5.1.11.
+DAILY_LIMIT_BY_MARKET: Final[Mapping[str, Decimal]] = MappingProxyType(
+    {
+        "yildiz": Decimal("0.20"),
+        "ana": Decimal("0.15"),
+        "alt": Decimal("0.10"),
+        "yip": Decimal("0.10"),
+        "poip": Decimal("0.10"),
+    }
+)
+#: Unknown (or unverified) market → the narrowest band, the conservative choice (see the module doc).
+DAILY_LIMIT_FALLBACK_PCT: Final = Decimal("0.10")
 #: Universe rule U6: tick / price ≤ 0.25 % (06 §2, §13 `max_tick_to_price`).
 MAX_TICK_TO_PRICE: Final = Decimal("0.0025")
 #: Smaller than any tick: "strictly below p" for the step-down search.
@@ -70,7 +87,18 @@ def step_down(price: Decimal) -> Decimal:
     return floor_to_tick(price - _EPS)
 
 
-def price_limits(base: Decimal, pct: Decimal = DAILY_LIMIT_PCT) -> tuple[Decimal, Decimal]:
+def daily_limit_pct(
+    market: str | None,
+    table: Mapping[str, Decimal] = DAILY_LIMIT_BY_MARKET,
+    fallback: Decimal = DAILY_LIMIT_FALLBACK_PCT,
+) -> Decimal:
+    """The daily price band of `market` (e.g. "yildiz" → 0.20); unknown / None → `fallback` (±10 %)."""
+    if market is None:
+        return fallback
+    return table.get(market.strip().lower(), fallback)
+
+
+def price_limits(base: Decimal, pct: Decimal = DAILY_LIMIT_FALLBACK_PCT) -> tuple[Decimal, Decimal]:
     """(taban, tavan) of a session whose base price (baz fiyat, the previous close) is `base`."""
     if base <= 0:
         raise ValueError("base price must be positive")
@@ -88,10 +116,12 @@ def limit_up_locked(high: Decimal | None, low: Decimal | None, close: Decimal, u
 
 
 __all__ = [
-    "DAILY_LIMIT_PCT",
+    "DAILY_LIMIT_BY_MARKET",
+    "DAILY_LIMIT_FALLBACK_PCT",
     "MAX_TICK_TO_PRICE",
     "TICK_TABLE",
     "ceil_to_tick",
+    "daily_limit_pct",
     "floor_to_tick",
     "limit_up_locked",
     "price_limits",
