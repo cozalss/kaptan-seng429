@@ -127,6 +127,15 @@ jobs:
       # FR-38 / NFR-10: any malicious fixture that reaches PROPOSE fails the build (report: reports/redteam.json).
       - name: "Red-team gate: no malicious case proposes"
         run: uv run pytest -m redteam --no-cov -p no:cacheprovider
+      # 08 §2 L2 (non-blocking): RAGAS-style judge over the seed set. Skips (exit 0, {"skipped": ...}) unless
+      # the repo variable KAPTAN_RAGAS=1 and a DEEPSEEK/GEMINI secret are set; cached, a few calls per run.
+      - name: "RAGAS judge (L2, skipped without KAPTAN_RAGAS=1 + a judge key)"
+        continue-on-error: true
+        env:
+          KAPTAN_RAGAS: ${{ vars.KAPTAN_RAGAS }}
+          DEEPSEEK_API_KEY: ${{ vars.KAPTAN_RAGAS == '1' && secrets.DEEPSEEK_API_KEY || '' }}
+          GEMINI_API_KEY: ${{ vars.KAPTAN_RAGAS == '1' && secrets.GEMINI_API_KEY || '' }}
+        run: uv run python -m kaptan.eval.ragas_eval --out reports/ragas.json
       - run: uv run pytest --cov-fail-under=90
       # NFR-14 per-module gates (line + branch: [tool.coverage.run] branch = true). WARN-ONLY this wave:
       # risk/, ingest/, brokers/ and domain/ are being changed by other M3 packages. To enforce, drop
