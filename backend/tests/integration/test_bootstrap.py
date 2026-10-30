@@ -171,4 +171,5 @@ def test_main_refuses_a_demo_database(monkeypatch: pytest.MonkeyPatch, capsys: p
     demo = Settings.model_construct(kaptan_env="dev", demo_mode=True)
     monkeypatch.setattr(bootstrap, "get_settings", lambda: demo)
     assert bootstrap.main([]) == 2
-    assert "seed_demo.py" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert "scripts/seed_demo.py" in err and "docker compose run --rm seed" in err and "`seed_demo`" in err

@@ -67,6 +67,10 @@ class LiveDesk:
     daily_entries: int
     sector_exposure_pct: Decimal
     group_exposure_pct: Decimal
+    #: 06 §7.2 P5: open + reserved notional over equity.
+    gross_exposure_pct: Decimal = Decimal(0)
+    #: 06 R12: lots of this ticker held (the sell side may not exceed it).
+    held_qty: int = 0
     #: 06 §11 step 4: a confirmed restart still in force (the monitor clears reset_at back inside −2.5 %).
     reset_active: bool = False
 
@@ -123,6 +127,13 @@ def exposure_pct(book: BookSnapshot, sector: str | None, group: str | None) -> t
     return in_sector / book.equity, in_group / book.equity
 
 
+def gross_exposure_pct(book: BookSnapshot) -> Decimal:
+    """P5: held + reserved notional over equity (an empty or negative book counts as full)."""
+    if book.equity <= 0:
+        return Decimal(1)
+    return sum((e.value for e in book.exposures()), Decimal(0)) / book.equity
+
+
 async def latest_price(
     conn: AsyncConnection[Any], ticker: str, now: datetime
 ) -> tuple[Decimal | None, datetime | None]:
@@ -176,4 +187,6 @@ async def live_desk(
         sector_exposure_pct=sector_pct,
         group_exposure_pct=group_pct,
         reset_active=reset["reset_at"] is not None,
+        gross_exposure_pct=gross_exposure_pct(book),
+        held_qty=sum(h.qty for h in book.holdings if h.ticker == ticker),
     )

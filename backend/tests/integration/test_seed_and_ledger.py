@@ -28,7 +28,7 @@ async def _count(conn: DictConn, table: str) -> int:
 async def test_seed_counts(seeded: SeedResult, pg: DictConn) -> None:
     assert seeded.counts["audit.audit_log"] == 4812
     expected = {
-        "auth.users": 5,
+        "auth.users": 6,  # the team + the inactive single-user account (sahip)
         "core.disclosures": 318 + 3 + 7,
         "trading.agent_runs": 23,
         "trading.approvals": 13,

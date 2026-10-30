@@ -99,14 +99,16 @@ async def _live_view(conn: Any, clock: Any) -> dict[str, Any]:
 
 @router.get("/admin/live", response_model=LiveView)
 async def live(user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
-    if user.role not in LIVE_READERS:
+    if user.role not in LIVE_READERS and not user.is_single_user:
         raise ApiError(403, "forbidden", READ_DENIED)
     return await _live_view(conn, clock)
 
 
 @router.post("/admin/live/arm", response_model=LiveView)
-async def live_arm_change(body: LiveArmInput, user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
-    if user.role not in ARM_ROLES[body.action]:
+async def live_arm_change(
+    body: LiveArmInput, user: CurrentUser, conn: Conn, clock: ClockDep, settings: SettingsDep
+) -> Any:
+    if user.role not in ARM_ROLES[body.action] and not user.is_single_user:
         raise ApiError(403, "forbidden", ARM_DENIED[body.action])
     await live_arm.change(
         conn,
@@ -117,6 +119,7 @@ async def live_arm_change(body: LiveArmInput, user: CurrentUser, conn: Conn, clo
         role=user.role,
         reason=body.reason.strip(),
         now=clock.now(),
+        single_user=settings.kaptan_single_user,
     )
     return await _live_view(conn, clock)
 
@@ -141,7 +144,7 @@ TICKER_PATH: Final = r"^[A-Z0-9]{3,8}$"
 
 
 def _only(user: Any, roles: frozenset[Role], text: str) -> None:
-    if user.role not in roles:
+    if user.role not in roles and not user.is_single_user:
         raise ApiError(403, "forbidden", text)
 
 
@@ -190,10 +193,18 @@ async def restricted_remove_confirm(
     user: CurrentUser,
     conn: Conn,
     clock: ClockDep,
+    settings: SettingsDep,
 ) -> Any:
     _only(user, frozenset({"risk_officer"}), RISK_ONLY)
     await restricted_svc.confirm_removal(
-        conn, entry_id, reason=body.reason.strip(), uid=user.uid, name=user.name, role=user.role, now=clock.now()
+        conn,
+        entry_id,
+        reason=body.reason.strip(),
+        uid=user.uid,
+        name=user.name,
+        role=user.role,
+        now=clock.now(),
+        single_user=settings.kaptan_single_user,
     )
     return await restricted_svc.restricted_view(conn)
 

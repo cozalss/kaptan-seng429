@@ -41,6 +41,7 @@ async def test_metrics_from_loopback_without_a_token(client: httpx.AsyncClient, 
     assert value(text, "kaptan_kap_waf_blocks_total", '{loop="poll"}') == 2
     assert value(text, "kaptan_approvals_pending") >= 1  # the demo day has open cards
     assert value(text, "kaptan_audit_chain_ok") == 1
+    assert 'kaptan_kap_ingest_lag_seconds{stat="p95"}' in text  # NFR-01
     assert value(text, "kaptan_metrics_scrape_errors") == 0
     for name in (
         "kaptan_kap_ingest_lag_seconds",

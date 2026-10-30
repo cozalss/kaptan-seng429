@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 from pathlib import Path
 
 import pytest
@@ -97,3 +99,27 @@ def test_ragas_is_skipped_without_the_flag() -> None:
 
     assert unavailable_reason({}) == "KAPTAN_RAGAS is not 1"
     assert unavailable_reason({"KAPTAN_RAGAS": "1"}) == "no judge key (DEEPSEEK_API_KEY / GEMINI_API_KEY)"
+
+
+def test_run_report_detail_and_mcnemar(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    from kaptan.eval.classify import PANEL_LABELS, main, run_report, subject_predictor
+
+    items = load_golden()
+
+    async def oracle(item: GoldItem) -> str:
+        return item.label
+
+    out = asyncio.run(run_report(items, {"oracle": oracle, "subject": subject_predictor()}))
+    best, subject = out["models"]["oracle"], out["models"]["subject"]
+    assert best["macro_f1"] == 1.0 and best["accuracy"] == 1.0
+    assert [r["cls"] for r in best["per_class"]] == list(PANEL_LABELS)
+    assert sum(map(sum, best["confusion"])) == len(items)
+    assert "mcnemar_vs_first" not in best and subject["mcnemar_vs_first"]["b"] >= 0
+    lo, hi = subject["macro_f1_ci95"]
+    assert lo <= subject["macro_f1"] <= hi
+    dest = tmp_path / "classify.json"
+    assert main(["--predictors", "subject", "--out", str(dest)]) == 0
+    assert json.loads(dest.read_text(encoding="utf-8"))["seed_only"] is True
+    assert '"subject"' in capsys.readouterr().out
+    with pytest.raises(ValueError, match="unknown predictor"):
+        main(["--predictors", "moon"])

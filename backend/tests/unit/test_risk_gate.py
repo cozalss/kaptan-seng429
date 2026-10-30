@@ -58,7 +58,7 @@ def test_demo_e3_gate_matches_the_fixture_risk_checks() -> None:
         ({"halted_today": True}, {}, "R02", "reject"),
         ({"in_universe": False}, {}, "R03", "reject"),
         ({"restrictions": ("vbts_brut_takas",)}, {}, "R04", "reject"),
-        ({"restrictions_age_h": 30.0}, {}, "R04", "hold"),
+        ({"restrictions_age_h": 30.0}, {}, "R04", "reject"),  # 06 R04 case 5
         ({"team_blocklisted": True}, {}, "R13", "reject"),
         ({"quota_ok": False}, {}, "R11", "hold"),
         ({"kap_delay_s": 400.0}, {}, "R11", "hold"),
@@ -118,11 +118,11 @@ def test_r07_with_no_stop_uses_the_other_caps() -> None:
     assert evaluate(replace(ORDER, stop_pct=Decimal(0)), CTX).verdict == "pass"
 
 
-def test_r14_skips_e4_and_missing_amount() -> None:
+def test_r14_skips_e4_and_rejects_a_missing_amount() -> None:
     e4 = evaluate(replace(ORDER, event_type="E4", regex_amounts=()), CTX)
     assert e4.verdict == "pass"
     no_amount = evaluate(replace(ORDER, reader_amount=None, regex_amounts=()), CTX)
-    assert no_amount.verdict == "pass"
+    assert no_amount.verdict == "reject"  # 06 R14: E1–E3 need a verified amount
 
 
 def test_r15_levels() -> None:

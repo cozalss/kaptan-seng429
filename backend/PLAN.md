@@ -136,3 +136,36 @@ DoD: panel e2e suite green against the backend; no 501 left.
   stop on reset/shutdown — keep them in one place (C) to avoid races.
 - `explain` JSONB for non-fixture runs must be produced by E in exactly the zod shape (validate with
   `kaptan.domain.schemas.Explain` before storing).
+
+## Finish round (2026-10-30): spec gap audit vs 03/05/06/08/09/10/11
+
+Built (tests in brackets):
+- Risk gate to 06 §10 tables: SELL exits never stopped by buy-only rules (R04 stale/tedbir, R07/R08/R10 skip
+  sells; R09 sell = limit ≥ taban, at-send uses the session whose close is the base); R04 stale → REJECT;
+  R07 cost-aware cash cap + TOO_SMALL (max 2 000 TL, 1 % equity); R08 P5 gross ≤ 100 % / 50 % crisis and
+  P6 cash buffer 5 %; R12 held-qty + NO_LEVERAGE at send; R14 missing amount rejects E1–E3; R15
+  RESTRICTED_SELL; R11 also rejects on an agent's own injection flag [test_risk_gate_spec_cases,
+  test_risk_gate_properties (2 000 seeded cases), test_exit_engine at-send].
+- Audit: `auth.login_failed` (hashed client, no secret), `approval.expired` from the feed settle,
+  `ticket.issued` names the company; `python -m kaptan.audit.verify_cli` / scripts/verify_audit_chain.py
+  checks every anchor line (exit 0/1/2).
+- Single-user mode KAPTAN_SINGLE_USER (account `sahip`, every permission, `auth.single_user_waiver` audit for
+  each waived second signature, migration 0021 relaxes the limit-version CHECK only under that waiver),
+  `/health.single_user`, `GET /me/overview`.
+- Eval: `/eval/summary` red-team block from reports/redteam.json, ablation rows from reports/backtest.json,
+  L1 from a human-labelled reports/classify.json; backtest total_return, Sortino, `--cost-scenarios`
+  (gross / 5 / 20 / 30 bp); classify per-class P/R/F1, confusion, bootstrap CI, McNemar, CLI;
+  `kaptan.evidence.inference` (BMP-KP, Corrado, Holm, BH, stationary block bootstrap Sharpe CI, deflated
+  Sharpe, trial log).
+- Demo: loss simulation = one market minute per step (halt 13:43, kill 13:46); feed skips "Düzeltme" (CORR);
+  NFR-01 ingest-lag p95 gauge; import boundary test (LLM side cannot import execution).
+
+Still open (with reason):
+- External: real broker adapter (no broker API account), deploy (hosting account), 300-item human golden
+  set + 50 RAG questions (human labelling), LangSmith (account), EVDS macro series (API key), RSS feeds.
+- Needs a panel/contract change first: a HOLD reason code for unknown leakage/ret10d inputs (RuleReasonCode
+  is mirrored from zod); pre-open ticket TTL 09:55 (06 R16) vs the mock's 10:10 (fixture parity);
+  kill switch voiding open tickets/cards in the DB (the mock only shows them cancelled).
+- Not built this round: N1c–N1f avoid list + X3 for them, E2_strong/CPI, E4 NPP/tone/audit-opinion rows,
+  degraded flag from the provider chain, deterministic quote check, class suspension, PitStore + canary,
+  ticker/company masking (A4), per-minute LLM token bucket, TOTP step-up, per-role DB users.

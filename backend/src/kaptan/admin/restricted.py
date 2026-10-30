@@ -18,6 +18,7 @@ from psycopg.types.json import Jsonb
 
 from kaptan.api.errors import ApiError
 from kaptan.audit.writer import AuditDraft, append, user_actor
+from kaptan.auth.four_eyes import second_signature
 from kaptan.db import DictConn
 from kaptan.domain.schemas._base import iso_ms
 from kaptan.reference._sql import execute, fetch_all, fetch_one
@@ -133,7 +134,15 @@ async def request_removal(
 
 
 async def confirm_removal(
-    conn: DictConn, entry_id: str, *, reason: str, uid: str, name: str, role: str, now: datetime
+    conn: DictConn,
+    entry_id: str,
+    *,
+    reason: str,
+    uid: str,
+    name: str,
+    role: str,
+    now: datetime,
+    single_user: bool | None = None,
 ) -> None:
     async with conn.transaction():
         row = await _removable(conn, entry_id)
@@ -141,8 +150,17 @@ async def confirm_removal(
         if not pending:
             raise ApiError(409, "not_started", "Önce Yönetici çıkarmayı başlatmalı (1/2).")
         first = pending["requested_by"]
-        if first["uid"] == uid:
-            raise ApiError(403, "same_person", "İkinci imzayı çıkarmayı başlatan kişi atamaz.")
+        await second_signature(
+            conn,
+            first_uid=str(first["uid"]),
+            uid=uid,
+            flow="restricted_removal",
+            refusal="İkinci imzayı çıkarmayı başlatan kişi atamaz.",
+            entity_type=ENTITY,
+            entity_id=entry_id,
+            now=now,
+            single_user=single_user,
+        )
         await execute(conn, DELETE_SQL, (entry_id,))
         await append(
             conn,

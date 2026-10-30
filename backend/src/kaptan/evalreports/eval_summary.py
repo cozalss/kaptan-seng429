@@ -6,8 +6,9 @@ L2 comes from the RAGAS judge's report file (`python -m kaptan.eval.ragas_eval -
 faithfulness and context_precision, plus one trend point dated by the file; a missing, unreadable or
 `{"skipped": ...}` file means "not run" (zeros, no trend). The panel shape has no answer_relevancy or sample
 count (`questions` is the fixed 50 of the target set), so those stay in the file.
-L1 (gold test set), L3 (holdout, run once), ablations and the red-team set are offline evaluations with no
-table yet: they stay empty (zeros, no rows) until those runs write their results.
+The red-team block, the ablation rows and L1 come from their report files (kaptan.evalreports.offline_layers:
+reports/redteam.json, reports/backtest.json, reports/classify.json for a human-labelled set only); L3 (the
+holdout, run once) stays empty until that run exists. A missing report keeps the empty layer.
 `is_sample` follows DEMO_MODE (the demo day's series is the seed's, labelled as such).
 """
 
@@ -22,6 +23,7 @@ from typing import Any, Final
 
 from kaptan.db import DictConn
 from kaptan.domain.schemas.reports import SAMPLE_LABEL
+from kaptan.evalreports import offline_layers as ol
 from kaptan.portfolio.pnl import list_pnl
 from kaptan.reference._sql import fetch_all, fetch_one
 from kaptan.text.turkish import IST
@@ -33,6 +35,8 @@ V1_0_START: Final = date(2026, 11, 9)
 V1_1_START: Final = date(2026, 11, 23)
 #: Where `python -m kaptan.eval.ragas_eval --out reports/ragas.json` writes (relative to the backend dir).
 RAGAS_REPORT: Final = Path("reports/ragas.json")
+#: Where the red-team, backtest and classify reports live (kaptan.evalreports.offline_layers).
+REPORTS_DIR: Final = Path("reports")
 
 SHADOW_SQL: Final = """
 SELECT coalesce(proposal_id, signal_id) AS proposal_id, ticker, reason_source || ':' || reason_code AS rejected_by,
@@ -121,7 +125,13 @@ def ragas_layer(path: Path = RAGAS_REPORT) -> dict[str, Any] | None:
 
 
 async def eval_summary(
-    conn: DictConn, *, now: datetime, today: date, is_sample: bool, ragas_path: Path = RAGAS_REPORT
+    conn: DictConn,
+    *,
+    now: datetime,
+    today: date,
+    is_sample: bool,
+    ragas_path: Path = RAGAS_REPORT,
+    reports_dir: Path = REPORTS_DIR,
 ) -> dict[str, Any]:
     series = await list_pnl(conn, None, None)
     shadow = await fetch_all(conn, SHADOW_SQL)
@@ -135,6 +145,14 @@ async def eval_summary(
     l2 = ragas_layer(ragas_path)
     if l2 is not None:
         layers = {**layers, "l2": {**layers["l2"], **l2}}
+    redteam = ol.redteam_layer(reports_dir / ol.REDTEAM_REPORT.name)
+    l1 = ol.l1_layer(layers["l1"], reports_dir / ol.CLASSIFY_REPORT.name)
+    layers = {
+        **layers,
+        "redteam": redteam or layers["redteam"],
+        "l1": l1 or layers["l1"],
+        "ablations": ol.ablation_rows(reports_dir / ol.BACKTEST_REPORT.name),
+    }
     return {
         "is_sample": is_sample,
         "label": SAMPLE_LABEL if is_sample else REAL_LABEL,

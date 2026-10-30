@@ -69,7 +69,7 @@ async def test_unknown_restrictions_block_then_a_hard_restriction_then_it_sends(
     stale = await _approve(client)
     assert stale.status_code == 409, stale.text
     assert stale.json() == {
-        "detail": "Gönderim anında R04 geçmedi: Tedbir verisi 24 saatten eski: HOLD.",
+        "detail": "Gönderim anında R04 geçmedi: Tedbir verisi 24 saatten eski: tedbir bilinmiyor, alım yok.",
         "code": "conflict",
     }
     audit = await _last_audit(live_card)

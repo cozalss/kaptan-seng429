@@ -48,6 +48,7 @@ LOOPBACK: Final = frozenset({"127.0.0.1", "::1", "localhost"})
 
 KAP_LAG_SQL: Final = """
 SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY extract(epoch FROM first_seen_at - published_at)) AS p50,
+       percentile_cont(0.95) WITHIN GROUP (ORDER BY extract(epoch FROM first_seen_at - published_at)) AS p95,
        max(extract(epoch FROM first_seen_at - published_at)) AS max,
        extract(epoch FROM now() - max(first_seen_at)) AS last_age
   FROM core.disclosures
@@ -127,8 +128,8 @@ async def _db_metrics(s: Scrape, pool: Any) -> None:
     async with pool.connection() as conn:
         lag = await _one(conn, KAP_LAG_SQL)
         g = s.gauge("kaptan_kap_ingest_lag_seconds", "KAP publish → first seen, live rows of 24 h", ("stat",))
-        g.labels("p50").set(_num(lag.get("p50")))
-        g.labels("max").set(_num(lag.get("max")))
+        for stat in ("p50", "p95", "max"):  # NFR-01: p95 ≤ 45 s
+            g.labels(stat).set(_num(lag.get(stat)))
         s.gauge("kaptan_kap_last_seen_age_seconds", "Seconds since the newest live KAP row (-1 = none)").set(
             _num(lag.get("last_age"), -1.0)
         )

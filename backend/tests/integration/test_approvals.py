@@ -134,8 +134,13 @@ async def test_approving_an_auction_card_places_an_opg_order_and_a_ticket(
     assert [o["broker"] for o in explain["orders"]] == ["simbist", "order_ticket"]
     tickets = (await call(api, "analyst", "GET", "/tickets")).json()
     assert tickets[0]["ticket_no"] == "T-2027-0111-010"
-    actions = await sql(migrated, "SELECT action FROM audit.audit_log ORDER BY chain_pos DESC LIMIT 2")
+    actions = await sql(migrated, "SELECT action, payload FROM audit.audit_log ORDER BY chain_pos DESC LIMIT 2")
     assert [r["action"] for r in actions] == ["ticket.issued", "approval.decided"]
+    card = res.json()
+    assert (actions[0]["payload"]["ticker"], actions[0]["payload"]["company"]) == ("KRGCL", card["company_name"])
+    found = (await call(api, "auditor", "GET", "/audit?limit=60&q=emir fişi")).json()["items"]
+    issued = next(e for e in found if e["action"] == "ticket.issued")
+    assert issued["payload"]["company"] == card["company_name"]  # the ledger line names the company
 
 
 async def test_demo_e3_end_to_end_with_fill_position_and_sse(

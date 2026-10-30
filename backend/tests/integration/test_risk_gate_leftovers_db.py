@@ -53,9 +53,10 @@ async def test_cooldown_reaches_the_agent_desk_and_the_gate(pg: DictConn) -> Non
     assert await cooldown_active(pg, "ORNEK", NOW)
     desk = await desk_for(pg, "ORNEK", now=NOW)
     assert desk.in_cooldown
-    order = GateOrder("ORNEK", "E1", 100, Decimal("47.4"), Decimal("0.08"),
+    order = GateOrder("ORNEK", "E1", 1000, Decimal("47.4"), Decimal("0.08"),
                       evidence_ids=("a",) * 5, retrieved_ids=("a",), expected_edge_bps=Decimal(70),
-                      est_cost_bps=Decimal(30))  # fmt: skip
+                      est_cost_bps=Decimal(30), reader_amount=Decimal(10**7),
+                      regex_amounts=(Decimal(10**7),))  # fmt: skip
     ctx = GateContext(Decimal(1_000_000), Decimal("47.4"), Decimal(20_000_000), Decimal(1_000_000), in_cooldown=True)
     verdict = evaluate(order, ctx)
     assert (verdict.verdict, verdict.results[-1].detail_tr) == ("reject", COOLDOWN_TR)

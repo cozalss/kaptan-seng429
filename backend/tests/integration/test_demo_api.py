@@ -193,9 +193,13 @@ async def test_loss_simulation_steps_halt_then_kill(
         return
     assert risk["halted_today"] is True
     assert risk["daily_pnl_pct"] == META["loss_daily"][-1]
-    actions = [e["action"] for e in (await _get(http, "/audit?scope=all&limit=4"))["items"]]
+    items = (await _get(http, "/audit?scope=all&limit=4"))["items"]
+    actions = [e["action"] for e in items]
     assert "demo.injected" in actions
     assert "risk.halted" in actions
+    at = {e["action"]: e["occurred_at"] for e in items}
+    # 11 §2: one simulated market minute per step → the halt (step 3) and the kill (step 6) differ in minutes
+    assert at["risk.halted"][:16] < at["kill_switch.on"][:16] and at["demo.injected"][:16] < at["risk.halted"][:16]
 
 
 # ── ticker ─────────────────────────────────────────────────────────────────

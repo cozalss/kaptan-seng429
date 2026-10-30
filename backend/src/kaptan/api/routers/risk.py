@@ -87,5 +87,14 @@ async def reset_confirm(
 ) -> Any:
     settings = getattr(request.app.state, "settings", None)
     personal = settings is not None and settings.kaptan_mode == "personal"
-    await ks.confirm_reset(conn, uid=actor.uid, role=actor.role, reason=body.reason, now=clock.now(), personal=personal)
+    single = settings is not None and settings.kaptan_single_user
+    await ks.confirm_reset(
+        conn,
+        uid=actor.uid,
+        role=actor.role,
+        reason=body.reason,
+        now=clock.now(),
+        personal=personal,
+        single_user=single,
+    )
     return await _status_after_write(request, conn, clock)

@@ -20,7 +20,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Path, Request
 
-from kaptan.api.deps import Actor, ClockDep, CurrentUser, require
+from kaptan.api.deps import Actor, ClockDep, CurrentUser, SettingsDep, require
 from kaptan.db import Conn
 from kaptan.domain.schemas import LimitDecisionInput, LimitProposalInput, LimitsView
 from kaptan.events.publish import publish
@@ -62,6 +62,16 @@ async def decide(
     conn: Conn,
     clock: ClockDep,
     request: Request,
+    settings: SettingsDep,
 ) -> Any:
-    await svc.decide(conn, version, body, uid=actor.uid, name=actor.name, role=actor.role, now=clock.now())
+    await svc.decide(
+        conn,
+        version,
+        body,
+        uid=actor.uid,
+        name=actor.name,
+        role=actor.role,
+        now=clock.now(),
+        single_user=settings.kaptan_single_user,
+    )
     return await _view_after_write(request, conn)

@@ -2,15 +2,25 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+
 import pytest
 import redis.asyncio as aioredis
 
 from kaptan.auth.ratelimit import KEY_PREFIX
 from kaptan.settings import Settings
-from tests.conftest import DEMO_PASSPHRASE, bearer
+from tests.conftest import DEMO_PASSPHRASE, bearer, reseed_test_db
 from tests.integration.ops_support import app_client, unique_ip
 
 pytestmark = pytest.mark.integration
+
+
+@pytest.fixture(autouse=True)
+async def _reseed_after(migrated: Settings) -> AsyncIterator[None]:
+    """Failed logins are audited (09 §7.1): put the demo ledger back afterwards."""
+    yield
+    await reseed_test_db(migrated)
+
 
 LOGIN = "/api/v1/auth/login"
 

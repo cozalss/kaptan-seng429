@@ -106,3 +106,32 @@ def test_cli(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     doc = json.loads(out.read_text(encoding="utf-8"))
     assert set(doc) == {"kaptan", "bist100"}
     assert "cagr" in capsys.readouterr().out
+
+
+def test_total_return_and_sortino_are_reported() -> None:
+    m = _metrics("no_approval")
+    assert m["total_return"] == pytest.approx(-0.01)
+    assert m["sortino"] is not None and m["sortino"] < 0
+    flat = _metrics("rules_only")
+    assert flat["total_return"] == pytest.approx(0.01)
+    assert flat["sortino"] is None  # no down day: the downside deviation is zero
+
+
+def test_cost_scenarios_gross_base_and_stress() -> None:
+    from kaptan.eval.backtest import COST_SCENARIOS, run_scenarios
+
+    assert COST_SCENARIOS == {"gross": 0.0, "base_005": 5.0, "stress_020": 20.0, "stress_030": 30.0}
+    out = run_scenarios(Dataset.from_doc(_doc()), ["kaptan"])
+    returns = [out[s]["kaptan"]["total_return"] for s in COST_SCENARIOS]
+    assert returns == sorted(returns, reverse=True)  # more cost, less return
+    assert returns[0] == pytest.approx(0.01)
+
+
+def test_cli_cost_scenarios(tmp_path: Path) -> None:
+    data = tmp_path / "h.json"
+    data.write_text(json.dumps(_doc()), encoding="utf-8")
+    out = tmp_path / "r.json"
+    main(["--data", str(data), "--from", "2025-01-01", "--to", "2025-01-16", "--arms", "kaptan",
+          "--cost-scenarios", "--out", str(out)])  # fmt: skip
+    doc = json.loads(out.read_text(encoding="utf-8"))
+    assert set(doc) == {"gross", "base_005", "stress_020", "stress_030"}

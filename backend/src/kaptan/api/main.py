@@ -134,6 +134,7 @@ def _health_router() -> APIRouter:
             "redis": "ok" if redis_ok else "down",
             "demo_mode": s.demo_mode,
             "llm_mode": s.llm_mode,
+            "single_user": s.kaptan_single_user,
             "now": state.clock.now().isoformat(),
         }
 

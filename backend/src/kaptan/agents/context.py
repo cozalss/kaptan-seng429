@@ -79,6 +79,7 @@ class DeskState:
     daily_entries: int = 0
     sector_exposure_pct: Decimal = Decimal(0)
     group_exposure_pct: Decimal = Decimal(0)
+    gross_exposure_pct: Decimal = Decimal(0)
 
 
 @dataclass(frozen=True, slots=True)

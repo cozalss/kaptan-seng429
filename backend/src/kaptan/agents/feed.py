@@ -47,7 +47,7 @@ TERMINAL: Final = frozenset({"done", "waiting_approval", "skipped", "capped", "f
 HOUR: Final = timedelta(hours=1)
 
 DISCLOSURE_SQL: Final = """
-SELECT d.origin, d.ingest_source, d.subject_route, d.primary_ticker,
+SELECT d.origin, d.ingest_source, d.subject_route, d.primary_ticker, d.reason,
        EXISTS (SELECT 1 FROM core.disclosure_texts t WHERE t.disclosure_index = d.disclosure_index
                 AND t.lang = 'tr' AND length(t.body) > 0) AS has_text
   FROM core.disclosures d WHERE d.disclosure_index = %s
@@ -124,6 +124,8 @@ def scope_reason(row: dict[str, Any]) -> str | None:
         return "not_kap"
     if row["ingest_source"] == "backfill":
         return "backfill"
+    if row.get("reason") == "CORR":  # 06 §3: a "Düzeltme" is not a new event (S0, no LLM run)
+        return "correction"
     if row["subject_route"] not in AGENT_ROUTES:
         return f"route:{row['subject_route']}"
     if not row["primary_ticker"]:

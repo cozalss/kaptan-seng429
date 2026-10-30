@@ -12,6 +12,7 @@ panel uses `user.role` from the answer. An unknown role value is 400; no role = 
 
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
@@ -20,12 +21,13 @@ from pydantic import Field
 
 from kaptan.api.deps import CurrentUser, SettingsDep
 from kaptan.api.errors import ApiError, unauthenticated
+from kaptan.audit.writer import AuditDraft, append
 from kaptan.auth import sessions
 from kaptan.auth.passphrase import verify_passphrase
 from kaptan.auth.ratelimit import Limiter
 from kaptan.auth.tokens import create_access_token
 from kaptan.db import Conn
-from kaptan.domain.roles import DEFAULT_ROLE, Role, is_role, member_for_role
+from kaptan.domain.roles import DEFAULT_ROLE, Role, acting_member, is_role
 from kaptan.domain.schemas import KModel, Me, SessionOut, TokenOut
 from kaptan.ops.http import app_limiter, request_ip
 from kaptan.settings import Settings
@@ -85,7 +87,7 @@ def _clear_refresh_cookie(response: Response, settings: Settings) -> None:
 
 
 def _session_out(settings: Settings, *, role: Role, family: str) -> dict[str, Any]:
-    member = member_for_role(role)
+    member = acting_member(role, settings.kaptan_single_user)
     token = create_access_token(settings, uid=member.uid, name=member.name, role=role, family=family)
     return {"access_token": token, "user": {"id": member.uid, "display_name": member.name, "role": role}}
 
@@ -100,8 +102,9 @@ async def login(
         raise ApiError(429, "rate_limited", "Çok fazla deneme. Bir dakika sonra yeniden deneyin.")
     role = _role_or_400(body.role, DEFAULT_ROLE)
     if not verify_passphrase(settings, body.passphrase):
+        await _audit_login_failed(request, conn, role, client)
         raise unauthenticated(LOGIN_FAILED)
-    member = member_for_role(role)
+    member = acting_member(role, settings.kaptan_single_user)
     async with conn.transaction():
         session = await sessions.start_family(
             conn, uid=member.uid, role=role, now=_wall_now(), ttl_s=settings.refresh_token_ttl_s
@@ -110,10 +113,29 @@ async def login(
     return _session_out(settings, role=role, family=session.family)
 
 
+async def _audit_login_failed(request: Request, conn: Conn, role: Role, client: str | None) -> None:
+    """09 §7.1: a failed login is an audit event; no secret and no raw IP (a short hash of the client)."""
+    client_hash = hashlib.sha256((client or "?").encode()).hexdigest()[:16]
+    async with conn.transaction():
+        await append(
+            conn,
+            [
+                AuditDraft(
+                    actor="system:auth",
+                    action="auth.login_failed",
+                    entity_type="session",
+                    entity_id="login",
+                    payload={"role": role, "client": client_hash},
+                    occurred_at=request.app.state.clock.now(),
+                )
+            ],
+        )
+
+
 @router.post("/auth/role", response_model=SessionOut)
 async def set_role(body: Annotated[RoleBody, Body()], actor: CurrentUser, settings: SettingsDep, conn: Conn) -> Any:
     role = _role_or_400(body.role)
-    member = member_for_role(role)
+    member = acting_member(role, settings.kaptan_single_user)
     async with conn.transaction():
         await sessions.set_family_role(conn, family=actor.family, uid=member.uid, role=role)
     return _session_out(settings, role=role, family=actor.family)
@@ -144,7 +166,7 @@ async def refresh(request: Request, response: Response, settings: SettingsDep, c
         _clear_refresh_cookie(response, settings)
         raise unauthenticated() from exc
     _set_refresh_cookie(response, settings, session)
-    member = member_for_role(session.role)
+    member = acting_member(session.role, settings.kaptan_single_user)
     access = create_access_token(settings, uid=member.uid, name=member.name, role=session.role, family=session.family)
     return {"access_token": access}
 

@@ -196,6 +196,7 @@ def live_gate_fields(p: dict[str, Any], desk: DeskState) -> dict[str, Any]:
         "reset_active": desk.reset_active,
         "sector_exposure_pct": desk.sector_exposure_pct,
         "group_exposure_pct": desk.group_exposure_pct,
+        "gross_exposure_pct": desk.gross_exposure_pct,
         "schema_ok": schema_ok,
     }
 
@@ -218,6 +219,7 @@ def gate_inputs(state: KaptanState, ctx: RunContext, qty: int | None = None) -> 
         escalate_required=bool(p["escalate_required"]),
         degraded=bool(p["degraded"]),
         regime_applied=_dec((p.get("multipliers") or {}).get("regime", 1)) < 1,  # 06 R10: m_regime already in qty
+        cost_side=_dec(p["est_cost_bps"]) / 20_000,  # round-trip bps → one side as a fraction (R07 cash cap)
     )
     compliance = (state.get("compliance") or {}).get("decision", "pass")
     gctx = GateContext(
@@ -226,6 +228,7 @@ def gate_inputs(state: KaptanState, ctx: RunContext, qty: int | None = None) -> 
         adv20_try=desk.adv20_try,
         cash_free_try=desk.equity_try if desk.cash_free_try is None else desk.cash_free_try,
         upper_limit=_dec(m["upper_limit"]) if m.get("upper_limit") else None,
+        lower_limit=_dec(m["lower_limit"]) if m.get("lower_limit") else None,
         kill_switch_on=desk.kill_switch_on,
         drawdown_pct=desk.drawdown_pct,
         daily_pnl_pct=desk.daily_pnl_pct,
@@ -234,7 +237,8 @@ def gate_inputs(state: KaptanState, ctx: RunContext, qty: int | None = None) -> 
         restrictions=tuple(r.kind for r in desk.restrictions),
         team_blocklisted=any(r.kind == "team_insider" for r in desk.restrictions),
         quota_ok=desk.quota_ok,
-        injection_flag=bool((state.get("guard") or {}).get("quarantined")),
+        # 06 R11: TR rules / Prompt Guard (the guard's quarantine) ∨ an agent's own injection flag → REJECT
+        injection_flag=bool((state.get("guard") or {}).get("quarantined")) or bool(m.get("any_injection_flag")),
         n_open_positions=desk.n_open_positions,
         holds_ticker=desk.holds_ticker,
         in_cooldown=desk.in_cooldown,

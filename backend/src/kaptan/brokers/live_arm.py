@@ -19,6 +19,7 @@ from psycopg.types.json import Jsonb
 
 from kaptan.api.errors import ApiError
 from kaptan.audit.writer import AuditDraft, append
+from kaptan.auth.four_eyes import second_signature
 from kaptan.brokers.config import ExecConfig
 from kaptan.domain.schemas._base import iso_ms
 from kaptan.prices.calendar import IST
@@ -164,6 +165,7 @@ async def change(
     role: str,
     reason: str,
     now: datetime,
+    single_user: bool | None = None,
 ) -> None:
     """start (admin, 1/2) · confirm (risk officer, 2/2, another person) · disarm (either). One transaction + audit."""
     async with conn.transaction():
@@ -186,8 +188,17 @@ async def change(
         else:
             if state.started is None:
                 raise ApiError(409, "not_started", "Önce Yönetici silahlandırmayı başlatmalı (1/2).")
-            if state.started.get("uid") == uid:
-                raise ApiError(403, "same_person", SAME_PERSON)
+            await second_signature(
+                conn,
+                first_uid=str(state.started.get("uid")),
+                uid=uid,
+                flow="live_arm",
+                refusal=SAME_PERSON,
+                entity_type=ENTITY[0],
+                entity_id=ENTITY[1],
+                now=now,
+                single_user=single_user,
+            )
             if now >= arm_expiry(now):
                 raise ApiError(409, "conflict", "Gün sonu geçti (18:30): yarın yeniden başlatın.")
             expires = arm_expiry(now)

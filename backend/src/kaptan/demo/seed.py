@@ -17,6 +17,8 @@ from psycopg.types.json import Jsonb
 
 from kaptan.audit.writer import INSERT_SQL as AUDIT_INSERT_SQL
 from kaptan.demo.fixtures import DemoFixtures, Row, ts
+from kaptan.domain.roles import SINGLE_USER
+from kaptan.settings import get_settings
 
 #: Every table the seed owns, emptied before loading (children first is not needed: TRUNCATE … CASCADE).
 SEEDED_TABLES = (
@@ -245,10 +247,33 @@ def audit_rows(fx: DemoFixtures) -> list[Row]:
     ]
 
 
+SINGLE_USER_SQL = """
+INSERT INTO auth.users (uid, display_name, role, duty_tr, ord, is_active) VALUES (%s, %s, %s, %s, 99, %s)
+ON CONFLICT (uid) DO UPDATE SET display_name = EXCLUDED.display_name, role = EXCLUDED.role,
+  duty_tr = EXCLUDED.duty_tr, ord = EXCLUDED.ord, is_active = EXCLUDED.is_active
+"""
+
+
+async def seed_single_user(conn: AsyncConnection[Any], single: bool) -> None:
+    """The KAPTAN_SINGLE_USER account; in that mode it is the only active user."""
+    m = SINGLE_USER
+    await conn.execute(SINGLE_USER_SQL, (m.uid, m.name, m.role, m.duty_tr, single))
+    if single:
+        await conn.execute("UPDATE auth.users SET is_active = false WHERE uid <> %s", (m.uid,))
+
+
 async def reseed(
-    conn: AsyncConnection[Any], fx: DemoFixtures | None = None, *, started_at: datetime | None = None
+    conn: AsyncConnection[Any],
+    fx: DemoFixtures | None = None,
+    *,
+    started_at: datetime | None = None,
+    single_user: bool | None = None,
 ) -> SeedResult:
-    """Replace all demo data with the fixture day. `conn` must be the owner connection (not autocommit)."""
+    """Replace all demo data with the fixture day. `conn` must be the owner connection (not autocommit).
+
+    `single_user` (default KAPTAN_SINGLE_USER): the `sahip` account is active and the team rows are kept
+    (the fixture history signs with them) but inactive; off, `sahip` exists inactive."""
+    single = get_settings().kaptan_single_user if single_user is None else single_user
     fx = fx or DemoFixtures()
     started = started_at or datetime.now(UTC)
     counts: dict[str, int] = {}
@@ -259,6 +284,7 @@ async def reseed(
         await conn.execute(f"TRUNCATE {', '.join(SEEDED_TABLES)} RESTART IDENTITY CASCADE")
         await conn.execute("ALTER SEQUENCE trading.proposal_note_seq RESTART WITH 1")
         await _load_reference(conn, fx, counts)
+        await seed_single_user(conn, single)
         await _load_runs(conn, fx, counts)
         await _load_execution(conn, fx, counts)
         await _load_governance(conn, fx, counts)

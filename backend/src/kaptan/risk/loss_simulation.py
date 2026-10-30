@@ -4,6 +4,10 @@ Package C audits `demo.injected` and then calls `run_loss_step(conn, i)` for i =
 LOSS_STEP_MS (1.4 s) from a background task. Each step moves the live strategy's daily P&L along
 LOSS_DAILY; the drawdown comes from the same equity curve as the P&L chart (live_equity), so the
 daily −1 % halt fires at step 2 and the −5 % drawdown kill switch at the last step.
+
+Each step driven by the app's demo clock is one simulated market minute (11 §2 step 4: the drop comes
+step by step): the clock, and ops.demo_state.started_at with it, moves one minute forward before the step,
+so the ledger shows the −1 % halt at 13:43 and the −5 % kill at 13:46, not both in the same minute.
 """
 
 from __future__ import annotations
@@ -24,6 +28,9 @@ from kaptan.risk.status import risk_status
 
 LOSS_DAILY: Final[tuple[float, ...]] = (-0.004, -0.0075, -0.0112, -0.021, -0.03, -0.0392)
 LOSS_STEP_MS: Final = 1_400
+#: One loss step = one simulated market minute on the demo clock.
+MARKET_STEP: Final = timedelta(minutes=1)
+SHIFT_START_SQL: Final = "UPDATE ops.demo_state SET started_at = started_at - %s WHERE id = 1"
 #: Canonical v1 thresholds (06 §11: R02 daily halt, R01 drawdown kill).
 DAILY_HALT_PCT: Final = -0.01
 KILL_DRAWDOWN_PCT: Final = -0.05
@@ -72,7 +79,12 @@ async def run_loss_step(
         raise ValueError(f"loss step must be 0..{len(LOSS_DAILY) - 1}, got {step}")
     if now is None:
         clock = getattr(getattr(app, "state", None), "clock", None)
-        now = clock.now() if clock is not None else await demo_now(conn)
+        if clock is not None and getattr(clock, "demo", False):
+            now = clock.advance(MARKET_STEP)
+            await conn.execute(SHIFT_START_SQL, (MARKET_STEP,))  # other processes read the same demo time
+            await conn.commit()
+        else:
+            now = clock.now() if clock is not None else await demo_now(conn)
     daily = LOSS_DAILY[step]
     halted = killed = False
     async with conn.transaction():

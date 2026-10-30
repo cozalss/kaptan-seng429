@@ -39,6 +39,12 @@ class Clock:
         started = self.started_at or real
         return self.anchor + max(timedelta(0), real - started)
 
+    def advance(self, delta: timedelta) -> datetime:
+        """Demo only: move "now" forward by `delta` (a simulated market minute); returns the new now."""
+        if self.demo:
+            self.started_at = (self.started_at or self.real_now()) - delta
+        return self.now()
+
     def restart(self, started_at: datetime | None = None) -> datetime:
         """Demo reset: the clock jumps back to the anchor."""
         self.started_at = started_at or self.real_now()

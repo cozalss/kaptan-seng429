@@ -8,7 +8,7 @@ Used by approvals/service.py for cards of real runs (`run_set = 'live'`); demo c
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Final
 
@@ -16,7 +16,7 @@ from psycopg import AsyncConnection
 
 from kaptan.market.segment import limit_pct_of
 from kaptan.market.ticks import price_limits
-from kaptan.prices.calendar import istanbul_date, prev_session
+from kaptan.prices.calendar import CalendarRangeError, is_trading_day, istanbul_date, prev_session, session_close
 from kaptan.prices.reads import close_on
 from kaptan.risk.active_limits import active_limits
 from kaptan.risk.desk import live_desk
@@ -49,12 +49,23 @@ async def _one(conn: AsyncConnection[Any], sql: str, params: tuple[Any, ...] = (
     return None if row is None else dict(row)
 
 
-async def _upper_limit(conn: AsyncConnection[Any], ticker: str, now: datetime) -> Decimal | None:
-    """R09's tavan: the previous close + the band of the stock's market (06 §2 [V]; unknown → ±10 %)."""
-    prev = await close_on(conn, ticker, prev_session(istanbul_date(now)))
+def base_session(now: datetime) -> date:
+    """The session whose close is the base price of the next order: today's once today's session has
+    closed (an exit approved in the evening sells at tomorrow's open), else the previous session's."""
+    today = istanbul_date(now)
+    try:
+        closed_today = is_trading_day(today) and now >= session_close(today)
+    except CalendarRangeError:
+        closed_today = False
+    return today if closed_today else prev_session(today)
+
+
+async def _limits(conn: AsyncConnection[Any], ticker: str, now: datetime) -> tuple[Decimal | None, Decimal | None]:
+    """R09's (taban, tavan): the previous close ± the band of the stock's market (06 §2 [V]; unknown → ±10 %)."""
+    prev = await close_on(conn, ticker, base_session(now))
     if prev is None:
-        return None
-    return price_limits(Decimal(str(prev)), await limit_pct_of(conn, ticker, now))[1]
+        return None, None
+    return price_limits(Decimal(str(prev)), await limit_pct_of(conn, ticker, now))
 
 
 async def check_at_send(
@@ -69,6 +80,7 @@ async def check_at_send(
     async with conn.cursor() as cur:
         await cur.execute(RESTRICTIONS_SQL, (ticker,))
         kinds = tuple(str(r["kind"]) for r in await cur.fetchall())
+    lower, upper = await _limits(conn, ticker, now)
     last = desk.last_price or (Decimal(str(issuer["price"])) if issuer else Decimal(str(card["limit_price"])))
     order = GateOrder(
         ticker=ticker,
@@ -84,7 +96,8 @@ async def check_at_send(
         last_price=last,
         adv20_try=Decimal(str(issuer["adv20_try"])) if issuer else Decimal(0),
         cash_free_try=desk.cash_free_try,
-        upper_limit=await _upper_limit(conn, ticker, now),
+        upper_limit=upper,
+        lower_limit=lower,
         kill_switch_on=state["kill_switch"] == "on",
         drawdown_pct=desk.drawdown_pct,
         daily_pnl_pct=desk.daily_pnl_pct,
@@ -95,6 +108,7 @@ async def check_at_send(
         team_blocklisted="team_insider" in kinds,
         price_age_s=desk.price_age_s if card.get("entry") == "intraday_limit" else 0.0,
         holds_ticker=desk.holds_ticker,
+        held_qty=desk.held_qty,
         live_armed=bool(state["live_armed"]),
         approval_expired=expires is not None and now > datetime.fromisoformat(str(expires)),
     )

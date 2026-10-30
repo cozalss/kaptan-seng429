@@ -20,7 +20,7 @@ from kaptan.api.errors import ApiError, unauthenticated
 from kaptan.auth.tokens import InvalidTokenError, decode_access_token
 from kaptan.clock import Clock
 from kaptan.domain.permissions import SAME_PERSON_TEXT, Action, can, denied_reason
-from kaptan.domain.roles import Role
+from kaptan.domain.roles import SINGLE_USER, Role
 from kaptan.settings import Settings, get_settings
 
 
@@ -32,6 +32,11 @@ class Actor:
     name: str
     role: Role
     family: str
+
+    @property
+    def is_single_user(self) -> bool:
+        """The KAPTAN_SINGLE_USER account (issued only while that mode is on): every role's permissions."""
+        return self.uid == SINGLE_USER.uid
 
     @property
     def audit_actor(self) -> str:
@@ -81,10 +86,12 @@ async def current_user(request: Request, settings: SettingsDep) -> Actor:
 CurrentUser = Annotated[Actor, Depends(current_user)]
 
 
-def require(action: Action) -> Callable[[Actor], Awaitable[Actor]]:
+def require(action: Action) -> Callable[[Actor, Settings], Awaitable[Actor]]:
     """Dependency factory: the caller, or 403 `forbidden` with the plain reason ("Bunu Risk Sorumlusu yapar.")."""
 
-    async def checker(actor: CurrentUser) -> Actor:
+    async def checker(actor: CurrentUser, settings: SettingsDep) -> Actor:
+        if settings.kaptan_single_user:  # one person holds every permission (KAPTAN_SINGLE_USER)
+            return actor
         if not can(actor.role, action):
             raise ApiError(403, "forbidden", denied_reason(action, actor.role))
         return actor

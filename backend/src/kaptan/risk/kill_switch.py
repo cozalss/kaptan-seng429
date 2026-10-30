@@ -16,6 +16,7 @@ from psycopg.types.json import Jsonb
 
 from kaptan.api.errors import ApiError
 from kaptan.audit.writer import AuditDraft, append
+from kaptan.auth.four_eyes import second_signature
 from kaptan.domain.permissions import SAME_PERSON_TEXT
 from kaptan.domain.schemas._base import iso_ms
 from kaptan.prices.calendar import istanbul_date, sessions_between
@@ -150,7 +151,14 @@ def personal_reset_allowed(kill_at: datetime | None, started_at: datetime, now: 
 
 
 async def confirm_reset(
-    conn: AsyncConnection[Any], *, uid: str, role: str, reason: str, now: datetime, personal: bool | None = None
+    conn: AsyncConnection[Any],
+    *,
+    uid: str,
+    role: str,
+    reason: str,
+    now: datetime,
+    personal: bool | None = None,
+    single_user: bool | None = None,
 ) -> None:
     """Risk Sorumlusu confirms (2/2), never the person who started it (403 `same_person`):
     kill switch off, drawdown floored at −4.9 %, audit `kill_switch.reset` {step: 2, role, reason, started_by}.
@@ -164,8 +172,17 @@ async def confirm_reset(
         started = state["reset_started"]
         if started is None:
             raise ApiError(409, "not_started", NOT_STARTED)
-        if started["uid"] == uid:
-            raise ApiError(403, "same_person", SAME_PERSON_TEXT["kill_reset"])
+        await second_signature(
+            conn,
+            first_uid=str(started["uid"]),
+            uid=uid,
+            flow="kill_reset",
+            refusal=SAME_PERSON_TEXT["kill_reset"],
+            entity_type=KILL_ENTITY[0],
+            entity_id=KILL_ENTITY[1],
+            now=now,
+            single_user=single_user,
+        )
         if personal and not personal_reset_allowed(state["kill_at"], datetime.fromisoformat(started["at"]), now):
             raise ApiError(409, "conflict", TOO_EARLY)
         await conn.execute(

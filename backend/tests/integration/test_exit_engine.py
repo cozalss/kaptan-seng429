@@ -16,6 +16,8 @@ from kaptan.domain.schemas import iso_ms
 from kaptan.portfolio.closing import in_cooldown
 from kaptan.portfolio.exits import run_exits
 from kaptan.prices.calendar import add_sessions
+from kaptan.risk.at_send import check_at_send
+from kaptan.settings import get_settings
 from tests.contract.harness import assert_matches
 from tests.integration.test_fill_engine import (
     KRGCL,
@@ -74,6 +76,13 @@ async def test_stop_exit_end_to_end(desk: DictConn) -> None:
     audit = await last_audit(desk)
     assert (audit["action"], audit["payload"]["rule"]) == ("proposal.created", "X2")
     assert (await run_exits(desk, WED)).cards == []  # idempotent / still pending
+    # R16 at send lets the exit through: a sell at taban, with no fresh restriction data (06 R04/R09 notes).
+    capital = get_settings().paper_capital_try
+    for at in (datetime(2027, 1, 13, 16, 0, tzinfo=UTC), datetime(2027, 1, 14, 6, 30, tzinfo=UTC)):
+        check = await check_at_send(desk, card, at, capital=capital)
+        assert check.ok, check.result.detail_tr
+    short = await check_at_send(desk, {**card, "qty": 1481}, datetime(2027, 1, 14, 6, 30, tzinfo=UTC), capital=capital)
+    assert short.failed_rule == "R12"
     # The exit is approved like any proposal (R15) and sells at Thursday's open.
     events = await sign(desk, EXIT_X2, datetime(2027, 1, 13, 16, 0, tzinfo=UTC))
     assert [e for e, _ in events] == ["order"]  # no ticket for a sell

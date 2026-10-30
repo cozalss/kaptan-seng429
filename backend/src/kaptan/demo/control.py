@@ -145,7 +145,7 @@ async def reset(app: Any, settings: Settings) -> None:
     await timers_of(app).stop_all()
     owner = await connect(url)
     try:
-        result = await reseed(owner)
+        result = await reseed(owner, single_user=settings.kaptan_single_user)
     finally:
         await owner.close()
     app.state.clock.restart(result.started_at)

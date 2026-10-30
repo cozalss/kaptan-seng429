@@ -15,6 +15,7 @@ from psycopg.types.json import Jsonb
 
 from kaptan.api.errors import ApiError
 from kaptan.audit.writer import AuditDraft, append
+from kaptan.auth.four_eyes import second_signature
 from kaptan.domain.permissions import SAME_PERSON_TEXT
 from kaptan.domain.schemas import LimitDecisionInput, LimitProposalInput
 from kaptan.domain.schemas.governance import limit_violations
@@ -112,6 +113,7 @@ async def decide(
     name: str,
     role: str,
     now: datetime,
+    single_user: bool | None = None,
 ) -> None:
     """Approve (new active, the old one superseded, effective now) or reject a proposed version."""
     async with conn.transaction():
@@ -123,8 +125,19 @@ async def decide(
             if row is None or row["status"] != "proposed":
                 raise ApiError(409, "conflict", NOT_PENDING)
             proposed_by = row["proposed_by"]["uid"]
-            if proposed_by == uid:
-                raise ApiError(403, "same_person", SAME_PERSON_TEXT["limits"])
+            waived = await second_signature(
+                conn,
+                first_uid=str(proposed_by),
+                uid=uid,
+                flow="limits",
+                refusal=SAME_PERSON_TEXT["limits"],
+                entity_type="limit_version",
+                entity_id=str(version),
+                now=now,
+                single_user=single_user,
+            )
+            if waived:  # migration 0021: the two-person CHECK admits this audited waiver only
+                await cur.execute("SET LOCAL kaptan.single_user_waiver = 'on'")
             approve = body.decision == "approve"
             decided = Jsonb(signature(uid, name, role, now, body.comment or None))
             if approve:

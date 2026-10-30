@@ -176,6 +176,14 @@ async def test_producer_is_idempotent_per_index_and_stage(redis: aioredis.Redis)
         await publish_to_agents(redis, [idx], stage="other")
 
 
+async def _corrected(pool: AsyncConnectionPool[DictConn]) -> int:
+    idx = await add_disclosure(pool)
+    async with pool.connection() as conn:
+        await conn.execute("UPDATE core.disclosures SET reason = 'CORR' WHERE disclosure_index = %s", (idx,))
+        await conn.commit()
+    return idx
+
+
 async def test_out_of_scope_rows_are_skipped_without_a_run(
     feed_db: AsyncConnectionPool[DictConn], redis: aioredis.Redis
 ) -> None:
@@ -186,6 +194,7 @@ async def test_out_of_scope_rows_are_skipped_without_a_run(
         await add_disclosure(feed_db, route="archive_only", subject="Genel Kurul"): "route:archive_only",
         await add_disclosure(feed_db, source="backfill"): "backfill",
         await add_disclosure(feed_db, ticker=None): "no_ticker",
+        await _corrected(feed_db): "correction",
     }
     for idx, reason in cases.items():
         handled = await feed.handle(idx)
@@ -361,6 +370,12 @@ async def test_parked_runs_are_settled_after_expiry(feed_db: AsyncConnectionPool
     row = await feed_row(feed_db, idx)
     assert card == {"status": "expired"} and run == {"status": "completed"}
     assert row is not None and (row["status"], row["reason"]) == ("done", "expire")
+    audit = await one(
+        feed_db,
+        "SELECT actor, entity_id FROM audit.audit_log WHERE action = 'approval.expired' AND run_id = %s",
+        result.run_id,
+    )
+    assert audit is not None and audit["actor"] == "system:approval_expiry"  # 09 §7.1
 
 
 def test_decision_for_cards() -> None:

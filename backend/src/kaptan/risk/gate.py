@@ -59,6 +59,14 @@ class GateLimits:
     amount_tolerance: Decimal = Decimal("0.005")
     max_kap_delay_s: int = 300
     max_restriction_age_h: int = 24
+    #: 06 §7.1 / §13: an entry smaller than max(min_notional_abs, equity × min_notional_pct) is TOO_SMALL.
+    min_notional_abs: Decimal = Decimal(2_000)
+    min_notional_pct: Decimal = Decimal("0.01")
+    #: 06 §7.2 P5: gross exposure ≤ 100 % (no leverage), ≤ 50 % in the crisis regime.
+    gross_max_pct: Decimal = Decimal(1)
+    gross_crisis_pct: Decimal = Decimal("0.5")
+    #: 06 §7.2 P6: free cash after the entry stays ≥ 5 % of equity.
+    cash_buffer_pct: Decimal = Decimal("0.05")
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,6 +90,8 @@ class GateOrder:
     degraded: bool = False
     #: 06 R10: the rule engine already sized with m_regime (crisis ×0,5), so R10 must not shrink again.
     regime_applied: bool = False
+    #: 06 R07/R12 `cost_side`: one side's cost as a fraction (commission + BSMV + spread), for the cash cap.
+    cost_side: Decimal = Decimal(0)
 
     @property
     def notional(self) -> Decimal:
@@ -97,6 +107,8 @@ class GateContext:
     adv20_try: Decimal
     cash_free_try: Decimal
     upper_limit: Decimal | None = None
+    #: 06 R09 note: a SELL only has to satisfy limit ≥ taban (exit priority).
+    lower_limit: Decimal | None = None
     kill_switch_on: bool = False
     drawdown_pct: Decimal = Decimal(0)
     daily_pnl_pct: Decimal = Decimal(0)
@@ -112,6 +124,10 @@ class GateContext:
     price_age_s: float = 0.0
     n_open_positions: int = 0
     holds_ticker: bool = False
+    #: 06 R12: lots held of this ticker (None: unknown, then `holds_ticker` decides).
+    held_qty: int | None = None
+    #: 06 §7.2 P5: open + reserved notional over equity.
+    gross_exposure_pct: Decimal = Decimal(0)
     daily_entries: int = 0
     #: P8 (06 §7.2): the ticker is inside a stop (X2) cooldown (kaptan.risk.cooldown).
     in_cooldown: bool = False
@@ -208,11 +224,13 @@ def r03(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
 
 
 def r04(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
+    if o.side != "buy":  # 06 R04: buy-only; exits are never blocked by a restriction
+        return _ok("R04", ph)
     hard = [k for k in c.restrictions if k in HARD_RESTRICTIONS]
-    if o.side == "buy" and hard:
+    if hard:
         return _no("R04", ph, "reject", f"Tedbirli hisse ({', '.join(hard)}): sert veto.")
-    if c.restrictions_age_h > lim.max_restriction_age_h:
-        return _no("R04", ph, "hold", "Tedbir verisi 24 saatten eski: HOLD.")
+    if c.restrictions_age_h > lim.max_restriction_age_h:  # 06 R04 case 5: unknown restrictions → no buy
+        return _no("R04", ph, "reject", "Tedbir verisi 24 saatten eski: tedbir bilinmiyor, alım yok.")
     return _ok("R04", ph)
 
 
@@ -233,9 +251,11 @@ def r11(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
 
 
 def r14(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
-    if o.event_type not in ("E1", "E2", "E3") or o.reader_amount is None:
+    if o.event_type not in ("E1", "E2", "E3"):
         return _ok("R14", ph)
     amt = o.reader_amount
+    if amt is None:  # 06 R14: E1–E3 need a verified amount; none read → no trade on a guess
+        return _no("R14", ph, "reject", "Okuyucu tutar çıkaramadı: tutar doğrulanamadı, ret.")
     if any(abs(r - amt) <= abs(amt) * lim.amount_tolerance for r in o.regex_amounts):
         return _ok("R14", ph)
     return _no("R14", ph, "reject", "Okuyucu tutarı metindeki tutarlarla eşleşmiyor: ret.")
@@ -260,6 +280,10 @@ def r09(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
     obs, cap = f"{sign}%{fmt_dec(abs(_f(band)) * 100, 1)}", f"±{fmt_pct(_f(lim.price_band_pct), 0)}"
     if c.price_age_s > lim.max_price_age_s:
         return _no("R09", ph, "hold", "Fiyat 20 dakikadan eski: HOLD.", observed=obs, limit=cap)
+    if o.side == "sell":  # 06 R09 note: the band reduces to limit ≥ taban for a sell (exit priority)
+        if c.lower_limit is not None and o.limit_price < c.lower_limit:
+            return _no("R09", ph, "reject", "Satış limiti tabanın altında.", observed=obs, limit=cap)
+        return _ok("R09", ph, "Satış limiti tabanın üstünde (çıkış önceliği).", observed=obs, limit=cap)
     ceiling = (c.last_price * (1 + lim.price_band_pct)).quantize(CENT, rounding=ROUND_HALF_UP)
     floor = (c.last_price * (1 - lim.price_band_pct)).quantize(CENT, rounding=ROUND_HALF_UP)
     if not floor <= o.limit_price <= ceiling:
@@ -270,8 +294,11 @@ def r09(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
 
 
 def r12(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
-    if o.side == "sell" and not c.holds_ticker:
+    if o.side == "sell" and (not c.holds_ticker or (c.held_qty is not None and o.qty > c.held_qty)):
         return _no("R12", ph, "reject", "Açığa satış yok: eldeki pozisyon olmadan satış reddedildi.")
+    # 06 R12 NO_LEVERAGE. Pre-trade R07 already caps the size at the free cash, so only the send can fail.
+    if o.side == "buy" and ph == "at_send" and o.notional * (1 + o.cost_side) > c.cash_free_try:
+        return _no("R12", ph, "reject", "Kaldıraç yok: emir tutarı serbest nakdi aşıyor.")
     if c.mode == "live" and not c.live_armed:
         return _no("R12", ph, "reject", "Canlı mod silahlanmamış: ret.")
     return _ok("R12", ph)
@@ -282,6 +309,8 @@ def _floor_qty(x: Decimal) -> int:
 
 
 def r07(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
+    if o.side != "buy":  # sizing caps entries; an exit sells what is held (R12)
+        return _ok("R07", ph)
     price = o.limit_price
     caps = {
         "risk": _floor_qty(c.equity_try * lim.risk_per_trade_pct * lim.risk_tolerance / (price * o.stop_pct))
@@ -289,7 +318,7 @@ def r07(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
         else o.qty,
         "position": _floor_qty(c.equity_try * lim.max_position_pct / price),
         "adv": _floor_qty(c.adv20_try * lim.max_adv_share / price),
-        "cash": _floor_qty(c.cash_free_try / price),
+        "cash": _floor_qty(c.cash_free_try / (price * (1 + o.cost_side))),
     }
     qty = min(o.qty, *caps.values())
     pos, adv = o.notional / c.equity_try, o.notional / c.adv20_try
@@ -297,6 +326,10 @@ def r07(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
     detail = f"İşlem riski {fmt_pct(_f(lim.risk_per_trade_pct), 1)}; pozisyon {obs}; hacmin {fmt_pct(_f(adv), 1)}'i."
     if qty <= 0:
         return _no("R07", ph, "reject", "Boyut sınırları içinde emir kalmıyor: ret.", observed=obs, limit=cap)
+    min_notional = max(lim.min_notional_abs, c.equity_try * lim.min_notional_pct)
+    if qty * price < min_notional:  # 06 §7.1 TOO_SMALL
+        got, need = fmt_dec(_f(qty * price), 0), fmt_dec(_f(min_notional), 0)
+        return _no("R07", ph, "reject", f"Emir çok küçük: {got} TL < {need} TL.", observed=obs, limit=cap)
     if qty < o.qty:
         binding = min(caps, key=lambda k: caps[k])
         res = _no("R07", ph, "resize", f"{detail} Boyut küçültüldü ({binding}).", observed=obs, limit=cap)
@@ -305,6 +338,8 @@ def r07(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
 
 
 def r08(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
+    if o.side != "buy":  # 06 R08: portfolio limits restrict entries only
+        return _ok("R08", ph)
     if c.holds_ticker:
         return _no("R08", ph, "reject", "Aynı hissede açık pozisyon var (piramit yok).")
     if c.n_open_positions >= lim.max_concurrent_positions:
@@ -314,20 +349,28 @@ def r08(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
     if c.daily_entries >= max_entries:
         where = "Kriz rejiminde günlük" if crisis else "Günlük"
         return _no("R08", ph, "reject", f"{where} yeni giriş sınırı ({max_entries}) dolu.")
-    if o.side == "buy" and c.in_cooldown:
+    if c.in_cooldown:
         return _no("R08", ph, "reject", COOLDOWN_TR)
-    room = min(lim.max_sector_pct - c.sector_exposure_pct, lim.max_group_pct - c.group_exposure_pct)
-    if room <= 0:
-        return _no("R08", ph, "reject", "Sektör veya grup sınırı dolu.")
-    room_qty = _floor_qty(c.equity_try * room / o.limit_price)
+    gross_cap = lim.gross_crisis_pct if crisis else lim.gross_max_pct
+    sector_room = min(lim.max_sector_pct - c.sector_exposure_pct, lim.max_group_pct - c.group_exposure_pct)
+    rooms = {  # TL of room left under each cap; the first is the original P3/P4 text
+        "Sektör veya grup": c.equity_try * sector_room,
+        "Brüt maruziyet (P5)": c.equity_try * (gross_cap - c.gross_exposure_pct),
+        "Nakit tamponu (P6)": c.cash_free_try - c.equity_try * lim.cash_buffer_pct,
+    }
+    binding = min(rooms, key=lambda k: rooms[k])
+    if rooms[binding] <= 0:
+        return _no("R08", ph, "reject", f"{binding} sınırı dolu.")
+    room_qty = _floor_qty(rooms[binding] / o.limit_price)
     if room_qty < o.qty:
-        res = _no("R08", ph, "resize", "Sektör/grup sınırı için boyut küçültüldü.")
+        what = "Sektör/grup" if binding == "Sektör veya grup" else binding
+        res = _no("R08", ph, "resize", f"{what} sınırı için boyut küçültüldü.")
         return replace(res, new_qty=room_qty)
     return _ok("R08", ph)
 
 
 def r10(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
-    if c.regime != "crisis":
+    if c.regime != "crisis" or o.side != "buy":
         return _ok("R10", ph)
     if o.event_type == "E3":
         return _no("R10", ph, "reject", "Kriz rejiminde yeni E3 yok.")
@@ -363,6 +406,8 @@ def _r15(o: GateOrder, c: GateContext, lim: GateLimits, resized: bool) -> tuple[
         reasons.append("DEGRADED")
     if c.n_open_positions >= lim.target_concurrent_positions:
         reasons.append("NEAR_MAX_POSITIONS")
+    if o.side == "sell" and c.team_blocklisted:  # 06 R15: an exit from a later-blocklisted stock
+        reasons.append("RESTRICTED_SELL")
     if resized:
         reasons.append("RESIZED")
     return RiskResult("pre_trade", "R15", "approval_required", RISK_RULES["R15"][1]), tuple(reasons)

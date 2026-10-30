@@ -5,7 +5,9 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from tests.conftest import DEMO_PASSPHRASE, bearer, login
+from kaptan.db import connect
+from kaptan.settings import Settings
+from tests.conftest import DEMO_PASSPHRASE, bearer, login, reseed_test_db
 from tests.contract.harness import assert_matches
 
 pytestmark = pytest.mark.integration
@@ -38,7 +40,7 @@ async def test_login_grants_the_door_role(client: httpx.AsyncClient, role: str, 
     assert body["user"]["id"] == uid
 
 
-async def test_login_refusals(client: httpx.AsyncClient) -> None:
+async def test_login_refusals(client: httpx.AsyncClient, migrated: Settings) -> None:
     bad_role = await client.post("/api/v1/auth/login", json={"passphrase": DEMO_PASSPHRASE, "role": "root"})
     assert bad_role.status_code == 400
     assert bad_role.json() == {"detail": "Bilinmeyen rol.", "code": "validation"}
@@ -48,12 +50,28 @@ async def test_login_refusals(client: httpx.AsyncClient) -> None:
     missing = await client.post("/api/v1/auth/login", json={})
     assert missing.status_code == 422
     assert missing.json() == {"detail": "Eksik alan: passphrase.", "code": "validation"}
+    conn = await connect(migrated.database_url.get_secret_value())
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                "SELECT actor, payload FROM audit.audit_log WHERE action = 'auth.login_failed' ORDER BY chain_pos"
+            )
+            rows = await cur.fetchall()
+        await conn.rollback()
+    finally:
+        await conn.close()
+    assert len(rows) == 1  # 09 §7.1: audited, without the passphrase or the raw IP
+    assert rows[0]["actor"] == "system:auth"
+    assert set(rows[0]["payload"]) == {"role", "client"}
+    assert "yanlış" not in str(rows[0]["payload"])
+    await reseed_test_db(migrated)
 
 
-async def test_login_is_rate_limited(client: httpx.AsyncClient) -> None:
+async def test_login_is_rate_limited(client: httpx.AsyncClient, migrated: Settings) -> None:
     codes = [(await client.post("/api/v1/auth/login", json={"passphrase": "x"})).status_code for _ in range(6)]
     assert codes[:5] == [401] * 5
     assert codes[5] == 429
+    await reseed_test_db(migrated)
 
 
 async def test_me_without_or_with_a_bad_token_is_401_envelope(client: httpx.AsyncClient) -> None:

@@ -186,6 +186,9 @@ async def execute_approved(
             "limit_price": ticket["limit_price"],
             "stage": ticket["stage"],
             "side": ticket["side"],
+            # the ledger line names the company ("Örnek Enerji için emir fişi yazıldı") and search finds it
+            "ticker": card["ticker"],
+            "company": card["company_name"],
         }
         draft = run_audit(
             "system:order_ticket", "ticket.issued", "order_ticket", ticket["ticket_no"], payload, card["run_id"]

@@ -45,7 +45,7 @@ from kaptan.api.loop import run
 from kaptan.audit.writer import AuditDraft, append
 from kaptan.auth.passphrase import hash_passphrase, verify_hash
 from kaptan.db import connect
-from kaptan.domain.roles import ROLES, TEAM, Role, member_for_role
+from kaptan.domain.roles import ROLES, SINGLE_USER, TEAM, Role, acting_member, member_for_role
 from kaptan.domain.schemas._base import iso_ms
 from kaptan.domain.schemas.governance import LIMITS_V1
 from kaptan.llm.usage import QUOTA_ROWS
@@ -86,6 +86,12 @@ class BootstrapReport:
 
 def default_users() -> list[UserSpec]:
     return [UserSpec(uid=m.uid, display_name=m.name, role=m.role, duty_tr=m.duty_tr) for m in TEAM]
+
+
+def single_user_users() -> list[UserSpec]:
+    """KAPTAN_SINGLE_USER: just the one account (it signs in with the shared passphrase)."""
+    m = SINGLE_USER
+    return [UserSpec(uid=m.uid, display_name=m.name, role=m.role, duty_tr=m.duty_tr)]
 
 
 def load_users(path: Path | None, env_json: str | None = None) -> list[UserSpec]:
@@ -165,17 +171,17 @@ async def _users(
         rep.updated.append(f"user:{user.uid}")
 
 
-def _signature(role: Role, at: datetime, reason: str) -> dict[str, Any]:
-    m = member_for_role(role)
+def _signature(role: Role, at: datetime, reason: str, single_user: bool = False) -> dict[str, Any]:
+    m = acting_member(role, single_user)
     return {"uid": m.uid, "name": m.name, "role": role, "at": iso_ms(at), "reason": reason}
 
 
-async def _limits(conn: AsyncConnection[Any], now: datetime, rep: BootstrapReport) -> None:
+async def _limits(conn: AsyncConnection[Any], now: datetime, rep: BootstrapReport, single: bool = False) -> None:
     if await _one(conn, "SELECT 1 FROM trading.limit_versions LIMIT 1") is not None:
         rep.kept.append("limits")
         return
-    proposed = _signature("admin", now, "Kurulum: kanonik başlangıç limitleri.")
-    decided = _signature("risk_officer", now, "Kurulum: kanonik değerlerle aynı.")
+    proposed = _signature("admin", now, "Kurulum: kanonik başlangıç limitleri.", single)
+    decided = _signature("risk_officer", now, "Kurulum: kanonik değerlerle aynı.", single)
     await conn.execute(
         "INSERT INTO trading.limit_versions (version, status, reason, created_at, effective_from, proposed_by, "
         "decided_by) VALUES (1, 'active', %s, %s, %s, %s, %s)",
@@ -234,7 +240,7 @@ async def bootstrap_data(
     tx = conn.transaction(force_rollback=dry_run)
     async with tx:
         await _users(conn, users, env, rep)
-        await _limits(conn, now, rep)
+        await _limits(conn, now, rep, settings.kaptan_single_user)
         await _singletons(conn, settings, rep)
         if rep.created or rep.updated:
             draft = AuditDraft(
@@ -319,7 +325,11 @@ async def _main(settings: Settings, args: argparse.Namespace) -> int:
             await conn.close()
         return 0
     url = settings.database_owner_url or settings.database_url
-    users = load_users(args.users, environ.get("KAPTAN_BOOTSTRAP_USERS"))
+    given = args.users is not None or bool(environ.get("KAPTAN_BOOTSTRAP_USERS"))
+    if settings.kaptan_single_user and not given:
+        users = single_user_users()
+    else:
+        users = load_users(args.users, environ.get("KAPTAN_BOOTSTRAP_USERS"))
     conn = await connect(url.get_secret_value())
     try:
         rep = await bootstrap_data(conn, settings, users, environ=environ, dry_run=args.dry_run)
@@ -337,7 +347,11 @@ def main(argv: list[str] | None = None) -> int:
     try:
         settings = get_settings()
         if settings.demo_mode and args.cmd == "data":
-            raise ConfigError("DEMO_MODE=true: use scripts/seed_demo.py for a demo database, not the bootstrap")
+            raise ConfigError(
+                "DEMO_MODE=true: seed a demo database instead of the bootstrap: locally "
+                "`uv run python scripts/seed_demo.py`, in Docker `docker compose run --rm seed` "
+                "(entrypoint command `seed_demo`)"
+            )
         ensure_production_ready(settings, "bootstrap")
         return run(_main(settings, args))
     except ConfigError as exc:

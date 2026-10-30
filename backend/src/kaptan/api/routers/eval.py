@@ -30,7 +30,14 @@ router = APIRouter(tags=["eval"])
 async def summary(user: CurrentUser, conn: Conn, clock: ClockDep, settings: SettingsDep) -> Any:
     now = clock.now()
     today = now.astimezone(IST).date()
-    return await es.eval_summary(conn, now=now, today=today, is_sample=settings.demo_mode, ragas_path=es.RAGAS_REPORT)
+    return await es.eval_summary(
+        conn,
+        now=now,
+        today=today,
+        is_sample=settings.demo_mode,
+        ragas_path=es.RAGAS_REPORT,
+        reports_dir=es.REPORTS_DIR,
+    )
 
 
 @router.get("/reports/forward/weekly", response_model=ForwardWeeklyReport)

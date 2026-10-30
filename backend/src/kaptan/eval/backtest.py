@@ -27,7 +27,7 @@ import argparse
 import json
 import math
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time
 from pathlib import Path
 from typing import Any, Final
@@ -40,6 +40,8 @@ OPEN_CUT: Final = time(9, 55)
 EVENT_ARMS: Final = ("kaptan", "no_approval", "rules_only", "subject_only", "free_llm")
 BENCH_ARMS: Final = ("bist100", "equal_weight")
 ALL_ARMS: Final = EVENT_ARMS + BENCH_ARMS
+#: 08 §3.1 / 06 §12.4: bps per side. Gross (pre-cost), the base model, the sensitivity scenario, the 30 bp stress.
+COST_SCENARIOS: Final[dict[str, float]] = {"gross": 0.0, "base_005": 5.0, "stress_020": 20.0, "stress_030": 30.0}
 
 
 @dataclass(frozen=True, slots=True)
@@ -212,12 +214,22 @@ def simulate_benchmark(arm: str, ds: Dataset, p: Params) -> ArmResult:
 def metrics(r: ArmResult, p: Params) -> dict[str, float | None]:
     eq = r.equity
     if len(eq) < 2:
-        return {"cagr": None, "sharpe": None, "max_dd": None, "hit_rate": None, "turnover": None, "cost_drag_bps": None}
+        return {
+            "cagr": None,
+            "total_return": None,
+            "sharpe": None,
+            "sortino": None,
+            "max_dd": None,
+            "hit_rate": None,
+            "turnover": None,
+            "cost_drag_bps": None,
+        }
     years = (len(eq) - 1) / TRADING_DAYS
     cagr = (eq[-1] / eq[0]) ** (1 / years) - 1 if eq[0] > 0 and eq[-1] > 0 else None
     rets = [eq[i] / eq[i - 1] - 1 for i in range(1, len(eq))]
     mean = sum(rets) / len(rets)
     sd = math.sqrt(sum((x - mean) ** 2 for x in rets) / (len(rets) - 1)) if len(rets) > 1 else 0.0
+    downside = math.sqrt(sum(min(x, 0.0) ** 2 for x in rets) / len(rets))
     peak, mdd = eq[0], 0.0
     for v in eq:
         peak = max(peak, v)
@@ -227,7 +239,9 @@ def metrics(r: ArmResult, p: Params) -> dict[str, float | None]:
     traded = sum(t.notional + t.notional * (1 + t.gross_return) for t in trades)
     return {
         "cagr": None if cagr is None else round(cagr, 6),
+        "total_return": round(eq[-1] / eq[0] - 1, 6) if eq[0] > 0 else None,
         "sharpe": round(mean / sd * math.sqrt(TRADING_DAYS), 4) if sd > 0 else None,
+        "sortino": round(mean / downside * math.sqrt(TRADING_DAYS), 4) if downside > 0 else None,
         "max_dd": round(mdd, 6),
         "hit_rate": round(sum(t.net_pnl > 0 for t in trades) / len(trades), 4) if trades else None,
         "turnover": round(traded / avg_eq / years, 4) if trades else 0.0,
@@ -252,6 +266,17 @@ def run(
     return out
 
 
+def run_scenarios(
+    ds: Dataset, arms: Sequence[str], p: Params | None = None, *, free_llm_key: str | None = None
+) -> dict[str, dict[str, Any]]:
+    """The same arms under every cost scenario (COST_SCENARIOS): {scenario: report}."""
+    base = p or Params()
+    return {
+        name: report(run(ds, arms, replace(base, cost_bps=bps), free_llm_key=free_llm_key))
+        for name, bps in COST_SCENARIOS.items()
+    }
+
+
 def report(results: Sequence[ArmResult]) -> dict[str, Any]:
     return {r.arm: ({"skipped": r.skipped} if r.skipped else dict(r.metrics)) for r in results}
 
@@ -265,10 +290,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--to", dest="end", type=date.fromisoformat, required=True)
     ap.add_argument("--arms", default=",".join(a for a in ALL_ARMS if a != "free_llm"))
     ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument("--cost-scenarios", action="store_true", help="gross, base 5 bp, 20 bp and 30 bp stress")
     ns = ap.parse_args(argv)
     ds = Dataset.load(ns.data).window(ns.start, ns.end)
-    results = run(ds, [a.strip() for a in ns.arms.split(",") if a.strip()], free_llm_key=os.environ.get("GROQ_API_KEY"))
-    doc = json.dumps(report(results), indent=2)
+    arms, key = [a.strip() for a in ns.arms.split(",") if a.strip()], os.environ.get("GROQ_API_KEY")
+    if ns.cost_scenarios:
+        doc = json.dumps(run_scenarios(ds, arms, free_llm_key=key), indent=2)
+    else:
+        doc = json.dumps(report(run(ds, arms, free_llm_key=key)), indent=2)
     if ns.out is not None:
         ns.out.parent.mkdir(parents=True, exist_ok=True)
         ns.out.write_text(doc, encoding="utf-8")

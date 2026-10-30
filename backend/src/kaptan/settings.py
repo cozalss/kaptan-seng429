@@ -129,6 +129,10 @@ class Settings(BaseSettings):
     #: KAPTAN_MODE (04 §env): paper | personal | live | backtest. `personal` turns on the one-person
     #: kill-switch restart rule (06 §11: ≥ 24 h between the two signatures and ≥ 5 sessions since the kill).
     kaptan_mode: Literal["paper", "personal", "live", "backtest"] = "paper"
+    #: KAPTAN_SINGLE_USER ("tek kullanıcı modu"): one account (uid `sahip`) holds every permission and
+    #: completes every two-person flow alone; each waived second signature is audited
+    #: (`auth.single_user_waiver`). Off: the four roles and the 403 `same_person` rule apply.
+    kaptan_single_user: bool = False
     #: Starting capital of the paper desk (kaptan.risk.book): equity = capital + fills' cash flows + marks.
     paper_capital_try: float = Field(default=1_000_000.0, gt=0)
     #: M3 A3 (kaptan.brokers): the personal account the order tickets size for (12 §4; the demo's 350.000 TL).

@@ -40,6 +40,16 @@ TEAM: Final[tuple[TeamMember, ...]] = (
 )
 
 
+#: KAPTAN_SINGLE_USER: the one account that acts in every role (its auth.users row is seeded inactive
+#: unless the mode is on). The role column only says which screen the session looks through.
+SINGLE_USER: Final = TeamMember("sahip", "Sahip", "risk_officer", "Tek kullanıcı · bütün roller")
+
+
+def acting_member(role: Role, single_user: bool) -> TeamMember:
+    """Who signs in for `role`: the single account in single-user mode, else the role's team member."""
+    return SINGLE_USER if single_user else member_for_role(role)
+
+
 def is_role(value: object) -> TypeGuard[Role]:
     return isinstance(value, str) and value in ROLES
 
@@ -53,4 +63,4 @@ def member_by_uid(uid: str | None) -> TeamMember | None:
     if not uid:
         return None
     key = uid.removeprefix("user:")
-    return next((m for m in TEAM if m.uid == key), None)
+    return next((m for m in (*TEAM, SINGLE_USER) if m.uid == key), None)

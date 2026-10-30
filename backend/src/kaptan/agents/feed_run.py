@@ -37,7 +37,7 @@ from kaptan.agents.scenario import AUDIT_STRATEGY_VERSION, _audit_outcome
 from kaptan.agents.state import KaptanState
 from kaptan.agents.timeline import plan
 from kaptan.agents.tools import Toolbox
-from kaptan.audit.writer import append
+from kaptan.audit.writer import AuditDraft, append
 from kaptan.clock import istanbul_date
 from kaptan.demo.fixtures import DemoFixtures
 from kaptan.disclosures.counters import day_counters
@@ -87,6 +87,7 @@ SELECT f.disclosure_index, f.run_id, a.status, a.expires_at, a.approved_notional
 """
 EXPIRE_CARD_SQL: Final = (
     "UPDATE trading.approvals SET status = 'expired' WHERE run_id = %s AND status IN ('pending', 'claimed')"
+    " RETURNING proposal_id"
 )
 CLOSE_RUN_SQL: Final = "UPDATE trading.agent_runs SET status = 'completed', finished_at = %s WHERE run_id = %s"
 
@@ -182,6 +183,7 @@ async def desk_for(
         daily_entries=real.daily_entries,
         sector_exposure_pct=real.sector_exposure_pct,
         group_exposure_pct=real.group_exposure_pct,
+        gross_exposure_pct=real.gross_exposure_pct,
         reset_active=real.reset_active,
     )
 
@@ -376,6 +378,27 @@ def decision_for(row: dict[str, Any], now: datetime) -> dict[str, Any] | None:
     return None
 
 
+async def expire_card(conn: AsyncConnection[Any], run_id: str, now: datetime) -> None:
+    """Mark the run's open card expired and audit `approval.expired` (09 §7.1) in the caller's transaction."""
+    async with conn.cursor() as cur:
+        await cur.execute(EXPIRE_CARD_SQL, (run_id,))
+        expired = [str(r["proposal_id"]) for r in await cur.fetchall()]
+    drafts = [
+        AuditDraft(
+            actor="system:approval_expiry",
+            action="approval.expired",
+            entity_type="proposal",
+            entity_id=proposal_id,
+            run_id=run_id,
+            payload={"run_id": run_id},
+            occurred_at=now,
+        )
+        for proposal_id in expired
+    ]
+    if drafts:
+        await append(conn, drafts)
+
+
 async def settle_one(conn: AsyncConnection[Any], row: dict[str, Any], decision: dict[str, Any], deps: LiveDeps,
                      now: datetime) -> bool:  # fmt: skip
     """Resume (or, without a checkpoint, just close) one parked run. Returns True if the graph resumed."""
@@ -392,7 +415,7 @@ async def settle_one(conn: AsyncConnection[Any], row: dict[str, Any], decision: 
         log.warning("run %s: no checkpoint to resume (in-memory saver restarted?); closing it", run_id)
     async with conn.transaction():
         if decision["decision"] == "expire":
-            await conn.execute(EXPIRE_CARD_SQL, (run_id,))
+            await expire_card(conn, run_id, now)
         await conn.execute(CLOSE_RUN_SQL, (now, run_id))
         await conn.execute(
             "UPDATE ops.agent_feed SET status = 'done', reason = %s, finished_at = %s, updated_at = %s"

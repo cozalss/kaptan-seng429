@@ -31,7 +31,7 @@ async def test_healthz_and_readyz_when_everything_is_up(client: httpx.AsyncClien
 async def test_the_old_health_endpoint_is_unchanged(client: httpx.AsyncClient) -> None:
     res = await client.get("/api/v1/health")
     assert res.status_code == 200
-    assert set(res.json()) == {"status", "db", "redis", "demo_mode", "llm_mode", "now"}
+    assert set(res.json()) == {"status", "db", "redis", "demo_mode", "llm_mode", "now", "single_user"}
 
 
 async def test_readyz_reports_worker_heartbeats(client: httpx.AsyncClient, migrated: Settings) -> None:
