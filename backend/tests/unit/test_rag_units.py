@@ -101,6 +101,26 @@ async def test_attach_similar_is_a_no_op_outside_live_mode() -> None:
     assert await attach_similar(None, live, settings=off) is live  # type: ignore[arg-type]
 
 
+async def test_attach_similar_skips_a_run_the_pre_gate_vetoes() -> None:
+    from kaptan.rag.agent_context import pregate_vetoes
+
+    live = _ctx(provider="live")
+    outside = replace(live, desk=replace(live.desk, in_universe=False))
+    calls: list[Any] = []
+
+    class Counting:
+        model = version = "x"
+        dim = 1024
+
+        async def embed_queries(self, texts: Any) -> Any:
+            calls.append(texts)
+            raise RuntimeError("not reached")
+
+    assert pregate_vetoes(outside) and not pregate_vetoes(live)
+    assert await attach_similar(None, outside, embedder=Counting()) is outside  # type: ignore[arg-type]
+    assert calls == []
+
+
 async def test_attach_similar_never_fails_the_run() -> None:
     live = _ctx(provider="live")
 

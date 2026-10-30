@@ -33,6 +33,13 @@ def is_live(ctx: RunContext) -> bool:
     return getattr(ctx.provider, "name", "") == LIVE_PROVIDER
 
 
+def pregate_vetoes(ctx: RunContext) -> bool:
+    """True when the run's pre-gate (R03 universe, R04 hard measures, R13 insider list) will veto it."""
+    from kaptan.agents.nodes.screen import _veto_reasons  # lazy: the agents package imports this module
+
+    return _veto_reasons(ctx.desk.restrictions, ctx.desk.in_universe) is not None
+
+
 async def attach_similar(
     conn: Conn,
     ctx: RunContext,
@@ -44,6 +51,8 @@ async def attach_similar(
     """A copy of `ctx` with `similar` and `regulation` filled (live provider only, unless `force`)."""
     settings = settings or get_settings()
     if not (force or is_live(ctx)):
+        return ctx
+    if pregate_vetoes(ctx):  # the LLM-free pre-gate stops this run anyway: spend no embedding call on it
         return ctx
     ctx = await attach_regulation(conn, ctx, settings=settings, embedder=embedder)
     k = settings.rag_context_k

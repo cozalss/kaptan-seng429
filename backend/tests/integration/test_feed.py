@@ -286,6 +286,26 @@ async def test_hourly_cap_and_llm_daily_cap(feed_db: AsyncConnectionPool[DictCon
     assert (await off.handle(await add_disclosure(feed_db))).reason == "hourly_cap"
 
 
+async def test_daily_cap_counts_the_istanbul_day(feed_db: AsyncConnectionPool[DictConn], redis: aioredis.Redis) -> None:
+    from kaptan.agents.feed import istanbul_midnight
+
+    day_now = NOW + timedelta(days=3)
+    async with feed_db.connection() as conn:
+        await conn.execute("UPDATE ops.agent_feed SET started_at = %s", (NOW - timedelta(days=1),))  # earlier tests
+        await conn.commit()
+    runner = FakeRunner()
+    cfg = FeedConfig(max_runs_per_hour=10, max_runs_per_day=1)
+    feed = AgentFeed(feed_db, redis, runner, cfg, now=lambda: day_now)
+    a, b = await add_disclosure(feed_db), await add_disclosure(feed_db)
+    assert (await feed.handle(a)).status == "done"
+    capped = await feed.handle(b)
+    assert (capped.status, capped.reason) == ("capped", "daily_cap")
+    nextday = AgentFeed(
+        feed_db, redis, runner, cfg, now=lambda: istanbul_midnight(day_now) + timedelta(days=1, hours=1)
+    )
+    assert (await nextday.handle(await add_disclosure(feed_db))).status == "done"
+
+
 async def test_unacked_entry_is_replayed_after_a_crash(
     feed_db: AsyncConnectionPool[DictConn], redis: aioredis.Redis
 ) -> None:

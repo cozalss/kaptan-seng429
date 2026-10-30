@@ -125,6 +125,12 @@ class Settings(BaseSettings):
     checkpointer: Literal["memory", "postgres"] = "memory"
     #: KAP → agent worker (kaptan.workers.agent_worker): LLM-spending runs allowed per rolling hour.
     agent_max_runs_per_hour: int = Field(default=6, ge=0)
+    #: … and per Istanbul day (0 = no daily cap). live.env keeps it small: the spend of a whole day is bounded.
+    agent_max_runs_per_day: int = Field(default=0, ge=0)
+    #: Live warm-up (kaptan.live.warmup, first start of the live stack): KAP history days before today and the
+    #: most İş Yatırım tickers whose price history it loads (largest free-float market caps first).
+    live_backfill_days: int = Field(default=5, ge=0, le=30)
+    live_warmup_max_tickers: int = Field(default=300, ge=0, le=1000)
 
     #: KAPTAN_MODE (04 §env): paper | personal | live | backtest. `personal` turns on the one-person
     #: kill-switch restart rule (06 §11: ≥ 24 h between the two signatures and ≥ 5 sessions since the kill).

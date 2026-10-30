@@ -48,7 +48,9 @@ def feed_for(settings: Settings, pool: Any, redis: Any, deps: LiveDeps) -> Agent
     async def settle(now: datetime) -> int:
         return await settle_waiting(pool, deps, now)
 
-    cfg = FeedConfig(max_runs_per_hour=settings.agent_max_runs_per_hour)
+    cfg = FeedConfig(
+        max_runs_per_hour=settings.agent_max_runs_per_hour, max_runs_per_day=settings.agent_max_runs_per_day
+    )
     return AgentFeed(pool, redis, runner, cfg, budget_ok=budget_ok, settle=settle, now=lambda: datetime.now(UTC))
 
 
@@ -68,10 +70,11 @@ async def run_worker(settings: Settings, stop: asyncio.Event | None = None) -> i
             provider = get_provider(settings.llm_mode, settings=settings, redis=redis)
             deps = LiveDeps(provider=provider, tools=toolbox_for(settings), redis=redis)
             log.info(
-                "agent worker started (llm_mode=%s, checkpointer=%s, max_runs_per_hour=%d)",
+                "agent worker started (llm_mode=%s, checkpointer=%s, max_runs_per_hour=%d, max_runs_per_day=%d)",
                 settings.llm_mode,
                 settings.checkpointer,
                 settings.agent_max_runs_per_hour,
+                settings.agent_max_runs_per_day,
             )
             await feed_for(settings, pool, redis, deps).run(stop)
     finally:

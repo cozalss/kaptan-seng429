@@ -19,6 +19,7 @@ Politeness (MKK runs a WAF; `robots.txt` itself answers HTTP 666):
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import random
 import time
@@ -203,7 +204,9 @@ class KapClient:
     async def _json_list(self, method: str, path: str, *, json_body: Any = None, referer: str) -> list[dict[str, Any]]:
         resp = await self._request(method, path, kind="json", json_body=json_body, referer=referer)
         try:
-            data = resp.json()
+            # JSON is UTF-8 (RFC 8259): decode the bytes, never a charset header (a cp1254/latin-1 label
+            # would turn "TUKAŞ" into "TUKAÅ"). json.loads(bytes) also detects UTF-16/32 and a BOM.
+            data = json.loads(resp.content)
         except ValueError as exc:
             raise KapBlockedError(f"{path}: body is not JSON") from exc
         if not isinstance(data, list) or not all(isinstance(r, dict) for r in data):

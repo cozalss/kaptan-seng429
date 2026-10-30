@@ -43,6 +43,12 @@ docker compose down               # stop; add -v to drop the database
 API health: http://localhost:8000/api/v1/health · operations: [`docs/ops/RUNBOOK.md`](docs/ops/RUNBOOK.md) ·
 tests: [Testler](#testler) · live LLM mode: [Replay'den canlı moda](#replayden-canlı-moda).
 
+**Today's real data** (real KAP disclosures, Borsa İstanbul prices, live agents; keys from `backend/.env`):
+
+```bash
+docker compose down && docker compose --env-file live.env --profile live up -d --build
+```
+
 ## Ne yapar?
 
 Borsa İstanbul şirketleri önemli her gelişmeyi KAP'ta (Kamuyu Aydınlatma Platformu) duyurur: yeni bir sözleşme,
@@ -353,8 +359,9 @@ Girişler IP başına dakikada 5 ile sınırlıdır (`LOGIN_RATE_PER_MINUTE`).
 
 ### Replay'den canlı moda
 
-Varsayılan `LLM_MODE=replay`: ajanlar kayıtlı cevaplarla çalışır, ağ ve anahtar gerekmez. Canlı mod için değişken
-adları (değerler gitignore'daki kök `.env` dosyasına ya da `backend/prod.env`'e yazılır, asla depoya değil):
+Varsayılan `LLM_MODE=replay`: ajanlar kayıtlı cevaplarla çalışır, ağ ve anahtar gerekmez. Güncel veriyle tek komut:
+`docker compose --env-file live.env --profile live up -d --build` (ayrıntı: RUNBOOK §1 "Güncel veri"). Değişken
+adları (anahtarlar gitignore'daki `backend/.env`'e ya da `backend/prod.env`'e yazılır, asla depoya değil):
 
 | Değişken | Etkisi |
 |---|---|
@@ -362,7 +369,8 @@ adları (değerler gitignore'daki kök `.env` dosyasına ya da `backend/prod.env
 | `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY` | Sağlayıcı anahtarları; anahtarı olmayan sağlayıcı atlanır |
 | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `OLLAMA_BASE_URL` | İsteğe bağlı ek halkalar |
 | `LLM_CAP_*` | Sağlayıcı başına günlük sert sınırlar |
-| `KAP_LIVE=true`, `DEMO_MODE=false` | Gerçek KAP bildirimleri: boş veritabanı (`docker compose down -v`) ve `docker compose --profile live up -d` |
+| `KAP_LIVE=true`, `DEMO_MODE=false` | Gerçek KAP bildirimleri, kendi veritabanında (`live.env`: `KAPTAN_PGDATA=pgdata_live`); ilk açılışta `warmup` |
+| `AGENT_MAX_RUNS_PER_HOUR`, `AGENT_MAX_RUNS_PER_DAY` | Modele giden ajan koşusu üst sınırı (saat / İstanbul günü) |
 | `PRICES_LIVE=true`, `CHECKPOINTER=postgres` | Gerçek fiyat işaretleri; yeniden başlatmaya dayanıklı ajan grafı |
 
 ### Sorun giderme

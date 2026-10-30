@@ -11,7 +11,7 @@ Also used to publish SSE `counters` (feed) after every change that moves them.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime, time, timedelta
 from functools import cache
 from typing import Any, Final
 
@@ -20,6 +20,7 @@ from psycopg import AsyncConnection
 from kaptan.clock import istanbul_date
 from kaptan.demo.fixtures import DemoFixtures
 from kaptan.domain.schemas._base import iso_ms
+from kaptan.text.turkish import IST
 
 DEMO_RUN_MS: Final = 7_500
 
@@ -33,13 +34,17 @@ rows AS (
          coalesce(d.run_id IN (SELECT run_id FROM inflight) AND r.kind <> 'pregate_veto', false) AS hides_class
     FROM core.disclosures d
     LEFT JOIN trading.agent_runs r ON r.run_id = d.run_id
-   WHERE d.visible
+   WHERE CASE WHEN %(demo)s THEN d.visible
+              -- live: `visible` only marks today's feed (the poller hides a day at midnight), so a day
+              -- is every KAP row published in it, the backfilled history included
+              ELSE d.published_at >= %(day_start)s AND d.published_at < %(day_end)s END
 ),
 cards AS (
   SELECT a.run_id, a.status
     FROM trading.approvals a
     JOIN trading.agent_runs r ON r.run_id = a.run_id
    WHERE r.visible AND a.run_id NOT IN (SELECT run_id FROM inflight)
+     AND (%(demo)s OR (a.created_at >= %(day_start)s AND a.created_at < %(day_end)s))
 )
 SELECT
   (SELECT count(*) FROM rows)                                   AS total,
@@ -78,11 +83,23 @@ def counters_from_row(row: dict[str, Any], now: datetime, floor: int) -> dict[st
     }
 
 
-async def day_counters(conn: AsyncConnection[Any], now: datetime, *, demo: bool = False) -> dict[str, Any]:
-    """DayCounters as of `now` (the demo clock in DEMO_MODE). The mock's token floor applies only with
-    `demo=True` (DEMO_MODE); a real day shows its real token count."""
+async def day_counters(
+    conn: AsyncConnection[Any], now: datetime, *, demo: bool = False, day: date | None = None
+) -> dict[str, Any]:
+    """DayCounters as of `now` (the demo clock in DEMO_MODE). With `demo=True` (DEMO_MODE) every visible row
+    is the demo day and the mock's token floor applies; otherwise only the Istanbul day of `now` counts
+    (disclosures by publication time, cards by creation time) and the day shows its real token count."""
+    day = day or istanbul_date(now)  # `day`: a past session (outside DEMO_MODE); as_of stays `now`
+    day_start = datetime.combine(day, time(0, 0), IST)
+    params = {
+        "run_s": DEMO_RUN_MS / 1000,
+        "day": day,
+        "demo": demo,
+        "day_start": day_start,
+        "day_end": day_start + timedelta(days=1),
+    }
     async with conn.cursor() as cur:
-        await cur.execute(COUNTERS_SQL, {"run_s": DEMO_RUN_MS / 1000, "day": istanbul_date(now)})
+        await cur.execute(COUNTERS_SQL, params)
         row = await cur.fetchone()
     assert row is not None
     return counters_from_row(dict(row), now, tokens_floor() if demo else 0)

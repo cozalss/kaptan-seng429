@@ -53,7 +53,13 @@ class TickerReport:
 
 
 async def fetch_ticker(
-    client: PoliteClient, ticker: str, start: date, end: date, sources: Collection[Source] = ALL_SOURCES
+    client: PoliteClient,
+    ticker: str,
+    start: date,
+    end: date,
+    sources: Collection[Source] = ALL_SOURCES,
+    *,
+    chunk_days: int = isyatirim.CHUNK_DAYS,
 ) -> Fetched:
     raw: list[DailyBar] = []
     series: yahoo.YahooSeries | None = None
@@ -62,7 +68,7 @@ async def fetch_ticker(
             lead = prev_session(start)
         except CalendarRangeError:
             lead = start
-        raw = await isyatirim.fetch_daily(client, ticker, lead, end)
+        raw = await isyatirim.fetch_daily(client, ticker, lead, end, chunk_days=chunk_days)
     if "yfinance" in sources:
         series = await yahoo.fetch_chart(client, ticker, start, end)
     merged = with_raw_open(raw, series)

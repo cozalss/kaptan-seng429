@@ -156,6 +156,35 @@ def _injected(e: Entry, _who: str, _what: str) -> str:
     return f"Senaryo eklendi: {SCENARIO_TR.get(key, 'senaryo')}."
 
 
+#: Why the pre-gate vetoed, by the first rule code in the payload's reasons (panel audit-words.ts VETO_REASON).
+VETO_REASON: Final[dict[str, str]] = {
+    "R01": "her şey durdurulmuştu",
+    "R02": "günlük zarar sınırı",
+    "R03": "hisse izlenen evrenin dışında",
+    "R04": "tedbirli hisse",
+    "R09": "fiyat bandının dışında",
+    "R10": "kriz rejimi",
+    "R11": "kota ya da veri sorunu",
+    "R12": "yalnızca alım kuralı",
+    "R13": "ekip engel listesinde",
+}
+VETO_CODE: Final = re.compile(r"^(R\d{2})")
+
+
+def veto_reason(e: Mapping[str, Any]) -> str | None:
+    reasons = e["payload"].get("reasons")
+    for r in reasons if isinstance(reasons, list) else []:
+        m = VETO_CODE.match(r) if isinstance(r, str) else None
+        if m and m.group(1) in VETO_REASON:
+            return VETO_REASON[m.group(1)]
+    return None
+
+
+def _rejected(e: Mapping[str, Any], what: str) -> str:
+    why = veto_reason(e)
+    return f"Kurallar {what} için öneriyi baştan reddetti{f' ({why})' if why else ''}."
+
+
 PHRASES: Final[dict[str, Phrase]] = {
     "disclosure.ingested": lambda _e, _w, what: f"KAP okuyucu {what} bildirimini getirdi.",
     "classification.done": lambda _e, _w, _x: "Sınıflandırıcı bir bildirimin türünü belirledi.",
@@ -163,7 +192,7 @@ PHRASES: Final[dict[str, Phrase]] = {
     "agent.output": lambda _e, who, _x: f"{who} notunu yazdı.",
     "rule.decided": lambda _e, _w, _x: "Kural motoru eşikleri tarttı.",
     "risk.checked": lambda _e, _w, _x: "Risk kapısı bir öneriyi denetledi.",
-    "risk.rejected": lambda _e, _w, what: f"Kurallar {what} için öneriyi baştan reddetti (tedbirli hisse).",
+    "risk.rejected": lambda e, _w, what: _rejected(e, what),
     "compliance.rejected": lambda _e, _w, what: f"Uyum {what} bildirimindeki gizli talimatı yakaladı; öneri çıkmadı.",
     "proposal.created": lambda _e, _w, what: f"Tayfa {what} için öneri hazırladı.",
     "approval.decided": _decided,

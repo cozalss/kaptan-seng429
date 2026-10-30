@@ -83,10 +83,13 @@ def parse_rows(ticker: str, payload: Any) -> list[DailyBar]:
     return [bars[d] for d in sorted(bars)]
 
 
-async def fetch_daily(client: PoliteClient, ticker: str, start: date, end: date) -> list[DailyBar]:
-    """Raw daily bars for [start, end], one request per ≤ 1-year chunk."""
+async def fetch_daily(
+    client: PoliteClient, ticker: str, start: date, end: date, *, chunk_days: int = CHUNK_DAYS
+) -> list[DailyBar]:
+    """Raw daily bars for [start, end], one request per ≤ `chunk_days` chunk (the endpoint also answers
+    ~14 months at once; the live warm-up uses that to load 250+ sessions in one request)."""
     out: list[DailyBar] = []
-    for lo, hi in chunks(start, end):
+    for lo, hi in chunks(start, end, chunk_days):
         params = {"hisse": ticker, "startdate": lo.strftime(DATE_FMT), "enddate": hi.strftime(DATE_FMT)}
         payload = await client.get_json(URL, params=params)
         if payload is None:

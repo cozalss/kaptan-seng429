@@ -1,4 +1,9 @@
-"""The forward paper P&L series (trading.pnl_daily, fixture order) and its last point."""
+"""The forward paper P&L series (trading.pnl_daily) and its last point.
+
+Order: strategies in fixture order (first `ord` of each), days ascending within a strategy — exactly the
+fixture order on the demo day, and still date order when a session is written later than today's row
+(the live warm-up's earlier days, a catch-up run), which gets a higher `ord`.
+"""
 
 from __future__ import annotations
 
@@ -12,13 +17,13 @@ LIVE_STRATEGY: Final = "kaptan:v1.1-fwd"
 
 PNL_SQL: Final = """
 SELECT d, strategy, equity, daily_return, peak_equity, drawdown, n_positions, n_trades
-FROM trading.pnl_daily
+FROM (SELECT *, min(ord) OVER (PARTITION BY strategy) AS strategy_ord FROM trading.pnl_daily) p
 WHERE (%(from)s::date IS NULL OR d >= %(from)s::date) AND (%(to)s::date IS NULL OR d <= %(to)s::date)
-ORDER BY ord
+ORDER BY strategy_ord, d, ord
 """
 
 LAST_POINT_SQL: Final = """
-SELECT equity, peak_equity FROM trading.pnl_daily WHERE strategy = %s ORDER BY ord DESC LIMIT 1
+SELECT equity, peak_equity FROM trading.pnl_daily WHERE strategy = %s ORDER BY d DESC, ord DESC LIMIT 1
 """
 
 

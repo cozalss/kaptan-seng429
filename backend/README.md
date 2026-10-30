@@ -30,6 +30,14 @@ curl -s http://127.0.0.1:8000/api/v1/health
 **One command, Docker only** (from the repo root): `docker compose up -d --build` builds this image and the panel
 (`../Dockerfile.panel`), migrates, loads the demo day once (`seed_demo`), starts the API, the scheduler and the
 panel on http://localhost:3100 (API :8000). See the root README and `../docs/ops/RUNBOOK.md`.
+
+**Today's real data:** `docker compose --env-file live.env --profile live up -d --build` (repo root) runs the same
+stack with `DEMO_MODE=false`, `LLM_MODE=live`, `KAP_LIVE=true`, `PRICES_LIVE=true` on its own volumes. The
+one-off `warmup` service (`python -m kaptan.live.warmup`, entrypoint `live_warmup`) loads the last
+`LIVE_BACKFILL_DAYS` KAP days, İş Yatırım's stock list and ~14 months of daily bars for the shares that can pass
+U4, then runs the universe / pnl_eod / regime / brief jobs; `agent_worker` waits for it. Spend caps:
+`AGENT_MAX_RUNS_PER_HOUR`, `AGENT_MAX_RUNS_PER_DAY` (after the LLM-free pre-gate) and the provider `LLM_CAP_*`.
+`GET /api/v1/disclosures?day=&limit=&ticker=` lists a day's disclosures (newest first).
 Without Docker for the app processes:
 
 Docker Desktop, uv, Python 3.11, Node 24. Two terminals; the commands are the same in Git Bash and

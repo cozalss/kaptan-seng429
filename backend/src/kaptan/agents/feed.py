@@ -11,8 +11,9 @@ visible row, stage `text` after the detail fetcher stored its text). For each en
    `skipped` with the reason. In-scope rows without their TR text yet wait as `awaiting_text` until the
    `text` entry arrives.
 3. **Spend limit:** at most `AGENT_MAX_RUNS_PER_HOUR` runs that reached an LLM (or are still running) per
-   rolling hour, and no run when every live provider is over its daily cap (kaptan.llm.budget); such rows
-   are `capped` (not retried: a stale disclosure is not worth a late run).
+   rolling hour, at most `AGENT_MAX_RUNS_PER_DAY` per Istanbul day (0 = no daily cap), and no run when
+   every live provider is over its daily cap (kaptan.llm.budget); such rows are
+   `capped` (not retried: a stale disclosure is not worth a late run).
 4. **Ack after persist:** the entry is XACKed only after the run's transaction (which also writes the
    feed row) committed. A crash before that leaves the entry pending; on restart the consumer reads its
    own pending entries first (`XREADGROUP … 0`) and claims stale ones of dead consumers (`XAUTOCLAIM`).
@@ -37,6 +38,7 @@ from redis.exceptions import RedisError, ResponseError
 from kaptan.agents.feed_run import LiveResult
 from kaptan.ingest.publish import AGENT_STREAM
 from kaptan.ingest.subject_routes import DETAIL_ROUTES
+from kaptan.text.turkish import IST
 
 log = logging.getLogger("kaptan.agents.feed")
 
@@ -102,6 +104,8 @@ Settle = Callable[[datetime], Awaitable[int]]
 @dataclass(frozen=True, slots=True)
 class FeedConfig:
     max_runs_per_hour: int = 6
+    #: Runs that reached an LLM per Istanbul calendar day; 0 = no daily cap (only the hourly one).
+    max_runs_per_day: int = 0
     consumer: str = "worker-1"
     count: int = 10
     block_ms: int = 1_000
@@ -131,6 +135,12 @@ def scope_reason(row: dict[str, Any]) -> str | None:
     if not row["primary_ticker"]:
         return "no_ticker"
     return None
+
+
+def istanbul_midnight(now: datetime) -> datetime:
+    """00:00 Europe/Istanbul of `now`'s Istanbul day, as an aware datetime (the daily cap's window start)."""
+    local = now.astimezone(IST)
+    return local.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 async def _one(conn: Any, sql: str, params: Any) -> dict[str, Any] | None:
@@ -192,6 +202,10 @@ class AgentFeed:
         row = await _one(conn, SPENT_SQL, (self.now() - HOUR, index))
         if row is not None and int(row["n"]) >= self.cfg.max_runs_per_hour:
             return "hourly_cap"
+        if self.cfg.max_runs_per_day > 0:
+            row = await _one(conn, SPENT_SQL, (istanbul_midnight(self.now()), index))
+            if row is not None and int(row["n"]) >= self.cfg.max_runs_per_day:
+                return "daily_cap"
         if self.budget_ok is not None and not await self.budget_ok():
             return "llm_daily_cap"
         return None
