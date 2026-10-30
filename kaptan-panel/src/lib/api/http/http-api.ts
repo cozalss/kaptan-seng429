@@ -1,9 +1,10 @@
 import { z } from "zod";
-import { ApprovalCard, AuditPage, ChainVerifyResult, DayCounters, Explain, LimitsView, Me, OrderTicket, PnlPoint, Position, ProposalNote, RiskStatus, TeamMember } from "@/lib/domain";
+import { ApprovalCard, AuditPage, ChainVerifyResult, DayCounters, DisclosureListItem, Explain, LimitsView, Me, OrderTicket, PnlPoint, Position, ProposalNote, RiskStatus, TeamMember } from "@/lib/domain";
 import type { Role } from "@/lib/domain/user";
 import { noteServerTime } from "@/lib/clock";
 import { HoldResult, Overview } from "@/lib/solo/overview";
 import { ApiError, type KaptanApi } from "../types";
+import { repairDeep } from "./mojibake";
 
 /**
  * FastAPI client (04 §11, 09 §6). Access JWT lives in memory only; the refresh token is
@@ -75,7 +76,8 @@ async function request<T extends z.ZodType>(schema: T, path: string, init: Reque
     throw new ApiError(res.status, code, msg ?? fallback[res.status] ?? "Sunucu hatası.");
   }
   if (res.status === 204) return schema.parse(undefined);
-  const json: unknown = await res.json();
+  // Some live KAP text reaches the API double-decoded (UTF-8 read as cp1254): repair it once, here.
+  const json: unknown = repairDeep(await res.json());
   const parsed = schema.safeParse(json);
   if (!parsed.success) throw new ApiError(502, "schema", "Sunucu yanıtı beklenen biçimde değil.");
   return parsed.data;
@@ -108,6 +110,14 @@ export function createHttpApi(): KaptanApi {
     },
     users: () => request(z.array(TeamMember), "/admin/users"),
     counters: () => request(DayCounters, "/disclosures/counters").then(withServerTime),
+    // One odd row (an unusual ticker, a new enum value) must not blank the whole list: keep the rows that parse.
+    disclosures: (q = {}) =>
+      request(z.array(z.unknown()), `/disclosures${qs({ day: q.day, limit: q.limit, ticker: q.ticker })}`).then((rows) =>
+        rows.flatMap((r) => {
+          const one = DisclosureListItem.safeParse(r);
+          return one.success ? [one.data] : [];
+        }),
+      ),
     listApprovals: (status = "pending") => request(z.array(ApprovalCard), `/approvals${qs({ status })}`),
     decideApproval: (pid, d) => request(ApprovalCard, `/approvals/${id(pid)}/decision`, post(d)),
     explain: (runId) => request(Explain, `/runs/${id(runId)}/explain`),

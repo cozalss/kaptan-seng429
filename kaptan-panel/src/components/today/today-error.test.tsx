@@ -17,6 +17,7 @@ const desk: DeskState = {
 };
 
 vi.mock("@/components/shell/desk-state", () => ({ useDesk: () => desk }));
+vi.mock("@/lib/api/react", () => ({ useApiQuery: () => ({ data: undefined, error: null, loading: true, refreshing: false, refetch: async () => undefined }) }));
 vi.mock("@/lib/sse/use-event-stream", () => ({ useEventStream: () => "closed" }));
 vi.mock("@/lib/clock", () => ({ useNow: () => null }));
 vi.mock("@/components/roles/use-role", () => ({ useRole: () => ({ role: "risk_officer" }) }));

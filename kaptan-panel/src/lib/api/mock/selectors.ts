@@ -1,3 +1,4 @@
+import { MAX_DISCLOSURES } from "@/lib/api/limits";
 import type {
   ApprovalCard,
   AuditEntry,
@@ -382,3 +383,18 @@ export function expiringToday(state: MockState, realNow: number = Date.now()): P
 
 export const ANCHOR_DATE = new Date(CLOCK_ANCHOR_MS).toISOString().slice(0, 10);
 export const PREV_SESSION = addDays(ANCHOR_DATE, -3);
+
+/** GET /disclosures: one Istanbul day (default today on the mock clock), newest first, capped at 500. */
+export function disclosuresOn(
+  state: MockState,
+  q: { day?: string; limit?: number; ticker?: string } = {},
+  realNow: number = Date.now(),
+): DisclosureListItem[] {
+  const istanbulDay = (ms: number) => new Date(ms + 3 * 3_600_000).toISOString().slice(0, 10);
+  const day = q.day ?? istanbulDay(nowMs(state, realNow));
+  const limit = Math.max(1, Math.min(q.limit ?? 200, MAX_DISCLOSURES));
+  return visibleDisclosures(state, realNow)
+    .filter((d) => istanbulDay(Date.parse(d.published_at)) === day)
+    .filter((d) => !q.ticker || d.stock_codes.includes(q.ticker))
+    .slice(0, limit);
+}

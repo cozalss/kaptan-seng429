@@ -30,17 +30,33 @@ function RoleMark({ role, className }: { role: Role; className?: string }) {
   );
 }
 
+/** Initials in a disc of the role's tone (the sidebar's account card). */
+function Avatar({ role, name }: { role: Role; name: string }) {
+  const initials = name
+    .split(/\s+/)
+    .map((w) => w[0] ?? "")
+    .join("")
+    .slice(0, 2)
+    .toLocaleUpperCase("tr-TR");
+  return (
+    <span aria-hidden className={cn(`tone-${role}`, "grid size-9 shrink-0 place-items-center rounded-full bg-[var(--tone)] text-dense font-semibold text-on-dark ring-2 ring-white/25")}>
+      {initials}
+    </span>
+  );
+}
+
 /**
  * The account menu at the right of the top bar: who is signed in (name and role), "Hesap
  * değiştir" with the four team accounts (the choice is kept in the session; the guided tour
  * and the tests switch here), Ayarlar and Çıkış. The trigger's accessible name starts with
  * "Rol: <rol>." so a screen reader hears the role first.
  */
-export function AccountMenu() {
+export function AccountMenu({ variant = "bar", collapsed = false }: { variant?: "bar" | "sidebar"; collapsed?: boolean }) {
   const router = useRouter();
   const { role, user, switchTo, switching } = useRole();
   // The switch is confirmed by a short slip ("Hesap değişti: …", use-role.ts), read out by the toaster.
   const pick = (next: Role) => void switchTo(next);
+  const side = variant === "sidebar";
 
   const signOut = async () => {
     try {
@@ -58,25 +74,28 @@ export function AccountMenu() {
         aria-busy={switching || undefined}
         data-testid="account-menu"
         className={cn(
-          "group inline-flex h-11 max-w-[220px] min-w-0 items-center gap-2.5 border-2 border-rule-ui bg-panel pr-2.5 pl-3 text-left outline-none",
-          "transition-colors duration-[var(--dur-quick)] ease-[var(--ease-ink)] hover:bg-wash-tint data-[state=open]:bg-wash-tint",
-          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+          "group flex min-w-0 items-center gap-3 text-left outline-none",
+          "transition-colors duration-[var(--dur-quick)] ease-[var(--ease-ink)]",
+          side
+            ? "w-full rounded-xl border border-navy-line bg-white/[0.06] p-2.5 pr-3 hover:bg-navy-raised data-[state=open]:bg-navy-raised focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-navy"
+            : "h-11 max-w-[220px] rounded-lg border-2 border-rule-ui bg-panel pr-2.5 pl-3 hover:bg-wash-tint data-[state=open]:bg-wash-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+          side && collapsed && "lg:justify-center lg:border-transparent lg:bg-transparent lg:p-1",
           switching && "cursor-progress",
         )}
       >
-        <RoleMark role={role} />
-        <span className="min-w-0 leading-tight">
-          <span className="block truncate text-dense font-semibold text-ink">
-            {user.name}
-          </span>
-          <span className="hidden truncate text-meta leading-[18px] text-ink-soft sm:block">
-            {ROLE_LABEL[role]}
-          </span>
+        {side ? <Avatar role={role} name={user.name} /> : <RoleMark role={role} />}
+        <span className={cn("min-w-0 flex-1 leading-tight", side && collapsed && "lg:sr-only")}>
+          <span className={cn("block truncate font-semibold", side ? "text-ui text-on-navy" : "text-dense text-ink")}>{user.name}</span>
+          <span className={cn("truncate text-meta leading-[18px]", side ? "block text-on-navy-soft" : "hidden text-ink-soft sm:block")}>{ROLE_LABEL[role]}</span>
         </span>
         <svg
           aria-hidden
           viewBox="0 0 10 10"
-          className="size-2.5 shrink-0 text-ink-soft transition-transform duration-[var(--dur-quick)] group-data-[state=open]:rotate-180"
+          className={cn(
+            "size-2.5 shrink-0 transition-transform duration-[var(--dur-quick)]",
+            side ? "rotate-180 text-on-navy-soft group-data-[state=open]:rotate-0" : "text-ink-soft group-data-[state=open]:rotate-180",
+            side && collapsed && "lg:hidden",
+          )}
           fill="none"
           stroke="currentColor"
           strokeWidth={1.5}
@@ -86,8 +105,9 @@ export function AccountMenu() {
       </M.Trigger>
       <M.Portal>
         <M.Content
-          align="end"
-          sideOffset={6}
+          side={side ? "top" : "bottom"}
+          align={side ? "start" : "end"}
+          sideOffset={8}
           className={cn(
             MENU_CONTENT,
             "w-[280px] max-w-[calc(100vw-24px)] py-0",

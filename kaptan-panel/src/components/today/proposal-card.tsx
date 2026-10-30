@@ -40,46 +40,56 @@ export function ProposalCard({
     <article
       aria-label={name}
       className={cn(
-        "group relative grid gap-x-8 gap-y-3 px-4 py-5 transition-colors duration-[var(--dur-quick)] ease-[var(--ease-ink)] hover:bg-wash-tint sm:grid-cols-[minmax(0,1fr)_auto] sm:px-6",
+        "group relative grid gap-x-6 gap-y-3 px-5 py-4 transition-colors duration-[var(--dur-quick)] ease-[var(--ease-ink)] hover:bg-wash-tint grid-cols-[minmax(0,1fr)_auto] items-end md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center",
         "has-[a:focus-visible]:bg-wash-tint",
-        fresh && "animate-card-arrive",
+        fresh && "animate-card-arrive bg-wash-tint",
       )}
     >
-      <div className="min-w-0">
-        <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-          <span
-            data-side={card.side}
-            className={cn("px-1.5 text-meta font-semibold text-on-dark", card.side === "sell" ? "bg-loss" : "bg-gain")}
-          >
-            {SIDE_LABEL[card.side]}
-          </span>
-          <span className="text-body font-semibold text-ink">{titleTr(name)}</span>
-          <span className="text-meta text-ink-soft">{kind}</span>
-          {fresh ? <span className="bg-brand px-1.5 text-meta font-semibold text-on-dark">yeni</span> : null}
-        </p>
-        <h2 className="mt-1 text-ui text-ink-soft">{plainEvent(card)}</h2>
-        <Signatures yours={yours} />
+      <div className="col-span-2 flex min-w-0 gap-3.5 md:col-span-1">
+        <span
+          aria-hidden
+          className={cn(
+            "mt-0.5 grid h-10 w-12 shrink-0 place-items-center rounded-lg font-mono text-[11px] font-semibold tracking-tight",
+            card.side === "sell" ? "bg-loss/10 text-loss" : "bg-gain/10 text-gain",
+          )}
+        >
+          {card.ticker}
+        </span>
+        <div className="min-w-0">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="text-body font-semibold text-ink">{titleTr(name)}</span>
+            <span
+              data-side={card.side}
+              className={cn("rounded-full px-2 text-meta leading-[20px] font-semibold text-on-dark", card.side === "sell" ? "bg-loss" : "bg-gain")}
+            >
+              {SIDE_LABEL[card.side]}
+            </span>
+            {fresh ? <span className="rounded-full bg-brand px-2 text-meta leading-[20px] font-semibold text-on-dark">yeni</span> : null}
+            <span className="text-meta text-muted">{kind}</span>
+          </p>
+          <h2 className="mt-0.5 text-ui text-ink-soft">{plainEvent(card)}</h2>
+          <Signatures yours={yours} />
+        </div>
       </div>
 
-      <div className="flex items-end justify-between gap-6 sm:flex-col sm:items-end sm:justify-start sm:gap-1 sm:text-right">
-        <p className="tabular-nums">
-          <span className="block text-body font-semibold text-ink">{fmtTry(card.final_notional_try)}</span>
-          <span className="block text-meta text-ink-soft">
-            {fmtInt(card.qty)} lot · {card.side === "sell" ? "en az" : "en fazla"} {fmtPrice(card.limit_price)}
-          </span>
-          <span className="block text-meta text-ink-soft">Son saat {deadline(card, nowIso)}</span>
-        </p>
-        <Link
-          href={href.proposal(card.proposal_id)}
-          aria-label={`İncele: ${name}`}
-          className="inline-flex min-h-11 shrink-0 items-center gap-1.5 text-ui font-semibold text-brand after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-brand sm:mt-2 sm:min-h-0"
-        >
-          İncele
-          <span aria-hidden className="transition-transform duration-[var(--dur-quick)] ease-[var(--ease-ink)] group-hover:translate-x-1">
-            →
-          </span>
-        </Link>
-      </div>
+      <p className="pl-[62px] tabular-nums md:pl-0 md:text-right">
+        <span className="block text-body font-semibold text-ink">{fmtTry(card.final_notional_try)}</span>
+        <span className="block text-meta text-ink-soft">
+          {fmtInt(card.qty)} lot · {card.side === "sell" ? "en az" : "en fazla"} {fmtPrice(card.limit_price)}
+        </span>
+        <span className="block text-meta text-ink-soft">Son saat {deadline(card, nowIso)}</span>
+      </p>
+
+      <Link
+        href={href.proposal(card.proposal_id)}
+        aria-label={`İncele: ${name}`}
+        className="inline-flex h-10 items-center justify-center gap-1.5 justify-self-end rounded-lg border-[1.5px] border-rule-ui bg-panel px-3.5 text-ui font-semibold text-ink transition-colors duration-[var(--dur-quick)] after:absolute after:inset-0 after:content-[''] group-hover:border-brand group-hover:text-brand focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-brand "
+      >
+        İncele
+        <span aria-hidden className="transition-transform duration-[var(--dur-quick)] ease-[var(--ease-ink)] group-hover:translate-x-0.5">
+          →
+        </span>
+      </Link>
     </article>
   );
 }
@@ -90,7 +100,7 @@ export function ProposalCard({
  */
 function Signatures({ yours }: { yours: boolean }) {
   return (
-    <p className="tone-risk_officer mt-3 text-meta text-ink-soft">
+    <p className="tone-risk_officer mt-2 inline-flex flex-wrap items-center gap-x-1 rounded-full bg-sunk px-2.5 py-0.5 text-meta text-ink-soft">
       <span className="sr-only">İmzalar: kurallar imzaladı;</span>
       <span aria-hidden className="font-semibold text-ink tabular-nums">
         İmza 1/2 ·{" "}

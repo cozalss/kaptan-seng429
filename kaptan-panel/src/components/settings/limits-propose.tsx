@@ -86,7 +86,7 @@ export function ProposeLimit({ view, onDone }: { view: LimitsView; onDone: () =>
       <p className="text-ui text-ink-soft">Risk Sorumlusu onaylayınca yürürlüğe girer.</p>
       <label className="block space-y-1.5">
         <span className="text-dense text-ink-soft">Hangi sınır?</span>
-        <select value={key} onChange={(e) => pick(e.target.value as LimitKey)} className="h-11 w-full border-2 border-rule-ui bg-panel px-3 text-ui text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:h-10">
+        <select value={key} onChange={(e) => pick(e.target.value as LimitKey)} className="h-11 w-full rounded-lg border-2 border-rule-ui bg-panel px-3 text-ui text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:h-10">
           {PLAIN_LIMITS.map((k) => (
             <option key={k} value={k}>
               {limitSentence(k, valueOf(view.active.values, k) ?? 0)}

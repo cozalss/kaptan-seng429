@@ -14,6 +14,7 @@ const SCREENS: ReadonlyArray<{ path: string; signedIn: boolean; ready: (p: Page)
   { path: "/login/kral", signedIn: false, ready: (p) => expect(p.getByRole("heading", { level: 1, name: "Sayfa bulunamadı." })).toBeVisible() },
   { path: "/bugun", signedIn: true, ready: (p) => expect(p.getByRole("list", { name: "Bekleyen öneriler" })).toBeVisible() },
   { path: "/oneri/prop-day-e1-krgcl", signedIn: true, ready: (p) => expect(p.getByRole("region", { name: "Öneri" })).toBeVisible() },
+  { path: "/bildirimler", signedIn: true, ready: (p) => expect(p.getByRole("list", { name: "Bildirim listesi" })).toBeVisible() },
   { path: "/portfoy", signedIn: true, ready: (p) => expect(p.getByRole("button", { name: "Durdur", exact: true })).toBeVisible() },
   { path: "/denetim", signedIn: true, ready: (p) => expect(p.getByRole("list", { name: "Denetim kayıtları" })).toBeVisible() },
   { path: "/ayarlar", signedIn: true, ready: (p) => expect(p.getByRole("list", { name: "Geçerli sınırlar" })).toBeVisible() },

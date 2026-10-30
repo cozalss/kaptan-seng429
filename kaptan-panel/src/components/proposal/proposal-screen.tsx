@@ -81,14 +81,23 @@ export function ProposalScreen({ proposalId }: { proposalId: string }) {
   const lines = crewLines(card, explain);
 
   return (
-    <article aria-labelledby="oneri-baslik" className="max-w-[800px] animate-fade-in space-y-8">
-      <ProposalHeader card={card} status={status} />
+    <article
+      aria-labelledby="oneri-baslik"
+      className="grid animate-fade-in grid-cols-1 gap-y-6 xl:grid-cols-[minmax(0,1fr)_minmax(400px,0.72fr)] xl:gap-x-6"
+    >
+      <div className="xl:col-span-2">
+        <ProposalHeader card={card} status={status} />
+      </div>
 
-      <ProposalSummary card={card} status={status} risk={risk} riskLoading={ex.loading} perTradeCap={perTradeCap} equity={equity} nowMs={now} />
+      <div className="min-w-0 xl:col-start-1 xl:row-start-2">
+        <ProposalSummary card={card} status={status} risk={risk} riskLoading={ex.loading} perTradeCap={perTradeCap} equity={equity} nowMs={now} />
+      </div>
 
-      <Decision card={card} status={status} ticket={ticket} justSigned={signedHere && status === "approved"} onDecided={onDecidedHere} />
+      <div className="min-w-0 xl:sticky xl:top-6 xl:col-start-2 xl:row-span-2 xl:row-start-2 xl:self-start">
+        <Decision card={card} status={status} ticket={ticket} justSigned={signedHere && status === "approved"} onDecided={onDecidedHere} />
+      </div>
 
-      <div className="border border-rule-soft bg-panel">
+      <div className="min-w-0 self-start overflow-hidden rounded-xl border border-line bg-panel shadow-card xl:col-start-1 xl:row-start-3">
         <Disclosure id="neden" title="Neden bu öneri?" meta={plainHistory(card.evidence_summary, explain?.evidence_events)}>
           <WhySections card={card} explain={explain} />
         </Disclosure>
@@ -106,7 +115,7 @@ export function ProposalScreen({ proposalId }: { proposalId: string }) {
 
 function Loading() {
   return (
-    <div className="max-w-[800px] space-y-6" role="status" aria-label="Öneri yükleniyor">
+    <div className="max-w-[960px] space-y-6" role="status" aria-label="Öneri yükleniyor">
       <Skeleton className="h-4 w-40" />
       <Skeleton className="h-12 w-5/6" />
       <Skeleton className="h-40 w-full" />

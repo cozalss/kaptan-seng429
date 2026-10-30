@@ -14,7 +14,7 @@ export { equitySeries, linePath, seriesChange, yDomain, type EquityPoint } from 
  * the peak and the −5% level where everything stops (north red, the colour of Durdur).
  * Point, tap or use the arrow keys: a readout answers "on this day it was X".
  */
-export function EquityLine({ points, peak }: { points: readonly EquityPoint[]; peak: number | null }) {
+export function EquityLine({ points, peak, title = "Değer" }: { points: readonly EquityPoint[]; peak: number | null; title?: string }) {
   const geo = linePath(points, peak);
   const [active, setActive] = useState<number | null>(null);
   const first = points[0];
@@ -40,7 +40,7 @@ export function EquityLine({ points, peak }: { points: readonly EquityPoint[]; p
   return (
     <figure className={cn(CARD, CARD_PAD, "space-y-4")}>
       <figcaption className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <span className="text-[18px] leading-7 font-semibold text-ink">Değer</span>
+        <span className="text-body font-semibold text-ink">{title}</span>
         {ready && change !== null ? (
           <span className="text-dense text-muted tabular-nums">
             Son {points.length - 1} seansta <span className={cn("font-semibold", signTone(change))}>{fmtSignedPct(change, 1)}</span>
@@ -162,7 +162,7 @@ function Readout({ point, prev, left }: { point: EquityPoint; prev: EquityPoint 
   return (
     <span
       aria-hidden
-      className={cn("pointer-events-none absolute -top-2 z-10 -translate-y-full border border-rule-soft bg-panel px-2.5 py-1 text-dense whitespace-nowrap tabular-nums shadow-[0_2px_8px_rgb(16_17_23/0.12)]", edge)}
+      className={cn("pointer-events-none absolute -top-2 z-10 -translate-y-full rounded-md border border-rule-soft bg-panel px-2.5 py-1 text-dense whitespace-nowrap tabular-nums shadow-[0_2px_8px_rgb(16_17_23/0.12)]", edge)}
       style={{ left: `${left}%` }}
     >
       <span className="text-muted">{fmtShortDate(point.d)}</span>

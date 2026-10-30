@@ -5,6 +5,7 @@ import type {
   AuditPage,
   ChainVerifyResult,
   DayCounters,
+  DisclosureListItem,
   Explain,
   LimitDecisionInput,
   LimitProposalInput,
@@ -40,6 +41,11 @@ export interface KaptanApi {
 
   /** Today's counters for the one quiet line on Bugün ("212 bildirim okundu, 5 öneri"). */
   counters(): Promise<DayCounters>;
+  /**
+   * GET /disclosures?day=YYYY-MM-DD&limit=&ticker= — one Istanbul day's disclosures, newest first
+   * (default: today on the server clock; limit 1–500, default 200).
+   */
+  disclosures(query?: DisclosureQuery): Promise<DisclosureListItem[]>;
 
   // proposals — the Risk Sorumlusu signs; an approval yields an order ticket
   listApprovals(status?: ApprovalCard["status"] | "all"): Promise<ApprovalCard[]>;
@@ -82,6 +88,12 @@ export interface KaptanApi {
   /** Tamper test: change one ledger record behind the chain's back (or undo it). */
   setTamper(on: boolean): Promise<{ tamper_on: boolean }>;
   resetDemo(): Promise<void>;
+}
+
+export interface DisclosureQuery {
+  day?: string;
+  limit?: number;
+  ticker?: string;
 }
 
 /** Errors carry an HTTP-like status, a machine code and a Turkish, user-safe message. */

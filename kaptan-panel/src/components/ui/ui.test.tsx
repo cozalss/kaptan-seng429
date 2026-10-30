@@ -120,7 +120,7 @@ describe("small pieces", () => {
   });
 
   it("shares one menu look", () => {
-    expect(MENU_CONTENT).toMatch(/shadow-ink/);
+    expect(MENU_CONTENT).toMatch(/rounded-xl/);
     expect(MENU_CONTENT).toMatch(/menu-in/);
     expect(MENU_ITEM).toMatch(/py-3/);
   });

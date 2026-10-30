@@ -35,6 +35,7 @@ const base = (over: Partial<DeskState>): DeskState => ({
 });
 
 vi.mock("@/components/shell/desk-state", () => ({ useDesk: () => desk }));
+vi.mock("@/lib/api/react", () => ({ useApiQuery: () => ({ data: undefined, error: null, loading: true, refreshing: false, refetch: async () => undefined }) }));
 vi.mock("@/lib/sse/use-event-stream", () => ({ useEventStream: () => "closed" }));
 vi.mock("@/lib/clock", () => ({ useNow: () => Date.parse("2027-01-11T10:40:00.000Z") }));
 vi.mock("@/components/roles/use-role", () => ({ useRole: () => ({ role: "analyst" }) }));

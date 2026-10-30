@@ -49,7 +49,7 @@ export function Decision({
 
   return (
     <section aria-labelledby="karar" className="space-y-6">
-      <div className="border border-rule-soft bg-panel">
+      <div className="overflow-hidden rounded-xl border border-line bg-panel shadow-card">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 pt-5 pb-3 sm:px-6">
           <h2 id="karar" tabIndex={-1} className="scroll-mt-24 text-[19px] leading-7 font-semibold text-ink outline-none">
             Karar

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { withNums } from "./num";
 
 /**
  * The few typographic pieces every screen shares: a small kicker line, the one big Bodoni
@@ -11,8 +10,7 @@ export function Kicker({ children, className }: { children: ReactNode; className
 }
 
 /**
- * The one big Bodoni sentence of a screen. Figures in a plain-string sentence are set in
- * tabular Inter (withNums). `focusTarget` makes it the place focus lands after a route change
+ * The one big sentence of a screen (Inter 700, tabular figures). `focusTarget` makes it the place focus lands after a route change
  * (shell/app-shell.tsx), so a screen reader starts reading at the sentence.
  */
 export function BigSentence({
@@ -34,12 +32,12 @@ export function BigSentence({
       tabIndex={focusTarget ? -1 : undefined}
       data-route-focus={focusTarget ? "" : undefined}
       className={cn(
-        "font-display text-display tracking-[-0.015em] text-balance text-ink sm:text-display-lg",
+        "text-[30px] leading-[36px] font-bold tabular-nums tracking-[-0.025em] text-balance text-ink sm:text-[38px] sm:leading-[44px]",
         focusTarget && "outline-none",
         className,
       )}
     >
-      {typeof children === "string" ? withNums(children) : children}
+      {children}
     </Tag>
   );
 }

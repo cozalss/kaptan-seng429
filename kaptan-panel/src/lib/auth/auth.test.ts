@@ -1,6 +1,6 @@
 import { decodeSession, encodeSession, SESSION_MAX_AGE_S } from "./session";
 import { DEMO_PASSPHRASE, passphraseMatches } from "./passphrase";
-import { activeNavHref, HOME, href, LEGACY_REDIRECTS, NAV_ITEMS, ROUTES, safeNext } from "@/lib/nav";
+import { activeNavHref, HOME, href, LEGACY_REDIRECTS, NAV_ITEMS, ROUTES, safeNext, sectionLabel } from "@/lib/nav";
 
 describe("passphrase", () => {
   it("matches the demo passphrase exactly", () => {
@@ -36,14 +36,18 @@ describe("session cookie", () => {
 describe("navigation", () => {
   it("lands on Bugün and keeps three items in the top bar", () => {
     expect(HOME).toBe("/bugun");
-    expect(NAV_ITEMS.map((r) => r.label)).toEqual(["Bugün", "Portföy", "Denetim"]);
+    expect(NAV_ITEMS.map((r) => r.label)).toEqual(["Bugün", "Bildirimler", "Portföy", "Denetim kaydı", "Ayarlar"]);
   });
   it("lights Bugün for a proposal and nothing for unknown paths", () => {
     expect(activeNavHref("/bugun")).toBe(ROUTES.bugun);
     expect(activeNavHref("/oneri/p-1")).toBe(ROUTES.bugun);
     expect(activeNavHref("/portfoy")).toBe(ROUTES.portfoy);
     expect(activeNavHref("/denetim")).toBe(ROUTES.denetim);
-    expect(activeNavHref("/ayarlar")).toBeNull();
+    expect(activeNavHref("/ayarlar")).toBe(ROUTES.ayarlar);
+    expect(activeNavHref("/bildirimler")).toBe(ROUTES.bildirimler);
+    expect(sectionLabel("/oneri/p-1")).toBe("Bugün · Öneri");
+    expect(sectionLabel("/denetim")).toBe("Denetim kaydı");
+    expect(sectionLabel("/yok")).toBe("Masa");
     expect(activeNavHref("/yok")).toBeNull();
   });
   it("builds proposal links", () => {

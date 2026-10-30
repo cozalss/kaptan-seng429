@@ -36,11 +36,11 @@ export function TourInstrument({ index, step, role, busy, error, manual, onBacku
   const last = index === DEMO_STEPS.length - 1;
   const total = DEMO_STEPS.length;
   return (
-    <section aria-label="Rehberli tur" data-testid="guided-demo" className="tour-rise fixed inset-x-0 bottom-0 z-40 border-t-2 border-hairline bg-panel shadow-[0_-4px_16px_rgb(16_17_23/0.12)]">
+    <section aria-label="Rehberli tur" data-testid="guided-demo" className="tour-rise fixed inset-x-0 bottom-0 z-40 border-t border-line bg-panel lg:left-[var(--sidebar-w)] shadow-[0_-4px_16px_rgb(16_17_23/0.12)]">
       <div aria-hidden className="h-[3px] bg-sunk">
         <div className="h-full origin-left bg-brand transition-transform duration-[var(--dur-base)] ease-[var(--ease-out-expo)]" style={{ transform: `scaleX(${(index + 1) / total})` }} />
       </div>
-      <div className="mx-auto flex max-w-[752px] flex-col gap-3 px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:gap-6 sm:px-6 sm:py-3">
+      <div className="mx-auto flex max-w-[1560px] flex-col gap-3 px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:gap-6 sm:px-6 sm:py-3">
         <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-meta text-muted">
             <span className="font-semibold text-ink tabular-nums">

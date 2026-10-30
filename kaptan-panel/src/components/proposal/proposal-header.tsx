@@ -23,18 +23,18 @@ const STATUS_PILL: Readonly<Record<ApprovalStatus, { label: string; tone: string
 export function ProposalHeader({ card, status }: { card: ApprovalCard; status: ApprovalStatus }) {
   const pill = STATUS_PILL[status];
   return (
-    <header className="space-y-3">
+    <header className="space-y-3 border-b-[3px] border-double border-ink/80 pb-5">
       <Link href={ROUTES.bugun} className="inline-flex min-h-11 items-center gap-1.5 text-dense font-medium text-muted hover:text-ink sm:min-h-0">
         <span aria-hidden>←</span>
         Bugün
       </Link>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <p className="text-[16px] leading-6 font-semibold text-ink">{titleTr(shortName(card.company_name))}</p>
-        <span className="code border border-rule-soft px-1.5 text-dense text-ink-soft">{card.ticker}</span>
+        <span className="code rounded-md border border-rule-soft px-1.5 text-dense text-ink-soft">{card.ticker}</span>
         <span className="text-dense text-muted">{card.sub_type_tr}</span>
-        <span className={cn("ml-auto border px-2 py-0.5 text-dense font-semibold", pill.tone)}>{pill.label}</span>
+        <span className={cn("ml-auto rounded-full border-[1.5px] px-3 py-0.5 text-dense font-semibold", pill.tone)}>{pill.label}</span>
       </div>
-      <BigSentence id="oneri-baslik" focusTarget className="text-[32px] leading-[38px] sm:text-[40px] sm:leading-[46px]">
+      <BigSentence id="oneri-baslik" focusTarget className="max-w-[40ch]">
         {plainEvent(card)}
       </BigSentence>
     </header>

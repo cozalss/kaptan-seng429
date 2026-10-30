@@ -27,7 +27,7 @@ describe("Denetim", () => {
   it("reads the ledger as plain sentences, filters, searches and verifies the chain", async () => {
     const u = user();
     renderWithDesk(<AuditScreen />, new MockDb(null), "auditor");
-    expect(await screen.findByRole("heading", { level: 1, name: "Denetim" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Denetim kaydı" })).toBeInTheDocument();
     const list = await screen.findByRole("list", { name: "Denetim kayıtları" });
     expect(records(list)).toHaveLength(30);
     expect(within(list).getAllByText(/^KAP okuyucu .* bildirimini getirdi\.$/).length).toBeGreaterThan(0);

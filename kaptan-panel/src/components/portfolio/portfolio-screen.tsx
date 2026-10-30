@@ -13,7 +13,9 @@ import { SampleTag } from "@/components/story/ui";
 import { EquityLine } from "./equity-line";
 import { equitySeries } from "./equity-math";
 import { Holdings } from "./holdings";
-import { CARD, PageTitle, SectionTitle } from "./kit";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/shell/page-frame";
+import { CARD, CardHead, SectionTitle } from "./kit";
 import { PortfolioHero } from "./portfolio-hero";
 import { istanbulDate } from "./risk-math";
 import { StopControl } from "./stop-control";
@@ -57,55 +59,41 @@ export function PortfolioScreen() {
   const stopped = risk?.kill_switch === "on";
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="order-[-2]">
-        <PageTitle aside={IS_MOCK ? <SampleTag /> : null}>Portföy</PageTitle>
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_400px] xl:gap-5">
+      <div className="order-[-2] col-span-full">
+        <PageHeader title="Portföy" lead="Ne kadar var, nasıl gitti, elinde ne var." actions={IS_MOCK ? <SampleTag /> : null} className="mb-2 sm:mb-3" />
       </div>
 
-      {unreachable ? (
-        <ErrorState
-          message="Panel sunucuya ulaşamadı; öneriler ve portföy yüklenemedi."
-          onRetry={() => void refresh()}
-        />
-      ) : (
-        <PortfolioHero risk={risk} />
-      )}
-      <EquityLine points={points} peak={risk?.peak_equity ?? null} />
+      <div className="order-1 col-span-full">
+        {unreachable ? (
+          <ErrorState message="Panel sunucuya ulaşamadı; öneriler ve portföy yüklenemedi." onRetry={() => void refresh()} />
+        ) : (
+          <PortfolioHero risk={risk} />
+        )}
+      </div>
+      <div className={cn("order-2 min-w-0", stopped && "col-span-full")}>
+        <EquityLine points={points} peak={risk?.peak_equity ?? null} />
+      </div>
 
       {q.error && !q.data ? (
-        <ErrorState message={q.error} onRetry={q.refetch} />
+        <div className="order-4 col-span-full">
+          <ErrorState message={q.error} onRetry={q.refetch} />
+        </div>
       ) : null}
 
-      <section aria-labelledby="elindekiler" className={CARD}>
-        <SectionTitle
-          id="elindekiler"
-          title="Elindekiler"
-          className="px-4 pt-4 pb-3 sm:px-6 sm:pt-5"
-        >
-          Fişleri aracı kuruma sen girersin; satırdaki şirket öneriyi açar.
-        </SectionTitle>
-        {q.data && today ? (
-          <Holdings positions={q.data[0]} today={today} />
-        ) : (
-          <SkeletonLines lines={3} className="px-4 pb-5 sm:px-6" />
-        )}
+      <section aria-labelledby="elindekiler" className={cn(CARD, "order-5 col-span-full overflow-hidden")}>
+        <CardHead id="elindekiler" title="Elindekiler" note="Fişleri aracı kuruma sen girersin; satırdaki şirket öneriyi açar." />
+        {q.data && today ? <Holdings positions={q.data[0]} today={today} /> : <SkeletonLines lines={3} className="px-5 pb-5" />}
       </section>
 
       {waiting.length ? (
-        <section aria-labelledby="fisler" className="space-y-4">
-          <SectionTitle
-            id="fisler"
-            title={`Girilecek fişler (${waiting.length})`}
-          >
+        <section aria-labelledby="fisler" className="order-6 col-span-full space-y-4">
+          <SectionTitle id="fisler" title={`Girilecek fişler (${waiting.length})`}>
             İmzalandı, aracı kurumda henüz girilmedi. Girince “Girdim”e bas.
           </SectionTitle>
-          <div className="space-y-6">
+          <div className="grid gap-6 2xl:grid-cols-2">
             {waiting.map((t) => (
-              <OrderSlip
-                key={t.ticket_no}
-                ticket={t}
-                onMarked={() => void q.refetch()}
-              />
+              <OrderSlip key={t.ticket_no} ticket={t} onMarked={() => void q.refetch()} />
             ))}
           </div>
         </section>
@@ -114,7 +102,7 @@ export function PortfolioScreen() {
       {/* One fixed place in the tree, so a stop or restart never remounts it mid-dialog; while
           stopped it is moved (visually) right under the title, where the next step is. */}
       {risk ? (
-        <div className={stopped ? "order-[-1]" : "order-1"}>
+        <div className={stopped ? "order-[-1] col-span-full" : "order-3 min-w-0"}>
           <StopControl risk={risk} />
         </div>
       ) : null}

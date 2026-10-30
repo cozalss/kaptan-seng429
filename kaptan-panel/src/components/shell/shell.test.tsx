@@ -9,7 +9,10 @@ import { renderWithDesk } from "../harness.test-utils";
 import { nav } from "../nav.test-utils";
 import { AppShell } from "./app-shell";
 import { RiskBanner } from "./banners";
-import { TopBar } from "./top-bar";
+import { Sidebar } from "./sidebar";
+
+const noop = () => undefined;
+const SIDEBAR = <Sidebar open={false} onClose={noop} collapsed={false} onToggleCollapsed={noop} />;
 import { logout } from "./session-actions";
 
 vi.mock("next/navigation", async () => (await import("../nav.test-utils")).mockNavigation());
@@ -27,22 +30,35 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("top bar", () => {
-  it("has Bugün, Portföy, Denetim and one account menu, and marks the current place", async () => {
+describe("sidebar", () => {
+  it("has Bugün, Portföy, Denetim kaydı, Ayarlar and one account menu, and marks the current place", async () => {
     nav.pathname = "/oneri/p-1";
-    renderWithDesk(<TopBar />);
+    renderWithDesk(SIDEBAR);
     const main = screen.getByRole("navigation", { name: "Ana gezinme" });
-    expect(within(main).getAllByRole("link").map((a) => a.textContent)).toEqual(["Bugün", "Portföy", "Denetim"]);
+    // Bugün carries the count of proposals still waiting for their second signature.
+    await waitFor(() => expect(within(main).getAllByRole("link").map((a) => a.textContent)).toEqual(["Bugün4 bekleyen öneri", "Bildirimler", "Portföy", "Denetim kaydı", "Ayarlar"]));
     // One account menu at every width; its name starts with the role.
     expect(screen.getAllByRole("button", { name: /^Rol: Risk Sorumlusu\. Hesap: / })).toHaveLength(1);
     expect(screen.queryByText("Kimin gözüyle bakıyorsun?")).toBeNull();
-    expect(within(main).getByRole("link", { name: "Bugün" })).toHaveAttribute("aria-current", "page");
+    expect(within(main).getByRole("link", { name: /^Bugün/ })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "KAPtan — Bugün" })).toHaveAttribute("href", "/bugun");
+    // The Risk Sorumlusu's one action: the next proposal in the queue.
+    expect(screen.getByRole("link", { name: "Sıradaki öneri" })).toHaveAttribute("href", expect.stringMatching(/^\/oneri\/prop-day-/));
+  });
+
+  it("sends the Denetçi to the ledger and marks Portföy once everything is stopped", async () => {
+    const db = new MockDb(null);
+    engageKillSwitch(db, "user:uye-3", "test durdurması");
+    renderWithDesk(SIDEBAR, db, "auditor");
+    expect(await screen.findByRole("link", { name: "Defteri doğrula" })).toHaveAttribute("href", "/denetim");
+    const main = screen.getByRole("navigation", { name: "Ana gezinme" });
+    await waitFor(() => expect(within(main).getByRole("link", { name: /^Portföy/ })).toHaveTextContent("Portföydurdu"));
+    expect(within(main).getByRole("link", { name: /^Bugün/ })).toHaveTextContent(/^Bugün$/);
   });
 
   it("switches the account from the menu and keeps the choice", async () => {
     const u = userEvent.setup({ delay: null });
-    renderWithDesk(<TopBar />);
+    renderWithDesk(SIDEBAR);
     await u.click(screen.getByRole("button", { name: /^Rol: Risk Sorumlusu\./ }));
     expect(await screen.findByText("Hesap değiştir")).toBeInTheDocument();
     const items = screen.getAllByRole("menuitemradio");
@@ -55,7 +71,7 @@ describe("top bar", () => {
   it("opens Ayarlar and signs out from the account menu", async () => {
     const u = userEvent.setup({ delay: null });
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 204 }));
-    renderWithDesk(<TopBar />);
+    renderWithDesk(SIDEBAR);
     await u.click(screen.getByRole("button", { name: /^Rol: / }));
     expect(await screen.findByRole("menuitem", { name: "Ayarlar" })).toHaveAttribute("href", "/ayarlar");
     await u.click(screen.getByRole("menuitem", { name: "Çıkış" }));

@@ -8,7 +8,8 @@ import { cn, prefersReducedMotion } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { ErrorState, SkeletonLines } from "@/components/ui/primitives";
-import { CARD, PageTitle } from "@/components/portfolio/kit";
+import { CARD } from "@/components/portfolio/kit";
+import { PageHeader } from "@/components/shell/page-frame";
 import { useChainWalk, VERIFY_EVENT } from "./chain-walk";
 import { rowId, Timeline, type Scope } from "./ledger";
 import { VerifyPanel } from "./verify-panel";
@@ -74,17 +75,14 @@ export function AuditScreen() {
   const growing = list.refreshing && data !== undefined && data.items.length < Math.min(limit, data.total);
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-2">
-        <PageTitle>Denetim</PageTitle>
-        <p className="text-body text-ink-soft">Her bildirim, imza ve durdurma bu deftere yazılır; kimse silemez.</p>
-      </div>
+    <div className="space-y-4 xl:space-y-5">
+      <PageHeader title="Denetim kaydı" lead="Her bildirim, imza ve durdurma bu deftere yazılır; kimse silemez." className="mb-6 sm:mb-6" />
 
       <VerifyPanel walk={walk} onVerify={() => void verify()} onShow={showRecord} tamperOn={data?.tamper_on ?? false} />
 
-      <section aria-labelledby="kayitlar" className={CARD}>
+      <section aria-labelledby="kayitlar" className={cn(CARD, "overflow-hidden")}>
         <div className="flex flex-col gap-3 px-4 pt-4 pb-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:pt-5">
-          <h2 id="kayitlar" className="text-[18px] leading-7 font-semibold text-ink">
+          <h2 id="kayitlar" className="text-body font-semibold text-ink">
             Kayıtlar
           </h2>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

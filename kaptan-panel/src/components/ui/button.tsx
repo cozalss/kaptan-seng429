@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 export const buttonVariants = cva(
   [
     "relative inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap",
-    "border-2 font-sans font-medium select-none",
+    "rounded-lg border-2 font-sans font-medium select-none",
     "transition-[translate,background-color,color,border-color] duration-[var(--dur-quick)] ease-[var(--ease-out-expo)] active:duration-[var(--dur-instant)]",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
     // Written out in full (no template strings) so Tailwind sees every class. Not while pending.
@@ -23,14 +23,14 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "border-brand bg-brand text-on-dark hover:bg-ink hover:border-ink active:translate-y-px",
+        primary: "border-brand bg-brand text-on-dark hover:bg-navy-raised hover:border-navy-raised active:translate-y-px",
         secondary: "border-ink bg-panel text-ink hover:bg-wash-tint active:translate-y-px",
         ghost: "border-transparent bg-transparent text-ink hover:bg-wash-tint active:bg-wash-tint-strong",
         outline: "border-ink bg-transparent text-ink hover:bg-wash-tint active:bg-wash-tint-strong",
         danger: "border-north bg-north text-on-dark hover:bg-north-deep hover:border-north-deep active:translate-y-px",
         "danger-outline": "border-north bg-panel text-north hover:bg-north-tint active:translate-y-px",
         /** A text button: underlined words, no box, still a 44px target. */
-        link: "inline-flex min-h-11 items-center border-transparent bg-transparent px-0 font-normal text-ink underline underline-offset-4 decoration-[1.5px] decoration-rule-ui hover:decoration-ink",
+        link: "inline-flex min-h-11 items-center rounded-none border-transparent bg-transparent px-0 font-normal text-ink underline underline-offset-4 decoration-[1.5px] decoration-rule-ui hover:decoration-ink",
       },
       size: {
         sm: "h-8 px-3 text-dense max-sm:h-11",

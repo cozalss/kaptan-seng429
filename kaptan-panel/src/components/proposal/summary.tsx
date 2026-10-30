@@ -28,7 +28,7 @@ export function ProposalSummary({
   const [a, b] = card.holding_days;
   const riskHint = riskLoading ? "…" : "Bu öneride yok";
   return (
-    <section aria-labelledby="oneri-ozet" className="border border-rule-soft bg-panel">
+    <section aria-labelledby="oneri-ozet" className="overflow-hidden rounded-xl border border-line bg-panel shadow-card">
       <div className="px-5 pt-5 pb-4 sm:px-6">
         <h2 id="oneri-ozet" className="text-dense font-semibold text-muted">
           Öneri

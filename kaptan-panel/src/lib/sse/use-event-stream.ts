@@ -1,17 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { z } from "zod";
+import type { z } from "zod";
 import { DeskEvent, FeedEvent, RunEvent } from "@/lib/domain/events";
 import { API_MODE } from "@/lib/api/config";
 import { getMockDb } from "@/lib/api/mock/db";
 import type { BusMessage, StreamKey } from "./bus";
+import { subscribeShared } from "./shared-stream";
 
 /**
  * Subscribe to an SSE stream (04 §11): "feed", "desk" or a run's node stream.
  * - mock: subscribes to the in-memory bus the mock API publishes to;
- * - http: POST /sse/ticket (60 s, single use, 09 §6) → EventSource; on error it backs off
- *   (1 s → 15 s) and reconnects with the last event id.
+ * - http: one EventSource per stream shared by the whole tab (shared-stream.ts: ticket,
+ *   back-off and reconnect with the last event id live there).
  * Handlers are typed per event and may change between renders without resubscribing.
  */
 type EventsOf<U extends { event: string; data: unknown }> = {
@@ -61,58 +62,11 @@ export function useEventStream(stream: StreamArg, handlers: Record<string, ((dat
       return getMockDb().bus.subscribe(key, dispatch);
     }
 
-    let es: EventSource | null = null;
-    let lastId = "";
-    let attempt = 0;
-    let stopped = false;
-    let retryTimer: ReturnType<typeof setTimeout> | null = null;
-    const path = key.startsWith("run:") ? `runs/${encodeURIComponent(key.slice(4))}` : key;
-
-    const connect = async () => {
-      try {
-        const res = await fetch("/api/v1/sse/ticket", { method: "POST", credentials: "include" });
-        if (!res.ok) throw new Error("ticket");
-        const { ticket } = z.object({ ticket: z.string() }).parse(await res.json());
-        if (stopped) return;
-        const params = new URLSearchParams({ ticket, ...(lastId ? { last_event_id: lastId } : {}) });
-        es = new EventSource(`/api/v1/stream/${path}?${params.toString()}`);
-        es.onopen = () => {
-          attempt = 0;
-          setStatus("open");
-        };
-        es.onerror = () => {
-          es?.close();
-          schedule();
-        };
-        const names = (SCHEMA[kind] as unknown as { options: Array<{ shape: { event: { value: string } } }> }).options.map(
-          (o) => o.shape.event.value,
-        );
-        for (const name of names) {
-          es.addEventListener(name, (ev) => {
-            const me = ev as MessageEvent<string>;
-            lastId = me.lastEventId || lastId;
-            try {
-              dispatch({ id: lastId, event: name, data: JSON.parse(me.data) });
-            } catch {
-              // Malformed JSON from the stream is dropped.
-            }
-          });
-        }
-      } catch {
-        schedule();
-      }
-    };
-    const schedule = () => {
-      if (stopped) return;
-      setStatus("reconnecting");
-      attempt += 1;
-      retryTimer = setTimeout(() => void connect(), Math.min(15_000, 1_000 * 2 ** (attempt - 1)));
-    };
-    void connect();
+    // http: one shared EventSource per stream for the whole tab (shared-stream.ts).
+    const names = (SCHEMA[kind] as unknown as { options: Array<{ shape: { event: { value: string } } }> }).options.map((o) => o.shape.event.value);
+    const unsubscribe = subscribeShared(key, names, { onMessage: dispatch, onStatus: setStatus });
     return () => {
-      stopped = true;
-      if (retryTimer) clearTimeout(retryTimer);
-      es?.close();
+      unsubscribe();
       setStatus("closed");
     };
   }, [key, kind]);

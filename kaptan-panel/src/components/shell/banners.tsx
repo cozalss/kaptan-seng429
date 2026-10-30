@@ -45,9 +45,9 @@ export function RiskBanner() {
 
 function Band({ className, children }: { className: string; children: ReactNode }) {
   return (
-    <div className={cn("grid animate-[banner-open_280ms_var(--ease-out-expo)_both]", className)}>
+    <div className={cn("mb-4 grid animate-[banner-open_280ms_var(--ease-out-expo)_both] rounded-xl", className)}>
       <div className="min-h-0 overflow-hidden">
-        <p className="mx-auto flex max-w-[752px] flex-wrap items-baseline gap-x-3 gap-y-0.5 px-4 py-2 text-ui sm:px-6">{children}</p>
+        <p className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-4 py-2.5 text-ui sm:px-5">{children}</p>
       </div>
     </div>
   );

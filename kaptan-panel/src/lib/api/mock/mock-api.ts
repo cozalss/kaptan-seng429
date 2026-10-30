@@ -59,6 +59,12 @@ export function createMockApi(opts: MockApiOptions): KaptanApi {
       return ok(sel.counters(db.snapshot), 60);
     },
 
+    async disclosures(q = {}) {
+      me();
+      if (q.day !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(q.day)) throw new ApiError(422, "validation", "Tarih bekleniyor (YYYY-MM-DD)");
+      return ok(sel.disclosuresOn(db.snapshot, q), 80);
+    },
+
     async explain(runId) {
       me();
       const e = sel.explainFor(db.snapshot, runId);

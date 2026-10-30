@@ -27,7 +27,7 @@ export function DialogContent({
       <D.Overlay className="fixed inset-0 z-50 bg-scrim data-[state=open]:animate-[fade-in_160ms_var(--ease-out-expo)] data-[state=closed]:animate-[fade-out_120ms_var(--ease-out-expo)]" />
       <D.Content
         className={cn(
-          "fixed top-[max(8px,6vh)] left-1/2 z-50 max-h-[calc(100dvh-16px)] w-[calc(100vw-32px)] -translate-x-1/2 overflow-y-auto overscroll-contain border-2 bg-panel shadow-ink-lg outline-none",
+          "fixed top-[max(8px,6vh)] left-1/2 z-50 max-h-[calc(100dvh-16px)] w-[calc(100vw-32px)] -translate-x-1/2 overflow-y-auto overscroll-contain rounded-xl border-2 bg-panel shadow-[0_24px_64px_-16px_rgb(10_33_72/0.45)] outline-none",
           "data-[state=open]:animate-[dialog-in_220ms_var(--ease-out-expo)] data-[state=closed]:animate-[fade-out_120ms_var(--ease-out-expo)]",
           tone === "critical" ? "border-north" : "border-ink",
           size === "sm" && "max-w-[420px]",

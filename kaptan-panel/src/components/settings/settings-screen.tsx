@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { DEMO_MODE } from "@/lib/api/config";
 import { cn } from "@/lib/utils";
-import { PageTitle } from "@/components/portfolio/kit";
+import { PageHeader } from "@/components/shell/page-frame";
 import { DemoSection } from "./demo-section";
 import { LimitsSection } from "./limits-section";
 import { TeamSection } from "./team-section";
@@ -62,9 +62,9 @@ export function SettingsScreen() {
   };
 
   return (
-    <div className="space-y-6">
-      <PageTitle>Ayarlar</PageTitle>
-      <div role="tablist" aria-label="Ayarlar bölümleri" onKeyDown={onKey} className="-mx-4 flex gap-1 overflow-x-auto border-b-2 border-hairline px-4 sm:mx-0 sm:px-0">
+    <div>
+      <PageHeader title="Ayarlar" lead="Sınırlar, ekip ve roller; değişiklikler iki imzayla." className="mb-5 sm:mb-6" />
+      <div role="tablist" aria-label="Ayarlar bölümleri" onKeyDown={onKey} className="mb-5 inline-flex max-w-full gap-1 overflow-x-auto rounded-xl border border-line bg-panel p-1 shadow-card">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -79,9 +79,9 @@ export function SettingsScreen() {
             tabIndex={tab === t.id ? 0 : -1}
             onClick={() => select(t.id)}
             className={cn(
-              "-mb-[2px] inline-flex h-11 shrink-0 items-center border-b-[3px] px-3 text-ui font-medium whitespace-nowrap transition-colors duration-[var(--dur-quick)]",
+              "inline-flex h-10 shrink-0 items-center rounded-lg px-4 text-ui font-medium whitespace-nowrap transition-colors duration-[var(--dur-quick)]",
               "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand",
-              tab === t.id ? "border-brand text-ink" : "border-transparent text-ink-soft hover:text-ink",
+              tab === t.id ? "bg-navy font-semibold text-on-navy" : "text-ink-soft hover:bg-wash-tint hover:text-ink",
             )}
           >
             {t.label}

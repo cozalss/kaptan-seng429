@@ -52,6 +52,28 @@ export function auditCompany(e: AuditEntry): { text: string; code: boolean } {
 
 type Phrase = (e: AuditEntry, who: string, what: string) => string;
 
+/** Why the pre-gate vetoed, in words, by the first rule code in the payload's reasons (06 §10). */
+const VETO_REASON: Readonly<Record<string, string>> = {
+  R01: "her şey durdurulmuştu",
+  R02: "günlük zarar sınırı",
+  R03: "hisse izlenen evrenin dışında",
+  R04: "tedbirli hisse",
+  R09: "fiyat bandının dışında",
+  R10: "kriz rejimi",
+  R11: "kota ya da veri sorunu",
+  R12: "yalnızca alım kuralı",
+  R13: "ekip engel listesinde",
+};
+
+export function vetoReason(e: Pick<AuditEntry, "payload">): string | null {
+  const reasons = Array.isArray(e.payload.reasons) ? e.payload.reasons : [];
+  for (const r of reasons) {
+    const code = typeof r === "string" ? /^(R\d{2})/.exec(r)?.[1] : undefined;
+    if (code && VETO_REASON[code]) return VETO_REASON[code];
+  }
+  return null;
+}
+
 function filled(e: AuditEntry, what: string): string {
   const qty = str(e.payload.qty);
   const buy = qty ? `${qty} lot alış` : "alış";
@@ -75,7 +97,10 @@ const PHRASES: Readonly<Record<string, Phrase>> = {
   "agent.output": (_e, who) => `${who} notunu yazdı.`,
   "rule.decided": () => "Kural motoru eşikleri tarttı.",
   "risk.checked": () => "Risk kapısı bir öneriyi denetledi.",
-  "risk.rejected": (_e, _w, what) => `Kurallar ${what} için öneriyi baştan reddetti (tedbirli hisse).`,
+  "risk.rejected": (e, _w, what) => {
+    const why = vetoReason(e);
+    return `Kurallar ${what} için öneriyi baştan reddetti${why ? ` (${why})` : ""}.`;
+  },
   "compliance.rejected": (_e, _w, what) => `Uyum ${what} bildirimindeki gizli talimatı yakaladı; öneri çıkmadı.`,
   "proposal.created": (_e, _w, what) => `Tayfa ${what} için öneri hazırladı.`,
   "approval.decided": (e, who, what) => (e.payload.decision === "reject" || e.payload.decision === "rejected" ? `${who} ${what} önerisini reddetti.` : `${who} ${what} önerisini imzaladı.`),

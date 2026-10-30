@@ -6,25 +6,28 @@ import { cn } from "@/lib/utils";
 
 /**
  * The few pieces Portföy, Denetim and Ayarlar share, so the three screens read as one product:
- * the page title (the only Bodoni on the screen), a card, a section title, a status pill and
+ * a card and its title row, a section title, a status pill and
  * the two-step signature status (1/2 → 2/2). Plain Tailwind on the global tokens.
  */
 
-/** A white card on the page: one clear border, generous padding on the 8px grid. */
-export const CARD = "border-2 border-hairline bg-panel";
+/** A white card on the canvas: rounded, one navy-tinted edge and a soft lift. */
+export const CARD = "rounded-xl border border-line bg-panel shadow-card";
 export const CARD_PAD = "p-4 sm:p-6";
 
 /** Column heads of the screens' tables. */
 export const TH = "text-meta font-semibold text-muted";
 
-/** The page title: Bodoni at 40px, where focus lands after a route change. */
-export function PageTitle({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
+/** A card's own title row: a 16px Inter 600 heading, an optional note and an action on the right. */
+export function CardHead({ id, title, note, action, className }: { id?: string; title: ReactNode; note?: ReactNode; action?: ReactNode; className?: string }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-      <h1 tabIndex={-1} data-route-focus="" className="font-display text-[40px] leading-[44px] tracking-[-0.015em] text-ink outline-none">
-        {children}
-      </h1>
-      {aside}
+    <div className={cn("flex flex-wrap items-start justify-between gap-x-4 gap-y-1 px-5 pt-4 pb-3", className)}>
+      <div className="min-w-0">
+        <h2 id={id} className="text-body font-semibold text-ink">
+          {title}
+        </h2>
+        {note ? <p className="mt-0.5 text-dense text-muted">{note}</p> : null}
+      </div>
+      {action}
     </div>
   );
 }
@@ -86,7 +89,7 @@ export function TwoStep({ steps, label, fresh = null }: { steps: readonly [Step,
             key={s.testId}
             data-testid={s.testId}
             className={cn(
-              "flex min-w-0 items-start gap-3 border-2 px-4 py-3",
+              "flex min-w-0 items-start gap-3 rounded-lg border-2 px-4 py-3",
               s.sig ? "border-gain/40 bg-gain/5" : s.waiting ? "border-brand bg-wash-tint" : "border-hairline",
               s.sig && fresh === n && "animate-stamp-in",
             )}

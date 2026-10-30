@@ -40,9 +40,9 @@
   color-scheme: light only;
 
   /* Colour — every colour has one job. Ratios are on --paper (projector rule: ≥ 7:1). */
-  --paper: #f3f1ec; /* rice paper, the landing's page colour */
-  --panel: #fffefa; /* a brighter sheet laid on the paper (as on the landing) */
-  --sunk: #e7e3d9; /* recessed paper: table heads, wells, code */
+  --paper: #eef0f4; /* the dashboard canvas: a cool paper grey the cards sit on */
+  --panel: #ffffff; /* a card laid on the canvas */
+  --sunk: #e6eaf0; /* recessed: table heads, wells, code, tracks of meters */
   --ink: #121318; /* type, ink lines, hard shadows (15.7:1) */
   --ink-lift: #2a2c38; /* the primary button under the pointer: ink, lifted a shade */
   --ink-soft: #23242a; /* secondary type (12.9:1) */
@@ -53,7 +53,26 @@
   --rule-ui: rgb(18 19 24 / 0.78); /* borders of controls */
   --rule-soft: rgb(18 19 24 / 0.5);
   --hairline: rgb(18 19 24 / 0.3); /* dividers: still a line when washed out */
-  --scrim: rgb(243 241 236 / 0.8);
+  --scrim: rgb(238 240 244 / 0.8);
+  --line: rgb(12 47 99 / 0.16); /* the 1px edge of a card on the canvas */
+  --line-strong: rgb(12 47 99 / 0.28);
+  --shadow-card: 0 1px 2px rgb(10 33 72 / 0.06), 0 2px 8px -2px rgb(10 33 72 / 0.06);
+
+  /* The sidebar: KAPtan navy, deeper than the wordmark so the canvas reads as the page. */
+  --navy: #0a2148;
+  --navy-raised: #133166; /* a nav item under the pointer */
+  --navy-line: rgb(255 255 255 / 0.12);
+  --on-navy: #ffffff;
+  --on-navy-soft: #c3cee2; /* nav labels (10.6:1 on navy) */
+  --on-navy-muted: #9fb0cc; /* the section label (7.4:1 on navy) */
+  --navy-action: #c9d6f2; /* the sidebar's one action button (navy on it 11:1) */
+  --signal-ok: #5fd39a; /* "Piyasa: Normal" dot on navy */
+
+  /* The disclosure flow (one hue, light → dark as a notice nears a decision). */
+  --flow-1: #c3cde0;
+  --flow-2: #7489b3;
+  --flow-3: #0c2f63;
+  --sidebar-w: 248px;
   --north: #b3261e; /* Durdur, veto, broken chain (5.9:1, on panel 6.9:1) */
   --north-deep: #9b1f18; /* north red under the pointer */
   --north-tint: rgb(179 38 30 / 0.1);
@@ -117,6 +136,16 @@
   --color-ochre-tint: var(--ochre-tint);
   --color-brand: var(--brand);
   --color-on-dark: var(--on-dark);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-navy: var(--navy);
+  --color-navy-raised: var(--navy-raised);
+  --color-navy-line: var(--navy-line);
+  --color-on-navy: var(--on-navy);
+  --color-on-navy-soft: var(--on-navy-soft);
+  --color-on-navy-muted: var(--on-navy-muted);
+  --color-navy-action: var(--navy-action);
+  --color-signal-ok: var(--signal-ok);
 
   /* Bodoni (display cut) only for page titles of 32px and up and the wordmark (B2B brief).
      `font-display-text` was the Bodoni text cut for 24–32px lines; it now resolves to Inter
@@ -151,7 +180,14 @@
 
   --shadow-ink: var(--shadow-ink);
   --shadow-ink-lg: var(--shadow-ink-lg);
+  --shadow-card: var(--shadow-card);
+  /* Cards and controls are softly rounded (the dashboard); stamps and slips stay square. */
   --radius-*: initial;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
   --ease-out-expo: var(--ease-out-expo);
   --ease-ink: var(--ease-ink);
 }

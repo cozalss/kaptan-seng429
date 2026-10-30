@@ -54,8 +54,8 @@ export function RegimeLine({ regime }: { regime: RiskStatus["regime"] }) {
       data-regime={regime}
       aria-live="polite"
       className={cn(
-        "border px-4 py-2.5 text-dense text-ink",
-        crisis ? "border-ochre bg-ochre-tint" : "border-rule-soft",
+        "rounded-lg border px-4 py-2.5 text-dense text-ink",
+        crisis ? "border-ochre bg-ochre-tint" : "border-line bg-panel",
       )}
     >
       <span className="font-semibold">

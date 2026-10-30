@@ -23,10 +23,14 @@ export function LimitsSection() {
   const view = q.data;
 
   return (
-    <section aria-labelledby="sinirlar-baslik" id="sinirlar" className="space-y-6">
+    <section aria-labelledby="sinirlar-baslik" id="sinirlar" className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.8fr)]">
       {/* A change waiting for its second signature is the one thing to act on: it comes first. */}
-      {view?.pending ? <Pending view={view} onDone={() => void q.refetch()} /> : null}
-      <div className={CARD}>
+      {view?.pending ? (
+        <div className="xl:col-span-2">
+          <Pending view={view} onDone={() => void q.refetch()} />
+        </div>
+      ) : null}
+      <div className={cn(CARD, "overflow-hidden")}>
         <div className="flex flex-col gap-2 px-4 pt-4 pb-3 sm:flex-row sm:items-start sm:justify-between sm:px-6 sm:pt-5">
           <SectionTitle id="sinirlar-baslik" title="Sınırlar">
             Değiştirmek iki imza ister: Yönetici önerir, Risk Sorumlusu onaylar.
@@ -40,10 +44,10 @@ export function LimitsSection() {
         {view ? <ActiveLimits version={view.active} /> : <SkeletonLines lines={5} className="px-4 pb-5 sm:px-6" />}
       </div>
       {view ? (
-        <>
+        <div className="min-w-0 space-y-6">
           {view.pending ? null : <ProposeLimit view={view} onDone={() => void q.refetch()} />}
           <History versions={view.history} />
-        </>
+        </div>
       ) : null}
     </section>
   );

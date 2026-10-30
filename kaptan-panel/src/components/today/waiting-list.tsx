@@ -7,6 +7,7 @@ import { useDesk } from "@/components/shell/desk-state";
 import { useRole } from "@/components/roles/use-role";
 import { useNow } from "@/lib/clock";
 import { cn } from "@/lib/utils";
+import { CARD } from "@/components/portfolio/kit";
 import { waitingItems } from "./waiting";
 
 /**
@@ -29,8 +30,9 @@ export function WaitingList({ className }: { className?: string }) {
   const items = waitingItems({ can, uid: user.uid, tickets: tickets.data, now, limits: limits.data, risk });
   if (!items.length) return null;
   return (
-    <section aria-labelledby="seni-bekleyenler" className={cn("animate-fade-in border-2 border-ink bg-panel px-4 py-4 sm:px-6", className)}>
-      <h2 id="seni-bekleyenler" className="text-body font-semibold text-ink">
+    <section aria-labelledby="seni-bekleyenler" className={cn(CARD, "animate-fade-in border-brand/40 px-5 py-4", className)}>
+      <h2 id="seni-bekleyenler" className="flex items-center gap-2 text-body font-semibold text-ink">
+        <span aria-hidden className="size-2 rounded-full bg-brand" />
         Seni bekleyenler
       </h2>
       <ul className="mt-2 divide-y divide-hairline">

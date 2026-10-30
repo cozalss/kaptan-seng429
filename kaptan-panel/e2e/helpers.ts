@@ -45,15 +45,34 @@ export async function loginApi(page: Page) {
   expect(r.ok()).toBe(true);
 }
 
-/** Navigate with the top bar (client-side, so the in-tab mock desk and its timers keep running). */
+/**
+ * Under 1024px the sidebar is a drawer behind "Menüyü aç": open it when its navigation is not
+ * on screen (from 1024px it is always there and this does nothing).
+ */
+export async function showSidebar(page: Page) {
+  const menu = page.getByRole("button", { name: "Menüyü aç" });
+  if (!(await menu.isVisible())) return; // 1024px and up: the sidebar is always there
+  if ((await menu.getAttribute("aria-expanded")) !== "true") await menu.click();
+  await expect(page.getByRole("navigation", { name: "Ana gezinme" })).toBeVisible();
+}
+
+/** Navigate with the sidebar (client-side, so the in-tab mock desk and its timers keep running). */
 export async function go(page: Page, label: "Bugün" | "Portföy" | "Denetim", url: RegExp) {
-  await page.getByRole("navigation", { name: "Ana gezinme" }).getByRole("link", { name: label }).click();
+  await showSidebar(page);
+  await page.getByRole("navigation", { name: "Ana gezinme" }).getByRole("link", { name: new RegExp(`^${label}`) }).click();
   await expect(page).toHaveURL(url);
+  await drawerSettled(page);
+}
+
+/** On a phone the drawer closes after a route change; wait until it has, so the next step sees the page. */
+async function drawerSettled(page: Page) {
+  const menu = page.getByRole("button", { name: "Menüyü aç" });
+  if (await menu.isVisible()) await expect(menu).toHaveAttribute("aria-expanded", "false");
 }
 
 /**
- * The top bar's account menu trigger. Its accessible name starts with "Rol: <rol>." (kept
- * from the old role chip, so `^Rol: Denetçi\.` assertions still hold).
+ * The sidebar's account card (the menu trigger). Its accessible name starts with "Rol: <rol>."
+ * (kept from the old role chip, so `^Rol: Denetçi\.` assertions still hold).
  */
 export function accountMenu(page: Page) {
   return page.getByRole("button", { name: /^Rol: / });
@@ -61,13 +80,16 @@ export function accountMenu(page: Page) {
 
 /** Open Ayarlar from the account menu (client-side). */
 export async function openSettings(page: Page) {
+  await showSidebar(page);
   await accountMenu(page).click();
   await page.getByRole("menuitem", { name: "Ayarlar" }).click();
   await expect(page).toHaveURL(/\/ayarlar$/);
+  await drawerSettled(page);
 }
 
 /** Switch to another team account with the account menu's "Hesap değiştir" (kept in the session). */
 export async function pickRole(page: Page, label: RoleLabel) {
+  await showSidebar(page);
   await accountMenu(page).click();
   await page.getByRole("menuitemradio", { name: new RegExp(`^${label} ·`) }).click();
   await expect(page.getByRole("button", { name: new RegExp(`^Rol: ${label}\\.`) })).toBeVisible();

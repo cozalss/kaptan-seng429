@@ -8,6 +8,7 @@
 export const ROUTES = {
   bugun: "/bugun",
   oneri: "/oneri",
+  bildirimler: "/bildirimler",
   portfoy: "/portfoy",
   denetim: "/denetim",
   ayarlar: "/ayarlar",
@@ -22,11 +23,15 @@ export const href = {
   proposal: (proposalId: string) => `${ROUTES.oneri}/${encodeURIComponent(proposalId)}`,
 } as const;
 
-/** The items in the top bar (Ayarlar lives in the ⚙ menu). */
-export const NAV_ITEMS: ReadonlyArray<{ href: string; label: string }> = [
-  { href: ROUTES.bugun, label: "Bugün" },
-  { href: ROUTES.portfoy, label: "Portföy" },
-  { href: ROUTES.denetim, label: "Denetim" },
+export type NavKey = "bugun" | "bildirimler" | "portfoy" | "denetim" | "ayarlar";
+
+/** The items in the sidebar, in order (Ayarlar is also in the account menu). */
+export const NAV_ITEMS: ReadonlyArray<{ key: NavKey; href: string; label: string }> = [
+  { key: "bugun", href: ROUTES.bugun, label: "Bugün" },
+  { key: "bildirimler", href: ROUTES.bildirimler, label: "Bildirimler" },
+  { key: "portfoy", href: ROUTES.portfoy, label: "Portföy" },
+  { key: "denetim", href: ROUTES.denetim, label: "Denetim kaydı" },
+  { key: "ayarlar", href: ROUTES.ayarlar, label: "Ayarlar" },
 ];
 
 /**
@@ -52,12 +57,21 @@ export const LEGACY_REDIRECTS: ReadonlyArray<{ source: string; destination: stri
   { source: "/admin", destination: ROUTES.ayarlar },
 ];
 
-/** Which top-bar item is current for a path (an Öneri belongs to Bugün). */
+/** Which sidebar item is current for a path (an Öneri belongs to Bugün). */
 export function activeNavHref(pathname: string): string | null {
   if (pathname === ROUTES.bugun || pathname.startsWith(`${ROUTES.oneri}/`)) return ROUTES.bugun;
+  if (pathname === ROUTES.bildirimler) return ROUTES.bildirimler;
   if (pathname === ROUTES.portfoy) return ROUTES.portfoy;
   if (pathname === ROUTES.denetim) return ROUTES.denetim;
+  if (pathname === ROUTES.ayarlar) return ROUTES.ayarlar;
   return null;
+}
+
+/** The eyebrow over a screen: where you are, in the sidebar's words. */
+export function sectionLabel(pathname: string): string {
+  if (pathname.startsWith(`${ROUTES.oneri}/`)) return "Bugün · Öneri";
+  const active = activeNavHref(pathname);
+  return NAV_ITEMS.find((i) => i.href === active)?.label ?? "Masa";
 }
 
 /** Only same-site panel paths are honoured for ?next= (no open redirect; "/" is the landing). */
