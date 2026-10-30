@@ -77,7 +77,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
           aria-controls="kenar-cubugu"
           className={cn(
             "ml-auto hidden size-9 place-items-center rounded-lg border border-navy-line text-on-navy-soft transition-colors hover:bg-navy-raised hover:text-on-navy focus-visible:outline-on-navy lg:grid",
-            collapsed && "lg:absolute lg:top-[72px] lg:left-1/2 lg:-translate-x-1/2",
+            collapsed && "lg:absolute lg:top-[72px] lg:left-1/2 lg:z-10 lg:-translate-x-1/2",
           )}
         >
           <IconSidebar className="size-[18px]" />
@@ -95,7 +95,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
 
       <p className={cn("mt-4 px-6 font-mono text-[12px] leading-4 font-medium tracking-[0.16em] text-on-navy-muted uppercase", collapsed && "lg:mt-14 lg:sr-only")}>Masa</p>
 
-      <nav aria-label="Ana gezinme" className={cn("mt-3 pl-3", collapsed && "lg:mt-0 lg:pl-3")}>
+      <nav aria-label="Ana gezinme" className={cn("mt-3 pl-3", collapsed && "lg:mt-16 lg:pl-3")}>
         <ul className="space-y-1">
           {NAV_ITEMS.map((item) => {
             const on = active === item.href;
