@@ -129,7 +129,7 @@ export function executeApproved(db: MockDb, proposalId: string): void {
   if (!card) return;
   const ticket = explainFor(db.snapshot, card.run_id)?.ticket;
   if (ticket) {
-    db.audit("system:order_ticket", "ticket.issued", "order_ticket", ticket.ticket_no, { qty: ticket.qty, limit_price: ticket.limit_price, stage: ticket.stage }, card.run_id);
+    db.audit("system:order_ticket", "ticket.issued", "order_ticket", ticket.ticket_no, { ticker: card.ticker, company: card.company_name, qty: ticket.qty, side: card.side, limit_price: ticket.limit_price, stage: ticket.stage }, card.run_id);
     db.bus.emit("desk", "ticket", ticket);
   }
   const id = card.run_id.replace(/^run-/, "ord-s-");

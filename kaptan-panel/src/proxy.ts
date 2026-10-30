@@ -1,27 +1,30 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { HOME, isPublicPath } from "@/lib/nav";
 import { decodeSession, SESSION_COOKIE } from "@/lib/auth/session";
+import { SINGLE_USER_ENV, SOLO_HOME } from "@/lib/solo/mode";
 
 /**
  * Route guard (Next 16 `proxy`, formerly middleware). Personal mode: one user, no roles —
  * the only question is "signed in or not".
  * mock: the session cookie → signed-out users go to /login?next=…; a signed-in user who opens
- *       /login or a role door (/login/<rol>) goes to the panel home (/bugun).
+ *       /login or a role door (/login/<rol>) goes to the panel home (/bugun), or to /benim in
+ *       single-user mode (NEXT_PUBLIC_SINGLE_USER=true).
  * http: only the presence of the refresh cookie is checked here; the API owns the session.
  * "/" is the public landing (rewritten to the static /index.html) and its files are excluded
  * by the matcher below, so the landing never needs a session.
  */
 const IS_HTTP = process.env.NEXT_PUBLIC_API_MODE === "http";
-const REFRESH_COOKIE = "__Host-kaptan_rt";
+/** The API names its refresh cookie `__Host-kaptan_rt`, or `kaptan_rt` on a plain-http host (COOKIE_SECURE=false). */
+const REFRESH_COOKIES = ["__Host-kaptan_rt", "kaptan_rt"] as const;
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   if (pathname === "/") return NextResponse.next();
   const isPublic = isPublicPath(pathname);
-  const signedIn = IS_HTTP ? request.cookies.has(REFRESH_COOKIE) : decodeSession(request.cookies.get(SESSION_COOKIE)?.value) !== null;
+  const signedIn = IS_HTTP ? REFRESH_COOKIES.some((name) => request.cookies.has(name)) : decodeSession(request.cookies.get(SESSION_COOKIE)?.value) !== null;
 
   if (!signedIn) return isPublic ? NextResponse.next() : redirectToLogin(request, pathname + search);
-  if (isPublic && !IS_HTTP) return NextResponse.redirect(new URL(HOME, request.url));
+  if (isPublic && !IS_HTTP) return NextResponse.redirect(new URL(SINGLE_USER_ENV ? SOLO_HOME : HOME, request.url));
   return NextResponse.next();
 }
 

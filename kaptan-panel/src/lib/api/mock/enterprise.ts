@@ -3,7 +3,7 @@ import { TEAM } from "@/lib/domain/user";
 import { verifyChain } from "@/lib/audit-chain";
 import { auditMatches } from "@/lib/audit-words";
 import { ApiError, type KaptanApi } from "../types";
-import { parse, signatureOf, userActor, type MockCtx } from "./guard";
+import { parse, secondSignature, signatureOf, userActor, type MockCtx } from "./guard";
 import type { MockState } from "./state";
 import * as sel from "./selectors";
 
@@ -84,7 +84,7 @@ export function createEnterprise(ctx: MockCtx): Enterprise {
       const r = db.snapshot.risk;
       if (r.kill_switch !== "on") throw new ApiError(409, "not_on", "Sistem çalışıyor; yeniden başlatılacak bir şey yok.");
       if (!r.reset_started) throw new ApiError(409, "not_started", "Önce Yönetici yeniden başlatmayı başlatmalı (1/2).");
-      if (r.reset_started.uid === a.uid) throw new ApiError(403, "same_person", "Başlatan kişi onaylayamaz; ikinci imza başka birinden gelir.");
+      secondSignature(ctx, a, r.reset_started.uid, "kill_reset", ["system_flag", "kill_switch"], "Başlatan kişi onaylayamaz; ikinci imza başka birinden gelir.");
       db.update((s) => ({
         ...s,
         risk: { ...s.risk, kill_switch: "off", kill_reason: null, kill_at: null, kill_by: null, reset_started: null, drawdown_pct: Math.max(s.risk.drawdown_pct, -0.049) },
@@ -130,7 +130,7 @@ export function createEnterprise(ctx: MockCtx): Enterprise {
       const d = parse(LimitDecisionInput, input);
       const v = db.snapshot.limitVersions.find((x) => x.version === versionNo);
       if (!v || v.status !== "proposed") throw new ApiError(409, "conflict", "Bu değişiklik artık imza beklemiyor.");
-      if (v.proposed_by.uid === a.uid) throw new ApiError(403, "same_person", "Öneren kişi onaylayamaz; ikinci imza başka birinden gelir.");
+      secondSignature(ctx, a, v.proposed_by.uid, "limits", ["limit_version", String(versionNo)], "Öneren kişi onaylayamaz; ikinci imza başka birinden gelir.");
       const at = now();
       const decided: LimitVersion = { ...v, status: d.decision === "approve" ? "active" : "rejected", effective_from: d.decision === "approve" ? at : null, decided_by: signatureOf(a, at, d.comment || null) };
       db.update((s) => ({

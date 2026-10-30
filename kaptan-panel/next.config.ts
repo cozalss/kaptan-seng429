@@ -18,6 +18,8 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // A second dev server (the single-user e2e, playwright.single.config.ts) builds into its own folder.
+  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   poweredByHeader: false,
   devIndicators: false,
   // One API client per build: `@/lib/api/client` is the mock or the http client, never both

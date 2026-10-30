@@ -47,6 +47,11 @@ describe("audit sentences", () => {
     expect(auditSentence(entry({ actor: "user:uye-2", action: "audit.verified" }))).toBe("Analist defteri doğruladı.");
     expect(auditSentence(entry({ actor: "system:simbist", action: "order.filled", payload: { ticker: "ORNEK", company: "ÖRNEK ENERJİ A.Ş.", qty: 560 } }))).toBe("Örnek Enerji için 560 lot alış gerçekleşti (KAPtan hesabı).");
     expect(auditSentence(entry({ action: "order.filled", payload: { qty: 620 } }))).toBe("620 lot alış gerçekleşti (KAPtan hesabı).");
+    // The API's ticket.issued carries no company: say what is known, never "bir şirket için".
+    expect(auditSentence(entry({ actor: "system:order_ticket", action: "ticket.issued", payload: { qty: 620, side: "buy" } }))).toBe("620 lotluk alış emir fişi yazıldı.");
+    expect(auditSentence(entry({ actor: "system:order_ticket", action: "ticket.issued", payload: { qty: 1800, side: "sell" } }))).toBe("1800 lotluk satış emir fişi yazıldı.");
+    expect(auditSentence(entry({ actor: "system:order_ticket", action: "ticket.issued", payload: { ticker: "ORNEK", qty: 620 } }))).toBe("Örnek Enerji için emir fişi yazıldı.");
+    expect(auditSentence(entry({ actor: "system:order_ticket", action: "ticket.issued" }))).toBe("Emir fişi yazıldı.");
     // A ticker the issuer list does not know stays a code.
     expect(auditCompany(entry({ payload: { ticker: "ZZZZ" } }))).toEqual({ text: "ZZZZ", code: true });
     expect(auditCompany(entry({ payload: { ticker: "DMOEN" } }))).toEqual({ text: "Doğu Enerji Üretim", code: false });

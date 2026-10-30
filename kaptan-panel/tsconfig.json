@@ -20,6 +20,6 @@
     "plugins": [{ "name": "next" }],
     "paths": { "@/lib/api/client": ["./src/lib/api/client.mock.ts"], "@/*": ["./src/*"] }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts", "**/*.mts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts", ".next/solo/types/**/*.ts", ".next/solo/dev/types/**/*.ts", "**/*.mts"],
   "exclude": ["node_modules", ".next", "playwright-report", "test-results"]
 }

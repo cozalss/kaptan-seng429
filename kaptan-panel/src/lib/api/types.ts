@@ -20,6 +20,7 @@ import type {
 } from "@/lib/domain";
 import type { Role } from "@/lib/domain/user";
 import type { DemoScenario } from "@/mocks/ids";
+import type { HoldInput, HoldResult, Overview } from "@/lib/solo/overview";
 
 /**
  * The one typed client every screen uses (API.md is the contract for the backend). One login,
@@ -51,6 +52,11 @@ export interface KaptanApi {
   // order tickets (emir fişi) — entered by hand at the broker, then marked here
   listTickets(): Promise<OrderTicket[]>;
   markTicket(ticketNo: string, input: TicketMarkInput): Promise<OrderTicket>;
+
+  /** The single-user home in one call (GET /me/overview): money, where it sits, suggestions. */
+  overview(): Promise<Overview>;
+  /** "Tut" / "Geç" on a suggestion (POST /me/suggestions/{id}/hold): audited; the card itself stays open. */
+  holdSuggestion(id: string, input: HoldInput): Promise<HoldResult>;
 
   // portfolio
   positions(): Promise<Position[]>;

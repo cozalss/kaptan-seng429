@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ApprovalCard, AuditPage, ChainVerifyResult, DayCounters, Explain, LimitsView, Me, OrderTicket, PnlPoint, Position, ProposalNote, RiskStatus, TeamMember } from "@/lib/domain";
 import type { Role } from "@/lib/domain/user";
 import { noteServerTime } from "@/lib/clock";
+import { HoldResult, Overview } from "@/lib/solo/overview";
 import { ApiError, type KaptanApi } from "../types";
 
 /**
@@ -114,6 +115,8 @@ export function createHttpApi(): KaptanApi {
     addNote: (pid, body) => request(ProposalNote, `/approvals/${id(pid)}/notes`, post({ body })),
     listTickets: () => request(z.array(OrderTicket), "/tickets"),
     markTicket: (no, input) => request(OrderTicket, `/tickets/${id(no)}/mark`, post(input)),
+    overview: () => request(Overview, "/me/overview"),
+    holdSuggestion: (sid, input) => request(HoldResult, `/me/suggestions/${id(sid)}/hold`, post(input)),
     positions: () => request(z.array(Position), "/portfolio/positions"),
     pnl: (from, to) => request(z.array(PnlPoint), `/portfolio/pnl${qs({ from, to })}`),
     riskStatus: () => request(RiskStatus, "/risk/status").then(withServerTime),

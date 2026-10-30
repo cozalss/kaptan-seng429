@@ -6,6 +6,8 @@ import { ApiError, type KaptanApi } from "../types";
 import { getMockDb, type Actor, type MockDb } from "./db";
 import { createEnterprise } from "./enterprise";
 import { createCtx, parse, userActor } from "./guard";
+import { createSolo } from "./solo";
+import { SINGLE_USER_ENV } from "@/lib/solo/mode";
 import { engageKillSwitch, executeApproved, runDemoScenario, startLiveTicker, stopAllTimers, stopLiveTicker } from "./scenarios";
 import * as sel from "./selectors";
 
@@ -18,6 +20,8 @@ export interface MockApiOptions {
   latencyMs?: number;
   /** Start the live disclosure ticker (browser only). */
   live?: boolean;
+  /** Single-user mode (default: NEXT_PUBLIC_SINGLE_USER): every permission, both signatures by one person. */
+  singleUser?: boolean;
 }
 
 /**
@@ -28,13 +32,14 @@ export interface MockApiOptions {
  */
 export function createMockApi(opts: MockApiOptions): KaptanApi {
   const db = opts.db ?? getMockDb();
-  const ctx = createCtx(db, opts.getActor, opts.latencyMs ?? 140);
+  const ctx = createCtx(db, opts.getActor, opts.latencyMs ?? 140, opts.singleUser ?? SINGLE_USER_ENV);
   if (opts.live !== false) startLiveTicker(db);
   const { ok, now, me } = ctx;
 
   return {
     mode: "mock",
     ...createEnterprise(ctx),
+    ...createSolo(ctx),
 
     async me(): Promise<Me> {
       const a = me();

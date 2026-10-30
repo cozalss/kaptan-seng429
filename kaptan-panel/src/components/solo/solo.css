@@ -1,0 +1,122 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   "Benim KAPtan'ım" — the single-user home. The same paper, ink and indigo as the desk, plus
+   two things the desk does not need:
+   - a dark reading (the person checks their money at night on a phone): the desk's tokens are
+     re-stepped for a dark surface, only while this screen (or its dialogs) is on the page, so
+     every shared component (buttons, dialogs, toasts) follows without a fork;
+   - the allocation palette: six categorical inks in a fixed order, validated for colour-vision
+     deficiency on both surfaces (light: worst adjacent CVD ΔE 10.4; dark: 8.8), plus cash and
+     "Diğer" in neutral greys. Colour follows the holding, never its rank on screen.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root:has([data-solo]) {
+  color-scheme: light dark;
+  --solo-c1: #2f5aa8;
+  --solo-c2: #d06a2a;
+  --solo-c3: #14a07a;
+  --solo-c4: #d89a00;
+  --solo-c5: #c85a9a;
+  --solo-c6: #6a50c8;
+  --solo-other: #6e6a62;
+  --solo-cash: #c9c3b6;
+  --solo-area-top: rgb(12 47 99 / 0.16);
+  --solo-area-bottom: rgb(12 47 99 / 0);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:has([data-solo]) {
+    --paper: #121419;
+    --panel: #1a1d24;
+    --sunk: #252832;
+    --ink: #eeebe3;
+    --ink-lift: #d8d4ca;
+    --ink-soft: #dcd8cf;
+    --muted: #b9b4a9;
+    --wash: #a9bff0;
+    --wash-tint: rgb(169 191 240 / 0.12);
+    --wash-tint-strong: rgb(169 191 240 / 0.22);
+    --rule-ui: rgb(238 235 227 / 0.62);
+    --rule-soft: rgb(238 235 227 / 0.4);
+    --hairline: rgb(238 235 227 / 0.2);
+    --scrim: rgb(10 11 14 / 0.78);
+    --north: #ff8f80;
+    --north-deep: #ffaea3;
+    --north-tint: rgb(255 143 128 / 0.12);
+    --gain: #72d69e;
+    --loss: #ff9dbb;
+    --brand: #a9c1f5;
+    --on-dark: #121419;
+    --shadow-ink: 3px 3px 0 rgb(0 0 0 / 0.55);
+    --shadow-ink-lg: 6px 6px 0 rgb(0 0 0 / 0.55);
+
+    --solo-c1: #3d7ad6;
+    --solo-c2: #d4642a;
+    --solo-c3: #1a9a72;
+    --solo-c4: #c08800;
+    --solo-c5: #cf5a93;
+    --solo-c6: #8a7ae6;
+    --solo-other: #8d8a84;
+    --solo-cash: #4a4e5a;
+    --solo-area-top: rgb(169 193 245 / 0.2);
+    --solo-area-bottom: rgb(169 193 245 / 0);
+  }
+}
+
+/* The headline figure: Inter set large and tight, tabular, the kuruş a step down. */
+.solo-figure {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-feature-settings: "tnum", "case";
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+
+/* Cash is not a holding: a fine diagonal hatch so it never reads as one more colour. */
+.solo-cash-fill {
+  background-color: var(--solo-cash);
+  background-image: repeating-linear-gradient(135deg, rgb(255 255 255 / 0.28) 0 2px, transparent 2px 6px);
+}
+@media (prefers-color-scheme: dark) {
+  .solo-cash-fill {
+    background-image: repeating-linear-gradient(135deg, rgb(255 255 255 / 0.1) 0 2px, transparent 2px 6px);
+  }
+}
+
+@media (forced-colors: active) {
+  .solo-swatch,
+  .solo-segment {
+    forced-color-adjust: none;
+    border: 1px solid CanvasText;
+  }
+}
+
+/* The verb stamps on the suggestion slips. Light: AL indigo, SAT ink, TUT an open box. Dark:
+   the same inks as quiet washes, so three cards in a row do not glare at night. */
+.solo-stamp-al {
+  background: var(--brand);
+  color: var(--on-dark);
+  border-color: var(--ink);
+}
+.solo-stamp-sat {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.solo-stamp-tut {
+  background: var(--panel);
+  color: var(--ink);
+  border-color: var(--ink);
+}
+@media (prefers-color-scheme: dark) {
+  .solo-stamp-al {
+    background: rgb(169 193 245 / 0.16);
+    color: var(--brand);
+  }
+  .solo-stamp-sat {
+    background: rgb(238 235 227 / 0.1);
+    color: var(--ink);
+  }
+  .solo-stamp-tut {
+    background: transparent;
+  }
+}

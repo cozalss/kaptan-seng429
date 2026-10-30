@@ -15,6 +15,14 @@ const SCENARIO_TR: Readonly<Record<string, string>> = {
   loss_simulation: "zarar simülasyonu",
 };
 
+/** What a single-user waiver signed twice (backend four_eyes flows). */
+const WAIVER_FLOW: Readonly<Record<string, string>> = {
+  kill_reset: "yeniden başlatmanın",
+  limits: "sınır değişikliğinin",
+  live_arm: "canlı modun",
+  restricted_removal: "engel listesinden çıkarmanın",
+};
+
 function str(v: unknown): string | null {
   return typeof v === "string" && v.length > 0 ? v : typeof v === "number" ? String(v) : null;
 }
@@ -51,6 +59,15 @@ function filled(e: AuditEntry, what: string): string {
   return `${line.charAt(0).toLocaleUpperCase("tr-TR")}${line.slice(1)} gerçekleşti (KAPtan hesabı).`;
 }
 
+/** The API's ticket.issued names no company (only qty/side): describe the slip instead. */
+function ticketIssued(e: AuditEntry, what: string): string {
+  if (what !== NO_COMPANY) return `${what} için emir fişi yazıldı.`;
+  const qty = str(e.payload.qty);
+  const side = e.payload.side === "sell" ? "satış" : e.payload.side === "buy" ? "alış" : null;
+  if (!qty) return "Emir fişi yazıldı.";
+  return `${qty} lotluk ${side ? `${side} ` : ""}emir fişi yazıldı.`;
+}
+
 const PHRASES: Readonly<Record<string, Phrase>> = {
   "disclosure.ingested": (_e, _w, what) => `KAP okuyucu ${what} bildirimini getirdi.`,
   "classification.done": () => "Sınıflandırıcı bir bildirimin türünü belirledi.",
@@ -63,13 +80,16 @@ const PHRASES: Readonly<Record<string, Phrase>> = {
   "proposal.created": (_e, _w, what) => `Tayfa ${what} için öneri hazırladı.`,
   "approval.decided": (e, who, what) => (e.payload.decision === "reject" || e.payload.decision === "rejected" ? `${who} ${what} önerisini reddetti.` : `${who} ${what} önerisini imzaladı.`),
   "order.filled": (e, _w, what) => filled(e, what),
-  "ticket.issued": (_e, _w, what) => `${what} için emir fişi yazıldı.`,
+  "ticket.issued": (e, _w, what) => ticketIssued(e, what),
   "ticket.entered": (_e, who) => `${who} emir fişini aracı kuruma girdi.`,
   "ticket.unfilled": (_e, who) => `${who} emir fişini “dolmadı” diye işaretledi.`,
   "ticket.canceled": (_e, who) => `${who} emir fişini iptal etti.`,
   "kill_switch.on": (e, who) => (e.actor === "system:risk_monitor" ? "Risk izleyici zirveden −%5’te her şeyi durdurdu." : `${who} her şeyi durdurdu.`),
   "kill_switch.reset_started": (_e, who) => `${who} yeniden başlatmayı başlattı (1/2).`,
   "kill_switch.reset": (_e, who) => `${who} yeniden başlatmayı onayladı (2/2).`,
+  "auth.single_user_waiver": (e) => `Tek kullanıcı modu: ${WAIVER_FLOW[str(e.payload.flow) ?? ""] ?? "iki imzalı adımın"} ikinci imzası aynı kişiden alındı.`,
+  "suggestion.held": (_e, who, what) => `${who} ${what} için “Tut” dedi.`,
+  "suggestion.skipped": (_e, who, what) => `${who} ${what} önerisini geçti.`,
   "risk.halted": () => "Günlük −%1 sınırı aşıldı: yeni emir durdu.",
   "limits.proposed": (_e, who) => `${who} bir sınır değişikliği önerdi (1/2).`,
   "limits.approved": (_e, who) => `${who} sınır değişikliğini onayladı (2/2).`,

@@ -133,7 +133,8 @@ function LevelLabel({ y, above = false, className, children }: { y: number; abov
     <span
       aria-hidden
       className={cn(
-        "pointer-events-none absolute right-0 text-meta font-medium whitespace-nowrap text-muted tabular-nums",
+        // right-3: clear of today's dot, which sits on the right edge (on the −%5 line when it is hit).
+        "pointer-events-none absolute right-3 text-meta font-medium whitespace-nowrap text-muted tabular-nums",
         above ? "-translate-y-[calc(100%+2px)]" : "translate-y-[2px]",
         className,
       )}

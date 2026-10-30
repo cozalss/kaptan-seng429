@@ -17,6 +17,12 @@ export function exitLine(p: Pick<Position, "opened_at" | "planned_exit_date">, t
   return `${Math.max(1, h.planned - h.elapsed)} gün kaldı`;
 }
 
+/**
+ * Whose position it is: the KAPtan account's paper fill, or the slip you entered at your own
+ * broker ("Girdim"). One signed öneri can give both, so the same company may show twice.
+ */
+const BOOK_LABEL: Readonly<Record<Position["book"], string>> = { paper: "KAPtan hesabı", personal: "Kendi hesabın" };
+
 function signedTry(n: number): string {
   if (n === 0) return `0${NBSP}TL`;
   return `${n > 0 ? "+" : "−"}${fmtInt(Math.abs(Math.round(n)))}${NBSP}TL`;
@@ -63,7 +69,10 @@ export function Holdings({ positions, today }: { positions: readonly Position[];
                 >
                   {titleTr(shortName(p.company_name))}
                 </Link>
-                <span className="mt-0.5 block text-dense text-muted tabular-nums sm:hidden">{fmtInt(p.qty)} lot</span>
+                <span className="mt-0.5 block text-dense text-muted tabular-nums">
+                  <span className="sm:hidden">{fmtInt(p.qty)} lot · </span>
+                  {BOOK_LABEL[p.book]}
+                </span>
               </th>
               <td className="hidden px-3 py-3 text-right text-ui text-ink tabular-nums sm:table-cell">{fmtInt(p.qty)}</td>
               <td className="px-3 py-3 text-right tabular-nums">
