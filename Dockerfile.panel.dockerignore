@@ -1,0 +1,16 @@
+# Build context of Dockerfile.panel (the repo root): only the panel and the landing sources go in.
+*
+!kaptan-panel/
+!kaptan-landing/
+**/node_modules/
+**/.next/
+**/dist/
+**/coverage/
+**/test-results/
+**/playwright-report/
+**/.env
+**/.env.*
+**/*.pem
+**/*.tsbuildinfo
+kaptan-panel/public/index.html
+kaptan-panel/public/assets/

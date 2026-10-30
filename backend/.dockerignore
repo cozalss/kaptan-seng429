@@ -25,6 +25,10 @@ tests/*
 !tests/fixtures/
 tests/fixtures/*
 !tests/fixtures/demo/
-tests/fixtures/demo/expected/
+# The demo seed (kaptan.demo.fixtures) reads these three; the rest of expected/ is test-only.
+tests/fixtures/demo/expected/*
+!tests/fixtures/demo/expected/orders.json
+!tests/fixtures/demo/expected/tickets.json
+!tests/fixtures/demo/expected/positions.json
 Dockerfile
 docker-compose*.yml

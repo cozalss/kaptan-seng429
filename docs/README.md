@@ -12,6 +12,7 @@ Projenin özeti için depo kökündeki [README](../README.md)'ye bakın.
 | Kod yazmadan önce | [PRD](proje/03-PRD.md) → [Mimari](proje/04-mimari.md) → [Ajanlar](proje/05-ajan-spesifikasyonlari.md) → [Strateji ve kurallar](proje/06-strateji-ve-kurallar.md) → [Veri hattı](proje/07-veri-hatti-ve-sema.md) |
 | Panel üzerinde çalışan | [Panel SPEC](../kaptan-panel/SPEC.md) → [API sözleşmesi](../kaptan-panel/API.md) → [Panel README](../kaptan-panel/README.md) |
 | Tanıtım sayfası üzerinde çalışan | [Tasarım sistemi](../kaptan-landing/DESIGN.md) → [Brief](../kaptan-landing/KAPTAN-BRIEF.md) → [Tanıtım sayfası README](../kaptan-landing/README.md) |
+| Sistemi çalıştıran / işleten | [Kök README: tek komutla çalıştır](../README.md#tek-komutla-çalıştır) → [İşletim el kitabı](ops/RUNBOOK.md) → [Backend README](../backend/README.md) |
 | Her hafta | [Proje planı](proje/10-proje-plani-ve-gorevler.md) ve [risk kaydı](proje/13-risk-kaydi.md) |
 
 ## Proje belgeleri: [`proje/`](proje/00-ICINDEKILER.md)
@@ -39,6 +40,7 @@ Projenin özeti için depo kökündeki [README](../README.md)'ye bakın.
 
 | Belge | İçerik |
 |---|---|
+| [`backend/README.md`](../backend/README.md) | Backend: çalıştırma, testler, KAP, fiyatlar, LLM, RAG, risk, scheduler, deploy |
 | [`kaptan-panel/SPEC.md`](../kaptan-panel/SPEC.md) | Panelin ürün kuralları: ekranlar, kurumsal katman, oturum, içerik (tek doğru kaynak) |
 | [`kaptan-panel/API.md`](../kaptan-panel/API.md) | Backend sözleşmesi: kimlik, roller, 24 uç nokta, şemalar |
 | [`kaptan-panel/FRONTEND-SPEC.md`](../kaptan-panel/FRONTEND-SPEC.md) | Başvuru: alan şemaları, API ayrıntısı, içerik kuralları, fikstürler |
@@ -46,6 +48,15 @@ Projenin özeti için depo kökündeki [README](../README.md)'ye bakın.
 | [`kaptan-landing/DESIGN.md`](../kaptan-landing/DESIGN.md) | Tanıtım sayfasının tasarım sistemi |
 | [`kaptan-landing/KAPTAN-BRIEF.md`](../kaptan-landing/KAPTAN-BRIEF.md) | Tanıtım sayfasının içerik gerçekleri ve kırmızı çizgileri |
 | [`kaptan-landing/THIRD_PARTY_NOTICES.md`](../kaptan-landing/THIRD_PARTY_NOTICES.md) | Yazı tipleri ve lisansları |
+
+## İşletim: [`ops/`](ops/RUNBOOK.md)
+
+| Belge | İçerik |
+|---|---|
+| [`ops/RUNBOOK.md`](ops/RUNBOOK.md) | Başlat/durdur, Postgres yedeği ve geri yükleme, Durdur (kill switch) sıfırlama, denetim zinciri doğrulama, anahtar döndürme, sık sorunlar |
+| [`ops/SOPS-AGE.md`](ops/SOPS-AGE.md) | Sırların SOPS + age ile şifrelenmesi |
+| [`../docker-compose.yml`](../docker-compose.yml) | Bütün sistem tek komutla (yerel, demo günü) |
+| [`../backend/docker-compose.prod.yml`](../backend/docker-compose.prod.yml) · [`../backend/prod.env.example`](../backend/prod.env.example) | Üretim biçimli yığın ve her ortam değişkeni |
 
 ## Araştırma geçmişi: [`arastirma/`](arastirma/NIHAI-PROJE.md)
 

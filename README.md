@@ -24,14 +24,24 @@
 
 ## In English
 
-**KAPtan** is a multi-agent decision-support desk for the Public Disclosure Platform (KAP) of Borsa İstanbul,
-built for the SENG 429 Enterprise Application Development Lab at Çankaya University (Fall 2026). Six LLM agents
-read each disclosure, classify it, extract the figures and bring historical evidence; a deterministic rule engine
-and a 16-rule risk gate make the decision; a human Risk Officer signs every proposal, and every step is written
-to a hash-chained audit ledger. Nothing is executed automatically: a signed proposal becomes a paper-trading
-order and an order ticket that a person enters by hand. This repository holds the public landing page and the
-Next.js panel, which runs on a mock API today; the Python agent backend is being built against
-[`kaptan-panel/API.md`](kaptan-panel/API.md). The documentation is in Turkish. Not investment advice.
+**KAPtan** is a multi-agent decision-support desk for the Public Disclosure Platform (KAP) of Borsa İstanbul.
+Six LLM agents read each disclosure, classify it, extract the figures and bring historical evidence; a
+deterministic rule engine and a 16-rule risk gate make the decision; a human Risk Officer signs every proposal,
+and every step is written to a hash-chained audit ledger. Nothing is executed automatically: a signed proposal
+becomes a paper order and an order ticket that a person enters by hand. The repository holds the landing page,
+the Next.js panel and the Python backend (FastAPI, LangGraph, Postgres + pgvector, Redis). The documentation
+is in Turkish. Not investment advice.
+
+**Quickstart** (Docker Desktop only; the first build takes several minutes):
+
+```bash
+docker compose up -d --build      # Postgres+pgvector, Redis, migrations, demo day, API, scheduler, panel
+# open http://localhost:3100/login, pick a role, passphrase kaptan2026 (local only)
+docker compose down               # stop; add -v to drop the database
+```
+
+API health: http://localhost:8000/api/v1/health · operations: [`docs/ops/RUNBOOK.md`](docs/ops/RUNBOOK.md) ·
+tests: [Testler](#testler) · live LLM mode: [Replay'den canlı moda](#replayden-canlı-moda).
 
 ## Ne yapar?
 
@@ -233,7 +243,7 @@ aynı tabloyu okur. Ürün kuralları: [`kaptan-panel/SPEC.md`](kaptan-panel/SPE
 |---|---|
 | Tanıtım sayfası | Yayında: [kaptan-seng429.vercel.app](https://kaptan-seng429.vercel.app/) |
 | Panel | Yayında: [kaptan-seng429.vercel.app/login](https://kaptan-seng429.vercel.app/login). Bütün ekranlar, dört rol, iki imza, defter doğrulama, sınır değişikliği, Durdur ve rehberli tur, tarayıcı içinde çalışan deterministik bir mock API ile |
-| Backend | Yazılıyor. Python ajan grafı ve FastAPI servisi bir ekip arkadaşı tarafından [`kaptan-panel/API.md`](kaptan-panel/API.md) sözleşmesine göre geliştiriliyor; panelin http istemcisi hazır |
+| Backend | Çalışıyor: FastAPI + LangGraph ajan grafı, Postgres + pgvector, Redis; sözleşme [`kaptan-panel/API.md`](kaptan-panel/API.md). Varsayılan replay modu kayıtlı ajan cevaplarıyla anahtarsız çalışır; canlı KAP ve canlı LLM ortam değişkenleriyle açılır. Ayrıntı: [`backend/README.md`](backend/README.md) |
 | Proje belgeleri | 15 belge ve kanonik kararlar: [`docs/proje/`](docs/proje/00-ICINDEKILER.md) |
 
 Paneldeki şirketler ve rakamlar örnek veridir (ör. ÖRNEK ENERJİ A.Ş.); gerçek şirket, gerçek fiyat ya da gerçek
@@ -245,10 +255,10 @@ sinyal yoktur. Mock modunda parola giriş sayfasında yazar: `kaptan2026`.
 |---|---|
 | Tanıtım sayfası | Vite 8, düz JavaScript, GSAP, Lenis, WebGL (mürekkep deniz), Canvas 2D, Vitest |
 | Panel | Next.js 16 (App Router), React 19, TypeScript (strict), Tailwind CSS 4, Radix UI, zod, @noble/hashes, Vitest, Testing Library, Playwright, axe-core |
-| Backend (yazılıyor) | Python, LangGraph 1.x, FastAPI (SSE, JWT), Postgres + pgvector, Redis Streams, bge-m3 |
+| Backend | Python 3.11 (uv), LangGraph 1.x, FastAPI (SSE, JWT), psycopg 3, Alembic, Postgres 16 + pgvector, Redis 7 Streams, gemini-embedding-001 (1024 boyut) |
 | Modeller | Gemini Flash-Lite (ana), Groq gpt-oss ve Llama Prompt Guard 2; geri dönüş zinciri Azure for Students, yerel Ollama, en sonda HOLD |
 | Değerlendirme | RAGAS 0.4, kendi replay düzeneği, vectorbt |
-| Yayın | Vercel: tek deploy, `/` tanıtım sayfası, `/login` ve diğer yollar panel |
+| Yayın | Vercel: tek deploy, `/` tanıtım sayfası, `/login` ve diğer yollar panel (mock API). Bütün sistem: Docker Compose (yerel `docker-compose.yml`, üretim `backend/docker-compose.prod.yml`) |
 
 Mimari, diyagramlar ve karar kayıtları (ADR): [`docs/proje/04-mimari.md`](docs/proje/04-mimari.md).
 
@@ -258,9 +268,13 @@ Mimari, diyagramlar ve karar kayıtları (ADR): [`docs/proje/04-mimari.md`](docs
 .
 ├── kaptan-landing/        Tanıtım sayfası (Vite): pirinç kâğıdına basılmış bir çizgi roman
 ├── kaptan-panel/          Panel (Next.js 16); tanıtım sayfasını da "/" adresinde sunar
+├── backend/               Python backend: FastAPI, LangGraph ajanları, işçiler, migrasyonlar, testler
+├── docker-compose.yml     Bütün sistem tek komutla (yerel)
+├── Dockerfile.panel       Panelin imajı (http modu, tanıtım sayfası dahil)
 ├── docs/
 │   ├── README.md          Belgelerin dizini
 │   ├── proje/             15 proje belgesi ve kanonik kararlar
+│   ├── ops/               İşletim el kitabı (runbook) ve SOPS/age
 │   ├── arastirma/         Üç turluk araştırma geçmişi ve nihai proje özeti
 │   └── screens/           Bu sayfadaki ekran görüntüleri
 └── .github/workflows/     CI: tip denetimi, lint ve birim testleri
@@ -268,39 +282,101 @@ Mimari, diyagramlar ve karar kayıtları (ADR): [`docs/proje/04-mimari.md`](docs
 
 Vercel bu iki klasör adıyla derler; `kaptan-landing/` ve `kaptan-panel/` yeniden adlandırılmamalıdır.
 
-## Hızlı başlangıç
+## Mimari
 
-Gerekenler: Node.js 24 (CI'daki sürüm). Testler en az Node 22.22 ister.
-
-```bash
-# Panel ve tanıtım sayfası birlikte: http://localhost:3100
-cd kaptan-panel
-npm ci
-npm run dev        # predev adımı ../kaptan-landing'i derleyip public/ içine kopyalar
+```mermaid
+flowchart LR
+    U(["Tarayıcı"]) -->|":3100"| P["Panel<br/>Next.js 16"]
+    P -->|"/api/v1 (rewrite)"| A["API<br/>FastAPI + LangGraph"]
+    A --> PG[("Postgres 16<br/>+ pgvector")]
+    A <-->|"SSE olayları, hız sınırı, önbellek"| R[("Redis 7")]
+    S["Scheduler<br/>günlük işler"] --> PG
+    S --> R
+    subgraph LIVE["--profile live · KAP_LIVE=true"]
+        I["ingest_worker<br/>KAP poller"] -->|"kaptan:kap.disclosures"| AG["agent_worker<br/>ajan grafı"]
+    end
+    I --> PG
+    AG --> PG
+    AG -.->|"LLM_MODE=live"| LLM["Gemini · DeepSeek · Groq<br/>Azure · Ollama"]
+    M["migrate · seed<br/>tek seferlik"] --> PG
 ```
 
-```bash
-# Yalnız tanıtım sayfası: http://localhost:5173
-cd kaptan-landing
-npm ci
-npm run dev
-```
+<sub>`migrate` Alembic'i sahip rolüyle (`kaptan_owner`) çalıştırır; API ve işçiler `kaptan_app` rolüyle bağlanır
+(denetim defterinde yalnız INSERT/SELECT). Ayrıntılı mimari: [`docs/proje/04-mimari.md`](docs/proje/04-mimari.md).</sub>
 
-Yalnız panel üzerinde çalışırken `SKIP_LANDING=1 npm run dev` tanıtım sayfasını derlemeyi atlar.
+## Tek komutla çalıştır
+
+Gerekenler: Docker Desktop (Compose v2). Depo kökünde:
 
 ```bash
-# Bütün sistem (panel + FastAPI backend, demo günü): Docker Desktop, uv ve Python 3.11 gerekir
-cd backend
-cp .env.example .env                                   # parolaları / JWT_SECRET'ı doldur
-docker compose -f docker-compose.yml up -d             # Postgres :5432, Redis :6379
-uv sync && uv run alembic upgrade head && uv run python scripts/seed_demo.py
-DEMO_MODE=true uv run python -m kaptan.api --port 8000 # PowerShell: $env:DEMO_MODE="true"; uv run …
-cd ../kaptan-panel
-npm run dev:api                                        # http://localhost:3100, /api/v1 → 127.0.0.1:8000
+docker compose up -d --build
 ```
 
-Ayrıntılar: [`backend/README.md`](backend/README.md) ("Bütün sistemi yerelde çalıştır"),
-[`kaptan-panel/README.md`](kaptan-panel/README.md) ve [`kaptan-panel/API.md`](kaptan-panel/API.md).
+Sıra: Postgres + pgvector ve Redis sağlıklı → `migrate` (alembic head) → `seed` (kayıtlı demo günü, yalnız ilk
+seferde; ardından denetim zinciri doğrulanır) → `api` (replay LLM, demo saati) + `scheduler` → `panel` (http
+modu). İlk derleme birkaç dakika sürer. Sonra:
+
+| Ne | Adres |
+|---|---|
+| Panel | http://localhost:3100/login |
+| Tanıtım sayfası | http://localhost:3100/ |
+| API sağlığı | http://localhost:8000/api/v1/health · http://localhost:8000/readyz |
+
+```bash
+docker compose ps                  # api, panel, scheduler, postgres, redis: healthy · migrate, seed: Exited (0)
+docker compose logs -f api
+docker compose down                # durdur; -v ile veritabanı da silinir
+KAPTAN_API_PORT=8300 KAPTAN_PANEL_PORT=3300 docker compose up -d   # portlar doluysa
+```
+
+Bu yığın yalnız yerel içindir: parolalar sabit yerel değerlerdir ve API `KAPTAN_ENV=dev` ile çalışır. Üretim için
+`backend/docker-compose.prod.yml` ve [`backend/prod.env.example`](backend/prod.env.example); işletim (yedek,
+geri yükleme, Durdur sıfırlama, defter doğrulama, anahtar döndürme): [`docs/ops/RUNBOOK.md`](docs/ops/RUNBOOK.md).
+
+Docker'sız geliştirme (backend `uv run`, panel `npm run dev:api`): [`backend/README.md`](backend/README.md),
+"Run the whole system locally". Yalnız panel ve tanıtım sayfası (mock API, backend gerekmez):
+`cd kaptan-panel && npm ci && npm run dev` → http://localhost:3100.
+
+### Roller ve yerel giriş
+
+Tek parola, dört rol; giriş ekranında hesap seçilir ve her rol bir ekip üyesine bağlıdır. Yerel parola
+`kaptan2026`'dır (yalnız `KAPTAN_ENV=dev` iken ve `PASSPHRASE_HASH` boşsa; üretimde argon2id özeti zorunludur).
+
+| Rol | Hesap | Yapabildikleri |
+|---|---|---|
+| Analist | Üye 2 | Okur, not ekler |
+| Risk Sorumlusu (varsayılan) | Üye 3 | Öneriyi onaylar ya da reddeder, emir fişini işaretler, durdurur, sınır değişikliğini ve yeniden başlatmayı onaylar, defteri doğrular |
+| Yönetici | Üye 1 | Durdurur, sınır değişikliğini önerir, yeniden başlatmayı başlatır, kullanıcıları görür, senaryoları çalıştırır, defteri doğrular |
+| Denetçi | Denetçi | Her şeyi görür, hiçbir şeyi değiştiremez; defteri doğrular |
+
+Girişler IP başına dakikada 5 ile sınırlıdır (`LOGIN_RATE_PER_MINUTE`).
+
+### Replay'den canlı moda
+
+Varsayılan `LLM_MODE=replay`: ajanlar kayıtlı cevaplarla çalışır, ağ ve anahtar gerekmez. Canlı mod için değişken
+adları (değerler gitignore'daki kök `.env` dosyasına ya da `backend/prod.env`'e yazılır, asla depoya değil):
+
+| Değişken | Etkisi |
+|---|---|
+| `LLM_MODE=live` | Ajanlar gerçek modellere gider (zincir ve model kimlikleri `backend/config/models.yaml`) |
+| `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY` | Sağlayıcı anahtarları; anahtarı olmayan sağlayıcı atlanır |
+| `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `OLLAMA_BASE_URL` | İsteğe bağlı ek halkalar |
+| `LLM_CAP_*` | Sağlayıcı başına günlük sert sınırlar |
+| `KAP_LIVE=true`, `DEMO_MODE=false` | Gerçek KAP bildirimleri: boş veritabanı (`docker compose down -v`) ve `docker compose --profile live up -d` |
+| `PRICES_LIVE=true`, `CHECKPOINTER=postgres` | Gerçek fiyat işaretleri; yeniden başlatmaya dayanıklı ajan grafı |
+
+### Sorun giderme
+
+| Belirti | Çözüm |
+|---|---|
+| `port is already allocated` | `KAPTAN_API_PORT` / `KAPTAN_PANEL_PORT` ile başka port seç |
+| `seed` Exited (1) | `docker compose logs seed`; eski imajsa `docker compose build --no-cache api` |
+| Girişte "Çok fazla deneme" (429) | Bir dakika bekle |
+| Giriş olur, sayfa yenilenince oturum düşer | Paneli `localhost` ya da `127.0.0.1` ile aç (yenileme çerezi `__Host-` önekli ve `Secure`) |
+| Demo gününü baştan almak | ⚙ Ayarlar → Senaryolar → "Verileri sıfırla" (Yönetici) ya da `docker compose run --rm seed seed_demo --force` ve `docker compose restart api` |
+| `readyz` içinde `ingest_worker` / `agent_worker` `missing` | Normal; canlı işçiler yalnız `--profile live` ile çalışır |
+
+Daha fazlası: [`docs/ops/RUNBOOK.md`](docs/ops/RUNBOOK.md), "Sık sorunlar".
 
 ## Testler
 
@@ -316,8 +392,13 @@ Ayrıntılar: [`backend/README.md`](backend/README.md) ("Bütün sistemi yerelde
 | Birim testleri | `kaptan-landing` | `npm test` |
 | Kapsam (eşik %80) | `kaptan-landing` | `npm run coverage` |
 
-GitHub Actions, `main` dalına gelen her push ve pull request'te panelin tip denetimini ve lint'ini, iki uygulamanın
-da birim testlerini çalıştırır
+Backend testleri Postgres ve Redis ister: `backend/.env` (`.env.example`'dan) ve
+`docker compose -f backend/docker-compose.yml up -d`; entegrasyon testleri `kaptan_test` veritabanını kullanır ve
+Postgres kapalıysa atlanır.
+
+GitHub Actions, `main` dalına gelen her push ve pull request'te panelin tip denetimini, lint'ini ve birim testlerini,
+tanıtım sayfasının birim testlerini, backend'in lint, tip ve test adımlarını (Postgres + Redis ile), gitleaks
+taramasını ve gerçek backend'e karşı panel e2e'sini (engellemeyen) çalıştırır
 ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ## Belgeler

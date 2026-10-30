@@ -27,6 +27,11 @@ curl -s http://127.0.0.1:8000/api/v1/health
 
 ## Run the whole system locally (Bütün sistemi yerelde çalıştır)
 
+**One command, Docker only** (from the repo root): `docker compose up -d --build` builds this image and the panel
+(`../Dockerfile.panel`), migrates, loads the demo day once (`seed_demo`), starts the API, the scheduler and the
+panel on http://localhost:3100 (API :8000). See the root README and `../docs/ops/RUNBOOK.md`.
+Without Docker for the app processes:
+
 Docker Desktop, uv, Python 3.11, Node 24. Two terminals; the commands are the same in Git Bash and
 PowerShell except the env line of the API.
 
@@ -380,11 +385,12 @@ Outside the demo the gate reads the desk as it is; the demo keeps its seeded des
 
 ## Deploy-ready backend (M3 A5, `kaptan.ops`) — runs anywhere with Docker, no provider config
 
-**From scratch** (the image serves `api | ingest_worker | agent_worker | scheduler | migrate | bootstrap | dlq`):
+**From scratch** (the image serves `api | ingest_worker | agent_worker | scheduler | migrate | bootstrap | dlq |
+seed_demo`; `seed_demo` is for the local stack only):
 
 ```bash
 cd backend
-cp prod.env.example prod.env          # fill in (hex passwords; PASSPHRASE_HASH in single quotes); gitignored
+cp prod.env.example prod.env          # fill in the REQUIRED block; every other variable is listed there with its default
 docker compose -f docker-compose.prod.yml --env-file prod.env up -d --build
 curl -s http://127.0.0.1:8000/readyz  # {"status":"ready","checks":{"db":"ok","redis":"ok","migrations":"ok"},…}
 ```
