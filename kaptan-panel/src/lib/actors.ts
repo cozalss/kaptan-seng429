@@ -9,6 +9,7 @@ const SYSTEM_NAMES: Readonly<Record<string, string>> = {
   scheduler: "Zamanlayıcı",
   nightly_verify: "Gece doğrulaması",
   restrictions_sync: "Tedbir listesi",
+  auth: "Giriş kapısı",
 };
 
 /** Crew members whose plain name reads better than the pipeline label. */
@@ -27,6 +28,7 @@ export function actorParts(actor: string | null | undefined): { name: string; ki
     const node = NodeName.safeParse(id);
     return { name: NODE_NAMES[id] ?? (node.success ? NODE_LABELS[node.data].tr : id), kind: "Tayfa" };
   }
+  if (actor === "auth") return { name: "Giriş kapısı", kind: "Sistem" };
   if (actor.startsWith("system:")) return { name: SYSTEM_NAMES[actor.slice(7)] ?? actor.slice(7), kind: "Sistem" };
   return { name: actor, kind: "" };
 }

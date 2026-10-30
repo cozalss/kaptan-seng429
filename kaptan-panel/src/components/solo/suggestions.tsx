@@ -74,7 +74,7 @@ export function Suggestions({ suggestions, names, stopped, busy, errors, onAnswe
         <p className="mt-2 text-ui text-ink-soft">İşlemler durduruldu; öneriler şimdilik onaylanamaz.</p>
       ) : null}
       {list.length === 0 ? (
-        <p className="mt-4 border-2 border-ink bg-panel px-5 py-6 text-ui text-ink-soft">
+        <p className="mt-4 rounded-xl border border-line bg-panel shadow-card px-5 py-6 text-ui text-ink-soft">
           Şu an yeni öneri yok. KAPtan bir fırsat ya da yapılacak bir iş gördüğünde burada çıkar.
         </p>
       ) : (
@@ -97,7 +97,7 @@ export function Suggestions({ suggestions, names, stopped, busy, errors, onAnswe
         <button
           type="button"
           onClick={() => setShowAll(true)}
-          className="mt-4 inline-flex min-h-11 w-full items-center justify-center border-2 border-ink bg-panel px-4 text-ui font-medium text-ink transition-colors duration-[var(--dur-quick)] hover:bg-wash-tint"
+          className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-line-strong bg-panel px-4 text-ui font-medium text-ink shadow-card transition-[background-color,scale] duration-[var(--dur-quick)] hover:bg-wash-tint active:scale-[0.99]"
         >
           {list.length - FIRST_SLIPS} öneri daha göster
         </button>
@@ -127,9 +127,9 @@ function SuggestionSlip({
   const titleId = `oneri-${s.id}`;
   const closed = stopped || busy !== null || locked;
   return (
-    <li aria-labelledby={titleId} className="animate-card-arrive flex border-2 border-ink bg-panel shadow-ink">
-      <div aria-hidden className={cn("flex w-16 shrink-0 items-center justify-center border-r-2 sm:w-[104px]", STAMP[s.action])}>
-        <span className="title-display text-[28px] sm:text-[44px]">{verb}</span>
+    <li aria-labelledby={titleId} className="animate-card-arrive flex overflow-hidden rounded-xl border border-line bg-panel shadow-card transition-[box-shadow,border-color] duration-[var(--dur-quick)] hover:border-line-strong hover:shadow-[var(--shadow-raise)]">
+      <div aria-hidden className={cn("flex w-14 shrink-0 items-center justify-center sm:w-[84px]", STAMP[s.action])}>
+        <span className="title-display text-[24px] sm:text-[34px]">{verb}</span>
       </div>
       <div className="min-w-0 flex-1 px-4 py-3.5 sm:px-5 sm:py-4">
         <h3 id={titleId} className="flex flex-wrap items-baseline gap-x-2 text-[18px] leading-7 font-semibold text-ink">

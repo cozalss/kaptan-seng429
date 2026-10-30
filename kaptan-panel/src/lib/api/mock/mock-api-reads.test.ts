@@ -54,6 +54,18 @@ describe("mock API · reads", () => {
     expect((await api.listApprovals("all")).length).toBeGreaterThanOrEqual(3);
     expect(await api.counters()).toMatchObject({ total: DAY_BY_ANCHOR.total });
   });
+
+  it("counts a given day exactly and rejects a malformed date", async () => {
+    const { api } = setup();
+    const today = await api.counters();
+    const day = today.as_of.slice(0, 10);
+    const all = await api.disclosures({ limit: 500 });
+    const onDay = (await api.counters(day)).total;
+    expect(onDay).toBeGreaterThanOrEqual(all.length > 0 ? 1 : 0);
+    const before = await api.counters("2020-01-02");
+    expect(before).toMatchObject({ total: 0, noise: 0, archived: 0, processed: 0, proposals: 0 });
+    expect(await statusOf(api.counters("31.10.2026"))).toBe(422);
+  });
 });
 
 describe("ApiError helpers", () => {

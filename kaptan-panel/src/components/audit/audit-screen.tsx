@@ -80,7 +80,7 @@ export function AuditScreen() {
 
       <VerifyPanel walk={walk} onVerify={() => void verify()} onShow={showRecord} tamperOn={data?.tamper_on ?? false} />
 
-      <section aria-labelledby="kayitlar" className={cn(CARD, "overflow-hidden")}>
+      <section aria-labelledby="kayitlar" className={cn(CARD, "overflow-clip")}>
         <div className="flex flex-col gap-3 px-4 pt-4 pb-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:pt-5">
           <h2 id="kayitlar" className="text-body font-semibold text-ink">
             Kayıtlar

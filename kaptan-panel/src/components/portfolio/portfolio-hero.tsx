@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { RiskStatus } from "@/lib/domain";
-import { fmtInt, fmtPct, fmtSignedPct, NBSP } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { Figure } from "@/components/ui/figure";
 import { Skeleton } from "@/components/ui/primitives";
 import { signTone } from "@/components/story/sign-tone";
 import { CARD } from "./kit";
@@ -15,7 +15,7 @@ export function PortfolioHero({ risk }: { risk: RiskStatus | null }) {
     return (
       <div className="grid gap-3 sm:grid-cols-3">
         {[0, 1, 2].map((i) => (
-          <Skeleton key={i} className="h-[104px] w-full" />
+          <Skeleton key={i} className="h-[104px] w-full rounded-xl" />
         ))}
       </div>
     );
@@ -25,19 +25,14 @@ export function PortfolioHero({ risk }: { risk: RiskStatus | null }) {
     <div className="space-y-3">
       <dl aria-label="Özet" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Kpi label="Toplam değer" className="col-span-2 sm:col-span-1">
-          <span className="text-brand">
-            {fmtInt(Math.round(risk.equity))}
-            {NBSP}TL
-          </span>
+          <Figure value={risk.equity} kind="try" className="text-brand" />
         </Kpi>
         <Kpi label={paused ? "Bugün · yeni emir yok" : "Bugün"} band={paused}>
-          <span className={signTone(risk.daily_pnl_pct)}>
-            {fmtSignedPct(risk.daily_pnl_pct, 2)}
-          </span>
+          <Figure value={risk.daily_pnl_pct} kind="signedPct" digits={2} className={signTone(risk.daily_pnl_pct)} />
         </Kpi>
         <Kpi label="Zirveden">
           <span className={signTone(Math.min(0, risk.drawdown_pct))}>
-            {risk.drawdown_pct < 0 ? fmtPct(risk.drawdown_pct, 1) : "zirvede"}
+            {risk.drawdown_pct < 0 ? <Figure value={risk.drawdown_pct} kind="pct" digits={1} /> : "zirvede"}
           </span>
         </Kpi>
       </dl>

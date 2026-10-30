@@ -33,8 +33,8 @@ export function MoneyChart({ series, capitalStart }: { series: readonly EquityPo
   };
 
   return (
-    <figure aria-labelledby="grafik-baslik" className="border-2 border-ink bg-panel">
-      <figcaption className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-ink px-4 py-3 sm:px-5">
+    <figure aria-labelledby="grafik-baslik" className="overflow-clip rounded-xl border border-line bg-panel shadow-card">
+      <figcaption className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
         <div className="min-w-0">
           <h2 id="grafik-baslik" className="text-title font-semibold text-ink">
             Paranın yolculuğu
@@ -72,7 +72,7 @@ export function MoneyChart({ series, capitalStart }: { series: readonly EquityPo
 
 function PeriodToggle({ series, period, onChoose }: { series: readonly EquityPoint[]; period: Period; onChoose: (p: Period) => void }) {
   return (
-    <div role="group" aria-label="Dönem" className="flex border-2 border-ink">
+    <div role="group" aria-label="Dönem" className="flex gap-0.5 rounded-lg bg-sunk p-0.5">
       {PERIODS.map((p) => {
         const distinct = periodIsDistinct(series, p);
         const why = distinct ? PERIOD_LABEL[p] : `${PERIOD_LABEL[p]}: henüz bu kadar uzun bir geçmiş yok`;
@@ -86,9 +86,9 @@ function PeriodToggle({ series, period, onChoose }: { series: readonly EquityPoi
             aria-label={why}
             onClick={() => onChoose(p)}
             className={cn(
-              "min-h-10 min-w-12 px-3 text-dense font-semibold tabular-nums transition-colors duration-[var(--dur-quick)] not-first:border-l-2 not-first:border-ink",
-              period === p ? "bg-ink text-paper" : "bg-panel text-ink hover:bg-wash-tint",
-              "disabled:cursor-not-allowed disabled:text-muted disabled:line-through disabled:hover:bg-panel",
+              "min-h-9 min-w-12 rounded-md px-3 text-dense font-semibold tabular-nums transition-[background-color,color,box-shadow] duration-[var(--dur-quick)] max-sm:min-h-10",
+              period === p ? "bg-panel text-ink shadow-[0_1px_2px_rgb(10_33_72/0.16)]" : "text-ink-soft hover:text-ink",
+              "disabled:cursor-not-allowed disabled:text-muted disabled:line-through",
               "focus-visible:relative focus-visible:z-10",
             )}
           >
@@ -196,7 +196,7 @@ function SeriesTable({ points }: { points: readonly EquityPoint[] }) {
       <table className="mt-2 w-full text-left tabular-nums">
         <caption className="sr-only">Gün gün paranın değeri</caption>
         <thead>
-          <tr className="border-b-2 border-ink">
+          <tr className="border-b-2 border-hairline">
             <th scope="col" className="py-1 font-semibold">
               Gün
             </th>

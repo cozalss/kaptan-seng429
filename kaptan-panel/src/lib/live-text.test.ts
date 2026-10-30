@@ -1,5 +1,6 @@
 import type { AuditEntry } from "@/lib/domain";
 import { auditSentence, vetoReason } from "./audit-words";
+import { actorParts } from "./actors";
 import { repairDeep, repairMojibake } from "./api/http/mojibake";
 import { fateOf, flowFromList } from "@/components/disclosures/disclosure-logic";
 
@@ -34,6 +35,13 @@ describe("pre-gate veto wording", () => {
   it("says nothing extra when no rule code is given", () => {
     expect(auditSentence(veto(["bilinmeyen"]))).toBe("Kurallar Mogan Enerji Yatırım Holding için öneriyi baştan reddetti.");
     expect(vetoReason({ payload: {} })).toBeNull();
+  });
+
+  it("says a failed sign-in in words, never as the raw action code", () => {
+    const failed = { ...veto([]), actor: "auth", action: "auth.login_failed", payload: {} } as AuditEntry;
+    expect(auditSentence(failed)).toBe("Hatalı parolayla bir giriş denendi.");
+    expect(actorParts("auth")).toEqual({ name: "Giriş kapısı", kind: "Sistem" });
+    expect(actorParts("system:auth")).toEqual({ name: "Giriş kapısı", kind: "Sistem" });
   });
 });
 

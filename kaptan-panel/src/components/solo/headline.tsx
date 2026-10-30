@@ -3,6 +3,7 @@ import type { Overview } from "@/lib/solo/overview";
 import { fmtLira, fmtSignedLira, liraParts } from "@/lib/solo/words";
 import { cn } from "@/lib/utils";
 import { signTone } from "@/components/story/sign-tone";
+import { Figure } from "@/components/ui/figure";
 
 /**
  * The three numbers the screen is about: what the money is worth now (large), how much it
@@ -13,13 +14,13 @@ export function Headline({ overview }: { overview: Overview }) {
   const { whole, cents } = liraParts(overview.equity_now);
   const tone = signTone(Math.round(overview.pnl_abs));
   return (
-    <section aria-labelledby="paran-baslik" className="animate-page-in border-b-2 border-ink pb-6 lg:flex lg:items-end lg:justify-between lg:gap-10">
+    <section aria-labelledby="paran-baslik" className="animate-page-in border-b border-line-strong pb-6 lg:flex lg:items-end lg:justify-between lg:gap-10">
       <div className="min-w-0">
         <h1 id="paran-baslik" className="label text-muted">
           Paran şu an
         </h1>
         <p className="mt-3 flex flex-wrap items-baseline gap-x-1.5 text-ink" data-testid="toplam-para">
-          <span className="solo-figure text-[48px] min-[400px]:text-[56px] sm:text-[88px]">{whole}</span>
+          <Figure value={Number(whole.replace(/\D/g, ""))} kind="int" className="solo-figure text-[48px] min-[400px]:text-[56px] sm:text-[88px]" />
           <span className="solo-figure text-[24px] text-muted sm:text-[40px]">,{cents}</span>
           <span className="solo-figure ml-1 text-[28px] text-ink-soft sm:text-[48px]">₺</span>
         </p>

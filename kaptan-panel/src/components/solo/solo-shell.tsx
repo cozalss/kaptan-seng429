@@ -47,7 +47,7 @@ function SoloHeader() {
       router.refresh();
     });
   return (
-    <header className="border-b-2 border-ink bg-panel">
+    <header className="sticky top-0 z-30 border-b border-line bg-panel/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 w-full max-w-[1120px] items-center gap-3 px-4 sm:px-8">
         <Link href={SOLO_HOME} aria-label="Benim KAPtan'ım, ana sayfa" className="shrink-0">
           <Wordmark className="h-8 w-auto" title="KAPtan" />

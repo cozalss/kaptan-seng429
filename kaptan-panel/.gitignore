@@ -50,3 +50,6 @@ next-env.d.ts
 /public/images/
 /public/fonts/
 /public/favicon.svg
+
+# local UI screenshots
+/.shots-ui/

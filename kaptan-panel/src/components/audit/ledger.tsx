@@ -25,7 +25,7 @@ export const Timeline = memo(function Timeline({ items, scope, broken }: { items
   const rows = useMemo(() => groupRuns(items), [items]);
   return (
     <div>
-      <div aria-hidden className={cn(GRID, "hidden border-b-2 border-hairline py-2.5 sm:grid", TH)}>
+      <div aria-hidden className={cn(GRID, "sticky top-14 z-10 hidden bg-panel/95 lg:top-0 py-2.5 shadow-[inset_0_-2px_0_var(--hairline)] backdrop-blur-sm sm:grid", TH)}>
         <span>{scope === "today" ? "Saat" : "Tarih"}</span>
         <span>Kim</span>
         <span>Ne oldu</span>

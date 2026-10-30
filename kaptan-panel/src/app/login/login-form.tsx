@@ -79,13 +79,15 @@ export function LoginForm({ next, initialRole }: { next: string | null; initialR
         <p id="hesap-label" className="text-dense font-semibold text-ink">
           Hesap
         </p>
-        <div role="radiogroup" aria-labelledby="hesap-label" className="mt-2 divide-y divide-hairline border-2 border-rule-ui">
+        <div role="radiogroup" aria-labelledby="hesap-label" className="mt-2 grid gap-2">
           {ROLES.map((r) => (
             <label
               key={r}
               className={cn(
-                "flex min-h-14 cursor-pointer items-center gap-3 px-3.5 py-2 transition-colors duration-[var(--dur-quick)]",
-                "hover:bg-wash-tint has-[:checked]:bg-wash-tint has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-brand",
+                "flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border-[1.5px] border-rule-soft bg-panel px-3.5 py-2.5",
+                "transition-[background-color,border-color,box-shadow,scale] duration-[var(--dur-quick)] ease-[var(--ease-out-expo)] active:scale-[0.99]",
+                "hover:border-rule-ui hover:bg-wash-tint has-[:checked]:border-brand has-[:checked]:bg-wash-tint has-[:checked]:shadow-[0_0_0_1px_var(--brand)]",
+                "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand",
               )}
             >
               <input
@@ -100,7 +102,7 @@ export function LoginForm({ next, initialRole }: { next: string | null; initialR
                 <span className="block text-ui font-semibold text-ink">{ROLE_LABEL[r]}</span>
                 <span className="block text-meta text-ink-soft">{accountPerson(r)}</span>
               </span>
-              <span aria-hidden className={cn(`tone-${r}`, "size-2.5 shrink-0 bg-[var(--tone)]")} />
+              <span aria-hidden className={cn(`tone-${r}`, "size-2.5 shrink-0 rounded-full bg-[var(--tone)] ring-4 ring-[var(--tone-tint)]")} />
             </label>
           ))}
         </div>
@@ -123,7 +125,7 @@ export function LoginForm({ next, initialRole }: { next: string | null; initialR
           value={passphrase}
           onChange={(e) => setPassphrase(e.target.value)}
           className={cn(
-            "mt-2 h-12 w-full border-2 border-rule-ui bg-panel px-3.5 text-[16px] text-ink",
+            "mt-2 h-12 w-full rounded-xl border-[1.5px] border-rule-ui bg-panel px-3.5 text-[16px] text-ink",
             "transition-[border-color] duration-[var(--dur-quick)] ease-[var(--ease-ink)]",
             "focus-visible:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
             "aria-[invalid=true]:border-north",

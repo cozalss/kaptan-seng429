@@ -5,7 +5,9 @@ import { fmtInt, fmtPct, fmtSignedPct, fmtTry, NBSP } from "@/lib/format";
 import { ROUTES } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { signTone } from "@/components/story/sign-tone";
+import { Figure } from "@/components/ui/figure";
 import { Skeleton } from "@/components/ui/primitives";
+import { Sparkline } from "@/components/ui/sparkline";
 
 export interface KpiInput {
   risk: RiskStatus | null;
@@ -17,6 +19,8 @@ export interface KpiInput {
   pending: number;
   /** "yarın 09:50", the soonest deadline among the open proposals. */
   soonest: string | null;
+  /** The value line's closes (oldest first), drawn as a sparkline in the value tile. */
+  trend?: readonly number[];
 }
 
 /** Today's move in TL, from the equity and the day's return (equity = start × (1 + r)). */
@@ -35,7 +39,7 @@ function signedTry(n: number): string {
  * positions, proposals waiting for a signature and whether the desk is running. The value tile
  * is the way to Portföy.
  */
-export function KpiRow({ risk, cash, positions, maxPositions, pending, soonest }: KpiInput) {
+export function KpiRow({ risk, cash, positions, maxPositions, pending, soonest, trend = [] }: KpiInput) {
   const grid = "grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-[1.35fr_1.1fr_1.2fr_1fr_1fr_1.15fr] xl:gap-4";
   if (!risk) {
     return (
@@ -56,32 +60,35 @@ export function KpiRow({ risk, cash, positions, maxPositions, pending, soonest }
       <Link
         href={ROUTES.portfoy}
         aria-label={`Portföyün: ${total}, bugün ${today}. Portföy’e git`}
-        className="group col-span-2 block rounded-xl border border-navy bg-navy p-4 text-on-navy shadow-card transition-colors duration-[var(--dur-quick)] hover:bg-navy-raised focus-visible:outline-offset-2 md:col-span-1 xl:p-5"
+        className="group relative col-span-2 block overflow-hidden rounded-xl border border-navy bg-navy p-4 text-on-navy shadow-card transition-[background-color,translate] duration-[var(--dur-quick)] hover:bg-navy-raised focus-visible:outline-offset-2 active:translate-y-px md:col-span-1 xl:p-5"
       >
+        <Sparkline values={trend} className="pointer-events-none absolute right-0 bottom-0 h-11 w-[48%] text-[#7d9bd6] opacity-90 [mask-image:linear-gradient(to_right,transparent,black_45%)]" />
         <p className="flex items-center justify-between text-dense font-medium text-on-navy-soft">
           Portföy değeri
           <span aria-hidden className="transition-transform duration-[var(--dur-quick)] group-hover:translate-x-0.5">
             →
           </span>
         </p>
-        <p className="mt-2 text-[24px] leading-8 font-semibold tracking-[-0.02em] whitespace-nowrap tabular-nums xl:text-[26px]">{total}</p>
-        <p className="mt-1 text-meta text-on-navy-soft tabular-nums">{risk.drawdown_pct < 0 ? `zirveden ${fmtPct(risk.drawdown_pct, 1)}` : "zirvede"}</p>
+        <p className="relative mt-2 text-[24px] leading-8 font-semibold tracking-[-0.02em] whitespace-nowrap tabular-nums xl:text-[26px]">
+          <Figure value={risk.equity} kind="try" />
+        </p>
+        <p className="relative mt-1 text-meta text-on-navy-soft tabular-nums">{risk.drawdown_pct < 0 ? `zirveden ${fmtPct(risk.drawdown_pct, 1)}` : "zirvede"}</p>
       </Link>
 
       <Tile label="Bugünkü getiri" note={signedTry(dailyTry(risk.equity, risk.daily_pnl_pct))} noteTone={signTone(risk.daily_pnl_pct)}>
-        <span className={signTone(risk.daily_pnl_pct)}>{today}</span>
+        <Figure value={risk.daily_pnl_pct} kind="signedPct" digits={2} className={signTone(risk.daily_pnl_pct)} />
       </Tile>
 
       <Tile label="Nakit" note={cash === null ? "okunamadı" : cash === undefined ? null : `portföyün ${fmtPct(cash / risk.equity, 0)}’i`}>
-        {cash === undefined ? <Skeleton className="mt-1 h-7 w-28" /> : cash === null ? "—" : fmtTry(cash)}
+        {cash === undefined ? <Skeleton className="mt-1 h-7 w-28" /> : cash === null ? "—" : <Figure value={cash} kind="try" />}
       </Tile>
 
       <Tile label="Açık pozisyon" note={maxPositions !== null ? `en çok ${fmtInt(maxPositions)}` : null}>
-        {positions === undefined ? <Skeleton className="mt-1 h-7 w-12" /> : positions === null ? "—" : fmtInt(positions)}
+        {positions === undefined ? <Skeleton className="mt-1 h-7 w-12" /> : positions === null ? "—" : <Figure value={positions} kind="int" />}
       </Tile>
 
       <Tile label="Bekleyen onay" note={stopped ? "durdurulunca düştü" : soonest ? `son: ${soonest}` : "sıra boş"}>
-        {fmtInt(pending)}
+        <Figure value={pending} kind="int" />
       </Tile>
 
       <Tile
@@ -117,7 +124,7 @@ function Tile({
   return (
     <div
       className={cn(
-        "relative min-w-0 overflow-hidden rounded-xl border border-line bg-panel p-4 shadow-card xl:p-5",
+        "relative min-w-0 overflow-hidden rounded-xl border border-line bg-panel p-4 shadow-card transition-[border-color,box-shadow] duration-[var(--dur-quick)] hover:border-line-strong xl:p-5",
         accent && "before:absolute before:inset-y-0 before:left-0 before:w-1",
         accent === "north" && "border-north/50 bg-north-tint before:bg-north",
         accent === "ochre" && "border-ochre bg-ochre-tint before:bg-ochre",

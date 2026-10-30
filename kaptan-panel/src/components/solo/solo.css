@@ -47,6 +47,11 @@
     --brand: #a9c1f5;
     --on-dark: #121419;
     --shadow-ink: 3px 3px 0 rgb(0 0 0 / 0.55);
+    --line: rgb(238 235 227 / 0.12);
+    --line-strong: rgb(238 235 227 / 0.24);
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+    --shadow-raise: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -8px rgb(0 0 0 / 0.6);
+    --shadow-pop: 0 0 0 1px rgb(238 235 227 / 0.08), 0 12px 32px -8px rgb(0 0 0 / 0.7);
     --shadow-ink-lg: 6px 6px 0 rgb(0 0 0 / 0.55);
 
     --solo-c1: #3d7ad6;

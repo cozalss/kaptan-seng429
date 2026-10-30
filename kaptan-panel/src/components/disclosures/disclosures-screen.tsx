@@ -40,7 +40,15 @@ export function DisclosuresScreen() {
   const today = now === null ? null : istanbulDay(now);
 
   const q = useApiQuery((api) => (day ? api.disclosures({ day, limit: MAX_DISCLOSURES }) : Promise.resolve(null)), [day]);
-  useEventStream("feed", { counters: () => (day === today ? void q.refetch() : undefined) });
+  // The day's exact total (the list stops at MAX_DISCLOSURES): GET /disclosures/counters?day=.
+  const exact = useApiQuery((api) => (day ? api.counters(day) : Promise.resolve(null)), [day]);
+  useEventStream("feed", {
+    counters: () => {
+      if (day !== today) return;
+      void q.refetch();
+      void exact.refetch();
+    },
+  });
 
   const rows = useMemo(() => {
     const all = q.data ?? [];
@@ -86,7 +94,7 @@ export function DisclosuresScreen() {
       <section aria-labelledby="bildirim-listesi" className={cn(CARD, "overflow-hidden")}>
         <div className="flex flex-col gap-3 px-5 pt-4 pb-4 lg:flex-row lg:items-center lg:justify-between">
           <h2 id="bildirim-listesi" className="text-body font-semibold text-ink">
-            {q.data ? `${fmtInt(q.data.length)}${capped ? "+" : ""} bildirim` : "Bildirimler"}
+            {exact.data && q.data ? `${fmtInt(Math.max(exact.data.total, q.data.length))} bildirim` : q.data ? `${fmtInt(q.data.length)}${capped ? "+" : ""} bildirim` : "Bildirimler"}
           </h2>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div role="group" aria-label="Ne oldu" className="inline-flex flex-wrap gap-1 self-start rounded-xl bg-sunk p-1">

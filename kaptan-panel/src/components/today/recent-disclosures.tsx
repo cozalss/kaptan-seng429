@@ -19,8 +19,11 @@ export function RecentDisclosures({
   error,
   onRetry,
   note,
+  total = null,
 }: {
   rows: readonly DisclosureListItem[] | null;
+  /** The day's exact count from the counters, when known (the list itself is capped). */
+  total?: number | null;
   error: string | null;
   onRetry: () => void;
   note: string;
@@ -30,7 +33,7 @@ export function RecentDisclosures({
       <CardHead
         id="son-bildirimler"
         title="Son bildirimler"
-        note={rows ? `${note} · ${fmtInt(rows.length)}${rows.length >= MAX_DISCLOSURES ? "+" : ""} bildirim` : note}
+        note={total !== null ? `${note} · ${fmtInt(total)} bildirim` : rows ? `${note} · ${fmtInt(rows.length)}${rows.length >= MAX_DISCLOSURES ? "+" : ""} bildirim` : note}
         action={
           <Link href={ROUTES.bildirimler} className="text-dense font-semibold text-brand underline decoration-transparent underline-offset-4 hover:decoration-brand">
             Tümü →

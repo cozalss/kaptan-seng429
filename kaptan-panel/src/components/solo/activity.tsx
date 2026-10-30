@@ -26,7 +26,7 @@ export function Activity({ items }: { items: readonly ActivityItem[] }) {
               <span
                 aria-hidden
                 className={cn(
-                  "grid size-6 shrink-0 place-items-center border-2 text-dense font-semibold",
+                  "grid size-6 shrink-0 place-items-center rounded-full border-[1.5px] text-dense font-semibold",
                   it.kind === "skipped" || it.kind === "held" ? "border-rule-soft text-muted" : "border-ink text-ink",
                 )}
               >

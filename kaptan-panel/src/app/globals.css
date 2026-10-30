@@ -57,6 +57,10 @@
   --line: rgb(12 47 99 / 0.16); /* the 1px edge of a card on the canvas */
   --line-strong: rgb(12 47 99 / 0.28);
   --shadow-card: 0 1px 2px rgb(10 33 72 / 0.06), 0 2px 8px -2px rgb(10 33 72 / 0.06);
+  /* Elevation, three steps: a card on the canvas (card) · a card under the pointer (raise) ·
+     something laid on top of the page: menus, toasts, popovers (pop). Dialogs keep their own. */
+  --shadow-raise: 0 1px 2px rgb(10 33 72 / 0.08), 0 8px 24px -8px rgb(10 33 72 / 0.18);
+  --shadow-pop: 0 0 0 1px rgb(10 33 72 / 0.04), 0 12px 32px -8px rgb(10 33 72 / 0.28), 0 2px 6px rgb(10 33 72 / 0.08);
 
   /* The sidebar: KAPtan navy, deeper than the wordmark so the canvas reads as the page. */
   --navy: #0a2148;
@@ -181,6 +185,8 @@
   --shadow-ink: var(--shadow-ink);
   --shadow-ink-lg: var(--shadow-ink-lg);
   --shadow-card: var(--shadow-card);
+  --shadow-raise: var(--shadow-raise);
+  --shadow-pop: var(--shadow-pop);
   /* Cards and controls are softly rounded (the dashboard); stamps and slips stay square. */
   --radius-*: initial;
   --radius-sm: 6px;

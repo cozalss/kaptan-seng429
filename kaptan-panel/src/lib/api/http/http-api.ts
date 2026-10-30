@@ -109,7 +109,7 @@ export function createHttpApi(): KaptanApi {
       return body.user;
     },
     users: () => request(z.array(TeamMember), "/admin/users"),
-    counters: () => request(DayCounters, "/disclosures/counters").then(withServerTime),
+    counters: (day?: string) => request(DayCounters, `/disclosures/counters${qs({ day })}`).then(withServerTime),
     // One odd row (an unusual ticker, a new enum value) must not blank the whole list: keep the rows that parse.
     disclosures: (q = {}) =>
       request(z.array(z.unknown()), `/disclosures${qs({ day: q.day, limit: q.limit, ticker: q.ticker })}`).then((rows) =>

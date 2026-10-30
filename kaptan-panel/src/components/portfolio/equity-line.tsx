@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { useId, useMemo, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { fmtDateLong, fmtShortDate, fmtSignedPct, fmtTry } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { signTone } from "@/components/story/sign-tone";
@@ -14,8 +14,13 @@ export { equitySeries, linePath, seriesChange, yDomain, type EquityPoint } from 
  * the peak and the −5% level where everything stops (north red, the colour of Durdur).
  * Point, tap or use the arrow keys: a readout answers "on this day it was X".
  */
-export function EquityLine({ points, peak, title = "Değer" }: { points: readonly EquityPoint[]; peak: number | null; title?: string }) {
+export function EquityLine({ points: all, peak, title = "Değer" }: { points: readonly EquityPoint[]; peak: number | null; title?: string }) {
+  const [range, setRange] = useState<RangeKey>("all");
+  const ranges = RANGES.filter((r) => r.key === "all" || all.length > r.sessions + 1);
+  const span = RANGES.find((r) => r.key === range)?.sessions ?? 0;
+  const points = useMemo(() => (range === "all" || all.length <= span + 1 ? all : all.slice(-(span + 1))), [all, range, span]);
   const geo = linePath(points, peak);
+  const gradientId = useId();
   const [active, setActive] = useState<number | null>(null);
   const first = points[0];
   const end = points[points.length - 1];
@@ -39,11 +44,34 @@ export function EquityLine({ points, peak, title = "Değer" }: { points: readonl
 
   return (
     <figure className={cn(CARD, CARD_PAD, "space-y-4")}>
-      <figcaption className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <span className="text-body font-semibold text-ink">{title}</span>
-        {ready && change !== null ? (
-          <span className="text-dense text-muted tabular-nums">
-            Son {points.length - 1} seansta <span className={cn("font-semibold", signTone(change))}>{fmtSignedPct(change, 1)}</span>
+      <figcaption className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <span className="min-w-0">
+          <span className="block text-body font-semibold text-ink">{title}</span>
+          {ready && change !== null ? (
+            <span className="block text-dense text-muted tabular-nums">
+              Son {points.length - 1} seansta <span className={cn("font-semibold", signTone(change))}>{fmtSignedPct(change, 1)}</span>
+            </span>
+          ) : null}
+        </span>
+        {ready && ranges.length > 1 ? (
+          <span role="group" aria-label="Dönem" className="inline-flex gap-0.5 rounded-lg bg-sunk p-0.5">
+            {ranges.map((r) => (
+              <button
+                key={r.key}
+                type="button"
+                aria-pressed={range === r.key}
+                onClick={() => {
+                  setRange(r.key);
+                  setActive(null);
+                }}
+                className={cn(
+                  "h-8 rounded-md px-2.5 text-dense font-medium tabular-nums transition-[background-color,color,box-shadow] duration-[var(--dur-quick)] max-sm:h-10 max-sm:px-3",
+                  range === r.key ? "bg-panel text-ink shadow-[0_1px_2px_rgb(10_33_72/0.16)]" : "text-ink-soft hover:text-ink",
+                )}
+              >
+                {r.label}
+              </button>
+            ))}
           </span>
         ) : null}
       </figcaption>
@@ -71,6 +99,13 @@ export function EquityLine({ points, peak, title = "Değer" }: { points: readonl
             <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden className="absolute inset-0 block size-full overflow-visible">
               {geo.peakY !== null ? <Level y={geo.peakY} className="stroke-[var(--rule-soft)]" /> : null}
               {geo.stopY !== null ? <Level y={geo.stopY} dashed className="stroke-north" /> : null}
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--brand)" stopOpacity={0.16} />
+                  <stop offset="100%" stopColor="var(--brand)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <path d={geo.area} fill={`url(#${gradientId})`} />
               <path
                 d={geo.line}
                 fill="none"
@@ -108,6 +143,14 @@ export function EquityLine({ points, peak, title = "Değer" }: { points: readonl
     </figure>
   );
 }
+
+type RangeKey = "5" | "20" | "all";
+/** The periods the line can show, in sessions: a week, a month, everything loaded. */
+const RANGES: ReadonlyArray<{ key: RangeKey; label: string; sessions: number }> = [
+  { key: "5", label: "1 hafta", sessions: 5 },
+  { key: "20", label: "1 ay", sessions: 20 },
+  { key: "all", label: "Tümü", sessions: 0 },
+];
 
 function valueText(p: EquityPoint, isToday: boolean): string {
   return `${isToday ? "Bugün" : fmtDateLong(`${p.d}T09:00:00Z`)}: ${fmtTry(p.equity)}`;

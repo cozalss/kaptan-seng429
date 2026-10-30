@@ -26,7 +26,7 @@ interface StopPanelProps {
 export function StopPanel({ stoppedAt, pending, error, onStop, onRestart }: StopPanelProps) {
   if (stoppedAt) {
     return (
-      <section aria-labelledby="acil-durum" className="border-2 border-north bg-north-tint px-4 py-4 sm:px-5">
+      <section aria-labelledby="acil-durum" className="rounded-xl border border-north/50 bg-north-tint px-4 py-4 shadow-card sm:px-5">
         <h2 id="acil-durum" className="text-title font-semibold text-north">
           Tüm işlemler durduruldu
         </h2>
@@ -52,7 +52,7 @@ export function StopPanel({ stoppedAt, pending, error, onStop, onRestart }: Stop
     );
   }
   return (
-    <section aria-labelledby="acil-durum" className="border-2 border-ink bg-panel px-4 py-4 sm:px-5">
+    <section aria-labelledby="acil-durum" className="rounded-xl border border-line bg-panel shadow-card px-4 py-4 sm:px-5">
       <h2 id="acil-durum" className="text-title font-semibold text-ink">
         Acil durum
       </h2>

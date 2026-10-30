@@ -81,7 +81,7 @@ export function PortfolioScreen() {
         </div>
       ) : null}
 
-      <section aria-labelledby="elindekiler" className={cn(CARD, "order-5 col-span-full overflow-hidden")}>
+      <section aria-labelledby="elindekiler" className={cn(CARD, "order-5 col-span-full overflow-clip")}>
         <CardHead id="elindekiler" title="Elindekiler" note="Fişleri aracı kuruma sen girersin; satırdaki şirket öneriyi açar." />
         {q.data && today ? <Holdings positions={q.data[0]} today={today} /> : <SkeletonLines lines={3} className="px-5 pb-5" />}
       </section>

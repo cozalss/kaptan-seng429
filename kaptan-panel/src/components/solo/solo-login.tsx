@@ -87,7 +87,7 @@ export function SoloLoginForm({ next }: { next: string | null }) {
           value={passphrase}
           onChange={(e) => setPassphrase(e.target.value)}
           className={cn(
-            "mt-2 h-12 w-full border-2 border-rule-ui bg-panel px-3.5 text-[16px] text-ink",
+            "mt-2 h-12 w-full rounded-xl border-[1.5px] border-rule-ui bg-panel px-3.5 text-[16px] text-ink transition-[border-color] duration-[var(--dur-quick)]",
             "focus-visible:border-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
             "aria-[invalid=true]:border-north",
           )}
@@ -132,11 +132,11 @@ export function SoloLoginScreen({ next }: { next: string | null }) {
         <Wordmark className="h-10 w-auto self-start justify-self-start" />
         <h1 className="mt-10 font-display text-display tracking-[-0.015em] text-ink sm:text-display-lg">Benim KAPtan&apos;ım</h1>
         <p className="mt-3 text-lead text-ink-soft">Paran, önerilerin ve son işlemlerin tek ekranda.</p>
-        <section aria-label="Giriş" className="mt-8 border-2 border-ink bg-panel p-5 shadow-ink sm:p-6">
+        <section aria-label="Giriş" className="mt-8 rounded-2xl border border-line bg-panel p-5 shadow-[var(--shadow-raise)] sm:p-6">
           <SoloLoginForm next={next} />
         </section>
       </main>
-      <footer className="border-t border-hairline">
+      <footer className="border-t border-line">
         <div className="mx-auto w-full max-w-[440px] px-4 py-4">
           <a href="/" className="inline-flex min-h-11 items-center gap-1.5 text-dense font-medium text-ink">
             <span aria-hidden>←</span>

@@ -116,6 +116,33 @@ export function counters(state: MockState, realNow: number = Date.now()): DayCou
   };
 }
 
+/**
+ * GET /disclosures/counters?day=: the day's exact counters. Today is `counters`; another day
+ * counts every visible disclosure of that Istanbul day (no list cap) and the proposals made then.
+ */
+export function countersOn(state: MockState, day: string, realNow: number = Date.now()): DayCounters {
+  const today = counters(state, realNow);
+  const istanbulDay = (ms: number) => new Date(ms + 3 * 3_600_000).toISOString().slice(0, 10);
+  if (istanbulDay(nowMs(state, realNow)) === day) return today;
+  const rows = visibleDisclosures(state, realNow).filter((d) => istanbulDay(Date.parse(d.published_at)) === day);
+  const noise = rows.filter((r) => r.is_noise).length;
+  const processed = rows.filter((r) => r.run_id !== null).length;
+  const cards = approvalCards(state, realNow).filter((a) => istanbulDay(Date.parse(a.created_at)) === day);
+  return {
+    ...today,
+    total: rows.length,
+    noise,
+    archived: rows.length - noise - processed,
+    processed,
+    e_candidates: rows.filter((r) => r.classification && ["E1", "E2", "E3", "E4"].includes(r.classification.event_type)).length,
+    proposals: cards.length,
+    approvals: cards.filter((a) => a.status === "approved").length,
+    rejections: cards.filter((a) => a.status === "rejected").length,
+    llm_calls: 0,
+    llm_tokens: 0,
+  };
+}
+
 /* ── runs & explain ──────────────────────────────────────────────────── */
 const explainCache = new Map<string, Explain>();
 

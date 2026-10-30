@@ -64,8 +64,8 @@ export function AllocationPanel({ allocations, cash, total }: { allocations: rea
   const { bar, list } = allocationRows(allocations, cash, total);
   const invested = allocations.reduce((s, a) => s + a.amount, 0);
   return (
-    <section aria-labelledby="param-nerede" className="border-2 border-ink bg-panel">
-      <header className="border-b-2 border-ink px-4 py-3 sm:px-5">
+    <section aria-labelledby="param-nerede" className="overflow-clip rounded-xl border border-line bg-panel shadow-card">
+      <header className="border-b border-line px-4 py-3 sm:px-5">
         <h2 id="param-nerede" className="text-title font-semibold text-ink">
           Param nerede?
         </h2>
@@ -94,7 +94,7 @@ export function AllocationPanel({ allocations, cash, total }: { allocations: rea
           </thead>
           <tbody>
             {list.map((r) => (
-              <tr key={r.key} className={cn("border-b border-hairline last:border-b-0", r.fill === "cash" && "border-t-2 border-t-ink")}>
+              <tr key={r.key} className={cn("border-b border-hairline last:border-b-0", r.fill === "cash" && "border-t-2 border-t-hairline")}>
                 <th scope="row" className="py-2.5 pr-2 font-normal">
                   <span className="flex items-center gap-2.5">
                     <span aria-hidden className={cn("solo-swatch size-3 shrink-0", fillClass(r))} />

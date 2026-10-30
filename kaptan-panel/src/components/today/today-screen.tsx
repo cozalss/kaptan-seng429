@@ -73,7 +73,13 @@ export function TodayScreen() {
     (api) => (session ? api.disclosures({ day: session.shown, limit: MAX_DISCLOSURES }) : Promise.resolve(null)),
     [session?.shown, session?.previous ? 0 : (counters?.total ?? 0)],
   );
-  const flow: FlowData | null = session?.previous ? (day.data ? flowFromList(day.data) : null) : counters;
+  // A past session's exact counters (GET /disclosures/counters?day=); the capped list only
+  // stands in when that call fails, and then says "500+".
+  const past = useApiQuery(
+    (api) => (session?.previous ? api.counters(session.shown) : Promise.resolve(null)),
+    [session?.previous ? session.shown : null],
+  );
+  const flow: FlowData | null = session?.previous ? (past.data ?? (past.error && day.data ? flowFromList(day.data) : null)) : counters;
   const flowNote = session?.previous && shownLabel ? `Son seans: ${shownLabel}` : "Bugün KAP’ta yayımlananlar";
   const calm: CalmFacts | null = flow
     ? {
@@ -107,6 +113,7 @@ export function TodayScreen() {
             maxPositions={book.limits ? valueOf(book.limits, "max_concurrent_positions") : null}
             pending={stopped ? 0 : open.length}
             soonest={clock?.when ?? null}
+            trend={book.trend}
           />
 
           <FlowStrip data={flow} note={flowNote} />
@@ -139,7 +146,7 @@ export function TodayScreen() {
                   </ol>
                 ) : null}
               </section>
-              <RecentDisclosures rows={day.data ?? null} error={day.error} onRetry={day.refetch} note={flowNote} />
+              <RecentDisclosures rows={day.data ?? null} total={flow && !flow.capped ? flow.total : null} error={day.error} onRetry={day.refetch} note={flowNote} />
               <EquityLine points={book.points} peak={risk?.peak_equity ?? null} title="Portföy değeri" />
             </div>
 
@@ -180,7 +187,9 @@ function useDeskBook(risk: RiskStatus | null) {
     () => (pnl.data && risk && today ? equitySeries(pnl.data, LIVE_STRATEGY, { d: today, equity: risk.equity }) : []),
     [pnl.data, risk, today],
   );
+  const trend = useMemo(() => points.map((p) => p.equity), [points]);
   return {
+    trend,
     positions: positions.data ? positions.data.length : positions.error ? null : undefined,
     cash: overview.data ? overview.data.cash : overview.error ? null : undefined,
     limits: limits.data?.active.values,

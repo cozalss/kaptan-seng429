@@ -37,8 +37,8 @@ export function Holdings({ positions, today }: { positions: readonly Position[];
   if (!positions.length) return <p className="px-4 py-8 text-center text-ui text-ink-soft sm:px-6">Şu an elinde hisse yok. İmzalanan bir öneri buraya düşer.</p>;
   return (
     <table aria-label="Elindekiler" className="w-full border-collapse text-left">
-      <thead>
-        <tr className="border-b-2 border-hairline">
+      <thead className="sticky top-14 z-10 bg-panel/95 backdrop-blur-sm lg:top-0">
+        <tr className="shadow-[inset_0_-2px_0_var(--hairline)]">
           <th scope="col" className={cn(TH, "py-2.5 pr-3 pl-4 sm:pl-6")}>
             Şirket
           </th>
@@ -61,7 +61,7 @@ export function Holdings({ positions, today }: { positions: readonly Position[];
           const r = positionReturn(p);
           const h = holdingProgress(p, today);
           return (
-            <tr key={`${p.ticker}-${p.book}-${p.opened_at}`} className="border-b border-hairline last:border-b-0 hover:bg-wash-tint">
+            <tr key={`${p.ticker}-${p.book}-${p.opened_at}`} className="border-b border-hairline transition-colors duration-[var(--dur-instant)] last:border-b-0 hover:bg-wash-tint">
               <th scope="row" className="py-3 pr-3 pl-4 text-left font-normal sm:pl-6">
                 <Link
                   href={href.proposal(p.source_proposal)}
@@ -82,6 +82,12 @@ export function Holdings({ positions, today }: { positions: readonly Position[];
               <td className={cn("hidden px-3 py-3 text-right text-ui tabular-nums sm:table-cell", signTone(r))}>{fmtSignedPct(r)}</td>
               <td className={cn("py-3 pr-4 pl-3 text-right text-ui whitespace-nowrap tabular-nums sm:pr-6", h.dueToday || h.overdue ? "font-semibold text-ink" : "text-ink-soft")}>
                 {exitLine(p, today)}
+                <span aria-hidden className="mt-1.5 ml-auto block h-1 w-20 overflow-hidden rounded-full bg-sunk">
+                  <span
+                    className={cn("block h-full rounded-full", h.dueToday || h.overdue ? "bg-ochre" : "bg-[var(--flow-2)]")}
+                    style={{ width: `${Math.round(h.fraction * 100)}%` }}
+                  />
+                </span>
               </td>
             </tr>
           );

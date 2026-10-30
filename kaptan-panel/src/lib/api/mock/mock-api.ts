@@ -54,9 +54,10 @@ export function createMockApi(opts: MockApiOptions): KaptanApi {
       return ok({ id: m.uid, display_name: m.name, role: r }, 40);
     },
 
-    async counters() {
+    async counters(day?: string) {
       me();
-      return ok(sel.counters(db.snapshot), 60);
+      if (day !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new ApiError(422, "validation", "Tarih bekleniyor (YYYY-MM-DD)");
+      return ok(day === undefined ? sel.counters(db.snapshot) : sel.countersOn(db.snapshot, day), 60);
     },
 
     async disclosures(q = {}) {

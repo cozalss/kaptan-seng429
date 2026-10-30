@@ -39,8 +39,12 @@ export interface KaptanApi {
   /** The team: four members and the read-only Denetçi seat. */
   users(): Promise<TeamMember[]>;
 
-  /** Today's counters for the one quiet line on Bugün ("212 bildirim okundu, 5 öneri"). */
-  counters(): Promise<DayCounters>;
+  /**
+   * GET /disclosures/counters?day=YYYY-MM-DD — one Istanbul day's exact counters ("796 bildirim
+   * okundu, 5 öneri"); default today on the server clock. Unlike the capped /disclosures list
+   * it counts every disclosure of the day.
+   */
+  counters(day?: string): Promise<DayCounters>;
   /**
    * GET /disclosures?day=YYYY-MM-DD&limit=&ticker= — one Istanbul day's disclosures, newest first
    * (default: today on the server clock; limit 1–500, default 200).
