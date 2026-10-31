@@ -86,7 +86,7 @@ export function LoginScreen({ next, initialRole }: { next: string | null; initia
  * The navy panel's one ornament: the compass rose of the wordmark drawn large and faint, with
  * its bearing rings, bleeding off the corner. Decoration only.
  */
-function Bearing() {
+export function Bearing() {
   return (
     <svg
       aria-hidden

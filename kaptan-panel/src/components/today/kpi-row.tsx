@@ -40,7 +40,7 @@ function signedTry(n: number): string {
  * is the way to Portföy.
  */
 export function KpiRow({ risk, cash, positions, maxPositions, pending, soonest, trend = [] }: KpiInput) {
-  const grid = "grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-[1.35fr_1.1fr_1.2fr_1fr_1fr_1.15fr] xl:gap-4";
+  const grid = "grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-[1.4fr_repeat(5,minmax(0,1fr))] xl:gap-4";
   if (!risk) {
     return (
       <div className={grid} role="status" aria-label="Özet yükleniyor">
@@ -94,7 +94,7 @@ export function KpiRow({ risk, cash, positions, maxPositions, pending, soonest, 
       <Tile
         label="Risk durumu"
         note={stopped ? "yeniden başlatma iki imzayla" : paused ? `gün içi ${fmtPct(risk.daily_pnl_pct, 1)}; sınır −%1` : `piyasa ${risk.regime === "crisis" ? "kriz" : "normal"}`}
-        accent={stopped ? "north" : paused ? "ochre" : "gain"}
+        accent={stopped ? "north" : paused ? "ochre" : undefined}
         className="col-span-2 md:col-span-1"
       >
         <span className={cn("inline-flex items-center gap-2", stopped ? "text-north" : "text-ink")}>

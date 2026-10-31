@@ -118,3 +118,13 @@ export function IconArrow({ className }: { className?: string }) {
     </Icon>
   );
 }
+
+/** Kişisel mod: one person in a circle (the personal home). */
+export function IconPerson({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <circle cx="10" cy="7.25" r="3" />
+      <path d="M4.5 16.25c.9-2.6 3-4 5.5-4s4.6 1.4 5.5 4" />
+    </Icon>
+  );
+}

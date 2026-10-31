@@ -95,33 +95,97 @@
   }
 }
 
-/* The verb stamps on the suggestion slips. Light: AL indigo, SAT ink, TUT an open box. Dark:
-   the same inks as quiet washes, so three cards in a row do not glare at night. */
-.solo-stamp-al {
-  background: var(--brand);
-  color: var(--on-dark);
-  border-color: var(--ink);
-}
-.solo-stamp-sat {
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
-}
-.solo-stamp-tut {
-  background: var(--panel);
-  color: var(--ink);
-  border-color: var(--ink);
+/* ── The navy hero (money + its line). Light inks on the desk's navy in both readings. ── */
+:root:has([data-solo]) {
+  --solo-hero-line: #b9cdf7;
+  --solo-hero-area: rgb(185 205 247 / 0.3);
+  --solo-hero-grid: rgb(255 255 255 / 0.08);
+  --solo-hero-base: rgb(255 255 255 / 0.42);
+  --solo-hero-ring: rgb(185 205 247 / 0.28);
+  --solo-up-on-navy: #7ee2ab; /* 10.9:1 on navy */
+  --solo-down-on-navy: #ffadc4; /* 10.2:1 on navy */
 }
 @media (prefers-color-scheme: dark) {
-  .solo-stamp-al {
-    background: rgb(169 193 245 / 0.16);
-    color: var(--brand);
+  :root:has([data-solo]) .solo-hero {
+    background: #0d2652;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 16px 40px -16px rgb(0 0 0 / 0.7);
   }
-  .solo-stamp-sat {
-    background: rgb(238 235 227 / 0.1);
+}
+.solo-up {
+  color: var(--solo-up-on-navy);
+}
+.solo-down {
+  color: var(--solo-down-on-navy);
+}
+
+/* Today's move under the big figure: a soft pill that tints with the move. */
+.solo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+  padding: 0.2rem 0.75rem;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The line draws itself once (and again when the period changes): a left-to-right reveal. */
+.solo-draw {
+  animation: solo-draw 900ms var(--ease-out-expo) both;
+}
+@keyframes solo-draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+/* "Now" breathes softly on the line's last point. */
+.solo-pulse {
+  animation: solo-pulse 2.4s var(--ease-ink) infinite;
+}
+@keyframes solo-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(185 205 247 / 0.45);
+  }
+  60% {
+    box-shadow: 0 0 0 10px rgb(185 205 247 / 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .solo-draw,
+  .solo-pulse {
+    animation: none;
+  }
+}
+
+/* Dark reading: the wordmark in paper ink; filled buttons stay saturated with white words. */
+@media (prefers-color-scheme: dark) {
+  :root:has([data-solo]) .solo-wordmark {
     color: var(--ink);
   }
-  .solo-stamp-tut {
-    background: transparent;
+  :root:has([data-solo]) .bg-brand.border-brand:not(:disabled) {
+    background-color: #3d6bd0;
+    border-color: #3d6bd0;
+    color: #ffffff;
+  }
+  :root:has([data-solo]) .bg-brand.border-brand:not(:disabled):hover {
+    background-color: #5281e3;
+    border-color: #5281e3;
+  }
+  :root:has([data-solo]) .bg-north.border-north:not(:disabled) {
+    background-color: #c4392f;
+    border-color: #c4392f;
+    color: #ffffff;
+  }
+  :root:has([data-solo]) .bg-north.border-north:not(:disabled):hover {
+    background-color: #d84a40;
+    border-color: #d84a40;
   }
 }

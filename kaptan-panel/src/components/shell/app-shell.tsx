@@ -6,6 +6,7 @@ import { DEMO_MODE } from "@/lib/api/config";
 import { cn } from "@/lib/utils";
 import { ApiProvider } from "@/lib/api/react";
 import { SessionProvider, type SessionUser } from "@/lib/auth/session-context";
+import { rememberView } from "@/lib/solo/view-pref";
 import { Toaster } from "@/components/ui/toast";
 import { GuidedDemo } from "@/components/demo/guided-demo";
 import { RiskBanner } from "./banners";
@@ -73,6 +74,8 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
   const pathname = usePathname();
   useRouteFocus(pathname);
   const side = useSidebarState(pathname);
+  // This browser's view is now the full desk: the next sign-in lands here (see view-pref.ts).
+  useEffect(() => rememberView("masa"), []);
   return (
     <SessionProvider user={user}>
       <ApiProvider>
@@ -87,7 +90,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
             data-shell=""
             className={cn(
               "min-h-dvh transition-[padding] duration-[var(--dur-base)] ease-[var(--ease-out-expo)]",
-              side.collapsed ? "lg:pl-[76px]" : "lg:pl-[var(--sidebar-w)]",
+              side.collapsed ? "lg:pl-[76px] lg:[background:linear-gradient(to_right,var(--navy)_76px,transparent_76px)]" : "lg:pl-[var(--sidebar-w)] lg:[background:linear-gradient(to_right,var(--navy)_var(--sidebar-w),transparent_var(--sidebar-w))]",
             )}
           >
             <main id="icerik" tabIndex={-1} className="mx-auto w-full max-w-[1560px] px-4 pt-5 pb-16 outline-none sm:px-6 lg:px-8 lg:pt-7 xl:px-10">

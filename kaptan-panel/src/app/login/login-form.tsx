@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { ROLE_LABEL, ROLES, type Role } from "@/lib/domain/role-meta";
 import { DEMO_PASSPHRASE } from "@/lib/auth/passphrase";
 import { accountPerson } from "@/lib/auth/role-doors";
-import { HOME, safeNext } from "@/lib/nav";
+import { safeNext } from "@/lib/nav";
+import { homeFor, readView } from "@/lib/solo/view-pref";
 import { IS_MOCK } from "@/lib/api/config";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -55,7 +56,7 @@ export function LoginForm({ next, initialRole }: { next: string | null; initialR
     }
     const { httpLogin } = await import("@/lib/api/http/http-api");
     await httpLogin(value, role);
-    router.replace(safeNext(next) ?? HOME);
+    router.replace(safeNext(next) ?? homeFor(readView(), false));
   };
 
   const submit = (e?: React.FormEvent) => {

@@ -78,6 +78,22 @@ describe("sidebar", () => {
     await waitFor(() => expect(nav.replace).toHaveBeenCalledWith("/login"));
   });
 
+  it("offers Kişisel moda geç in the sidebar and the account menu, and remembers the choice", async () => {
+    const u = userEvent.setup({ delay: null });
+    renderWithDesk(SIDEBAR, new MockDb(null), "auditor");
+    const side = screen.getByTestId("kisisel-mod");
+    expect(side).toHaveAttribute("href", "/benim");
+    expect(side).toHaveAccessibleName(/Kişisel moda geç/);
+    await u.click(side);
+    expect(document.cookie).toContain("kaptan_view=benim");
+    document.cookie = "kaptan_view=masa; Path=/";
+    await u.click(screen.getByRole("button", { name: /^Rol: / }));
+    const item = await screen.findByRole("menuitem", { name: "Kişisel moda geç" });
+    expect(item).toHaveAttribute("href", "/benim");
+    await u.click(item);
+    expect(document.cookie).toContain("kaptan_view=benim");
+  });
+
   it("still signs out when the network fails", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline"));
     expect(await logout()).toBe("/login");

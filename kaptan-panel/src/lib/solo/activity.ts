@@ -16,13 +16,20 @@ export interface ActivityItem {
   key: string;
   at: string;
   kind: ActivityKind;
-  /** "3.000 ₺ THYAO aldın" — the sentence after the date. */
+  /** "3.000 ₺ THYAO aldın" — the whole sentence (read out, and the plain list). */
   text: string;
+  /** "THYAO aldın" — the sentence without the money (the row's first line). */
+  title: string;
+  /** The money it moved, if any (the row's right edge). */
+  amount: number | null;
 }
 
 export const ACTIVITY_LIMIT = 6;
 
 const amountOf = (p: Position) => p.qty * p.avg_cost;
+
+const YOU = { bought: "aldın", approved: "onayladın", skipped: "önerisini geçtin" } as const;
+const DESK = { bought: "alındı", approved: "onaylandı", skipped: "önerisi geçildi" } as const;
 
 /**
  * "Son işlemler" in plain words, newest first: buys that filled ("3.000 ₺ THYAO aldın"),
@@ -34,31 +41,41 @@ export function recentActivity(
   positions: readonly Position[],
   holds: readonly HoldAck[] = [],
   limit = ACTIVITY_LIMIT,
+  /** "you": one person did it all (aldın). "desk": a team desk's personal view (alındı). */
+  voice: "you" | "desk" = "you",
 ): ActivityItem[] {
+  const v = voice === "you" ? YOU : DESK;
   const filledBy = new Map(positions.map((p) => [p.source_proposal, p]));
   const items: ActivityItem[] = positions.map((p) => ({
     key: `fill:${p.source_proposal}:${p.ticker}`,
     at: p.opened_at,
     kind: "bought",
-    text: `${fmtLira(amountOf(p))} ${p.ticker} aldın`,
+    text: `${fmtLira(amountOf(p))} ${p.ticker} ${v.bought}`,
+    title: `${p.ticker} ${v.bought}`,
+    amount: amountOf(p),
   }));
   for (const c of approvals) {
     if (!c.decided_at || filledBy.has(c.proposal_id)) continue;
     if (c.status === "approved") {
-      const amount = fmtLira(c.approved_notional_try ?? c.final_notional_try);
+      const amount = c.approved_notional_try ?? c.final_notional_try;
+      const title = voice === "you" ? `${c.ticker} ${c.side === "buy" ? "alımını" : "satışını"} ${v.approved}` : `${c.ticker} ${c.side === "buy" ? "alımı" : "satışı"} ${v.approved}`;
       items.push({
         key: `ok:${c.proposal_id}`,
         at: c.decided_at,
         kind: c.side === "buy" ? "approved_buy" : "approved_sell",
-        text: `${c.ticker} ${c.side === "buy" ? "alımını" : "satışını"} onayladın · ${amount}`,
+        text: `${title} · ${fmtLira(amount)}`,
+        title,
+        amount,
       });
     } else if (c.status === "rejected") {
-      items.push({ key: `skip:${c.proposal_id}`, at: c.decided_at, kind: "skipped", text: `${c.ticker} önerisini geçtin` });
+      const text = `${c.ticker} ${v.skipped}`;
+      items.push({ key: `skip:${c.proposal_id}`, at: c.decided_at, kind: "skipped", text, title: text, amount: null });
     }
   }
   for (const h of holds) {
     const skipped = h.answer === "skipped";
-    items.push({ key: `hold:${h.id}`, at: h.at, kind: skipped ? "skipped" : "held", text: skipped ? `${h.symbol} önerisini geçtin` : `${h.symbol} elinde kalıyor` });
+    const text = skipped ? `${h.symbol} ${v.skipped}` : `${h.symbol} elinde kalıyor`;
+    items.push({ key: `hold:${h.id}`, at: h.at, kind: skipped ? "skipped" : "held", text, title: text, amount: null });
   }
   return items.sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, limit);
 }

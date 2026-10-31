@@ -146,8 +146,8 @@ export function TodayScreen() {
                   </ol>
                 ) : null}
               </section>
-              <RecentDisclosures rows={day.data ?? null} total={flow && !flow.capped ? flow.total : null} error={day.error} onRetry={day.refetch} note={flowNote} />
               <EquityLine points={book.points} peak={risk?.peak_equity ?? null} title="Portföy değeri" />
+              <RecentDisclosures rows={day.data ?? null} total={flow && !flow.capped ? flow.total : null} error={day.error} onRetry={day.refetch} note={flowNote} />
             </div>
 
             <div className="min-w-0 space-y-4 xl:space-y-5">

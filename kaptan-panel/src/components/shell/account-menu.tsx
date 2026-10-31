@@ -10,6 +10,8 @@ import {
   type Role,
 } from "@/lib/domain/role-meta";
 import { ROUTES } from "@/lib/nav";
+import { SOLO_HOME } from "@/lib/solo/mode";
+import { rememberView } from "@/lib/solo/view-pref";
 import { cn } from "@/lib/utils";
 import { MENU_CONTENT, MENU_ITEM } from "@/components/ui/menu";
 import { notify } from "@/components/ui/toast";
@@ -48,7 +50,7 @@ function Avatar({ role, name }: { role: Role; name: string }) {
 /**
  * The account menu at the right of the top bar: who is signed in (name and role), "Hesap
  * değiştir" with the four team accounts (the choice is kept in the session; the guided tour
- * and the tests switch here), Ayarlar and Çıkış. The trigger's accessible name starts with
+ * and the tests switch here), "Kişisel moda geç" (/benim), Ayarlar and Çıkış. The trigger's accessible name starts with
  * "Rol: <rol>." so a screen reader hears the role first.
  */
 export function AccountMenu({ variant = "bar", collapsed = false }: { variant?: "bar" | "sidebar"; collapsed?: boolean }) {
@@ -149,6 +151,11 @@ export function AccountMenu({ variant = "bar", collapsed = false }: { variant?: 
             ))}
           </M.RadioGroup>
           <M.Separator className="mt-1 h-px bg-hairline" />
+          <M.Item asChild className={MENU_ITEM}>
+            <Link href={SOLO_HOME} onClick={() => rememberView("benim")}>
+              Kişisel moda geç
+            </Link>
+          </M.Item>
           <M.Item asChild className={MENU_ITEM}>
             <Link href={ROUTES.ayarlar}>Ayarlar</Link>
           </M.Item>

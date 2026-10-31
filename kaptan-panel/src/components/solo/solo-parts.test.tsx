@@ -3,11 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { ApiProvider } from "@/lib/api/react";
 import { ApiError, type KaptanApi } from "@/lib/api/types";
 import { NBSP } from "@/lib/format";
-import type { Allocation, Suggestion } from "@/lib/solo/overview";
+import type { Allocation, Overview, Suggestion } from "@/lib/solo/overview";
 import { nav } from "../nav.test-utils";
 import { Activity } from "./activity";
 import { AllocationPanel, allocationRows } from "./allocation";
-import { MoneyChart } from "./money-chart";
+import { isFlat, MoneyHero, todayAmount } from "./money-hero";
 import { SoloHome } from "./solo-home";
 import { afterLogin, SoloLoginForm, SoloLoginScreen } from "./solo-login";
 import { SoloShell } from "./solo-shell";
@@ -26,12 +26,13 @@ afterEach(() => {
 });
 
 describe("Param nerede?", () => {
-  it("gives six holdings their own ink and folds the rest into Diğer on the bar", () => {
+  it("gives six holdings their own ink and folds the rest into one Diğer part", () => {
     const many = ["A", "B", "C", "D", "E", "F", "G"].map((s, i) => alloc(s, 70_000 - i * 1_000));
     const { bar, list } = allocationRows(many, 500_000, 1_000_000);
     expect(bar.map((r) => r.label)).toEqual(["A", "B", "C", "D", "E", "Diğer (2)", "Nakit"]);
-    expect(list).toHaveLength(8);
-    expect(list.filter((r) => r.fill === "other").map((r) => r.label)).toEqual(["F", "G"]);
+    // The list folds the same way: no two named rows share an ink; Diğer names what it holds.
+    expect(list.map((r) => r.label)).toEqual(bar.map((r) => r.label));
+    expect(list.find((r) => r.fill === "other")?.detail).toBe("F, G");
     const six = allocationRows(many.slice(0, 6), 0, 1_000_000);
     expect(six.bar.filter((r) => r.fill === "slot")).toHaveLength(6);
     expect(allocationRows([], 10, 0).list[0]?.share).toBe(0);
@@ -48,23 +49,38 @@ describe("Param nerede?", () => {
   });
 });
 
-describe("Paranın yolculuğu", () => {
+describe("the money hero", () => {
   const series = Array.from({ length: 120 }, (_, i) => ({
     date: new Date(Date.parse("2026-09-14T00:00:00Z") + i * 86_400_000).toISOString().slice(0, 10),
     equity: 1_000_000 + i * 500,
   }));
+  const overview = (over: Partial<Overview> = {}): Overview => ({
+    capital_start: 1_000_000,
+    equity_now: 1_059_500,
+    cash: 900_000,
+    pnl_abs: 59_500,
+    pnl_pct: 0.0595,
+    equity_series: series,
+    allocations: [alloc("FRZEN", 159_500)],
+    open_suggestions: [],
+    ...over,
+  });
 
-  it("switches period and reads values with the keyboard and the pointer", async () => {
+  it("scrubs the big figure with the keyboard and the pointer, and switches period", async () => {
     const u = user();
-    render(<MoneyChart series={series} capitalStart={1_000_000} />);
+    render(<MoneyHero overview={overview()} todayPct={0.002} />);
     const readout = screen.getByTestId("grafik-okuma");
-    expect(plain(readout.textContent)).toBe("Bugün1.059.500 ₺");
+    expect(plain(readout.textContent)).toBe("Bugün: 1.059.500 ₺");
+    expect(plain(screen.getByTestId("toplam-para").textContent)).toBe("1.059.500,00₺");
+    expect(screen.getByText("bugün")).toBeInTheDocument();
+    expect(screen.getByText("Yatırımda")).toBeInTheDocument();
     await u.click(screen.getByRole("button", { name: "Son 1 ay" }));
     expect(screen.getByRole("button", { name: "Son 1 ay" })).toHaveAttribute("aria-pressed", "true");
     const slider = screen.getByRole("slider", { name: "Paranın gün gün değeri" });
     slider.focus();
     await u.keyboard("{Home}");
     expect(slider).toHaveAttribute("aria-valuenow", "0");
+    expect(plain(screen.getByTestId("toplam-para").textContent)).not.toBe("1.059.500,00₺");
     await u.keyboard("{ArrowRight}");
     expect(slider).toHaveAttribute("aria-valuenow", "1");
     await u.keyboard("x");
@@ -77,9 +93,25 @@ describe("Paranın yolculuğu", () => {
     expect(screen.getAllByRole("row").length).toBeGreaterThan(20);
   });
 
-  it("says so when there is not enough history to draw", () => {
-    render(<MoneyChart series={[{ date: "2027-01-11", equity: 1_000_000 }]} capitalStart={1_000_000} />);
+  it("closes a period that would show the same as everything, without striking it out", () => {
+    render(<MoneyHero overview={overview({ equity_series: series.slice(0, 20) })} todayPct={null} />);
+    const three = screen.getByRole("button", { name: /Son 3 ay: henüz/ });
+    expect(three).toBeDisabled();
+    expect(three.className).not.toContain("line-through");
+  });
+
+  it("says so when there is not enough history, and when nothing has moved yet", () => {
+    render(<MoneyHero overview={overview({ equity_series: [{ date: "2027-01-11", equity: 1_000_000 }], pnl_abs: 0, pnl_pct: 0 })} todayPct={0} />);
     expect(screen.getByText("Grafik için en az iki günlük kayıt gerekiyor.")).toBeInTheDocument();
+    expect(screen.getByText("Henüz değişim yok")).toBeInTheDocument();
+    expect(screen.getByText("Bugün değişim yok")).toBeInTheDocument();
+  });
+
+  it("knows a flat line and today's move in lira", () => {
+    expect(isFlat([{ date: "2027-01-10", equity: 1 }, { date: "2027-01-11", equity: 1 }, { date: "2027-01-12", equity: 1 }])).toBe(true);
+    expect(isFlat(series)).toBe(false);
+    expect(Math.round(todayAmount(1_002_000, 0.002))).toBe(2_000);
+    expect(todayAmount(5, -1)).toBe(0);
   });
 });
 

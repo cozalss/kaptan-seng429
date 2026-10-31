@@ -7,9 +7,10 @@ import { useRouter } from "next/navigation";
 import { IS_MOCK } from "@/lib/api/config";
 import { DEMO_PASSPHRASE } from "@/lib/auth/passphrase";
 import { safeNext } from "@/lib/nav";
-import { SOLO_HOME } from "@/lib/solo/mode";
+import { homeFor, readView } from "@/lib/solo/view-pref";
 import { cn } from "@/lib/utils";
 import { Wordmark } from "@/components/brand/marks";
+import { Bearing } from "@/app/login/login-screen";
 import { Button } from "@/components/ui/button";
 
 const MSG_REQUIRED = "Parola gerekli.";
@@ -19,9 +20,9 @@ const MAX_PASSPHRASE = 200;
 const ERROR_ID = "solo-login-error";
 const HINT_ID = "solo-login-hint";
 
-/** Where to go after signing in: a safe ?next= or the simple home. */
+/** Where to go after signing in: a safe ?next=, else the view used last, else the simple home. */
 export function afterLogin(next: string | null): string {
-  return safeNext(next) ?? SOLO_HOME;
+  return safeNext(next) ?? homeFor(readView(), true);
 }
 
 /**
@@ -124,26 +125,70 @@ export function SoloLoginForm({ next }: { next: string | null }) {
   );
 }
 
-/** The single-user sign-in page: the mark, the name of the home, one password field. */
+/** What the personal home gives, in the words a person checks first. */
+const PROMISES = [
+  { title: "Paran tek bakışta", note: "Ne kadar var, nasıl değişti, nerede duruyor." },
+  { title: "Önerilere tek tuşla yanıt", note: "Her öneri sade bir cümleyle: al, sat ya da tut." },
+  { title: "Her an durdurabilirsin", note: "Tek tuş yeni işlemleri durdurur; hisselerin satılmaz." },
+] as const;
+
+/**
+ * The personal sign-in: the desk's navy panel with the promise of the home, and one password
+ * field on the paper beside it. On a phone the navy panel is a short band on top.
+ */
 export function SoloLoginScreen({ next }: { next: string | null }) {
   return (
-    <div data-solo className="flex min-h-dvh flex-col bg-paper text-ink">
-      <main className="mx-auto grid w-full max-w-[440px] flex-1 content-center px-4 py-12">
-        <Wordmark className="h-10 w-auto self-start justify-self-start" />
-        <h1 className="mt-10 font-display text-display tracking-[-0.015em] text-ink sm:text-display-lg">Benim KAPtan&apos;ım</h1>
-        <p className="mt-3 text-lead text-ink-soft">Paran, önerilerin ve son işlemlerin tek ekranda.</p>
-        <section aria-label="Giriş" className="mt-8 rounded-2xl border border-line bg-panel p-5 shadow-[var(--shadow-raise)] sm:p-6">
-          <SoloLoginForm next={next} />
-        </section>
-      </main>
-      <footer className="border-t border-line">
-        <div className="mx-auto w-full max-w-[440px] px-4 py-4">
+    <div data-solo className="grid min-h-dvh bg-paper text-ink lg:grid-cols-[minmax(0,1fr)_minmax(480px,44%)]">
+      <aside className="relative isolate overflow-hidden bg-navy text-on-navy">
+        <Bearing />
+        <div className="relative mx-auto flex h-full w-full max-w-[560px] flex-col px-6 py-8 sm:px-10 lg:py-14">
+          <Wordmark className="h-9 w-auto self-start text-on-navy sm:h-10" />
+          <div className="mt-8 animate-page-in lg:mt-auto">
+            <h1 className="font-display text-display tracking-[-0.015em] text-on-navy sm:text-hero">Benim KAPtan&apos;ım</h1>
+            <p className="mt-4 max-w-[40ch] text-body text-on-navy-soft sm:text-lead">Paran, önerilerin ve son işlemlerin tek ekranda.</p>
+          </div>
+          <ul aria-label="Neler var" className="mt-10 hidden gap-5 sm:grid lg:mt-14 lg:mb-auto">
+            {PROMISES.map((a) => (
+              <li key={a.title} className="flex items-start gap-3.5">
+                <span aria-hidden className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-navy-raised ring-1 ring-navy-line">
+                  <svg viewBox="0 0 12 12" className="size-3 text-signal-ok" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 6.5 5 9l5-6" />
+                  </svg>
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-ui font-semibold text-on-navy">{a.title}</span>
+                  <span className="mt-0.5 block text-dense text-on-navy-soft">{a.note}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <a href="/" className="group mt-8 hidden min-h-11 items-center gap-1.5 self-start text-dense font-medium text-on-navy-soft hover:text-on-navy lg:inline-flex">
+            <span aria-hidden className="transition-transform duration-[var(--dur-quick)] group-hover:-translate-x-0.5">
+              ←
+            </span>
+            Tanıtım sayfası
+          </a>
+        </div>
+      </aside>
+      <main className="flex flex-col">
+        <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-8 sm:py-16">
+          <section aria-labelledby="giris-baslik" className="w-full max-w-[420px] rounded-2xl border border-line bg-panel p-5 shadow-[var(--shadow-raise)] sm:p-8">
+            <h2 id="giris-baslik" className="text-[24px] leading-8 font-semibold tracking-[-0.02em] text-ink">
+              Giriş yap
+            </h2>
+            <p className="mt-1 text-dense text-ink-soft">Parolanla gir; kaldığın yerden devam et.</p>
+            <div className="mt-6">
+              <SoloLoginForm next={next} />
+            </div>
+          </section>
+        </div>
+        <footer className="border-t border-line px-4 py-4 sm:px-8 lg:hidden">
           <a href="/" className="inline-flex min-h-11 items-center gap-1.5 text-dense font-medium text-ink">
             <span aria-hidden>←</span>
             Tanıtım sayfası
           </a>
-        </div>
-      </footer>
+        </footer>
+      </main>
     </div>
   );
 }

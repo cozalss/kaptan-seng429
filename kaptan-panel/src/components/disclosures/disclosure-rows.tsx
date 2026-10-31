@@ -6,9 +6,10 @@ import { titleTr } from "@/components/story/turkish";
 import { FATE_LABEL, fateOf, tickerOf, type DisclosureFate } from "./disclosure-logic";
 
 const FATE_TONE: Readonly<Record<DisclosureFate, string>> = {
-  noise: "bg-sunk text-ink-soft",
-  archived: "bg-wash-tint text-brand",
-  processed: "bg-brand text-on-dark",
+  // Only what went to the crew is a filled pill; the rest is a quiet word, so the 13 that matter stand out.
+  noise: "px-0 font-medium text-muted",
+  archived: "px-0 font-medium text-muted",
+  processed: "px-2.5 bg-brand text-on-dark",
 };
 
 const EVENT_CODES = new Set(["E1", "E2", "E3", "E4"]);
@@ -28,7 +29,12 @@ export function DisclosureRows({ rows, label, compact = false }: { rows: readonl
         return (
           <li
             key={d.disclosure_index}
-            className={cn("grid grid-cols-[44px_minmax(0,1fr)] items-start gap-x-3 px-5 py-3 sm:grid-cols-[52px_76px_minmax(0,1fr)_auto] sm:items-center sm:gap-x-4", compact ? "sm:py-2.5" : "sm:py-3")}
+            data-fate={fate}
+            className={cn(
+              "relative",
+              fate === "processed" && "before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-r-full before:bg-brand",
+              "grid grid-cols-[44px_minmax(0,1fr)] items-start gap-x-3 px-5 py-3 sm:grid-cols-[52px_76px_minmax(0,1fr)_auto] sm:items-center sm:gap-x-4", compact ? "sm:py-2.5" : "sm:py-3",
+            )}
           >
             <time dateTime={d.published_at} className="pt-0.5 text-dense text-muted tabular-nums sm:pt-0">
               {fmtTime(d.published_at)}
@@ -39,7 +45,7 @@ export function DisclosureRows({ rows, label, compact = false }: { rows: readonl
             <div className="min-w-0">
               <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-ui">
                 <span className="code text-[12px] font-semibold text-ink sm:hidden">{ticker}</span>
-                <span className="min-w-0 truncate font-semibold text-ink">{titleTr(shortName(d.company_name))}</span>
+                <span className={cn("min-w-0 truncate text-ink", fate === "processed" ? "font-semibold" : "font-medium")}>{titleTr(shortName(d.company_name))}</span>
               </p>
               <p className="truncate text-dense text-ink-soft">
                 {d.subject}
@@ -62,7 +68,7 @@ export function DisclosureRows({ rows, label, compact = false }: { rows: readonl
 }
 
 function Fate({ fate }: { fate: DisclosureFate }) {
-  return <span className={cn("rounded-full px-2.5 text-meta leading-[22px] font-semibold whitespace-nowrap", FATE_TONE[fate])}>{FATE_LABEL[fate]}</span>;
+  return <span className={cn("rounded-full text-meta leading-[22px] font-semibold whitespace-nowrap", FATE_TONE[fate])}>{FATE_LABEL[fate]}</span>;
 }
 
 function Code({ code }: { code: string }) {

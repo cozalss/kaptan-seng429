@@ -38,7 +38,7 @@ export function ProposalSummary({
         </p>
       </div>
       <dl className="grid grid-cols-2 border-t border-hairline sm:grid-cols-4">
-        <Figure label="Toplam tutar" value={`≈ ${fmtTry(card.final_notional_try)}`} />
+        <Figure label="Toplam tutar" value={`≈ ${fmtTry(card.final_notional_try)}`} />
         <Figure label="Tutma süresi" value={card.side === "sell" ? "Bugün kapanır" : a === b ? `${a} gün` : `${a}–${b} gün`} className="border-l border-hairline" />
         <Figure
           label="Zarar durdurma"
@@ -47,7 +47,7 @@ export function ProposalSummary({
           className="border-t border-hairline sm:border-t-0 sm:border-l"
         />
         <Figure
-          label="En kötü durumda"
+          label="En kötü durum"
           value={risk ? `−${fmtTry(risk.maxLoss)}` : riskHint}
           note={risk && perTradeCap ? `İşlem başı sınır ≈ ${fmtTry(perTradeCap)}` : undefined}
           tone={risk ? "loss" : undefined}
@@ -76,8 +76,8 @@ function Figure({
 }) {
   return (
     <div className={cn("min-w-0 px-5 py-4 sm:px-6", className)}>
-      <dt className="text-dense text-muted">{label}</dt>
-      <dd className={cn("mt-1 text-[20px] leading-7 font-semibold tabular-nums", tone === "loss" ? "text-loss" : "text-ink")}>
+      <dt className="truncate text-dense text-muted">{label}</dt>
+      <dd className={cn("mt-1 text-[20px] leading-7 font-semibold whitespace-nowrap tabular-nums", tone === "loss" ? "text-loss" : "text-ink")}>
         {value}
       </dd>
       {note ? <dd className="mt-0.5 text-dense text-muted tabular-nums">{note}</dd> : null}

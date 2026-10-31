@@ -32,18 +32,17 @@ export function MobileBar({ open, onOpen }: { open: boolean; onOpen: () => void 
 }
 
 /**
- * The mono line over every screen: KAPTAN · where you are, a hairline, and the date on the
+ * The eyebrow over every screen: KAPtan · where you are, and the date on the
  * server's clock (never the browser's: in http mode it stays empty until the server answers).
  */
 export function PageEyebrow() {
   const pathname = usePathname();
   const now = useNow(60_000);
   return (
-    <div className="mb-3 flex items-center gap-3 font-mono text-[12px] leading-5 tracking-[0.14em] text-muted uppercase">
+    <div className="mb-3 flex items-center justify-between gap-3 text-[12px] leading-5 font-semibold tracking-[0.06em] text-muted uppercase">
       <span className="whitespace-nowrap">
         KAPtan <span aria-hidden>·</span> {sectionLabel(pathname)}
       </span>
-      <span aria-hidden className="h-px min-w-6 flex-1 bg-line-strong" />
       {now === null ? null : (
         <time dateTime={new Date(now).toISOString()} className="whitespace-nowrap tabular-nums">
           {fmtDate(new Date(now).toISOString())}
@@ -55,7 +54,7 @@ export function PageEyebrow() {
 
 /**
  * A screen's heading block: the big title (where focus lands after a route change), one line
- * under it, actions on the right, and the accountant's double rule that closes the header.
+ * under it and actions on the right; space (not a rule) closes the header.
  */
 export function PageHeader({
   title,
@@ -71,7 +70,7 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <header className={cn("mb-6 border-b-[3px] border-double border-ink/80 pb-5 sm:mb-8", className)}>
+    <header className={cn("mb-6 sm:mb-8", className)}>
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
           <h1 id={titleId} tabIndex={-1} data-route-focus="" className="text-[30px] leading-[36px] font-bold tracking-[-0.025em] text-balance text-ink outline-none sm:text-[38px] sm:leading-[44px]">

@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": false,
     "skipLibCheck": true,
     "strict": true,
@@ -16,10 +20,42 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "types": ["vitest/globals", "@testing-library/jest-dom"],
-    "plugins": [{ "name": "next" }],
-    "paths": { "@/lib/api/client": ["./src/lib/api/client.mock.ts"], "@/*": ["./src/*"] }
+    "types": [
+      "vitest/globals",
+      "@testing-library/jest-dom"
+    ],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/lib/api/client": [
+        "./src/lib/api/client.mock.ts"
+      ],
+      "@/*": [
+        "./src/*"
+      ]
+    }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts", ".next/solo/types/**/*.ts", ".next/solo/dev/types/**/*.ts", "**/*.mts"],
-  "exclude": ["node_modules", ".next", "playwright-report", "test-results"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    ".next/solo/types/**/*.ts",
+    ".next/solo/dev/types/**/*.ts",
+    "**/*.mts",
+    ".next/m3800/types/**/*.ts",
+    ".next/m3800/dev/types/**/*.ts",
+    ".next/s3810/types/**/*.ts",
+    ".next/s3810/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "playwright-report",
+    "test-results"
+  ]
 }

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { fmtTime } from "@/lib/format";
+import { fmtInt, fmtTime } from "@/lib/format";
 import type { Suggestion, SuggestionAction } from "@/lib/solo/overview";
-import { ACTION_WORD, confidenceWord, dayLabel } from "@/lib/solo/words";
+import { ACTION_WORD, confidenceWord, dayLabel, fmtLira } from "@/lib/solo/words";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -16,25 +16,47 @@ export function orderSuggestions(list: readonly Suggestion[]): Suggestion[] {
   return [...list].sort((a, b) => ORDER[a.action] - ORDER[b.action] || b.confidence - a.confidence || a.symbol.localeCompare(b.symbol));
 }
 
-/** The verb as a printed stamp: AL indigo, SAT ink, TUT an open box. Words differ, so colour never carries it alone. */
-const STAMP: Readonly<Record<SuggestionAction, string>> = {
-  al: "solo-stamp-al",
-  sat: "solo-stamp-sat",
-  tut: "solo-stamp-tut",
-};
+/** Show this many first; the rest open from the section header (a calm screen, a short phone scroll). */
+export const FIRST_SLIPS = 3;
 
-/** Show this many slips first; a longer list opens with one press (a calm screen, a short phone scroll). */
-export const FIRST_SLIPS = 4;
+/** How much and at what price, from the order behind an AL/SAT suggestion (the desk's own numbers). */
+export interface OrderFigures {
+  amount: number;
+  qty: number;
+  limit: number;
+}
+
+/** What this person may press here (single-user: everything; a team desk: the role's rights). */
+export interface DecideRights {
+  decide: boolean;
+  decideWhy: string | null;
+  /** Under an AL/SAT card on a team desk: who gives the second signature. */
+  signLine: string | null;
+}
+
+const ALL_RIGHTS: DecideRights = { decide: true, decideWhy: null, signLine: null };
+
+/** The verb as a small pill: AL green, SAT claret, TUT neutral. The word always carries it. */
+const BADGE: Readonly<Record<SuggestionAction, string>> = {
+  al: "bg-gain text-on-dark",
+  sat: "bg-loss text-on-dark",
+  tut: "bg-sunk text-ink ring-1 ring-line-strong",
+};
+const AVATAR: Readonly<Record<SuggestionAction, string>> = {
+  al: "bg-gain/10 text-gain",
+  sat: "bg-loss/10 text-loss",
+  tut: "bg-sunk text-ink-soft",
+};
 
 const LEVELS = { Güçlü: 3, Orta: 2, Zayıf: 1 } as const;
 
 function Confidence({ value }: { value: number }) {
   const word = confidenceWord(value);
   return (
-    <span className="inline-flex items-center gap-1.5 text-dense text-ink-soft">
-      <span aria-hidden className="flex gap-0.5">
+    <span className="inline-flex items-center gap-2 text-dense text-muted">
+      <span aria-hidden className="flex items-end gap-[2px]">
         {[1, 2, 3].map((i) => (
-          <span key={i} className={cn("h-2.5 w-1.5", i <= LEVELS[word] ? "bg-ink" : "bg-hairline")} />
+          <span key={i} className={cn("w-1 rounded-full", i === 1 ? "h-2" : i === 2 ? "h-2.5" : "h-3", i <= LEVELS[word] ? "bg-brand" : "bg-line-strong")} />
         ))}
       </span>
       <span>
@@ -47,136 +69,197 @@ function Confidence({ value }: { value: number }) {
 export interface SuggestionsProps {
   suggestions: readonly Suggestion[];
   names: ReadonlyMap<string, string>;
+  /** Order figures by suggestion id (AL/SAT). */
+  figures?: ReadonlyMap<string, OrderFigures>;
+  /** What is held now, by symbol (TUT cards show it). */
+  held?: ReadonlyMap<string, number>;
   stopped: boolean;
   busy: { id: string; answer: Answer } | null;
   errors: Readonly<Record<string, string>>;
+  rights?: DecideRights;
   onAnswer: (s: Suggestion, answer: Answer) => void;
 }
 
 /**
- * "Öneriler": one slip per suggestion — the verb stamped large, the share, one plain sentence
- * why, how sure KAPtan is, until when, and two buttons: Onayla / Geç.
+ * "Öneriler": one card with a row per suggestion — the company, the verb (AL / SAT / TUT), how
+ * much and at what price, one plain sentence why, how sure KAPtan is, until when, and two
+ * buttons: Onayla / Geç. On a team desk each AL/SAT row also says who signs second.
  */
-export function Suggestions({ suggestions, names, stopped, busy, errors, onAnswer }: SuggestionsProps) {
+export function Suggestions({ suggestions, names, figures, held, stopped, busy, errors, rights = ALL_RIGHTS, onAnswer }: SuggestionsProps) {
   const list = orderSuggestions(suggestions);
   const [showAll, setShowAll] = useState(false);
-  const folded = !showAll && list.length > FIRST_SLIPS + 1;
-  const shown = folded ? list.slice(0, FIRST_SLIPS) : list;
+  const foldable = list.length > FIRST_SLIPS;
+  const shown = foldable && !showAll ? list.slice(0, FIRST_SLIPS) : list;
   return (
-    <section aria-labelledby="oneriler" className="min-w-0">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 id="oneriler" className="font-display text-display tracking-[-0.01em] text-ink">
-          Öneriler
-        </h2>
-        <span className="text-dense text-muted tabular-nums">{list.length > 0 ? `${list.length} öneri bekliyor` : null}</span>
-      </div>
-      {stopped ? (
-        <p className="mt-2 text-ui text-ink-soft">İşlemler durduruldu; öneriler şimdilik onaylanamaz.</p>
-      ) : null}
+    <section aria-labelledby="oneriler" className="min-w-0 overflow-clip rounded-2xl border border-line bg-panel shadow-card">
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-line px-5 py-4 sm:px-6">
+        <div className="flex items-center gap-2.5">
+          <h2 id="oneriler" className="text-title font-semibold tracking-[-0.01em] text-ink">
+            Öneriler
+          </h2>
+          {list.length > 0 ? (
+            <span className="grid h-6 min-w-6 place-items-center rounded-full bg-brand px-1.5 text-meta leading-none font-semibold text-on-dark tabular-nums">
+              {list.length}
+              <span className="sr-only"> öneri bekliyor</span>
+            </span>
+          ) : null}
+        </div>
+        {foldable ? (
+          <button
+            type="button"
+            aria-expanded={showAll}
+            onClick={() => setShowAll((v) => !v)}
+            className="inline-flex min-h-11 items-center gap-1 text-dense font-semibold text-brand hover:underline hover:underline-offset-4 sm:min-h-9"
+          >
+            {showAll ? "Daha az göster" : `Tümünü gör (${list.length})`}
+          </button>
+        ) : null}
+        {stopped ? <p className="w-full text-dense text-ink-soft">İşlemler durduruldu; öneriler şimdilik onaylanamaz.</p> : null}
+        {!stopped && !rights.decide && rights.decideWhy && list.length > 0 ? <p className="w-full text-dense text-ink-soft">{rights.decideWhy}</p> : null}
+      </header>
       {list.length === 0 ? (
-        <p className="mt-4 rounded-xl border border-line bg-panel shadow-card px-5 py-6 text-ui text-ink-soft">
-          Şu an yeni öneri yok. KAPtan bir fırsat ya da yapılacak bir iş gördüğünde burada çıkar.
-        </p>
+        <EmptySuggestions />
       ) : (
-        <ul className="mt-4 space-y-4">
+        <ul className="divide-y divide-line">
           {shown.map((s) => (
-            <SuggestionSlip
+            <SuggestionRow
               key={s.id}
               s={s}
               name={names.get(s.symbol) ?? null}
+              figures={figures?.get(s.id) ?? null}
+              heldAmount={held?.get(s.symbol) ?? null}
               stopped={stopped}
               busy={busy?.id === s.id ? busy.answer : null}
               locked={busy !== null && busy.id !== s.id}
               error={errors[s.id] ?? null}
+              rights={rights}
               onAnswer={onAnswer}
             />
           ))}
         </ul>
       )}
-      {folded ? (
-        <button
-          type="button"
-          onClick={() => setShowAll(true)}
-          className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-line-strong bg-panel px-4 text-ui font-medium text-ink shadow-card transition-[background-color,scale] duration-[var(--dur-quick)] hover:bg-wash-tint active:scale-[0.99]"
-        >
-          {list.length - FIRST_SLIPS} öneri daha göster
-        </button>
-      ) : null}
     </section>
   );
 }
 
-function SuggestionSlip({
-  s,
-  name,
-  stopped,
-  busy,
-  locked,
-  error,
-  onAnswer,
-}: {
+function EmptySuggestions() {
+  return (
+    <div className="flex flex-col items-center px-6 py-10 text-center">
+      <span aria-hidden className="grid size-12 place-items-center rounded-full bg-sunk text-brand">
+        <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 5.5l1.6 6.5h-3.2z" fill="currentColor" />
+          <path d="M10.4 12 12 18.5 13.6 12" />
+        </svg>
+      </span>
+      <p className="mt-3 text-body font-semibold text-ink">Şu an yeni öneri yok — KAPtan izliyor.</p>
+      <p className="mt-1 max-w-[44ch] text-dense text-ink-soft">Bir fırsat ya da yapılacak bir iş gördüğünde burada çıkar; sayfayı yenilemen gerekmez.</p>
+    </div>
+  );
+}
+
+interface RowProps {
   s: Suggestion;
   name: string | null;
+  figures: OrderFigures | null;
+  heldAmount: number | null;
   stopped: boolean;
   busy: Answer | null;
   locked: boolean;
   error: string | null;
+  rights: DecideRights;
   onAnswer: (s: Suggestion, answer: Answer) => void;
-}) {
+}
+
+function SuggestionRow({ s, name, figures, heldAmount, stopped, busy, locked, error, rights, onAnswer }: RowProps) {
   const verb = ACTION_WORD[s.action];
   const titleId = `oneri-${s.id}`;
-  const closed = stopped || busy !== null || locked;
+  const closed = stopped || busy !== null || locked || !rights.decide;
   return (
-    <li aria-labelledby={titleId} className="animate-card-arrive flex overflow-hidden rounded-xl border border-line bg-panel shadow-card transition-[box-shadow,border-color] duration-[var(--dur-quick)] hover:border-line-strong hover:shadow-[var(--shadow-raise)]">
-      <div aria-hidden className={cn("flex w-14 shrink-0 items-center justify-center sm:w-[84px]", STAMP[s.action])}>
-        <span className="title-display text-[24px] sm:text-[34px]">{verb}</span>
-      </div>
-      <div className="min-w-0 flex-1 px-4 py-3.5 sm:px-5 sm:py-4">
-        <h3 id={titleId} className="flex flex-wrap items-baseline gap-x-2 text-[18px] leading-7 font-semibold text-ink">
-          <span>
-            {verb} — {s.symbol}
-          </span>
-          {name ? <span className="text-dense font-normal text-muted">{name}</span> : null}
-        </h3>
-        <p className="mt-1 text-body text-ink-soft">{s.reason_short}</p>
-        <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
-          <Confidence value={s.confidence} />
-          {s.expires_at ? (
-            <span className="text-dense text-muted tabular-nums">
-              Son onay: {dayLabel(s.expires_at)} {fmtTime(s.expires_at)}
-            </span>
-          ) : null}
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button
-            variant="primary"
-            size="md"
-            disabled={closed}
-            pending={busy === "approve"}
-            onClick={() => onAnswer(s, "approve")}
-            aria-label={`Onayla: ${verb} ${s.symbol}`}
-            className="min-w-28 max-sm:h-11"
-          >
-            {busy === "approve" ? "Onaylanıyor…" : "Onayla"}
-          </Button>
-          <Button
-            variant="outline"
-            size="md"
-            disabled={closed}
-            pending={busy === "skip"}
-            onClick={() => onAnswer(s, "skip")}
-            aria-label={`Geç: ${verb} ${s.symbol}`}
-            className="min-w-20 max-sm:h-11"
-          >
-            {busy === "skip" ? "Geçiliyor…" : "Geç"}
-          </Button>
-        </div>
-        {error ? (
-          <p role="alert" className="mt-2 text-dense font-medium text-north">
-            {error}
+    <li aria-labelledby={titleId} className="animate-card-arrive px-5 py-4 transition-colors duration-[var(--dur-quick)] hover:bg-wash-tint/40 sm:px-6 sm:py-5">
+      <div className="flex gap-3.5">
+        <span aria-hidden className={cn("mt-0.5 grid size-10 shrink-0 place-items-center rounded-lg font-mono text-[11px] font-semibold tracking-tight", AVATAR[s.action])}>
+          {s.symbol.slice(0, 5)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-col gap-x-4 gap-y-1 sm:flex-row sm:items-start sm:justify-between">
+            <h3 id={titleId} aria-label={`${verb} — ${s.symbol}${name ? ` ${name}` : ""}`} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+              <span className="text-body font-semibold text-ink">{s.symbol}</span>
+              <span aria-hidden className={cn("rounded-full px-2 text-[12px] leading-5 font-bold tracking-[0.04em]", BADGE[s.action])}>
+                {verb}
+              </span>
+              {name ? <span className="w-full truncate text-dense font-normal text-muted sm:w-auto">{name}</span> : null}
+            </h3>
+            <Figures action={s.action} figures={figures} heldAmount={heldAmount} />
+          </div>
+          <p className="mt-1.5 text-ui text-ink-soft">{s.reason_short}</p>
+          <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <Confidence value={s.confidence} />
+            {s.expires_at ? (
+              <span className="text-dense text-muted tabular-nums">
+                Son onay: {dayLabel(s.expires_at)} {fmtTime(s.expires_at)}
+              </span>
+            ) : null}
           </p>
-        ) : null}
+          {rights.signLine && s.action !== "tut" ? (
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-sunk px-2.5 py-0.5 text-meta text-ink-soft">
+              <span className="font-semibold text-ink tabular-nums">İmza 1/2</span>
+              <span aria-hidden>·</span>
+              {rights.signLine}
+            </p>
+          ) : null}
+          <div className="mt-3.5 grid grid-cols-2 gap-2 sm:flex">
+            <Button
+              variant="primary"
+              size="md"
+              disabled={closed}
+              pending={busy === "approve"}
+              onClick={() => onAnswer(s, "approve")}
+              aria-label={`Onayla: ${verb} ${s.symbol}`}
+              className="max-sm:h-11 sm:min-w-28"
+            >
+              {busy === "approve" ? "Onaylanıyor…" : "Onayla"}
+            </Button>
+            <Button
+              variant="outline"
+              size="md"
+              disabled={closed}
+              pending={busy === "skip"}
+              onClick={() => onAnswer(s, "skip")}
+              aria-label={`Geç: ${verb} ${s.symbol}`}
+              className="max-sm:h-11 sm:min-w-20"
+            >
+              {busy === "skip" ? "Geçiliyor…" : "Geç"}
+            </Button>
+          </div>
+          {error ? (
+            <p role="alert" className="mt-2 text-dense font-medium text-north">
+              {error}
+            </p>
+          ) : null}
+        </div>
       </div>
     </li>
+  );
+}
+
+function Figures({ action, figures, heldAmount }: { action: SuggestionAction; figures: OrderFigures | null; heldAmount: number | null }) {
+  if (action === "tut") {
+    if (heldAmount === null) return null;
+    return (
+      <p className="shrink-0 tabular-nums sm:text-right">
+        <span className="block text-[18px] leading-7 font-semibold text-ink">{fmtLira(heldAmount)}</span>
+        <span className="block text-meta text-muted">şu an elinde</span>
+      </p>
+    );
+  }
+  if (!figures) return null;
+  return (
+    <p className="shrink-0 tabular-nums sm:text-right">
+      <span className="block text-[18px] leading-7 font-semibold text-ink">{fmtLira(figures.amount)}</span>
+      <span className="block text-meta text-muted">
+        {fmtInt(figures.qty)} lot · {action === "sat" ? "en az" : "en fazla"} {fmtLira(figures.limit, true)}
+      </span>
+    </p>
   );
 }

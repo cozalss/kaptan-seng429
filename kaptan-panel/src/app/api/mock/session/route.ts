@@ -3,7 +3,9 @@ import { z } from "zod";
 import { passphraseMatches } from "@/lib/auth/passphrase";
 import { decodeSession, encodeSession, SESSION_COOKIE, SESSION_MAX_AGE_S } from "@/lib/auth/session";
 import { DEFAULT_ROLE, LoginRequest, memberForRole, Role } from "@/lib/domain/user";
-import { HOME, safeNext } from "@/lib/nav";
+import { safeNext } from "@/lib/nav";
+import { SINGLE_USER_ENV } from "@/lib/solo/mode";
+import { homeFor, parseView, VIEW_COOKIE } from "@/lib/solo/view-pref";
 
 /**
  * Mock session endpoints (mock mode only):
@@ -36,7 +38,8 @@ export async function POST(request: NextRequest) {
   const body = LoginRequest.safeParse(await request.json().catch(() => null));
   if (!body.success) return NextResponse.json({ detail: "Parola doğrulanamadı." }, { status: 400 });
   if (!passphraseMatches(body.data.passphrase)) return NextResponse.json({ detail: "Parola doğrulanamadı." }, { status: 401 });
-  const redirect = safeNext(body.data.next) ?? HOME;
+  // No ?next=: back to the view this browser used last (/benim or /bugun).
+  const redirect = safeNext(body.data.next) ?? homeFor(parseView(request.cookies.get(VIEW_COOKIE)?.value), SINGLE_USER_ENV);
   const role = body.data.role ?? DEFAULT_ROLE;
   const m = memberForRole(role);
   return withSession(NextResponse.json({ redirect, user: { uid: m.uid, name: m.name, role } }), role);

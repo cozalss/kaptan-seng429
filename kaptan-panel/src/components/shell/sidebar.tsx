@@ -11,7 +11,9 @@ import { effectiveStatus } from "@/components/approvals/approvals-logic";
 import { useRole } from "@/components/roles/use-role";
 import { AccountMenu } from "./account-menu";
 import { useDesk } from "./desk-state";
-import { IconArrow, IconClose, IconSidebar, NAV_ICON } from "./icons";
+import { IconArrow, IconClose, IconPerson, IconSidebar, NAV_ICON } from "./icons";
+import { SOLO_HOME } from "@/lib/solo/mode";
+import { rememberView } from "@/lib/solo/view-pref";
 
 export interface SidebarProps {
   /** Phone/tablet: the drawer is open. Ignored from 1024px, where the sidebar is always there. */
@@ -109,21 +111,21 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
                   aria-current={on ? "page" : undefined}
                   title={collapsed ? item.label : undefined}
                   className={cn(
-                    "relative flex h-11 items-center gap-3 rounded-l-xl pr-5 pl-3 text-ui transition-colors duration-[var(--dur-quick)]",
+                    "relative mr-3 flex h-11 items-center gap-3 rounded-lg pr-3 pl-3 text-ui transition-colors duration-[var(--dur-quick)]",
                     "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-on-navy",
                     on
-                      ? "bg-paper font-semibold text-navy before:absolute before:-top-3 before:right-0 before:size-3 before:bg-[radial-gradient(circle_at_0_0,transparent_11.5px,var(--paper)_12px)] after:absolute after:right-0 after:-bottom-3 after:size-3 after:bg-[radial-gradient(circle_at_0_100%,transparent_11.5px,var(--paper)_12px)]"
-                      : "mr-3 rounded-xl font-medium text-on-navy-soft hover:bg-navy-raised hover:text-on-navy",
+                      ? "bg-white/[0.11] font-semibold text-on-navy before:absolute before:inset-y-2.5 before:left-0 before:w-[3px] before:rounded-full before:bg-navy-action"
+                      : "font-medium text-on-navy-soft hover:bg-navy-raised hover:text-on-navy",
                     collapsed && "lg:justify-center lg:pr-3",
                   )}
                 >
-                  <Icon className={on ? "text-navy" : undefined} />
+                  <Icon className={on ? "text-on-navy" : undefined} />
                   <span className={cn("min-w-0 flex-1 truncate", collapsed && "lg:sr-only")}>{item.label}</span>
                   {badge !== null ? (
                     <span
                       className={cn(
                         "grid h-6 min-w-6 place-items-center rounded-full px-1.5 text-meta leading-none font-semibold tabular-nums",
-                        on ? "bg-navy text-on-navy" : "bg-on-navy text-navy",
+                        "bg-on-navy text-navy",
                         collapsed && "lg:absolute lg:top-0.5 lg:right-1.5 lg:h-5 lg:min-w-5 lg:text-[12px]",
                       )}
                     >
@@ -132,7 +134,7 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
                     </span>
                   ) : null}
                   {alarm ? (
-                    <span className={cn("inline-flex items-center gap-1.5 text-meta font-semibold", on ? "text-north" : "text-on-navy")}>
+                    <span className="inline-flex items-center gap-1.5 text-meta font-semibold text-on-navy">
                       <span aria-hidden className="size-2 rounded-full bg-north ring-2 ring-on-navy/70" />
                       <span className={cn(collapsed && "lg:sr-only")}>durdu</span>
                     </span>
@@ -148,7 +150,11 @@ export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: Sidebar
         <RoleAction collapsed={collapsed} />
       </div>
 
-      <div className="mt-auto space-y-3 p-4">
+      <div className={cn("mt-auto px-4 pt-6", collapsed && "lg:px-3")}>
+        <PersonalSwitch collapsed={collapsed} />
+      </div>
+
+      <div className="space-y-3 p-4">
         <RegimeLine collapsed={collapsed} />
         <AccountMenu variant="sidebar" collapsed={collapsed} />
       </div>
@@ -179,6 +185,33 @@ function RoleAction({ collapsed }: { collapsed: boolean }) {
     >
       <span className={cn(collapsed && "lg:sr-only")}>{target.label}</span>
       <IconArrow className="size-[18px]" />
+    </Link>
+  );
+}
+
+/**
+ * "Kişisel moda geç": the same desk as one person's simple home (/benim), with what this role may
+ * press. The choice is remembered, so the next sign-in lands there too.
+ */
+function PersonalSwitch({ collapsed }: { collapsed: boolean }) {
+  return (
+    <Link
+      href={SOLO_HOME}
+      onClick={() => rememberView("benim")}
+      title={collapsed ? "Kişisel moda geç" : undefined}
+      data-testid="kisisel-mod"
+      className={cn(
+        "group flex items-center gap-3 rounded-xl border border-navy-line px-3 py-2.5 text-on-navy-soft transition-colors duration-[var(--dur-quick)] hover:bg-navy-raised hover:text-on-navy",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-navy",
+        collapsed && "lg:justify-center lg:border-transparent lg:px-0",
+      )}
+    >
+      <IconPerson className="text-on-navy" />
+      <span className={cn("min-w-0 flex-1 leading-tight", collapsed && "lg:sr-only")}>
+        <span className="block text-ui font-semibold text-on-navy">Kişisel moda geç</span>
+        <span className="block text-meta text-on-navy-muted">Sade, tek ekran</span>
+      </span>
+      <IconArrow className={cn("size-4 transition-transform duration-[var(--dur-quick)] group-hover:translate-x-0.5", collapsed && "lg:hidden")} />
     </Link>
   );
 }

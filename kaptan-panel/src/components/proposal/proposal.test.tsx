@@ -32,9 +32,9 @@ describe("Öneri", () => {
     // The summary: lot and limit, then total, hold, stop, worst case, and the deadline.
     const summary = screen.getByRole("region", { name: "Öneri" });
     expect(summary).toHaveTextContent(/1\.480 lot al · limit /);
-    expect(summary).toHaveTextContent(/Toplam tutar≈ .*TLTutma süresi20–40 gün/);
+    expect(summary).toHaveTextContent(/Toplam tutar≈.*TLTutma süresi20–40 gün/);
     expect(await within(summary).findByText(/^−.*TL$/)).toBeInTheDocument();
-    expect(summary).toHaveTextContent(/Zarar durdurma.*Fiyat %.* düşerse satEn kötü durumda−/);
+    expect(summary).toHaveTextContent(/Zarar durdurma.*Fiyat %.* düşerse satEn kötü durum−/);
     expect(within(summary).getByText(/^Portföyün %.*karar için son saat/)).toBeInTheDocument();
 
     // The secondary sections are closed, with a meta line each; opening one shows its content.

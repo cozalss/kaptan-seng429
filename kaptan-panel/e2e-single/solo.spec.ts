@@ -48,6 +48,7 @@ test("login → home → approve → hold → Son işlemler → emergency stop �
   await expect(page.getByTestId("son-islemler")).toContainText(/KRGCL (alımını onayladın|aldın)/);
 
   // TUT: recorded by the API (suggestion.held), then hidden here and listed in Son işlemler.
+  await suggestions.getByRole("button", { name: /^Tümünü gör/ }).click();
   await page.getByRole("button", { name: "Onayla: TUT FRZEN" }).click();
   await expect(page.getByRole("button", { name: "Onayla: TUT FRZEN" })).toHaveCount(0);
   await expect(page.getByTestId("son-islemler")).toContainText("FRZEN elinde kalıyor");
@@ -91,5 +92,5 @@ test("dark reading passes axe too", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
   await signIn(page);
   const axe = await new AxeBuilder({ page }).analyze();
-  expect(axe.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
+  expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
 });

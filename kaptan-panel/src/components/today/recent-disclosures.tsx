@@ -8,7 +8,7 @@ import { DisclosureRows } from "@/components/disclosures/disclosure-rows";
 import { ErrorState, SkeletonLines } from "@/components/ui/primitives";
 
 /** Rows on Bugün; the whole day is on Bildirimler. */
-const SHOWN = 8;
+const SHOWN = 5;
 
 /**
  * "Son bildirimler": the newest KAP disclosures of the day Bugün talks about (today, or the last

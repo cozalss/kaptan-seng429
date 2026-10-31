@@ -1,14 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { HOME, isPublicPath } from "@/lib/nav";
+import { isPublicPath } from "@/lib/nav";
 import { decodeSession, SESSION_COOKIE } from "@/lib/auth/session";
-import { SINGLE_USER_ENV, SOLO_HOME } from "@/lib/solo/mode";
+import { SINGLE_USER_ENV } from "@/lib/solo/mode";
+import { homeFor, parseView, VIEW_COOKIE } from "@/lib/solo/view-pref";
 
 /**
  * Route guard (Next 16 `proxy`, formerly middleware). Personal mode: one user, no roles —
  * the only question is "signed in or not".
  * mock: the session cookie → signed-out users go to /login?next=…; a signed-in user who opens
- *       /login or a role door (/login/<rol>) goes to the panel home (/bugun), or to /benim in
- *       single-user mode (NEXT_PUBLIC_SINGLE_USER=true).
+ *       /login or a role door (/login/<rol>) goes to the view they used last (the `kaptan_view`
+ *       cookie: /benim or /bugun), else /bugun, or /benim in single-user mode. /benim itself is open
+ *       to every signed-in team member; explicit paths are never rerouted by the remembered view.
  * http: only the presence of the refresh cookie is checked here; the API owns the session.
  * "/" is the public landing (rewritten to the static /index.html) and its files are excluded
  * by the matcher below, so the landing never needs a session.
@@ -24,7 +26,10 @@ export function proxy(request: NextRequest) {
   const signedIn = IS_HTTP ? REFRESH_COOKIES.some((name) => request.cookies.has(name)) : decodeSession(request.cookies.get(SESSION_COOKIE)?.value) !== null;
 
   if (!signedIn) return isPublic ? NextResponse.next() : redirectToLogin(request, pathname + search);
-  if (isPublic && !IS_HTTP) return NextResponse.redirect(new URL(SINGLE_USER_ENV ? SOLO_HOME : HOME, request.url));
+  if (isPublic && !IS_HTTP) {
+    const view = parseView(request.cookies.get(VIEW_COOKIE)?.value);
+    return NextResponse.redirect(new URL(homeFor(view, SINGLE_USER_ENV), request.url));
+  }
   return NextResponse.next();
 }
 
