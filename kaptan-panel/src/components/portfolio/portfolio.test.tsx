@@ -141,6 +141,6 @@ describe("Portföy", () => {
     expect(screen.getByText(/^1\.005\.000/)).toBeInTheDocument();
     rerender(<PortfolioHero risk={{ ...risk, quota: [], halted_today: false, drawdown_pct: 0 }} />);
     expect(screen.getByText("Bugün")).toBeInTheDocument();
-    expect(screen.getByText("zirvede")).toBeInTheDocument();
+    expect(screen.getByText("zirvede · sınır −%5")).toBeInTheDocument();
   });
 });

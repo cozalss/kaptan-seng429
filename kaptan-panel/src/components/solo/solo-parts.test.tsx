@@ -123,8 +123,10 @@ describe("Öneriler and Son işlemler", () => {
   });
 
   it("shows an empty state and a card's own error", () => {
-    const { rerender } = render(<Suggestions suggestions={[]} names={new Map()} stopped={false} busy={null} errors={{}} onAnswer={vi.fn()} />);
+    const { rerender } = render(<Suggestions suggestions={[]} names={new Map()} stopped={false} busy={null} errors={{}} today={{ read: 796, toCrew: 40 }} onAnswer={vi.fn()} />);
     expect(screen.getByText(/Şu an yeni öneri yok/)).toBeInTheDocument();
+    expect(screen.getByText("796")).toBeInTheDocument();
+    expect(screen.getByText("yakından incelenen")).toBeInTheDocument();
     rerender(<Suggestions suggestions={[s("x", "al", 0.3)]} names={new Map()} stopped={false} busy={{ id: "x", answer: "approve" }} errors={{ x: "Olmadı." }} onAnswer={vi.fn()} />);
     expect(screen.getByRole("alert")).toHaveTextContent("Olmadı.");
     expect(screen.getByText("Zayıf")).toBeInTheDocument();
@@ -144,6 +146,7 @@ describe("loading and errors", () => {
       riskStatus: () => new Promise(() => {}),
       listApprovals: () => new Promise(() => {}),
       positions: () => new Promise(() => {}),
+      counters: () => new Promise(() => {}),
     } as unknown as KaptanApi;
     render(
       <ApiProvider api={failing}>
@@ -203,7 +206,9 @@ describe("frame", () => {
     );
     const account = screen.getByRole("navigation", { name: "Hesap" });
     expect(within(account).getByRole("link", { name: "Gelişmiş görünüm" })).toHaveAttribute("href", "/bugun");
-    await u.click(within(account).getByRole("button", { name: "Çıkış" }));
+    await u.click(within(account).getByRole("button", { name: "Hesap: Kişi" }));
+    expect(await screen.findByRole("menuitem", { name: "Gelişmiş görünüm" })).toHaveAttribute("href", "/bugun");
+    await u.click(screen.getByRole("menuitem", { name: "Çıkış" }));
     await waitFor(() => expect(nav.replace).toHaveBeenCalledWith("/login"));
   });
 });

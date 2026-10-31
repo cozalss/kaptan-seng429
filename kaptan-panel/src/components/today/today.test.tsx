@@ -26,7 +26,7 @@ describe("Bugün", () => {
     // The seeded sell (an X1 exit) is tagged Satış; the buys are tagged Alış.
     expect(within(list).getAllByText("Satış")).toHaveLength(1);
     // Each row: amount, lots and price cap, the deadline, and where it stands in the two signatures.
-    expect(cards[0]).toHaveTextContent(/\d[\d.]* TL\d+ lot · en fazla [\d.,]+ TLSon saat (bugün|yarın|\d+ \S+) 09:50/);
+    expect(cards[0]).toHaveTextContent(/\d[\d.]* TL·?\d+ lot · en fazla [\d.,]+ TL·?Son saat (bugün|yarın|\d+ \S+) 09:50/);
     expect(cards[0]).toHaveTextContent("İmzalar: kurallar imzaladı;İmza 1/2 · ikinci imza senin");
     // One meta line under the title: notices read and the soonest deadline (no clock bar, no crew strip).
     expect(await screen.findByText(/\d+ bildirim okundu · en yakın son saat (bugün|yarın|\d+ \S+) 09:50$/)).toBeInTheDocument();

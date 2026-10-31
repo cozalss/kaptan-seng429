@@ -1,5 +1,5 @@
 import type { AuditEntry } from "@/lib/domain";
-import { groupRuns, runMeta } from "./ledger-runs";
+import { groupRuns, runMeta, runSentence } from "./ledger-runs";
 import { shouldPaint, walkProgress } from "./chain-walk";
 
 const at = (pos: number, actor: string, action: string, hhmm: string): AuditEntry => ({
@@ -26,6 +26,16 @@ describe("groupRuns", () => {
     const rows = groupRuns(entries);
     expect(entries).toEqual(before);
     expect(rows.map((r) => (r.kind === "one" ? r.entry.chain_pos : r.entries.map((e) => e.chain_pos)))).toEqual([[10, 9, 8], 7, 6, 5, [4, 3]]);
+  });
+
+  it("folds any machine repeating the same act, like the rules' vetoes, but not mixed acts", () => {
+    const veto = (pos: number) => at(pos, "system:risk_gate", "risk.rejected", "09:00");
+    const rows = groupRuns([veto(5), veto(4), veto(3), at(2, "system:risk_gate", "risk.checked", "08:00"), veto(1)]);
+    expect(rows.map((r) => (r.kind === "one" ? r.entry.chain_pos : r.entries.map((e) => e.chain_pos)))).toEqual([[5, 4, 3], 2, 1]);
+    expect(runSentence("Kurallar", "risk.rejected", 19)).toBe("Kurallar 19 şirket için öneriyi baştan reddetti.");
+    expect(runSentence("KAP okuyucu", "disclosure.ingested", 9)).toBe("KAP okuyucu 9 bildirim getirdi.");
+    expect(runSentence("Ön eleme", "pregate.decided", 3)).toBe("Ön eleme 3 bildirimi süzdü.");
+    expect(runSentence("Zamanlayıcı", "x.y", 2)).toBe("Zamanlayıcı: 2 benzer kayıt.");
   });
 
   it("never folds a person's acts, even when they repeat", () => {

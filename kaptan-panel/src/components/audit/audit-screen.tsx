@@ -12,7 +12,7 @@ import { CARD } from "@/components/portfolio/kit";
 import { PageHeader } from "@/components/shell/page-frame";
 import { useChainWalk, VERIFY_EVENT } from "./chain-walk";
 import { rowId, Timeline, type Scope } from "./ledger";
-import { VerifyPanel } from "./verify-panel";
+import { VerifyButton, VerifyPanel } from "./verify-panel";
 
 /** Records shown at first; "Daha fazla göster" adds as many again (the API caps at 500). */
 const PAGE = 30;
@@ -76,9 +76,14 @@ export function AuditScreen() {
 
   return (
     <div className="space-y-4 xl:space-y-5">
-      <PageHeader title="Denetim kaydı" lead="Her bildirim, imza ve durdurma bu deftere yazılır; kimse silemez." className="mb-6 sm:mb-6" />
+      <PageHeader
+        title="Denetim kaydı"
+        lead="Her bildirim, imza ve durdurma bu deftere yazılır; kimse silemez. Her kayıt bir öncekinin parmak izini taşır."
+        actions={<VerifyButton walk={walk} onVerify={() => void verify()} />}
+        className="mb-6 sm:mb-6"
+      />
 
-      <VerifyPanel walk={walk} onVerify={() => void verify()} onShow={showRecord} tamperOn={data?.tamper_on ?? false} />
+      <VerifyPanel walk={walk} onShow={showRecord} tamperOn={data?.tamper_on ?? false} />
 
       <section aria-labelledby="kayitlar" className={cn(CARD, "overflow-clip")}>
         <div className="flex flex-col gap-3 px-4 pt-4 pb-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:pt-5">

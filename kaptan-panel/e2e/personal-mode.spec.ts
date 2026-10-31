@@ -25,7 +25,8 @@ test("multi-user desk → Kişisel moda geç → /benim (role rights) → rememb
   expect(axe.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
 
   // Sign out and back in: the remembered view opens.
-  await page.getByRole("navigation", { name: "Hesap" }).getByRole("button", { name: "Çıkış" }).click();
+  await page.getByRole("navigation", { name: "Hesap" }).getByRole("button", { name: /^Hesap: / }).click();
+  await page.getByRole("menuitem", { name: "Çıkış" }).click();
   await expect(page).toHaveURL(/\/login/);
   await page.goto("/login");
   await accountRadio(page, "Risk Sorumlusu").check();

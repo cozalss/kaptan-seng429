@@ -15,7 +15,10 @@ import { greeting, marketOpen } from "@/lib/solo/greeting";
 import { FULL_PANEL_HOME, SOLO_HOME } from "@/lib/solo/mode";
 import { rememberView } from "@/lib/solo/view-pref";
 import { cn } from "@/lib/utils";
+import { DropdownMenu as M } from "radix-ui";
 import { Wordmark } from "@/components/brand/marks";
+import { MENU_CONTENT, MENU_ITEM } from "@/components/ui/menu";
+import { notify } from "@/components/ui/toast";
 import { SkeletonLines } from "@/components/ui/primitives";
 import { Toaster } from "@/components/ui/toast";
 import { logout } from "@/components/shell/session-actions";
@@ -60,13 +63,6 @@ function initials(name: string): string {
 }
 
 function SoloHeader({ user, singleUser }: { user: SessionUser; singleUser: boolean }) {
-  const router = useRouter();
-  const [leaving, start] = useTransition();
-  const signOut = () =>
-    start(async () => {
-      router.replace(await logout());
-      router.refresh();
-    });
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-panel/85 backdrop-blur-md backdrop-saturate-150">
       <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center gap-3 px-4 sm:px-8">
@@ -89,26 +85,64 @@ function SoloHeader({ user, singleUser }: { user: SessionUser; singleUser: boole
             </svg>
             Gelişmiş görünüm
           </Link>
-          <span className="hidden items-center gap-2.5 border-l border-line pl-3 md:flex">
-            <span aria-hidden className="grid size-8 place-items-center rounded-full bg-navy text-meta font-semibold text-on-navy ring-1 ring-line-strong">
-              {initials(user.name)}
-            </span>
-            <span className="leading-tight">
-              <span className="block text-dense font-semibold text-ink">{user.name}</span>
-              {singleUser ? null : <span className="block text-meta text-muted">{ROLE_LABEL[user.role]}</span>}
-            </span>
-          </span>
-          <button
-            type="button"
-            onClick={signOut}
-            disabled={leaving}
-            className="inline-flex h-10 items-center rounded-lg px-2.5 text-dense font-medium text-ink-soft transition-colors duration-[var(--dur-quick)] hover:bg-wash-tint hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-progress max-sm:h-11"
-          >
-            {leaving ? "Çıkılıyor…" : "Çıkış"}
-          </button>
+          <SoloAccountMenu user={user} singleUser={singleUser} />
         </nav>
       </div>
     </header>
+  );
+}
+
+/**
+ * Who is signed in, as the desk's user chip: the initials in a navy disc (and the name from
+ * 768px). It opens a small menu: name and role, "Gelişmiş görünüm", "Çıkış".
+ */
+function SoloAccountMenu({ user, singleUser }: { user: SessionUser; singleUser: boolean }) {
+  const router = useRouter();
+  const [leaving, start] = useTransition();
+  const signOut = () =>
+    start(async () => {
+      try {
+        router.replace(await logout());
+        router.refresh();
+      } catch {
+        notify.error("Çıkış yapılamadı", "Bir daha dene.");
+      }
+    });
+  return (
+    <M.Root modal={false}>
+      <M.Trigger
+        aria-label={`Hesap: ${user.name}`}
+        aria-busy={leaving || undefined}
+        className="group ml-1 inline-flex h-11 items-center gap-2.5 rounded-full border border-line py-1 pr-2.5 pl-1 transition-colors duration-[var(--dur-quick)] hover:bg-wash-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand data-[state=open]:bg-wash-tint"
+      >
+        <span aria-hidden className="grid size-8 place-items-center rounded-full bg-navy text-meta font-semibold text-on-navy ring-1 ring-line-strong">
+          {initials(user.name)}
+        </span>
+        <span className="hidden text-left leading-tight md:block">
+          <span className="block text-dense font-semibold text-ink">{user.name}</span>
+          {singleUser ? null : <span className="block text-meta text-muted">{ROLE_LABEL[user.role]}</span>}
+        </span>
+        <svg aria-hidden viewBox="0 0 10 10" className="size-2.5 text-ink-soft transition-transform duration-[var(--dur-quick)] group-data-[state=open]:rotate-180" fill="none" stroke="currentColor" strokeWidth={1.5}>
+          <path d="M2 4l3 3 3-3" />
+        </svg>
+      </M.Trigger>
+      <M.Portal>
+        <M.Content side="bottom" align="end" sideOffset={8} className={cn(MENU_CONTENT, "w-[240px] py-0")}>
+          <div className="border-b border-line px-4 py-3">
+            <p className="text-ui font-semibold text-ink">{user.name}</p>
+            <p className="text-meta text-ink-soft">{singleUser ? "Benim KAPtan'ım" : ROLE_LABEL[user.role]}</p>
+          </div>
+          <M.Item asChild className={MENU_ITEM}>
+            <Link href={FULL_PANEL_HOME} onClick={() => rememberView("masa")}>
+              Gelişmiş görünüm
+            </Link>
+          </M.Item>
+          <M.Item className={cn(MENU_ITEM, "mb-1")} disabled={leaving} onSelect={signOut}>
+            {leaving ? "Çıkılıyor…" : "Çıkış"}
+          </M.Item>
+        </M.Content>
+      </M.Portal>
+    </M.Root>
   );
 }
 

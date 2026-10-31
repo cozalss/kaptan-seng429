@@ -40,7 +40,9 @@ function signedTry(n: number): string {
  * is the way to Portföy.
  */
 export function KpiRow({ risk, cash, positions, maxPositions, pending, soonest, trend = [] }: KpiInput) {
-  const grid = "grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-[1.4fr_repeat(5,minmax(0,1fr))] xl:gap-4";
+  // Under 640px the tiles are one horizontal strip that snaps tile by tile (no uneven 2-up stack).
+  const grid =
+    "flex gap-3 overflow-x-auto overscroll-x-contain snap-x snap-mandatory -mx-4 px-4 pb-1 [scrollbar-width:none] max-sm:*:w-[168px] max-sm:*:shrink-0 max-sm:*:snap-start sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-[1.4fr_repeat(5,minmax(0,1fr))] xl:gap-4";
   if (!risk) {
     return (
       <div className={grid} role="status" aria-label="Özet yükleniyor">

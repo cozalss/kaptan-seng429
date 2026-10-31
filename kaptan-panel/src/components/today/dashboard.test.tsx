@@ -75,6 +75,6 @@ describe("Bugün dashboard pieces", () => {
     render(<FlowStrip data={counters} />);
     const card = screen.getByRole("region", { name: "Bildirim akışı" });
     expect(card).toHaveTextContent("212bildirim okundu");
-    expect(within(card).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["61gürültü, elendi", "138ilgisiz, arşivlendi", "13tayfaya gönderildi"]);
+    expect(within(card).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["61gürültü, elendi", "138ilgisiz, arşivlendi", "13tayfaya gönderildi", "12olay adayı", "6öneri", "1 · 1onay · ret"]);
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
-import { fmtDateLong, fmtShortDate, fmtSignedPct, fmtTry } from "@/lib/format";
+import { fmtDateLong, fmtShortDate, fmtSignedPct, fmtTry, NBSP } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { signTone } from "@/components/story/sign-tone";
 import { CARD, CARD_PAD } from "./kit";
@@ -11,8 +11,10 @@ export { equitySeries, linePath, seriesChange, yDomain, type EquityPoint } from 
 
 /**
  * The portfolio's value over the last sessions as one line, in a card. Two reference lines:
- * the peak and the −5% level where everything stops (north red, the colour of Durdur).
- * Point, tap or use the arrow keys: a readout answers "on this day it was X".
+ * the peak (with its value) and the −5% level where everything stops (north red, the colour of
+ * Durdur), and three quiet values on the right. Point, tap or use the arrow keys: a readout
+ * answers "on this day it was X, that day's change". "Tablo olarak göster" is the same data as
+ * rows. A line that has not moved yet is drawn short, with a sentence instead of a flat box.
  */
 export function EquityLine({ points: all, peak, title = "Değer" }: { points: readonly EquityPoint[]; peak: number | null; title?: string }) {
   const [range, setRange] = useState<RangeKey>("all");
@@ -75,8 +77,9 @@ export function EquityLine({ points: all, peak, title = "Değer" }: { points: re
           </span>
         ) : null}
       </figcaption>
+      <div className="flex gap-3">
       <div
-        className={cn("relative h-[140px] touch-pan-y select-none sm:h-[180px]", ready && "cursor-crosshair")}
+        className={cn("relative min-w-0 flex-1 touch-pan-y select-none", ready && geo.flat ? "h-[96px]" : "h-[140px] sm:h-[180px]", ready && "cursor-crosshair")}
         {...(ready
           ? {
               role: "slider",
@@ -118,7 +121,7 @@ export function EquityLine({ points: all, peak, title = "Değer" }: { points: re
             </svg>
             {geo.peakY !== null && peak ? (
               <LevelLabel y={geo.peakY} above>
-                Zirve
+                Zirve · {fmtTryShort(peak)}
               </LevelLabel>
             ) : null}
             {geo.stopY !== null && peak ? (
@@ -132,14 +135,26 @@ export function EquityLine({ points: all, peak, title = "Değer" }: { points: re
           </>
         ) : null}
       </div>
+      {ready && !geo.flat ? (
+        <div aria-hidden className="relative w-[64px] shrink-0">
+          {geo.ticks.map((t) => (
+            <span key={t.value} className="absolute right-0 -translate-y-1/2 text-meta whitespace-nowrap text-muted tabular-nums" style={{ top: `${(t.y / H) * 100}%` }}>
+              {fmtTryShort(t.value)}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      </div>
+      {ready && geo.flat ? <p className="text-dense text-ink-soft">İlk işlemden sonra çizgi burada şekillenir.</p> : null}
       <div className="flex min-h-5 justify-between gap-4 text-dense text-muted tabular-nums">
         {ready ? (
           <>
             <span>{fmtShortDate(first.d)}</span>
-            <span>bugün</span>
+            <span className={geo.flat ? undefined : "mr-[76px]"}>bugün</span>
           </>
         ) : null}
       </div>
+      {ready ? <SeriesTable points={points} /> : null}
     </figure>
   );
 }
@@ -218,5 +233,44 @@ function Readout({ point, prev, left }: { point: EquityPoint; prev: EquityPoint 
         </>
       ) : null}
     </span>
+  );
+}
+
+/** "1,02 mn TL" / "850 bin TL": the value axis and the peak label. */
+export function fmtTryShort(n: number): string {
+  if (Math.abs(n) >= 1_000_000) return `${new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n / 1_000_000)}${NBSP}mn${NBSP}TL`;
+  if (Math.abs(n) >= 1_000) return `${new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 }).format(Math.round(n / 1_000))}${NBSP}bin${NBSP}TL`;
+  return fmtTry(n);
+}
+
+/** The keyboard- and screen-reader-friendly view of the line: day and value, newest first. */
+function SeriesTable({ points }: { points: readonly EquityPoint[] }) {
+  return (
+    <details className="text-dense">
+      <summary className="inline-flex min-h-11 cursor-pointer items-center font-medium text-ink underline decoration-rule-soft underline-offset-4 hover:decoration-ink sm:min-h-8">Tablo olarak göster</summary>
+      <div className="mt-2 max-h-[280px] overflow-y-auto">
+        <table className="w-full text-left tabular-nums">
+          <caption className="sr-only">Gün gün portföy değeri</caption>
+          <thead>
+            <tr className="border-b border-line text-muted">
+              <th scope="col" className="py-1.5 font-medium">
+                Gün
+              </th>
+              <th scope="col" className="py-1.5 text-right font-medium">
+                Değer
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...points].reverse().map((p) => (
+              <tr key={p.d} className="border-b border-line">
+                <td className="py-1.5">{fmtShortDate(p.d)}</td>
+                <td className="py-1.5 text-right">{fmtTry(p.equity)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </details>
   );
 }

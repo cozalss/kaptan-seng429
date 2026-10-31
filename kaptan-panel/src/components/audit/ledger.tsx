@@ -9,7 +9,7 @@ import { fmtInt, fmtShortDate, fmtTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { RoleEmblem } from "@/components/roles/role-emblem";
 import { TH } from "@/components/portfolio/kit";
-import { groupRuns, runMeta } from "./ledger-runs";
+import { groupRuns, runMeta, runSentence } from "./ledger-runs";
 
 export type Scope = "today" | "all";
 
@@ -36,7 +36,7 @@ export const Timeline = memo(function Timeline({ items, scope, broken }: { items
           r.kind === "one" ? (
             <Row key={r.entry.chain_pos} entry={r.entry} scope={scope} broken={broken} />
           ) : (
-            <Run key={`run-${r.entries[0]?.chain_pos}`} entries={r.entries} actor={r.actor} scope={scope} broken={broken} />
+            <Run key={`run-${r.entries[0]?.chain_pos}`} entries={r.entries} actor={r.actor} action={r.action} scope={scope} broken={broken} />
           ),
         )}
       </ol>
@@ -75,12 +75,20 @@ function Who({ actor, className }: { actor: string; className?: string }) {
   const who = actorParts(actor);
   const person = memberByUid(actor);
   return (
-    <span className={cn("min-w-0 text-dense", className)}>
-      <span className={cn("inline-flex items-center gap-1.5", person ? "font-semibold text-ink" : "text-ink-soft")}>
-        {person ? <RoleEmblem role={person.role} className={cn(`tone-${person.role}`, "size-3.5 shrink-0 text-[var(--tone)]")} /> : null}
-        {who.name}
+    <span className={cn("min-w-0 text-dense", className)} title={who.kind ? `${who.name} · ${who.kind}` : who.name}>
+      <span className={cn("flex min-w-0 items-center gap-2", person ? "font-semibold text-ink" : "text-ink-soft")}>
+        {person ? (
+          <span aria-hidden className={cn(`tone-${person.role}`, "grid size-6 shrink-0 place-items-center rounded-full bg-[var(--tone)] text-on-dark")}>
+            <RoleEmblem role={person.role} className="size-3.5" />
+          </span>
+        ) : (
+          <span aria-hidden className="grid size-6 shrink-0 place-items-center rounded-full bg-sunk text-[11px] font-semibold text-muted">
+            {who.name.charAt(0)}
+          </span>
+        )}
+        <span className="truncate">{who.name}</span>
+        {who.kind ? <span className="sr-only"> · {who.kind}</span> : null}
       </span>
-      {who.kind ? <span className="block text-meta text-muted">{who.kind}</span> : null}
     </span>
   );
 }
@@ -97,7 +105,15 @@ function Row({ entry, scope, broken }: { entry: AuditEntry; scope: Scope; broken
   const person = memberByUid(entry.actor);
   const bad = broken !== null && entry.chain_pos === broken;
   return (
-    <li id={rowId(entry.chain_pos)} className={cn(GRID, "scroll-mt-24 items-baseline py-3 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand", bad && "bg-north-tint shadow-[inset_4px_0_0_var(--north)]")}>
+    <li
+      id={rowId(entry.chain_pos)}
+      className={cn(
+        GRID,
+        "scroll-mt-24 items-center py-2.5 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand",
+        person && !bad && `tone-${person.role} shadow-[inset_3px_0_0_var(--tone)]`,
+        bad && "bg-north-tint shadow-[inset_4px_0_0_var(--north)]",
+      )}
+    >
       <When iso={entry.occurred_at} scope={scope} />
       <Who actor={entry.actor} className="hidden sm:block" />
       <div className="min-w-0">
@@ -115,18 +131,18 @@ function Row({ entry, scope, broken }: { entry: AuditEntry; scope: Scope; broken
   );
 }
 
-/** A folded run of the KAP okuyucu's fetches; "göster" opens the original rows. */
-function Run({ entries, actor, scope, broken }: { entries: readonly AuditEntry[]; actor: string; scope: Scope; broken: number | null }) {
+/** A folded run of one machine's repeated act; "göster" opens the original rows. */
+function Run({ entries, actor, action, scope, broken }: { entries: readonly AuditEntry[]; actor: string; action: string; scope: Scope; broken: number | null }) {
   const newest = entries[0] as AuditEntry;
   const hasBroken = broken !== null && entries.some((e) => e.chain_pos === broken);
   return (
     <li>
       <details className="group" open={hasBroken || undefined}>
-        <summary className={cn(GRID, "cursor-pointer list-none items-baseline py-3 hover:bg-wash-tint [&::-webkit-details-marker]:hidden")}>
+        <summary className={cn(GRID, "cursor-pointer list-none items-center py-2.5 hover:bg-wash-tint [&::-webkit-details-marker]:hidden")}>
           <When iso={newest.occurred_at} scope={scope} />
           <Who actor={actor} className="hidden sm:block" />
           <span className="min-w-0">
-            <span className="block text-ui text-ink-soft tabular-nums">{`${actorParts(actor).name} ${fmtInt(entries.length)} bildirim getirdi.`}</span>
+            <span className="block text-ui text-ink-soft tabular-nums">{runSentence(actorParts(actor).name, action, entries.length)}</span>
             <span className="mt-0.5 block text-meta text-muted tabular-nums">
               {runMeta(entries)} ·{" "}
               <span className="text-ink underline decoration-rule-soft underline-offset-4 group-hover:decoration-ink">

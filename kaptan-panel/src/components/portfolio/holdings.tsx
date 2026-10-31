@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Position } from "@/lib/domain";
-import { fmtInt, fmtSignedPct, NBSP } from "@/lib/format";
+import { fmtInt, fmtPct, fmtSignedPct, NBSP } from "@/lib/format";
 import { href } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { shortName } from "@/components/story/plain";
@@ -29,14 +29,19 @@ function signedTry(n: number): string {
 }
 
 /**
- * What you hold, as a table: company, lots, gain or loss in TL and in %, sessions left until
- * the planned exit. Figures are tabular and right-aligned; each company opens its öneri. On a
- * phone the lot sits under the name and the % under the TL figure.
+ * What you hold, as a table: company, lots, value now and its weight, gain or loss in TL and
+ * in %, sessions left until the planned exit. Figures are tabular and right-aligned; each
+ * company opens its öneri. The account is named once (above the table) unless both accounts
+ * hold something, then per row. On a phone the lot sits under the name and the % under the TL.
  */
 export function Holdings({ positions, today }: { positions: readonly Position[]; today: string }) {
   if (!positions.length) return <p className="px-4 py-8 text-center text-ui text-ink-soft sm:px-6">Şu an elinde hisse yok. İmzalanan bir öneri buraya düşer.</p>;
+  const books = new Set(positions.map((p) => p.book));
+  const oneBook = books.size === 1 ? (positions[0]?.book ?? null) : null;
+  const total = positions.reduce((sum, p) => sum + p.qty * p.last_price, 0);
   return (
     <table aria-label="Elindekiler" className="w-full border-collapse text-left">
+      {oneBook ? <caption className="px-4 pb-2 text-left text-dense text-muted sm:px-6">{oneBook === "paper" ? "Hepsi KAPtan hesabında" : "Hepsi kendi hesabında"}</caption> : null}
       <thead className="sticky top-14 z-10 bg-panel/95 backdrop-blur-sm lg:top-0">
         <tr className="shadow-[inset_0_-2px_0_var(--hairline)]">
           <th scope="col" className={cn(TH, "py-2.5 pr-3 pl-4 sm:pl-6")}>
@@ -44,6 +49,12 @@ export function Holdings({ positions, today }: { positions: readonly Position[];
           </th>
           <th scope="col" className={cn(TH, "hidden px-3 py-2.5 text-right sm:table-cell")}>
             Lot
+          </th>
+          <th scope="col" className={cn(TH, "hidden px-3 py-2.5 text-right md:table-cell")}>
+            Değer (TL)
+          </th>
+          <th scope="col" className={cn(TH, "hidden px-3 py-2.5 text-right lg:table-cell")}>
+            Ağırlık
           </th>
           <th scope="col" className={cn(TH, "px-3 py-2.5 text-right")}>
             K/Z (TL)
@@ -69,12 +80,18 @@ export function Holdings({ positions, today }: { positions: readonly Position[];
                 >
                   {titleTr(shortName(p.company_name))}
                 </Link>
-                <span className="mt-0.5 block text-dense text-muted tabular-nums">
-                  <span className="sm:hidden">{fmtInt(p.qty)} lot · </span>
-                  {BOOK_LABEL[p.book]}
-                </span>
+                {oneBook ? (
+                  <span className="mt-0.5 block text-dense text-muted tabular-nums sm:hidden">{fmtInt(p.qty)} lot</span>
+                ) : (
+                  <span className="mt-0.5 block text-dense text-muted tabular-nums">
+                    <span className="sm:hidden">{fmtInt(p.qty)} lot · </span>
+                    {BOOK_LABEL[p.book]}
+                  </span>
+                )}
               </th>
               <td className="hidden px-3 py-3 text-right text-ui text-ink tabular-nums sm:table-cell">{fmtInt(p.qty)}</td>
+              <td className="hidden px-3 py-3 text-right text-ui text-ink tabular-nums md:table-cell">{fmtInt(Math.round(p.qty * p.last_price))}</td>
+              <td className="hidden px-3 py-3 text-right text-ui text-ink-soft tabular-nums lg:table-cell">{total > 0 ? fmtPct((p.qty * p.last_price) / total, 1) : "—"}</td>
               <td className="px-3 py-3 text-right tabular-nums">
                 <span className={cn("block text-ui font-semibold", signTone(p.unrealized_pnl))}>{signedTry(p.unrealized_pnl)}</span>
                 <span className={cn("mt-0.5 block text-dense sm:hidden", signTone(r))}>{fmtSignedPct(r)}</span>
@@ -84,7 +101,7 @@ export function Holdings({ positions, today }: { positions: readonly Position[];
                 {exitLine(p, today)}
                 <span aria-hidden className="mt-1.5 ml-auto block h-1 w-20 overflow-hidden rounded-full bg-sunk">
                   <span
-                    className={cn("block h-full rounded-full", h.dueToday || h.overdue ? "bg-ochre" : "bg-[var(--flow-2)]")}
+                    className={cn("block h-full rounded-full", h.dueToday || h.overdue || h.planned - h.elapsed <= 1 ? "bg-ochre" : "bg-[var(--flow-2)]")}
                     style={{ width: `${Math.round(h.fraction * 100)}%` }}
                   />
                 </span>

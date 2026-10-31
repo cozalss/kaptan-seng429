@@ -80,12 +80,14 @@ export function LoginForm({ next, initialRole }: { next: string | null; initialR
         <p id="hesap-label" className="text-dense font-semibold text-ink">
           Hesap
         </p>
-        <div role="radiogroup" aria-labelledby="hesap-label" className="mt-2 grid gap-2">
+        <div role="radiogroup" aria-labelledby="hesap-label" className="mt-2 grid grid-cols-1 gap-2 min-[400px]:grid-cols-2">
           {ROLES.map((r) => (
             <label
               key={r}
               className={cn(
-                "flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border-[1.5px] border-rule-soft bg-panel px-3.5 py-2.5",
+                `tone-${r}`,
+                "relative flex min-h-[64px] cursor-pointer items-center gap-3 overflow-hidden rounded-xl border-[1.5px] border-rule-soft bg-panel py-2.5 pr-3 pl-4 min-[400px]:min-h-[76px]",
+                "before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-[var(--tone)]",
                 "transition-[background-color,border-color,box-shadow,scale] duration-[var(--dur-quick)] ease-[var(--ease-out-expo)] active:scale-[0.99]",
                 "hover:border-rule-ui hover:bg-wash-tint has-[:checked]:border-brand has-[:checked]:bg-wash-tint has-[:checked]:shadow-[0_0_0_1px_var(--brand)]",
                 "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand",
@@ -100,10 +102,9 @@ export function LoginForm({ next, initialRole }: { next: string | null; initialR
                 className="size-[18px] shrink-0 accent-[var(--brand)] focus-visible:outline-none"
               />
               <span className="min-w-0 flex-1">
-                <span className="block text-ui font-semibold text-ink">{ROLE_LABEL[r]}</span>
-                <span className="block text-meta text-ink-soft">{accountPerson(r)}</span>
+                <span className="block text-ui font-semibold whitespace-nowrap text-ink">{ROLE_LABEL[r]}</span>
+                <span className="block truncate text-meta text-ink-soft">{accountPerson(r)}</span>
               </span>
-              <span aria-hidden className={cn(`tone-${r}`, "size-2.5 shrink-0 rounded-full bg-[var(--tone)] ring-4 ring-[var(--tone-tint)]")} />
             </label>
           ))}
         </div>

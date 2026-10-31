@@ -40,12 +40,12 @@ export function ProposalCard({
     <article
       aria-label={name}
       className={cn(
-        "group relative grid gap-x-6 gap-y-3 px-5 py-4 transition-colors duration-[var(--dur-quick)] ease-[var(--ease-ink)] hover:bg-wash-tint grid-cols-[minmax(0,1fr)_auto] items-end md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center",
+        "group relative grid gap-x-6 gap-y-3 px-5 py-4 transition-colors duration-[var(--dur-quick)] ease-[var(--ease-ink)] hover:bg-wash-tint grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center",
         "has-[a:focus-visible]:bg-wash-tint",
         fresh && "animate-card-arrive bg-wash-tint",
       )}
     >
-      <div className="col-span-2 flex min-w-0 gap-3.5 md:col-span-1">
+      <div className="flex min-w-0 gap-3.5">
         <span
           aria-hidden
           className={cn(
@@ -72,18 +72,23 @@ export function ProposalCard({
         </div>
       </div>
 
-      <p className="pl-[62px] tabular-nums md:pl-0 md:text-right">
-        <span className="block text-body font-semibold text-ink">{fmtTry(card.final_notional_try)}</span>
-        <span className="block text-meta text-ink-soft">
-          {fmtInt(card.qty)} lot · {card.side === "sell" ? "en az" : "en fazla"} {fmtPrice(card.limit_price)}
+      <p className="flex flex-wrap items-baseline gap-x-1.5 pl-[62px] text-meta text-ink-soft tabular-nums md:block md:pl-0 md:text-right">
+        <span className="text-ui font-semibold text-ink md:block md:text-body">{fmtTry(card.final_notional_try)}</span>
+        <span aria-hidden className="md:hidden">·</span>
+        <span className="md:block">
+          {fmtInt(card.qty)} lot<span className="max-md:hidden"> · {card.side === "sell" ? "en az" : "en fazla"} {fmtPrice(card.limit_price)}</span>
         </span>
-        <span className="block text-meta text-ink-soft">Son saat {deadline(card, nowIso)}</span>
+        <span aria-hidden className="md:hidden">·</span>
+        <span className="md:block">
+          <span className="max-md:hidden">Son saat </span>
+          {deadline(card, nowIso)}
+        </span>
       </p>
 
       <Link
         href={href.proposal(card.proposal_id)}
         aria-label={`İncele: ${name}`}
-        className="inline-flex h-10 items-center justify-center gap-1.5 justify-self-end rounded-lg border-[1.5px] border-rule-ui bg-panel px-3.5 text-ui font-semibold text-ink transition-colors duration-[var(--dur-quick)] after:absolute after:inset-0 after:content-[''] group-hover:border-brand group-hover:text-brand focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-brand "
+        className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg md:h-10 md:w-auto md:justify-self-end border-[1.5px] border-rule-ui bg-panel px-3.5 text-ui font-semibold text-ink transition-colors duration-[var(--dur-quick)] after:absolute after:inset-0 after:content-[''] group-hover:border-brand group-hover:text-brand focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-brand "
       >
         İncele
         <span aria-hidden className="transition-transform duration-[var(--dur-quick)] ease-[var(--ease-ink)] group-hover:translate-x-0.5">

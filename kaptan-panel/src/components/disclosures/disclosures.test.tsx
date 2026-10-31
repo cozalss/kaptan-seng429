@@ -17,14 +17,17 @@ describe("Bildirimler", () => {
   it("lists the session's disclosures with what happened, and filters them", async () => {
     renderWithDesk(<DisclosuresScreen />);
     expect(await screen.findByRole("heading", { level: 1, name: "Bildirimler" })).toBeInTheDocument();
-    const list = await screen.findByRole("list", { name: "Bildirim listesi" });
+    const list = await screen.findByRole("group", { name: "Bildirim listesi" });
     const all = within(list).getAllByRole("listitem").length;
-    expect(all).toBeGreaterThan(10);
+    // 25 at first, cut by the hour under sticky bands.
+    expect(all).toBe(25);
+    expect(within(list).getAllByRole("heading", { level: 3 })[0]).toHaveTextContent(/^\d\d:00–\d\d:00\d+ bildirim$/);
+    expect(screen.getByRole("button", { name: /tane daha göster/ })).toBeInTheDocument();
 
     const u = userEvent.setup({ delay: null });
     await u.click(screen.getByRole("button", { name: /^Tayfaya gönderildi/ }));
-    await waitFor(() => expect(within(screen.getByRole("list", { name: "Bildirim listesi" })).getAllByRole("listitem").length).toBeLessThan(all));
-    const crew = within(screen.getByRole("list", { name: "Bildirim listesi" }));
+    await waitFor(() => expect(within(screen.getByRole("group", { name: "Bildirim listesi" })).getAllByRole("listitem").length).toBeLessThan(all));
+    const crew = within(screen.getByRole("group", { name: "Bildirim listesi" }));
     // Each row carries its pill twice (phone and desktop placement; one is display:none).
     expect(crew.getAllByText("tayfaya gönderildi")).toHaveLength(crew.getAllByRole("listitem").length * 2);
     expect(crew.queryByText("elendi")).toBeNull();
@@ -35,7 +38,7 @@ describe("Bildirimler", () => {
 
   it("steps back one session", async () => {
     renderWithDesk(<DisclosuresScreen />);
-    await screen.findByRole("list", { name: "Bildirim listesi" });
+    await screen.findByRole("group", { name: "Bildirim listesi" });
     await userEvent.setup({ delay: null }).click(screen.getByRole("button", { name: "← Önceki seans" }));
     expect(await screen.findByText(/8 Ocak Cuma/)).toBeInTheDocument();
   });

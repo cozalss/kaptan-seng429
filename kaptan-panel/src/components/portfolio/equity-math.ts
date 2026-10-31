@@ -1,4 +1,5 @@
 import type { PnlPoint } from "@/lib/domain";
+import { niceTicks } from "@/lib/solo/period";
 
 /**
  * Pure geometry of the equity line (portfolio-logic.test.ts). The chart is drawn in a
@@ -57,6 +58,10 @@ export interface EquityGeometry {
   /** y of the peak and of the −5% stop level, when a peak is given. */
   peakY: number | null;
   stopY: number | null;
+  /** Three round values inside the drawn range, with their y (the value axis on the right). */
+  ticks: Array<{ value: number; y: number }>;
+  /** Every point has the same value: nothing to read off the line yet. */
+  flat: boolean;
 }
 
 /**
@@ -65,7 +70,7 @@ export interface EquityGeometry {
  * drawn honestly, never cropped away.
  */
 export function linePath(points: readonly EquityPoint[], peak: number | null = null): EquityGeometry {
-  const none = { line: "", area: "", xy: [], last: null, peakY: null, stopY: null };
+  const none = { line: "", area: "", xy: [], last: null, peakY: null, stopY: null, ticks: [], flat: true };
   if (points.length < 2) return none;
   const levels = peak ? [peak, peak * (1 - STOP_DRAWDOWN)] : [];
   const { lo, hi } = yDomain([...points.map((p) => p.equity), ...levels]);
@@ -83,6 +88,10 @@ export function linePath(points: readonly EquityPoint[], peak: number | null = n
     last,
     peakY: peak ? yOf(peak) : null,
     stopY: peak ? yOf(peak * (1 - STOP_DRAWDOWN)) : null,
+    ticks: niceTicks(lo, hi)
+      .filter((v) => v >= lo && v <= hi)
+      .map((value) => ({ value, y: yOf(value) })),
+    flat: new Set(points.map((p) => Math.round(p.equity))).size < 2,
   };
 }
 

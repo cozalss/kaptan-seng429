@@ -77,6 +77,8 @@ export interface SuggestionsProps {
   busy: { id: string; answer: Answer } | null;
   errors: Readonly<Record<string, string>>;
   rights?: DecideRights;
+  /** Today's reading, for the empty state: how many notices were read and sent to the crew. */
+  today?: { read: number; toCrew: number } | null;
   onAnswer: (s: Suggestion, answer: Answer) => void;
 }
 
@@ -85,7 +87,7 @@ export interface SuggestionsProps {
  * much and at what price, one plain sentence why, how sure KAPtan is, until when, and two
  * buttons: Onayla / Geç. On a team desk each AL/SAT row also says who signs second.
  */
-export function Suggestions({ suggestions, names, figures, held, stopped, busy, errors, rights = ALL_RIGHTS, onAnswer }: SuggestionsProps) {
+export function Suggestions({ suggestions, names, figures, held, stopped, busy, errors, rights = ALL_RIGHTS, today = null, onAnswer }: SuggestionsProps) {
   const list = orderSuggestions(suggestions);
   const [showAll, setShowAll] = useState(false);
   const foldable = list.length > FIRST_SLIPS;
@@ -118,7 +120,7 @@ export function Suggestions({ suggestions, names, figures, held, stopped, busy, 
         {!stopped && !rights.decide && rights.decideWhy && list.length > 0 ? <p className="w-full text-dense text-ink-soft">{rights.decideWhy}</p> : null}
       </header>
       {list.length === 0 ? (
-        <EmptySuggestions />
+        <EmptySuggestions today={today} />
       ) : (
         <ul className="divide-y divide-line">
           {shown.map((s) => (
@@ -142,7 +144,7 @@ export function Suggestions({ suggestions, names, figures, held, stopped, busy, 
   );
 }
 
-function EmptySuggestions() {
+function EmptySuggestions({ today }: { today: { read: number; toCrew: number } | null }) {
   return (
     <div className="flex flex-col items-center px-6 py-10 text-center">
       <span aria-hidden className="grid size-12 place-items-center rounded-full bg-sunk text-brand">
@@ -153,6 +155,18 @@ function EmptySuggestions() {
         </svg>
       </span>
       <p className="mt-3 text-body font-semibold text-ink">Şu an yeni öneri yok — KAPtan izliyor.</p>
+      {today ? (
+        <dl className="mt-4 grid w-full max-w-[360px] grid-cols-2 divide-x divide-line rounded-xl border border-line bg-paper/60 py-3">
+          <div className="px-3">
+            <dt className="text-meta text-muted">bugün okunan bildirim</dt>
+            <dd className="text-[22px] leading-8 font-semibold text-ink tabular-nums">{fmtInt(today.read)}</dd>
+          </div>
+          <div className="px-3">
+            <dt className="text-meta text-muted">yakından incelenen</dt>
+            <dd className="text-[22px] leading-8 font-semibold text-ink tabular-nums">{fmtInt(today.toCrew)}</dd>
+          </div>
+        </dl>
+      ) : null}
       <p className="mt-1 max-w-[44ch] text-dense text-ink-soft">Bir fırsat ya da yapılacak bir iş gördüğünde burada çıkar; sayfayı yenilemen gerekmez.</p>
     </div>
   );

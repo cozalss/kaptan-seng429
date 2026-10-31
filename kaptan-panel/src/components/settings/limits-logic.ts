@@ -42,6 +42,27 @@ export function limitSentence(key: LimitKey, v: number): string {
   }
 }
 
+/** The value alone, as a settings row shows it on the right: "%0,5", "10", "±%5", "2×". */
+export function limitValueText(key: LimitKey, v: number): string {
+  switch (key) {
+    case "max_concurrent_positions":
+      return String(v);
+    case "price_band_pct":
+      return `±${pct(v)}`;
+    case "min_edge_cost_ratio":
+      return `${String(v).replace(".", ",")}×`;
+    case "daily_loss_halt_pct":
+    case "kill_drawdown_pct":
+      return `−${pct(Math.abs(v))}`;
+    case "risk_per_trade_pct":
+    case "max_position_pct":
+    case "max_adv_share":
+      return pct(v);
+    default:
+      return String(v).replace(".", ",");
+  }
+}
+
 export function valueOf(values: readonly LimitValue[], key: LimitKey): number | null {
   return values.find((v) => v.key === key)?.value ?? null;
 }

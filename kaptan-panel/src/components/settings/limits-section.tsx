@@ -10,7 +10,7 @@ import { SkeletonLines } from "@/components/ui/primitives";
 import { Denied } from "@/components/roles/denied";
 import { useRole } from "@/components/roles/use-role";
 import { CARD, CARD_PAD, Pill, SectionTitle, TwoStep } from "@/components/portfolio/kit";
-import { changedKey, historyLine, limitSentence, PLAIN_LIMITS, valueOf } from "./limits-logic";
+import { changedKey, historyLine, limitSentence, PLAIN_LIMITS, valueOf, limitValueText } from "./limits-logic";
 import { ProposeLimit } from "./limits-propose";
 
 /**
@@ -55,12 +55,15 @@ export function LimitsSection() {
 
 function ActiveLimits({ version }: { version: LimitVersion }) {
   return (
-    <ul aria-label="Geçerli sınırlar" className="divide-y divide-hairline border-t-2 border-hairline">
+    <ul aria-label="Geçerli sınırlar" className="divide-y divide-line border-t border-line">
       {PLAIN_LIMITS.map((key) => {
         const v = valueOf(version.values, key);
         return v === null ? null : (
-          <li key={key} className="px-4 py-3 text-ui text-ink sm:px-6">
-            {limitSentence(key, v)}
+          <li key={key} className="flex items-center justify-between gap-4 px-4 py-3 text-ui text-ink sm:px-6">
+            <span className="min-w-0">{limitSentence(key, v)}</span>
+            <span aria-hidden className="shrink-0 rounded-md bg-sunk px-2.5 py-0.5 text-dense font-semibold text-ink tabular-nums">
+              {limitValueText(key, v)}
+            </span>
           </li>
         );
       })}

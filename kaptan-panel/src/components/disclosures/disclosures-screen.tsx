@@ -16,11 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { ErrorState, SkeletonLines } from "@/components/ui/primitives";
 import { FATE_LABEL, fateOf, tickerOf, type DisclosureFate } from "./disclosure-logic";
-import { DisclosureRows } from "./disclosure-rows";
+import { DisclosureHours } from "./disclosure-rows";
 
 type Filter = "all" | DisclosureFate;
 /** Rows at first; "Daha fazla göster" adds as many again. */
-const PAGE = 50;
+const PAGE = 25;
 const FILTERS: readonly Filter[] = ["all", "processed", "archived", "noise"];
 
 /**
@@ -91,7 +91,7 @@ export function DisclosuresScreen() {
         }
       />
 
-      <section aria-labelledby="bildirim-listesi" className={cn(CARD, "overflow-hidden")}>
+      <section aria-labelledby="bildirim-listesi" className={cn(CARD, "overflow-clip")}>
         <div className="flex flex-col gap-3 px-5 pt-4 pb-4 lg:flex-row lg:items-center lg:justify-between">
           <h2 id="bildirim-listesi" className="text-body font-semibold text-ink">
             {exact.data && q.data ? `${fmtInt(Math.max(exact.data.total, q.data.length))} bildirim` : q.data ? `${fmtInt(q.data.length)}${capped ? "+" : ""} bildirim` : "Bildirimler"}
@@ -136,14 +136,14 @@ export function DisclosuresScreen() {
         ) : q.data ? (
           rows.length ? (
             <div className="border-t border-line">
-              <DisclosureRows rows={rows.slice(0, shown)} label="Bildirim listesi" />
+              <DisclosureHours rows={rows.slice(0, shown)} label="Bildirim listesi" />
               {rows.length > shown ? (
                 <div className="flex items-center justify-between gap-3 border-t border-line px-5 py-2">
                   <p className="text-dense text-muted tabular-nums">
                     {fmtInt(shown)} / {fmtInt(rows.length)} gösteriliyor
                   </p>
                   <Button variant="link" onClick={() => setShown((n) => n + PAGE)}>
-                    Daha fazla göster
+                    {fmtInt(Math.min(PAGE, rows.length - shown))} tane daha göster
                   </Button>
                 </div>
               ) : null}

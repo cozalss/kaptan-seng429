@@ -32,8 +32,15 @@ const FALLBACK_RIGHTS: SoloRights = soloRights({ singleUser: true, role: "risk_o
  */
 export function SoloHome() {
   const q = useApiQuery(async (api) => {
-    const [overview, risk, approvals, positions] = await Promise.all([api.overview(), api.riskStatus(), api.listApprovals("all"), api.positions()]);
-    return { overview, risk, approvals, positions };
+    // Today's reading counts only colour the empty state: when they fail, the home still opens.
+    const [overview, risk, approvals, positions, counters] = await Promise.all([
+      api.overview(),
+      api.riskStatus(),
+      api.listApprovals("all"),
+      api.positions(),
+      api.counters().catch(() => null),
+    ]);
+    return { overview, risk, approvals, positions, counters };
   });
   const session = useOptionalSession();
   const singleUser = useSingleUser();
@@ -141,6 +148,7 @@ export function SoloHome() {
             busy={busy}
             errors={errors}
             rights={rights}
+            today={data.counters ? { read: data.counters.total, toCrew: data.counters.processed } : null}
             onAnswer={(s, a) => void onAnswer(s, a)}
           />
         </div>

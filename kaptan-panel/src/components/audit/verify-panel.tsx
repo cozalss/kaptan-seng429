@@ -12,32 +12,51 @@ import { CARD, CARD_PAD, Pill } from "@/components/portfolio/kit";
 import type { Walk } from "./chain-walk";
 
 /**
- * "Defteri doğrula": one card, one button, a progress bar while the chain is checked and a
- * clear verdict (sağlam, or kırık at #N with the record and a way to it). Screen readers hear
- * the check through one always-present status line; the drawn verdict is for the eyes only.
+ * "Defteri doğrula" in the page header: one button, and after a check a small chip with the
+ * verdict ("Zincir sağlam · 4.812 kayıt · 10:42"). Screen readers hear the check through one
+ * always-present status line.
  */
-export function VerifyPanel({ walk, onVerify, onShow, tamperOn }: { walk: Walk; onVerify: () => void; onShow: (pos: number) => void; tamperOn: boolean }) {
+export function VerifyButton({ walk, onVerify }: { walk: Walk; onVerify: () => void }) {
   const { can } = useRole();
   const allowed = can("audit.verify");
   const walking = walk.phase === "walking";
   return (
-    <section aria-labelledby="dogrula" className={cn(CARD, CARD_PAD, "space-y-4")}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
-        <div className="space-y-1">
-          <h2 id="dogrula" className="text-[18px] leading-7 font-semibold text-ink">
-            Defter sağlam mı?
-          </h2>
-          <p className="max-w-[480px] text-ui text-ink-soft">Her kayıt bir öncekinin parmak izini taşır; sonradan değişen kayıt zinciri tam orada koparır.</p>
-        </div>
-        <Button variant="primary" size="lg" className="w-full sm:w-auto" locked={!allowed} pending={walking} disabled={!allowed || walking} onClick={onVerify}>
-          {walking ? "Doğrulanıyor…" : "Defteri doğrula"}
-        </Button>
-      </div>
-      {tamperOn ? <p className="text-dense text-muted">Kurcalama testi açık (Ayarlar).</p> : null}
-      <Denied action="audit.verify" />
+    <div className="flex flex-wrap items-center gap-2">
+      {walk.phase === "done" ? <VerdictChip walk={walk} /> : null}
+      <Button variant="secondary" size="md" locked={!allowed} pending={walking} disabled={!allowed || walking} onClick={onVerify}>
+        {walking ? "Doğrulanıyor…" : "Defteri doğrula"}
+      </Button>
       <p role="status" aria-live="polite" className="sr-only">
         {spoken(walk)}
       </p>
+    </div>
+  );
+}
+
+function VerdictChip({ walk }: { walk: Extract<Walk, { phase: "done" }> }) {
+  const ok = walk.result.ok;
+  return (
+    <span aria-hidden className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-dense font-semibold tabular-nums", ok ? "bg-gain/10 text-gain" : "bg-north-tint text-north")}>
+      <span className={cn("size-2 rounded-full", ok ? "bg-gain" : "bg-north")} />
+      {ok ? `Zincir sağlam · ${fmtInt(walk.result.checked)} kayıt` : `Kırık · #${fmtInt(walk.result.first_bad_pos ?? 0)}`}
+      <span className="font-medium">· {fmtTime(walk.result.verified_at)}</span>
+    </span>
+  );
+}
+
+/**
+ * Under the header, only when there is something to say: the role's reason when it may not
+ * verify, the tamper test note, and while/after a check the progress bar and the verdict (kırık
+ * at #N with the record and a way to it).
+ */
+export function VerifyPanel({ walk, onShow, tamperOn }: { walk: Walk; onShow: (pos: number) => void; tamperOn: boolean }) {
+  const { can } = useRole();
+  const allowed = can("audit.verify");
+  if (walk.phase === "idle" && allowed && !tamperOn) return null;
+  return (
+    <section aria-label="Defter doğrulaması" className={cn(CARD, CARD_PAD, "space-y-3")}>
+      {tamperOn ? <p className="text-dense text-muted">Kurcalama testi açık (Ayarlar).</p> : null}
+      <Denied action="audit.verify" />
       <WalkResult walk={walk} onShow={onShow} />
     </section>
   );
@@ -71,7 +90,7 @@ function WalkResult({ walk, onShow }: { walk: Walk; onShow: (pos: number) => voi
   const badPos = walk.phase === "done" && !walk.result.ok ? (walk.result.first_bad_pos ?? null) : null;
   const share = walk.total > 0 ? Math.min(1, checked / walk.total) : 0;
   return (
-    <div ref={box} className="scroll-mb-6 space-y-3 border-t-2 border-hairline pt-4" data-testid="walk-result">
+    <div ref={box} className="scroll-mb-6 space-y-3" data-testid="walk-result">
       <div aria-hidden className="h-2 overflow-hidden rounded-full bg-sunk">
         <div className={cn("h-full origin-left rounded-full", badPos !== null ? "bg-north" : done ? "bg-gain" : "bg-brand")} style={{ transform: `scaleX(${share})` }} />
       </div>

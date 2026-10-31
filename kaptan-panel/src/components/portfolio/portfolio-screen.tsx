@@ -16,7 +16,7 @@ import { Holdings } from "./holdings";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/shell/page-frame";
 import { CARD, CardHead, SectionTitle } from "./kit";
-import { PortfolioHero } from "./portfolio-hero";
+import { PortfolioHero, RegimeLine } from "./portfolio-hero";
 import { istanbulDate } from "./risk-math";
 import { StopControl } from "./stop-control";
 
@@ -61,7 +61,14 @@ export function PortfolioScreen() {
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_400px] xl:gap-5">
       <div className="order-[-2] col-span-full">
-        <PageHeader title="Portföy" lead="Ne kadar var, nasıl gitti, elinde ne var." actions={IS_MOCK ? <SampleTag /> : null} className="mb-2 sm:mb-3" />
+        <PageHeader title="Portföy" lead="Ne kadar var, nasıl gitti, elinde ne var." actions={
+            <span className="flex flex-wrap items-center gap-2">
+              {risk ? <RegimeLine regime={risk.regime} /> : null}
+              {IS_MOCK ? <SampleTag /> : null}
+            </span>
+          }
+          className="mb-2 sm:mb-3"
+        />
       </div>
 
       <div className="order-1 col-span-full">

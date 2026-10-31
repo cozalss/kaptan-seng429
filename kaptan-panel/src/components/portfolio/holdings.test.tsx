@@ -31,4 +31,15 @@ describe("Holdings", () => {
     expect(rows[1]).toHaveTextContent("Kendi hesabın");
     expect(rows[1]).not.toHaveTextContent("KAPtan hesabı");
   });
+
+  it("names the account once when every holding sits in it, with value and weight columns", () => {
+    render(<Holdings positions={[base, { ...base, ticker: "KRGCL", company_name: "KORU ÇELİK A.Ş.", qty: 100, last_price: 50 }]} today="2027-01-11" />);
+    const table = screen.getByRole("table", { name: "Elindekiler" });
+    expect(within(table).getByText("Hepsi KAPtan hesabında")).toBeInTheDocument();
+    const rows = within(table).getAllByRole("row").slice(1);
+    expect(rows[0]).not.toHaveTextContent("KAPtan hesabı");
+    expect(within(table).getByRole("columnheader", { name: "Değer (TL)" })).toBeInTheDocument();
+    expect(within(table).getByRole("columnheader", { name: "Ağırlık" })).toBeInTheDocument();
+    expect(rows[0]).toHaveTextContent("60.152");
+  });
 });
