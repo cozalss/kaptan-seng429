@@ -24,6 +24,8 @@ x-local-env: &local-env
   JWT_SECRET: ${JWT_SECRET:-}
   # Empty = the local passphrase kaptan2026 (dev only).
   PASSPHRASE_HASH: ${PASSPHRASE_HASH:-}
+  # true = tek kullanıcı modu: one account, the simple /benim home (KAPTAN_SINGLE_USER=true docker compose …).
+  KAPTAN_SINGLE_USER: ${KAPTAN_SINGLE_USER:-false}
   DEMO_MODE: ${DEMO_MODE:-true}
   LLM_MODE: ${LLM_MODE:-replay}
   KAP_LIVE: ${KAP_LIVE:-false}
