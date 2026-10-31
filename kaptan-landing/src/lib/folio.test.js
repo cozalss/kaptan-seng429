@@ -76,7 +76,9 @@ describe('initFolios', () => {
     win.fire('scroll');
     expect(slot.querySelector('.folio-page').textContent).toBe('s. 6 / 10');
     expect([...slot.querySelectorAll('.folio-ticks i')].map((t) => t.className)).toEqual(['is-done', 'is-current', '']);
-    expect(slot.closest('.running-head').style.getPropertyValue('--folio-progress')).toBe('0.500');
+    expect(slot.querySelector('.folio-ticks i.is-current').style.getPropertyValue('--folio-progress')).toBe('0.500');
+    // written on the tick, never on the head (that restyled the whole head every frame)
+    expect(slot.closest('.running-head').style.getPropertyValue('--folio-progress')).toBe('');
 
     folios.destroy();
     expect(win.listeners.scroll).toBeUndefined();

@@ -70,7 +70,9 @@ export const MODES = Object.freeze({
 /** What the counter's unit says in each act; it reads on from the number as one sentence. */
 export const COUNTER_UNITS = Object.freeze(['bildirim · bugün', 'bildirim · süzgeçte', 'öneri · insan onayına', 'yön · kanıtın gösterdiği']);
 
-const formatCount = (n) => new Intl.NumberFormat('tr-TR').format(Math.max(0, Math.round(n)));
+// one formatter: building an Intl.NumberFormat per frame was a measurable share of the scene's frame
+const COUNT_FORMAT = new Intl.NumberFormat('tr-TR');
+const formatCount = (n) => COUNT_FORMAT.format(Math.max(0, Math.round(n)));
 
 /**
  * @param {HTMLElement} section
@@ -86,12 +88,14 @@ export function createCompassView(section) {
   const dock = section.querySelector('[data-pusula-dock]');
   const title = section.querySelector('[data-pusula-title]');
   const rail = section.querySelector('[data-pusula-rail]');
+  // The progress rail's ink and playhead read --pusula-progress: it is written on their scale, not
+  // on the section, so a frame restyles the rail instead of the whole scene.
+  const scale = section.querySelector('.pusula__scale') ?? section;
   const placeTag = placer(tag);
   const placeDock = placer(dock);
   const bridge = createBridge(visual?.parentElement ?? null);
   let boxes = null; // measured sizes (CSS px, relative to the scene box)
   let shownExit = '';
-  let shownPivot = '';
   const shownLabels = labels.map(() => ({ x: NaN, y: NaN, alpha: NaN, pull: 0 }));
   let labelFit = null; // label widths and the stage width, measured once per resize
   let phase = -1;
@@ -151,7 +155,7 @@ export function createCompassView(section) {
       const text = progress.toFixed(4);
       if (text !== shownProgress) {
         shownProgress = text;
-        section.style.setProperty('--pusula-progress', text);
+        scale.style.setProperty('--pusula-progress', text);
       }
       setPhase(phaseAt(progress));
     },
@@ -204,13 +208,6 @@ export function createCompassView(section) {
     place(anchors, pose, { dock: docked = true, bridgeX = null } = {}) {
       if (!visual) return;
       if (!boxes) boxes = measure();
-      // the compass pivot, for whatever continues from it (the Rota course), in stage px
-      const pivot = `${Math.round(anchors.compass.x)},${Math.round(anchors.compass.y)}`;
-      if (pivot !== shownPivot) {
-        shownPivot = pivot;
-        section.style.setProperty('--pusula-pivot-x', `${Math.round(anchors.compass.x)}px`);
-        section.style.setProperty('--pusula-pivot-y', `${Math.round(anchors.compass.y)}px`);
-      }
       const hook = tagHook(anchors, pose.dock);
       const at = tagBox(hook, boxes.tag, boxes.safeTag);
       if (Number.isFinite(bridgeX)) {
@@ -229,12 +226,16 @@ export function createCompassView(section) {
         placeDock(box.x, box.y);
       }
     },
-    /** @param {number} exit  0 → 1 as the section leaves (the scene lifts away with it) */
+    /**
+     * @param {number} exit  0 → 1 as the section leaves (the scene lifts away with it). Kept here,
+     * not written to the section: no style reads it, and a section-wide custom property restyled
+     * the whole scene on every frame of the exit.
+     */
     setExit(exit) {
-      const text = exit.toFixed(3);
-      if (text === shownExit) return;
-      shownExit = text;
-      section.style.setProperty('--pusula-exit', text);
+      shownExit = exit.toFixed(3);
+    },
+    get exit() {
+      return shownExit;
     },
     mountCanvas(next) {
       canvas?.remove();

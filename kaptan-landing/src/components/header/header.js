@@ -1,5 +1,5 @@
 // Header surface state: transparent (with a soft scrim) over the top of the hero, a near-solid
-// blurred canvas with a hairline once the page has scrolled. Reads scroll once per frame at most.
+// blurred canvas with a hairline once the page has scrolled. Writes at most once per frame, on a change.
 
 export const SCROLLED_THRESHOLD_PX = 40;
 
@@ -17,19 +17,26 @@ export function initHeaderState({ header, threshold = SCROLLED_THRESHOLD_PX, win
   if (!header) return { destroy() {} };
   let frame = 0;
   let current = null;
+  let wanted = null;
 
   const update = () => {
     frame = 0;
-    const next = isScrolledPast(win.scrollY, threshold);
-    if (next === current) return;
-    current = next;
-    header.dataset.scrolled = String(next);
+    if (wanted === current) return;
+    current = wanted;
+    header.dataset.scrolled = String(current);
+  };
+  // Read in the scroll event, where layout is still clean: read inside the frame, after the scroll
+  // animations had written their styles, it forced an extra style and layout pass every frame.
+  const read = () => {
+    wanted = isScrolledPast(win.scrollY, threshold);
   };
   const onScroll = () => {
-    if (!frame) frame = win.requestAnimationFrame(update);
+    read();
+    if (!frame && wanted !== current) frame = win.requestAnimationFrame(update);
   };
 
   win.addEventListener('scroll', onScroll, { passive: true });
+  read();
   update();
   return {
     destroy() {

@@ -13,7 +13,7 @@ function mount() {
       <h2 data-pusula-title>350 bildirim.</h2>
       <p data-pusula-tag></p>
       <div data-pusula-dock></div>
-      <div data-pusula-rail></div>
+      <div data-pusula-rail><div class="pusula__scale"></div></div>
     </section>`;
   return document.querySelector('#pusula');
 }
@@ -37,7 +37,8 @@ describe('createCompassView', () => {
 
   it('publishes progress, marks the active act and names the counter unit', () => {
     view.setProgress(0.6);
-    expect(section.style.getPropertyValue('--pusula-progress')).toBe('0.6000');
+    expect(section.querySelector('.pusula__scale').style.getPropertyValue('--pusula-progress')).toBe('0.6000');
+    expect(section.style.getPropertyValue('--pusula-progress')).toBe('');
     expect(section.dataset.pusulaAct).toBe('onay');
     const acts = [...section.querySelectorAll('[data-pusula-act]')];
     expect(acts.map((s) => s.dataset.active)).toEqual(['false', 'false', 'true', 'false']);
@@ -120,11 +121,9 @@ describe('createCompassView', () => {
     expect(() => view.place(anchors, pose)).not.toThrow();
   });
 
-  it('publishes the exit for the CSS, only when it changes', () => {
+  it('keeps the exit without restyling the section', () => {
     view.setExit(0.25);
-    expect(section.style.getPropertyValue('--pusula-exit')).toBe('0.250');
-    section.style.removeProperty('--pusula-exit');
-    view.setExit(0.2501);
+    expect(view.exit).toBe('0.250');
     expect(section.style.getPropertyValue('--pusula-exit')).toBe('');
   });
 

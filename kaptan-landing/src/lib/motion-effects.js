@@ -62,6 +62,27 @@ function whenNear(target, margin) {
   });
 }
 
+// After the intro, a still moment is waited for this long before a heavy chapter is built early.
+const IDLE_START_MS = 1200;
+const IDLE_TIMEOUT_MS = 4000;
+
+/** Resolves at the first idle moment a little after it is asked (a timer where idle callbacks are missing). */
+function whenIdle() {
+  return new Promise((resolve) => {
+    window.setTimeout(() => {
+      if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(() => resolve(), { timeout: IDLE_TIMEOUT_MS });
+      else resolve();
+    }, IDLE_START_MS);
+  });
+}
+
+/**
+ * Near the viewport, or earlier while the page is idle: a chapter whose set-up re-measures every
+ * pin (the Sancak Tezgâhı) is best built while the reader is still, not in the middle of a scroll,
+ * where it cost a visible hitch.
+ */
+const whenNearOrIdle = (target, margin) => Promise.race([whenNear(target, margin), whenIdle()]);
+
 /**
  * "Bölüm 3 · Seyir Kuralları" · Sancak Tezgâhı: hands-on instruments and the inked mast.
  * Every width and both motion preferences (the instruments are for everyone; reduced motion only
@@ -76,7 +97,7 @@ function addRulesBench(mm, afterIntro, scroller) {
       return later(
         afterIntro,
         () =>
-          whenNear(section, '120% 0px')
+          whenNearOrIdle(section, '120% 0px')
             .then(() => import('../components/rules-bench/index.js'))
             .catch((error) => {
               // Without the bench every rule is printed in full again (menu.css, [data-bench='off']).

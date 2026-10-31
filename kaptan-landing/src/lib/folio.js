@@ -55,32 +55,46 @@ export function initFolios({ root = document, win = window } = {}) {
   const sections = [root.getElementById('hero'), ...slots.map((slot) => slot.closest('section, footer'))].filter(Boolean);
   const folios = slots.map((slot) => ({ slot, head: slot.closest('.running-head') ?? slot, ...buildFolio(slot, sections.length) }));
   let chapters = [];
+  let docHeight = 0;
+  let scrollY = 0;
   let last = null;
+  let shownProgress = '';
   let frame = 0;
 
+  // Geometry is measured on refresh only, and the scroll offset is read in the scroll event: read
+  // inside the frame, after the scroll animations had written their styles, scrollY and
+  // scrollHeight forced an extra style and layout pass every frame.
   const measure = () => {
+    scrollY = win.scrollY;
+    docHeight = root.documentElement.scrollHeight;
     chapters = sections.map((section) => {
       const rect = section.getBoundingClientRect();
-      return { top: rect.top + win.scrollY, height: rect.height };
+      return { top: rect.top + scrollY, height: rect.height };
     });
   };
 
   const render = () => {
     frame = 0;
-    const next = folioState({ scrollY: win.scrollY, viewport: win.innerHeight, docHeight: root.documentElement.scrollHeight, chapters });
+    const next = folioState({ scrollY, viewport: win.innerHeight, docHeight, chapters });
     const changed = !last || next.page !== last.page || next.pages !== last.pages || next.chapter !== last.chapter;
-    folios.forEach(({ head, ticks, page }) => {
-      head.style.setProperty('--folio-progress', next.progress.toFixed(3));
-      if (!changed) return;
-      page.textContent = folioLabel(next);
-      ticks.forEach((tick, index) => {
-        tick.className = index < next.chapter ? 'is-done' : index === next.chapter ? 'is-current' : '';
-      });
+    const progress = next.progress.toFixed(3);
+    const inked = changed || progress !== shownProgress;
+    shownProgress = progress;
+    folios.forEach(({ ticks, page }) => {
+      if (changed) {
+        page.textContent = folioLabel(next);
+        ticks.forEach((tick, index) => {
+          tick.className = index < next.chapter ? 'is-done' : index === next.chapter ? 'is-current' : '';
+        });
+      }
+      // on the current tick only (its ::after is the ink): on the head it restyled the whole head
+      if (inked) ticks[next.chapter]?.style.setProperty('--folio-progress', progress);
     });
     last = next;
   };
 
   const schedule = () => {
+    scrollY = win.scrollY;
     if (!frame) frame = win.requestAnimationFrame(render);
   };
   const refresh = () => {

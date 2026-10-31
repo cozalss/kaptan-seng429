@@ -55,29 +55,40 @@ export function initKeepPlace({ scroller, root = document, win = window, trigger
       const rect = box.getBoundingClientRect();
       return { top: rect.top + win.scrollY, height: rect.height };
     });
-  const read = () => {
-    const { chapter, progress } = folioState({ scrollY: win.scrollY, viewport: win.innerHeight, docHeight: root.documentElement.scrollHeight, chapters: chapters() });
+  // The chapters' geometry is measured when the layout changes (a refresh, a settled resize), not on
+  // every scroll: read inside the frame, after the scroll animations had written their styles, it
+  // forced an extra style and layout pass every frame. The offset itself is read in the scroll event.
+  let geometry = null;
+  const measure = () => {
+    geometry = { chapters: chapters(), docHeight: root.documentElement.scrollHeight };
+  };
+  const read = (scrollY = win.scrollY) => {
+    const { chapter, progress } = folioState({ scrollY, viewport: win.innerHeight, ...geometry });
     return { chapter, progress };
   };
 
+  measure();
   let size = view();
   let place = read();
   let frame = 0;
   let timer = 0;
+  let scrollY = win.scrollY;
 
   const onScroll = () => {
+    scrollY = win.scrollY;
     if (frame) return;
     frame = win.requestAnimationFrame(() => {
       frame = 0;
       const now = view();
       if (shapeChanged(size, now)) return; // the browser's own clamp after a resize is not the reader's
       size = now;
-      place = read();
+      place = read(scrollY);
     });
   };
   const settle = () => {
     timer = 0;
     size = view();
+    measure();
     place = read();
   };
   const waitToSettle = () => {
@@ -85,7 +96,10 @@ export function initKeepPlace({ scroller, root = document, win = window, trigger
     timer = win.setTimeout(settle, SETTLE_MS);
   };
   const onRefresh = () => {
-    if (!shapeChanged(size, view())) return;
+    if (!shapeChanged(size, view())) {
+      measure(); // same shape, new lengths (a lazy pin, late layout)
+      return;
+    }
     const y = placeY(place, chapters(), win.innerHeight);
     if (y !== null && Math.abs(y - win.scrollY) > 1) scroller.shift(y - win.scrollY);
     waitToSettle();

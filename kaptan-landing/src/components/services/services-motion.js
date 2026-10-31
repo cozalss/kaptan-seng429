@@ -35,9 +35,14 @@ function parts(section) {
   };
 }
 
+// The elements that drift in their frames (services.css, in-frame parallax): they carry --sx
+// themselves, since written on the pin it restyled the whole strip every frame.
+const PARALLAX_SELECTOR = '.service-card__media picture, .service-card__life';
+
 function buildPinnedTimeline({ pin, strip, track, ink }, turn, travel, moving) {
   let spread = false;
   let shownX = NaN;
+  let drifting = null;
   return buildStripTimeline({ strip, track, ink }, turn, travel, {
     // Every drawn frame (the scrub's lag tail included) marks the strip as moving, and the pin is
     // handed to the spread from what is drawn (the leaf past upright), not from the scroll position.
@@ -47,7 +52,8 @@ function buildPinnedTimeline({ pin, strip, track, ink }, turn, travel, moving) {
       const x = Math.round(Number(gsap.getProperty(strip, 'x')) || 0);
       if (x !== shownX) {
         shownX = x;
-        pin.style.setProperty('--sx', `${x}px`);
+        drifting ??= [...track.querySelectorAll(PARALLAX_SELECTOR)];
+        drifting.forEach((el) => el.style.setProperty('--sx', `${x}px`));
       }
       if (frame.spread !== spread) {
         spread = frame.spread;
@@ -184,7 +190,7 @@ export function initServicesMotion({ section, scroller }) {
   const cleanups = [
     () => ScrollTrigger.removeEventListener('refresh', measure),
     () => {
-      el.pin.style.removeProperty('--sx');
+      el.track.querySelectorAll(PARALLAX_SELECTOR).forEach((node) => node.style.removeProperty('--sx'));
       panels().forEach((item) => item.style.removeProperty('--cx'));
     },
     initServicesLife({ section }),

@@ -26,10 +26,18 @@ function watchHeight(section) {
     window.clearTimeout(timer);
     timer = window.setTimeout(() => ScrollTrigger.refresh(), REFRESH_DELAY_MS);
   });
+  // A refresh made elsewhere (the show's own, as its pin arrives) has measured the new height
+  // already: taken as the baseline, so the page is not re-measured a second time mid-scroll.
+  const sync = () => {
+    height = section.offsetHeight;
+    window.clearTimeout(timer);
+  };
+  ScrollTrigger.addEventListener('refresh', sync);
   observer.observe(section);
   return () => {
     window.clearTimeout(timer);
     observer.disconnect();
+    ScrollTrigger.removeEventListener('refresh', sync);
   };
 }
 

@@ -33,9 +33,19 @@ export function leafFrame(progress) {
  */
 export function createPageTurn({ leaf, book }) {
   const state = { progress: 0 };
+  // Called on every scrubbed frame of the chapter, also while the leaf lies still: only a change
+  // is written, so the book is not restyled for nothing.
+  let shown = '';
+  let written = '';
   const apply = () => {
     const frame = leafFrame(state.progress);
-    leaf.style.transform = `rotateY(${frame.angle.toFixed(2)}deg)`;
+    const transform = `rotateY(${frame.angle.toFixed(2)}deg)`;
+    const key = `${transform}|${frame.front.toFixed(3)}|${frame.back.toFixed(3)}|${frame.cast.toFixed(3)}|${state.progress <= 0}`;
+    // whatever else touched the leaf (a refresh clearing its props), the playhead decides what is drawn
+    if (key === shown && leaf.style.transform === written) return;
+    shown = key;
+    leaf.style.transform = transform;
+    written = leaf.style.transform; // as the browser serialises it
     book.style.setProperty('--shade-front', frame.front.toFixed(3));
     book.style.setProperty('--shade-back', frame.back.toFixed(3));
     book.style.setProperty('--shade-cast', frame.cast.toFixed(3));
@@ -46,6 +56,7 @@ export function createPageTurn({ leaf, book }) {
     state,
     apply,
     destroy() {
+      shown = '';
       leaf.style.removeProperty('transform');
       ['--shade-front', '--shade-back', '--shade-cast'].forEach((name) => book.style.removeProperty(name));
       book.classList.remove('is-closed');

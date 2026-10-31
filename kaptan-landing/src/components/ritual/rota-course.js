@@ -203,8 +203,15 @@ export function initRotaCourse({ section, animate = false }) {
   svg.append(probe);
 
   let timeline = null;
+  // The course is inked by one paused drawSVG tween whose progress is set: a gsap.set({ drawSVG })
+  // per frame re-measured the path (getTotalLength, computed style) on every frame of the scroll.
+  let inking = null;
   let facing = 1;
   let wakeNow = 0;
+  // Per-frame writes through quick setters, not a new tween per frame.
+  const setBoat = gsap.quickSetter(boat, 'css');
+  const setWake = wake ? gsap.quickSetter(wake, 'opacity') : () => {};
+  const setRing = ring ? gsap.quickSetter(ring, 'strokeDashoffset') : () => {};
   const boatSize = () => ({ width: boat.clientWidth || 114, height: boat.clientHeight || 86 });
 
   /** Puts the boat on the course at share `at`, sized for its depth and riding the swell there. */
@@ -214,15 +221,17 @@ export function initRotaCourse({ section, animate = false }) {
     const ride = calm ? { bob: 0, roll: 0 } : swellRide(at * rawPath.totalLength, swellAt(depth));
     const scale = boatScale(depth);
     facing = pose.facing;
-    gsap.set(boat, { x: point.x, y: point.y + ride.bob, rotation: pose.tilt * 0.6 + ride.roll * pose.facing, scaleX: scale * pose.facing, scaleY: scale });
+    setBoat({ x: point.x, y: point.y + ride.bob, rotation: pose.tilt * 0.6 + ride.roll * pose.facing, scaleX: scale * pose.facing, scaleY: scale });
     wakeNow = calm ? 0 : wakeLevel(wakeNow, speed);
-    if (wake) gsap.set(wake, { opacity: wakeNow });
+    setWake(wakeNow);
   };
 
   const build = () => {
     timeline?.scrollTrigger?.kill();
     timeline?.kill();
     timeline = null;
+    inking?.kill();
+    inking = null;
     const layout = measure(section, chart);
     if (!layout) return;
     const { start, port, marks } = layout;
@@ -253,15 +262,16 @@ export function initRotaCourse({ section, animate = false }) {
       return;
     }
 
+    inking = gsap.fromTo(reveal, { drawSVG: '0% 0%' }, { drawSVG: '0% 100%', ease: 'none', duration: 1, paused: true });
     const state = { y: start.y, last: 0 };
     const render = () => {
       const at = shareAt(state.y);
       const speed = (at - state.last) * rawPath.totalLength;
       state.last = at;
-      gsap.set(reveal, { drawSVG: `0% ${(at * 100).toFixed(3)}%` });
+      inking.progress(Math.round(at * 1e5) / 1e5);
       placeBoat(rawPath, at, depthOf(state.y), { speed });
       markReached(legs, reachedIndex(at, shares));
-      if (ring) gsap.set(ring, { strokeDashoffset: 1 - mapRange(at, ringFrom, 0.995) });
+      setRing(1 - mapRange(at, ringFrom, 0.995));
       chart.classList.toggle(MOORED, at >= 0.995);
       chart.classList.toggle(LAUNCHED, at > 0.004);
     };
@@ -304,6 +314,7 @@ export function initRotaCourse({ section, animate = false }) {
       stopLive();
       timeline?.scrollTrigger?.kill();
       timeline?.kill();
+      inking?.kill();
       probe.remove();
       gsap.set([boat, reveal, wake, ring].filter(Boolean), { clearProps: 'all' });
       sea?.replaceChildren();

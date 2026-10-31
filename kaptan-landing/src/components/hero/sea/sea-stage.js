@@ -141,10 +141,13 @@ function washGutter(root, mode) {
  */
 function revealNext(next, { dry, heroBottom, overlap }, height) {
   if (!next) return;
+  // The edge goes on the masked pin itself (services.css): on the section it restyled the whole
+  // chapter on every frame of the exit.
+  const masked = next.querySelector('[data-services-pin]') ?? next;
   const clear = () => {
     if (!next.hasAttribute(DRYING_ATTR)) return;
     next.removeAttribute(DRYING_ATTR);
-    next.style.removeProperty(DRY_EDGE);
+    masked.style.removeProperty(DRY_EDGE);
   };
   if (!(overlap > 0) || !Number.isFinite(heroBottom)) return clear();
   const stageTop = Math.min(0, heroBottom - height);
@@ -152,8 +155,13 @@ function revealNext(next, { dry, heroBottom, overlap }, height) {
   const edge = dry > 0 ? stageTop + (1 - fullyDryBelow(dry)) * height : nextTop + height * 4;
   const rel = edge - nextTop;
   if (rel < -REVEAL_FEATHER) return clear();
-  next.setAttribute(DRYING_ATTR, '');
-  next.style.setProperty(DRY_EDGE, `${Math.round(Math.min(rel, height * 4))}px`);
+  if (!next.hasAttribute(DRYING_ATTR)) next.setAttribute(DRYING_ATTR, '');
+  masked.style.setProperty(DRY_EDGE, `${Math.round(Math.min(rel, height * 4))}px`);
+}
+
+/** Sets a custom property only when its value changed. */
+function setVar(el, name, value) {
+  if (el.style.getPropertyValue(name) !== value) el.style.setProperty(name, value);
 }
 
 /** Everything in the DOM that rides the water: boat, headline, captions, needle. */
@@ -175,9 +183,10 @@ function writeDom(state, parts, spring, win) {
     caption.style.setProperty('--sway', `${(pose.angle * SWAY.caption * (i % 2 ? -1 : 1)).toFixed(3)}deg`);
   });
   setCaption(state, parts.captions, state.story.caption);
-  parts.section.style.setProperty('--outro', state.story.outro.toFixed(3));
+  // Section-wide variables restyle the whole stage: written only when they change.
+  setVar(parts.section, '--outro', state.story.outro.toFixed(3));
   // The grain flattens out as the drying starts, like the shader's paper, so the stage leaves as bare page paper.
-  parts.section.style.setProperty('--hero-dry', Math.min(1, dry * 5).toFixed(3));
+  setVar(parts.section, '--hero-dry', Math.min(1, dry * 5).toFixed(3));
   washGutter(parts.section.ownerDocument.documentElement, state.visible && dry <= 0 ? (state.story.storm > 0.45 ? 'storm' : 'calm') : null);
   revealNext(parts.next, { dry, heroBottom: state.heroBottom, overlap: state.overlap }, height);
   if (parts.needle) parts.needle.style.transform = `rotate(${spring.angle.toFixed(2)}deg)`;

@@ -39,7 +39,6 @@
      pin would hold each act's key frame for more notches than the eye needs (W6) */
   --pusula-pin: min(300vh, 2700px);
   --pusula-progress: 1;
-  --pusula-exit: 0; /* 0 → 1 while the section leaves the screen (view.js) */
   position: relative;
   z-index: var(--z-content);
   background: var(--color-canvas);
