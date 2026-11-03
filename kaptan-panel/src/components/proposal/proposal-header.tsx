@@ -1,42 +1,42 @@
 import Link from "next/link";
 import type { ApprovalCard, ApprovalStatus } from "@/lib/domain";
 import { ROUTES } from "@/lib/nav";
-import { cn } from "@/lib/utils";
-import { plainEvent, shortName } from "@/components/story/plain";
-import { titleTr } from "@/components/story/turkish";
-import { BigSentence } from "@/components/story/ui";
+import { reasonSentence } from "@/components/story/plain";
 
-/** The status as a plain pill: words first, colour only confirms. */
-const STATUS_PILL: Readonly<Record<ApprovalStatus, { label: string; tone: string }>> = {
-  pending: { label: "İmza bekliyor", tone: "border-wash text-wash" },
-  claimed: { label: "İnceleniyor", tone: "border-wash text-wash" },
-  approved: { label: "İmzalandı", tone: "border-gain text-gain" },
-  rejected: { label: "Reddedildi", tone: "border-north text-north" },
-  expired: { label: "Süresi doldu", tone: "border-rule-soft text-muted" },
-  cancelled: { label: "İptal oldu", tone: "border-rule-soft text-muted" },
+/** Where the proposal stands, in words. */
+const STATUS_SAYS: Readonly<Record<ApprovalStatus, string>> = {
+  pending: "Kararını bekliyor",
+  claimed: "Kararını bekliyor",
+  approved: "Onayladın",
+  rejected: "Geçtin",
+  expired: "Süresi doldu",
+  cancelled: "İptal oldu",
 };
 
 /**
- * The top of an Öneri: back to Bugün, whose news it is (company, ticker, event type), the
- * status, and what happened in one sentence (the page title, the only Bodoni on the screen).
+ * The top of "Neden?": the huge verb (the same one that was on the home: it flies over) and the
+ * one sentence that says why. The focus lands here after a route change.
  */
 export function ProposalHeader({ card, status }: { card: ApprovalCard; status: ApprovalStatus }) {
-  const pill = STATUS_PILL[status];
+  const sell = card.side === "sell";
   return (
-    <header className="space-y-3 border-b-[3px] border-double border-ink/80 pb-5">
-      <Link href={ROUTES.bugun} className="inline-flex min-h-11 items-center gap-1.5 text-dense font-medium text-muted hover:text-ink sm:min-h-0">
-        <span aria-hidden>←</span>
-        Bugün
-      </Link>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <p className="text-[16px] leading-6 font-semibold text-ink">{titleTr(shortName(card.company_name))}</p>
-        <span className="code rounded-md border border-rule-soft px-1.5 text-dense text-ink-soft">{card.ticker}</span>
-        <span className="text-dense text-muted">{card.sub_type_tr}</span>
-        <span className={cn("ml-auto rounded-full border-[1.5px] px-3 py-0.5 text-dense font-semibold", pill.tone)}>{pill.label}</span>
+    <header className="oneri-hero" data-action={sell ? "sat" : "al"}>
+      <div className="oneri-hero-top">
+        <Link href={ROUTES.benim} className="oneri-hero-back">
+          <span aria-hidden>←</span>
+          Ana sayfa
+        </Link>
+        <p className="oneri-hero-state">{STATUS_SAYS[status]}</p>
       </div>
-      <BigSentence id="oneri-baslik" focusTarget className="max-w-[40ch]">
-        {plainEvent(card)}
-      </BigSentence>
+      <h1 id="oneri-baslik" tabIndex={-1} data-route-focus="" className="oneri-hero-title">
+        <span className="oneri-verb oneri-verb-shared">{sell ? "SAT" : "AL"}</span>{" "}
+        <span className="u-chapter oneri-hero-sentence block">{reasonSentence(card)}</span>
+      </h1>
+      {status === "pending" || status === "claimed" ? (
+        <a href="#karar" className="oneri-hero-jump">
+          Okumadan karar vermek istersen <span aria-hidden>↓</span>
+        </a>
+      ) : null}
     </header>
   );
 }

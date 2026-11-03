@@ -3,7 +3,7 @@ import { Confidence, EventCode, IsoDate, IsoDateTime, Ticker } from "./common";
 import { EvidenceStrength, FlagCode } from "./agents";
 import { RuleTraceEntry } from "./rules";
 import { StageId } from "./personal";
-import { Role, Signature } from "./user";
+import { Signature } from "./user";
 
 /* ── TradeProposal (05) ───────────────────────────────────────────────── */
 export const TradeProposal = z.object({
@@ -96,8 +96,6 @@ export const ApprovalCard = z.object({
   expires_at: IsoDateTime,
   status: ApprovalStatus,
   decided_by: z.string().nullable(),
-  /** The role the signer acted in (only Risk Sorumlusu may sign; 04 §11). */
-  decided_role: Role.nullable(),
   decided_at: IsoDateTime.nullable(),
   decision_comment: z.string().nullable(),
   approved_notional_try: z.number().nullable(),
@@ -288,14 +286,15 @@ export const PnlPoint = z.object({
 });
 export type PnlPoint = z.infer<typeof PnlPoint>;
 
-/* ── Risk status, kill switch (06 §11; _KANONIK "Enterprise": reset = Yönetici + Risk Sorumlusu) ── */
+/* ── Risk status, stop and restart (06 §11) ── */
 /**
- * Restarting after Durdur takes two people: the Yönetici starts it (1/2) and the Risk
- * Sorumlusu confirms it (2/2). Present while the kill switch is on; `null` when it is off.
+ * The way back after a stop: present while stopped, `null` when running. The one person asks
+ * (`started`) and confirms. With real data confirm opens at `ready_at` (≥ 24 h after the request
+ * and ≥ 5 market days after the stop); `null` means it may be confirmed now.
  */
 export const KillReset = z.object({
-  /** The Yönetici's start (1/2), or null before anyone asked. */
   started: Signature.nullable(),
+  ready_at: IsoDateTime.nullable().default(null),
 });
 export type KillReset = z.infer<typeof KillReset>;
 

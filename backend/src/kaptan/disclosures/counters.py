@@ -1,57 +1,42 @@
-"""DayCounters for "today" — port of the panel mock's selectors.counters().
+"""DayCounters for "today": one Istanbul day, disclosures by publication time and cards by creation time.
 
-Visible disclosures = the 212 rows of 13:40 + the rows the live ticker released + injected demo rows.
-An injected run is "in flight" for DEMO_RUN_MS (7.5 s of wall time) after `ops.demo_injections.real_at`:
-until then its card does not count and its disclosure has no classification yet (a pre-gate veto
-keeps its subject-map class), exactly as the mock's runProgress() < 1. LLM usage comes from
-`core.day_counters`; in DEMO_MODE tokens never show less than the mock's floor (meta.json counters_base).
+LLM usage comes from `core.day_counters`. Also used to publish SSE `counters` (feed) after every change that moves them.
 
-Also used to publish SSE `counters` (feed) after every change that moves them.
+`agent_feed` is what the agent worker did that day, by when it happened: rows first read, runs started, what ended
+without a run. `deferred` is a snapshot of what still waits. A day the worker saw nothing has no `agent_feed`.
 """
 
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta
-from functools import cache
 from typing import Any, Final
 
 from psycopg import AsyncConnection
 
 from kaptan.clock import istanbul_date
-from kaptan.demo.fixtures import DemoFixtures
 from kaptan.domain.schemas._base import iso_ms
+from kaptan.events.publish import publish
 from kaptan.text.turkish import IST
 
-DEMO_RUN_MS: Final = 7_500
-
 COUNTERS_SQL: Final = """
-WITH inflight AS (
-  SELECT run_id FROM ops.demo_injections
-   WHERE run_id IS NOT NULL AND now() - real_at < make_interval(secs => %(run_s)s)
-),
-rows AS (
-  SELECT d.is_noise, d.run_id, d.classification,
-         coalesce(d.run_id IN (SELECT run_id FROM inflight) AND r.kind <> 'pregate_veto', false) AS hides_class
+WITH rows AS (
+  SELECT d.is_noise, d.run_id, d.classification
     FROM core.disclosures d
-    LEFT JOIN trading.agent_runs r ON r.run_id = d.run_id
-   WHERE CASE WHEN %(demo)s THEN d.visible
-              -- live: `visible` only marks today's feed (the poller hides a day at midnight), so a day
-              -- is every KAP row published in it, the backfilled history included
-              ELSE d.published_at >= %(day_start)s AND d.published_at < %(day_end)s END
+    -- `visible` only marks today's feed (the poller hides a day at midnight), so a day is every KAP row
+    -- published in it, the backfilled history included
+   WHERE d.published_at >= %(day_start)s AND d.published_at < %(day_end)s
 ),
 cards AS (
   SELECT a.run_id, a.status
     FROM trading.approvals a
     JOIN trading.agent_runs r ON r.run_id = a.run_id
-   WHERE r.visible AND a.run_id NOT IN (SELECT run_id FROM inflight)
-     AND (%(demo)s OR (a.created_at >= %(day_start)s AND a.created_at < %(day_end)s))
+   WHERE r.visible AND a.created_at >= %(day_start)s AND a.created_at < %(day_end)s
 )
 SELECT
   (SELECT count(*) FROM rows)                                   AS total,
   (SELECT count(*) FROM rows WHERE is_noise)                    AS noise,
   (SELECT count(*) FROM rows WHERE run_id IS NOT NULL)          AS processed,
-  (SELECT count(*) FROM rows
-    WHERE NOT hides_class AND classification->>'event_type' IN ('E1', 'E2', 'E3', 'E4')) AS e_candidates,
+  (SELECT count(*) FROM rows WHERE classification->>'event_type' IN ('E1', 'E2', 'E3', 'E4')) AS e_candidates,
   (SELECT count(*) FROM cards WHERE run_id NOT LIKE 'run-hist%%')                        AS proposals,
   (SELECT count(*) FROM cards WHERE status = 'approved' AND run_id NOT LIKE 'run-hist%%') AS approvals,
   (SELECT count(*) FROM cards WHERE status = 'rejected')                                  AS rejections,
@@ -60,12 +45,25 @@ SELECT
 """
 
 
-@cache
-def tokens_floor() -> int:
-    return int(DemoFixtures().meta["counters_base"]["llm_tokens_floor"])
+#: updated_at never precedes seen_at or started_at, so this WHERE keeps every row the FILTERs can count.
+AGENT_FEED_SQL: Final = """
+SELECT
+  count(*) FILTER (WHERE seen_at >= %(day_start)s AND seen_at < %(day_end)s AND status <> 'skipped') AS read,
+  count(*) FILTER (WHERE started_at >= %(day_start)s AND started_at < %(day_end)s
+                     AND status IN ('running', 'done', 'waiting_approval')
+                     AND reason IS DISTINCT FROM 'PREGATE_VETO') AS ran,
+  count(*) FILTER (WHERE started_at >= %(day_start)s AND started_at < %(day_end)s
+                     AND reason = 'PREGATE_VETO') AS vetoed,
+  count(*) FILTER (WHERE status = 'deferred' AND seen_at < %(day_end)s) AS deferred,
+  count(*) FILTER (WHERE status = 'window_closed' AND updated_at < %(day_end)s) AS window_closed,
+  count(*) FILTER (WHERE status = 'expired_unrun' AND updated_at < %(day_end)s) AS expired_unrun,
+  count(*) FILTER (WHERE status = 'failed' AND updated_at < %(day_end)s) AS failed
+  FROM ops.agent_feed
+ WHERE updated_at >= %(day_start)s OR status = 'deferred'
+"""
 
 
-def counters_from_row(row: dict[str, Any], now: datetime, floor: int) -> dict[str, Any]:
+def counters_from_row(row: dict[str, Any], now: datetime) -> dict[str, Any]:
     """Pure: the DayCounters document from the aggregate row."""
     total, noise, processed = int(row["total"]), int(row["noise"]), int(row["processed"])
     return {
@@ -79,36 +77,28 @@ def counters_from_row(row: dict[str, Any], now: datetime, floor: int) -> dict[st
         "approvals": int(row["approvals"]),
         "rejections": int(row["rejections"]),
         "llm_calls": int(row["llm_calls"] or 0),
-        "llm_tokens": max(int(row["llm_tokens"] or 0), floor),
+        "llm_tokens": int(row["llm_tokens"] or 0),
     }
 
 
-async def day_counters(
-    conn: AsyncConnection[Any], now: datetime, *, demo: bool = False, day: date | None = None
-) -> dict[str, Any]:
-    """DayCounters as of `now` (the demo clock in DEMO_MODE). With `demo=True` (DEMO_MODE) every visible row
-    is the demo day and the mock's token floor applies; otherwise only the Istanbul day of `now` counts
-    (disclosures by publication time, cards by creation time) and the day shows its real token count."""
-    day = day or istanbul_date(now)  # `day`: a past session (outside DEMO_MODE); as_of stays `now`
+async def day_counters(conn: AsyncConnection[Any], now: datetime, *, day: date | None = None) -> dict[str, Any]:
+    """DayCounters as of `now`: the Istanbul day of `now`, or `day` (a past session; as_of stays `now`)."""
+    day = day or istanbul_date(now)
     day_start = datetime.combine(day, time(0, 0), IST)
-    params = {
-        "run_s": DEMO_RUN_MS / 1000,
-        "day": day,
-        "demo": demo,
-        "day_start": day_start,
-        "day_end": day_start + timedelta(days=1),
-    }
+    params = {"day": day, "day_start": day_start, "day_end": day_start + timedelta(days=1)}
     async with conn.cursor() as cur:
         await cur.execute(COUNTERS_SQL, params)
         row = await cur.fetchone()
-    assert row is not None
-    return counters_from_row(dict(row), now, tokens_floor() if demo else 0)
+        assert row is not None
+        await cur.execute(AGENT_FEED_SQL, params)
+        feed = await cur.fetchone()
+    doc = counters_from_row(dict(row), now)
+    counts = {k: int(v) for k, v in dict(feed or {}).items()}
+    return {**doc, "agent_feed": counts} if any(counts.values()) else doc
 
 
 async def publish_counters(app: Any) -> None:
     """SSE `counters` on the feed stream (own pooled connection; after the caller's commit)."""
-    from kaptan.demo.ports import publish
-
     async with app.state.pool.connection() as conn:
-        data = await day_counters(conn, app.state.clock.now(), demo=app.state.clock.demo)
+        data = await day_counters(conn, app.state.clock.now())
     await publish(app, "feed", "counters", data)

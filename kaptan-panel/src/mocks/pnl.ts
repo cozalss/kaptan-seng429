@@ -4,7 +4,7 @@ import { PAPER_EQUITY_TRY } from "./explain-builder";
 import { createRng, round } from "./rng";
 
 /**
- * Forward paper P&L (örnek değer · gerçek sonuç değil): 1.000.000 TL virtual capital,
+ * Forward paper P&L of the test double: 1.000.000 TL virtual capital,
  * v1.0-fwd from 9 Nov 2026, v1.1-fwd from 23 Nov 2026, against BIST-100 buy-and-hold and
  * the equal-weight universe (08 §8.1 panel 2). Ends on the last session before the demo day.
  */

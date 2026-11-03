@@ -1,8 +1,8 @@
-"""The R13 team blocklist in `core.restricted_securities` (06 R13, 09 §RBAC row "İçeriden-öğrenen engel listesi").
+"""Your R13 blocklist in `core.restricted_securities` (06 R13, 09 §RBAC row "İçeriden-öğrenen engel listesi").
 
-- Adding is immediate (Yönetici): a `tb:<hex>` row, kind `team_insider` or `other`, `added_by` `user:<uid>`.
-- Removing takes two signatures: the Yönetici requests (1/2, written into `detail.pending_removal`), the Risk
-  Sorumlusu confirms (2/2, another person) and only then is the row deleted.
+- Adding is immediate: a `tb:<hex>` row, kind `team_insider` or `other`, `added_by` `user:<uid>`.
+- Removing takes two steps: you request (1/2, written into `detail.pending_removal`), then confirm (2/2, the second
+  signature waived and audited) and only then is the row deleted.
 - Rows the tedbir sync owns (`ts:` prefix, `system:` adders) and the SPK/VBTS kinds are never removable by
   hand; this module never touches them (the sync prunes only `ts:` rows). Team rows added by a person
   (`user:` adder, kind team_insider/other) are removable, whatever their id.
@@ -114,7 +114,7 @@ async def request_removal(
         row = await _removable(conn, entry_id)
         detail = dict(row.get("detail") or {})
         if detail.get("pending_removal"):
-            raise ApiError(409, "pending_exists", "Bu kaydın çıkarılması zaten ikinci imzayı bekliyor.")
+            raise ApiError(409, "pending_exists", "Bu kaydın çıkarılması zaten onay bekliyor.")
         detail["pending_removal"] = {"requested_by": _signature(uid, name, role, reason, now)}
         await execute(conn, SET_DETAIL_SQL, (Jsonb(detail), entry_id))
         await append(
@@ -142,24 +142,21 @@ async def confirm_removal(
     name: str,
     role: str,
     now: datetime,
-    single_user: bool | None = None,
 ) -> None:
     async with conn.transaction():
         row = await _removable(conn, entry_id)
         pending = (row.get("detail") or {}).get("pending_removal")
         if not pending:
-            raise ApiError(409, "not_started", "Önce Yönetici çıkarmayı başlatmalı (1/2).")
+            raise ApiError(409, "not_started", "Önce çıkarma isteği göndermelisin.")
         first = pending["requested_by"]
         await second_signature(
             conn,
             first_uid=str(first["uid"]),
             uid=uid,
             flow="restricted_removal",
-            refusal="İkinci imzayı çıkarmayı başlatan kişi atamaz.",
             entity_type=ENTITY,
             entity_id=entry_id,
             now=now,
-            single_user=single_user,
         )
         await execute(conn, DELETE_SQL, (entry_id,))
         await append(

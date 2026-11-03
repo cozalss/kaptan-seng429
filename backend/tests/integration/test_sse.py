@@ -22,13 +22,14 @@ import uvicorn
 from fastapi import FastAPI
 
 from kaptan.api.deps import settings_dep
-from kaptan.api.main import API_PREFIX, create_app
-from kaptan.demo.seed import SeedResult
+from kaptan.api.main import API_PREFIX
 from kaptan.events import bus
 from kaptan.events.publish import publish
 from kaptan.settings import Settings
 from tests.conftest import bearer, login, skip_or_fail
 from tests.contract.harness import assert_matches
+from tests.harness.app import create_test_app
+from tests.harness.seed import SeedResult
 
 pytestmark = pytest.mark.integration
 
@@ -133,14 +134,14 @@ async def test_run_streams_are_capped_and_expire(redis: aioredis.Redis) -> None:
 
 
 async def test_ticket_is_single_use(client: httpx.AsyncClient, redis: aioredis.Redis) -> None:
-    session = await login(client, "auditor")
+    session = await login(client)
     res = await client.post(f"{API_PREFIX}/sse/ticket", headers=bearer(session["access_token"]))
     assert res.status_code == 200
     ticket = res.json()["ticket"]
     assert set(res.json()) == {"ticket"}
     assert 0 < await redis.ttl(f"{bus.TICKET_PREFIX}{ticket}") <= bus.TICKET_TTL_S
     holder = await bus.redeem_ticket(redis, ticket)
-    assert holder == bus.TicketHolder(uid=session["user"]["id"], role="auditor")
+    assert holder == bus.TicketHolder(uid=session["user"]["id"])
     assert await bus.redeem_ticket(redis, ticket) is None
     used = await client.get(f"{API_PREFIX}/stream/desk", params={"ticket": ticket})
     assert used.status_code == 401
@@ -148,12 +149,12 @@ async def test_ticket_is_single_use(client: httpx.AsyncClient, redis: aioredis.R
 
 
 async def test_ticket_from_the_refresh_cookie(client: httpx.AsyncClient, redis: aioredis.Redis) -> None:
-    session = await login(client, "analyst")  # sets __Host-kaptan_rt in the client's jar
+    session = await login(client)  # sets __Host-kaptan_rt in the client's jar
     res = await client.post(f"{API_PREFIX}/sse/ticket")
     assert res.status_code == 200, res.text
     holder = await bus.redeem_ticket(redis, res.json()["ticket"])
     assert holder is not None
-    assert (holder.uid, holder.role) == (session["user"]["id"], "analyst")
+    assert holder.uid == session["user"]["id"]
     foreign = await client.post(f"{API_PREFIX}/sse/ticket", headers={"Origin": "https://evil.example"})
     assert foreign.status_code == 403
     client.cookies.clear()
@@ -176,7 +177,7 @@ async def test_stream_validates_its_inputs(client: httpx.AsyncClient) -> None:
 
 @pytest.fixture(scope="session")
 async def live_app(seeded: SeedResult, migrated: Settings) -> AsyncIterator[FastAPI]:
-    app = create_app(migrated)
+    app = create_test_app(migrated)
     app.dependency_overrides[settings_dep] = lambda: migrated
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=PORT, loop="none", log_level="warning"))
     task = asyncio.create_task(server.serve())
@@ -216,7 +217,7 @@ async def _next_event(lines: AsyncIterator[str]) -> dict[str, str]:
 
 async def test_decided_card_reaches_the_desk_within_a_second_and_replays(live_app: FastAPI) -> None:
     async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{PORT}", timeout=10) as http:
-        session = await login(http, "risk_officer")
+        session = await login(http)
         token = session["access_token"]
         params = {"ticket": await _ticket(http, token)}
         async with http.stream("GET", f"{API_PREFIX}/stream/desk", params=params) as res:

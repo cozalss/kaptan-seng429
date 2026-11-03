@@ -9,7 +9,7 @@ import { useEventStream } from "@/lib/sse/use-event-stream";
 import { useNow, currentTimeMs } from "@/lib/clock";
 import { SessionProvider } from "@/lib/auth/session-context";
 
-const OWNER_USER = { uid: "uye-3", name: "Üye 3", role: "risk_officer" as const };
+const OWNER_USER = { uid: "sen", name: "Deniz" };
 
 afterEach(() => {
   stopAllTimers();
@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 function apiWith(db: MockDb): KaptanApi {
-  return createMockApi({ getActor: () => OWNER_USER, db, latencyMs: 0, live: false });
+  return createMockApi({ user: OWNER_USER, db, latencyMs: 0, live: false });
 }
 
 function Counter() {
@@ -95,7 +95,7 @@ describe("useApiQuery / useApiMutation", () => {
         </ApiProvider>
       </SessionProvider>,
     );
-    expect(await screen.findByText("Üye 3", {}, { timeout: 3_000 })).toBeInTheDocument();
+    expect(await screen.findByText("Deniz", {}, { timeout: 3_000 })).toBeInTheDocument();
   });
 
   it("throws outside the provider", () => {
@@ -131,7 +131,7 @@ describe("useEventStream (mock bus)", () => {
 });
 
 describe("clock", () => {
-  it("returns the mock demo clock and ticks after mount", async () => {
+  it("returns the test double's clock and ticks after mount", async () => {
     __setMockDb(new MockDb(null));
     expect(new Date(currentTimeMs()).toISOString().startsWith("2027-01-11")).toBe(true);
     function Clock() {

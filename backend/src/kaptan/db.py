@@ -25,7 +25,7 @@ DictConn = AsyncConnection[dict[str, Any]]
 
 
 async def _configure(conn: DictConn) -> None:
-    # Hashes and the demo clock assume UTC; set it per connection so it never depends on the server.
+    # Hashes and day boundaries assume UTC; set it per connection so it never depends on the server.
     await conn.execute("SET TIME ZONE 'UTC'")
     await conn.commit()
 

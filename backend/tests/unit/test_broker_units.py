@@ -144,9 +144,8 @@ def test_parse_trading_and_the_repo_file(tmp_path: Path) -> None:
 
 def test_install_current_and_reset() -> None:
     bc.reset()
-    assert bc.current().demo_mode is True  # without the app: demo behaviour
     try:
-        cfg = bc.install(ExecConfig(demo_mode=False))
+        cfg = bc.install(ExecConfig())
         assert bc.current() is cfg
         assert bc.with_overrides(live_env_enabled=True).live_env_enabled is True
         assert bc.current().live_env_enabled is False

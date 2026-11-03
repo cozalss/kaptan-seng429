@@ -1,33 +1,38 @@
 "use client";
 
+import "./audit.css";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useApiQuery } from "@/lib/api/react";
+import { useNow } from "@/lib/clock";
 import { fmtInt } from "@/lib/format";
+import { istanbulDay } from "@/lib/session-day";
 import { useEventStream } from "@/lib/sse/use-event-stream";
-import { cn, prefersReducedMotion } from "@/lib/utils";
+import { prefersReducedMotion } from "@/lib/utils";
+import { PageHeader, ScreenState } from "@/components/shell/page-frame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
-import { ErrorState, SkeletonLines } from "@/components/ui/primitives";
-import { CARD } from "@/components/portfolio/kit";
-import { PageHeader } from "@/components/shell/page-frame";
-import { useChainWalk, VERIFY_EVENT } from "./chain-walk";
-import { rowId, Timeline, type Scope } from "./ledger";
-import { VerifyButton, VerifyPanel } from "./verify-panel";
+import { useChainWalk } from "./chain-walk";
+import { historySentence, type Scope } from "./diary-words";
+import { rowId, Diary } from "./ledger";
+import { VerifyBand } from "./verify-panel";
 
-/** Records shown at first; "Daha fazla göster" adds as many again (the API caps at 500). */
+/** Records shown at first; "Daha eskisini göster" adds as many again (the API caps at 500). */
 const PAGE = 30;
 const MAX = 500;
 
 /**
- * /denetim — "Defteri doğrula" with a clear verdict, then the ledger as a table (time, who,
- * what, record #) with a Bugün / Tümü filter and a search.
+ * /gecmis: everything that happened as a diary, grouped by day, in two voices (Sen and KAPtan), and
+ * one button that walks the whole chain and says whether anything was changed afterwards.
  */
 export function AuditScreen() {
   const [scope, setScope] = useState<Scope>("today");
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
   const [limit, setLimit] = useState(PAGE);
-  // The record "Defterde göster →" asked for, until the list holds it.
+  const now = useNow(60_000);
+  const today = now === null ? null : istanbulDay(now);
+  // The record "Kaydı göster" asked for, until the list holds it.
   const target = useRef<number | null>(null);
   useEffect(() => {
     const id = setTimeout(() => setQ(search.trim()), 200);
@@ -36,7 +41,7 @@ export function AuditScreen() {
 
   const list = useApiQuery((api) => api.auditList({ scope, q: q || undefined, limit }), [scope, q, limit]);
   const { walk, verify } = useChainWalk(list.data?.length ?? 0);
-  // New records arrive with every counter tick (the crew keeps reading) and every decision.
+  // New records arrive with every counter tick (KAPtan keeps reading) and every decision.
   useEventStream("feed", { counters: () => void list.refetch() });
   useEventStream("desk", {
     "approval.decided": () => void list.refetch(),
@@ -44,20 +49,14 @@ export function AuditScreen() {
     "limits.changed": () => void list.refetch(),
   });
 
-  useEffect(() => {
-    const onVerify = () => void verify();
-    window.addEventListener(VERIFY_EVENT, onVerify);
-    return () => window.removeEventListener(VERIFY_EVENT, onVerify);
-  }, [verify]);
-
-  // "Defterde göster →": once the list holds the record, bring it into view and focus it.
+  // "Kaydı göster": once the list holds the record, bring it into view and focus it.
   useEffect(() => {
     const pos = target.current;
     const row = pos === null ? null : document.getElementById(rowId(pos));
     if (!row) return;
     target.current = null;
     row.setAttribute("tabindex", "-1");
-    if (typeof row.scrollIntoView === "function") row.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    if (typeof row.scrollIntoView === "function") row.scrollIntoView({ block: "center", behavior: prefersReducedMotion() ? "auto" : "smooth" });
     row.focus({ preventScroll: true });
   }, [list.data]);
 
@@ -71,81 +70,90 @@ export function AuditScreen() {
   const broken = walk.phase === "done" && !walk.result.ok ? walk.result.first_bad_pos : null;
   const data = list.data;
   const more = data !== undefined && data.items.length < data.total && limit < MAX;
-  // Asked for more than we hold and the list is fetching: the link says so (it stays put).
+  // Asked for more than we hold and the list is fetching: the button says so (it stays put).
   const growing = list.refreshing && data !== undefined && data.items.length < Math.min(limit, data.total);
+  const sentence = data ? historySentence({ scope, total: data.total, searching: q.length > 0 }) : list.error ? "Günlüğü şu an açamadım." : "Günlüğü açıyorum…";
 
   return (
-    <div className="space-y-4 xl:space-y-5">
-      <PageHeader
-        title="Denetim kaydı"
-        lead="Her bildirim, imza ve durdurma bu deftere yazılır; kimse silemez. Her kayıt bir öncekinin parmak izini taşır."
-        actions={<VerifyButton walk={walk} onVerify={() => void verify()} />}
-        className="mb-6 sm:mb-6"
-      />
+    <div className="gc-screen">
+      <PageHeader name="Geçmiş" title={sentence} lead="Olan her şey sırayla buraya yazılır: sen ne yaptın, KAPtan ne yaptı. Bir kayıt sonradan değiştirilirse anlaşılır." />
 
-      <VerifyPanel walk={walk} onShow={showRecord} tamperOn={data?.tamper_on ?? false} />
+      <VerifyBand walk={walk} onVerify={() => void verify()} onShow={showRecord} />
 
-      <section aria-labelledby="kayitlar" className={cn(CARD, "overflow-clip")}>
-        <div className="flex flex-col gap-3 px-4 pt-4 pb-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:pt-5">
-          <h2 id="kayitlar" className="text-body font-semibold text-ink">
-            Kayıtlar
-          </h2>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div role="group" aria-label="Hangi kayıtlar" className="inline-flex self-start rounded-full bg-sunk p-1">
-              {(["today", "all"] as const).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  aria-pressed={scope === s}
-                  onClick={() => {
-                    setScope(s);
-                    setLimit(PAGE);
-                  }}
-                  className={cn(
-                    "h-9 rounded-full px-4 text-dense font-medium transition-colors duration-[var(--dur-quick)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-sm:h-10",
-                    scope === s ? "bg-panel text-ink shadow-[0_1px_3px_rgb(16_17_23/0.18)]" : "text-ink-soft hover:text-ink",
-                  )}
-                >
-                  {s === "today" ? "Bugün" : "Tümü"}
-                </button>
-              ))}
-            </div>
-            <label className="block sm:w-[260px]">
-              <span className="sr-only">Defterde ara</span>
-              <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Ara: şirket, rol, #3907…" />
-            </label>
-          </div>
+      <div className="gc-tools">
+        <div role="group" aria-label="Hangi günler" className="gc-scope">
+          {(["today", "all"] as const).map((s) => (
+            <button
+              key={s}
+              type="button"
+              aria-pressed={scope === s}
+              onClick={() => {
+                setScope(s);
+                setLimit(PAGE);
+              }}
+              className="gc-scope-btn"
+            >
+              {s === "today" ? "Bugün" : "Tümü"}
+            </button>
+          ))}
         </div>
+        <label className="block w-full sm:w-[280px]">
+          <span className="sr-only">Geçmişte ara</span>
+          <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Ara: şirket adı, onayladın…" />
+        </label>
+      </div>
 
-        {list.error && !data ? (
-          <div className="px-4 pb-5 sm:px-6">
-            <ErrorState message={list.error} onRetry={list.refetch} />
-          </div>
-        ) : null}
-        {data ? (
-          <>
-            {data.items.length ? (
-              <Timeline items={data.items} scope={scope} broken={broken} />
-            ) : (
-              <p className="border-t-2 border-hairline px-4 py-8 text-center text-ui text-ink-soft sm:px-6">Bu aramaya uyan kayıt yok.</p>
-            )}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-hairline px-4 py-2 sm:px-6">
-              <p role="status" aria-live="polite" className="text-dense text-muted tabular-nums">
-                {data.items.length < data.total
-                  ? `En yeni ${fmtInt(data.items.length)} kayıt · bu görünümde ${fmtInt(data.total)} · defterin tamamı ${fmtInt(data.length)}`
-                  : `${fmtInt(data.total)} kayıt · defterde ${fmtInt(data.length)}`}
-              </p>
-              {more ? (
-                <Button variant="link" pending={growing} onClick={() => setLimit((n) => Math.min(MAX, n + PAGE * 2))}>
-                  Daha fazla göster
+      {list.error && !data ? (
+        <ScreenState kind="error" title="Kayıtlara ulaşamadım." onRetry={list.refetch}>
+          {list.error} Kayıtlar yerinde; yalnızca şu an gösteremiyorum.
+        </ScreenState>
+      ) : null}
+
+      {data ? (
+        <>
+          {data.items.length ? (
+            <Diary items={data.items} broken={broken} today={today} />
+          ) : q ? (
+            <ScreenState
+              kind="empty"
+              title="Bu aramaya uyan kayıt yok."
+              action={
+                <Button variant="secondary" onClick={() => setSearch("")}>
+                  Aramayı temizle
                 </Button>
-              ) : null}
-            </div>
-          </>
-        ) : (
-          <SkeletonLines lines={6} className="px-4 pb-5 sm:px-6" />
-        )}
-      </section>
+              }
+            >
+              Şirketin adını ya da yaptığın işi yazabilirsin.
+            </ScreenState>
+          ) : (
+            <ScreenState
+              kind="empty"
+              title="Bugün henüz bir şey yazılmadı."
+              action={
+                <Button variant="secondary" onClick={() => setScope("all")}>
+                  Eski günlere bak
+                </Button>
+              }
+            >
+              KAPtan okumaya başlayınca ya da sen bir şey yapınca burası dolar.
+            </ScreenState>
+          )}
+          <div className="gc-more">
+            <p role="status" aria-live="polite" className="text-dense text-muted tabular-nums">
+              {data.items.length < data.total ? `En yeni ${fmtInt(data.items.length)} kayıt burada; bu görünümde ${fmtInt(data.total)}, toplam ${fmtInt(data.length)}.` : `${fmtInt(data.total)} kayıt burada; toplam ${fmtInt(data.length)}.`}
+            </p>
+            {more ? (
+              <Button variant="secondary" pending={growing} onClick={() => setLimit((n) => Math.min(MAX, n + PAGE * 2))}>
+                Daha eskisini göster
+              </Button>
+            ) : null}
+          </div>
+        </>
+      ) : !list.error ? (
+        <ScreenState kind="loading" title="Sayfaları çeviriyorum…">
+          Birazdan bugün neler olduğunu okuyacaksın.
+        </ScreenState>
+      ) : null}
     </div>
   );
 }

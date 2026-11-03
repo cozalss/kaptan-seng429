@@ -1,18 +1,39 @@
 import type { ReactNode } from "react";
-import type { ApprovalCard, Explain } from "@/lib/domain";
-import { NODE_LABELS, RISK_RULES } from "@/lib/domain";
+import type { ApprovalCard, Explain, NodeName } from "@/lib/domain";
+import { RISK_RULES } from "@/lib/domain";
 import { fmtLatency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** The summary line of "Ayrıntılar": what is inside, in counts. */
 export function detailsMeta(card: ApprovalCard, explain: Explain | null): string {
   const checks = explain?.risk_checks.length ?? 0;
-  return `${card.rule_trace_summary.length} kural${checks ? ` · ${checks} risk kontrolü` : ""} · tayfanın izi`;
+  return `${card.rule_trace_summary.length} kural${checks ? ` · ${checks} para sınırı kontrolü` : ""} · adım adım kayıt`;
 }
 
+/** The steps of a run in words: the internal names of the pipeline stay off the screen. */
+const STEP_WORDS: Readonly<Record<NodeName, string>> = {
+  route: "Haberin yönü belirlendi",
+  pre_gate: "Ön eleme",
+  guard: "Metin güvenlik kontrolü",
+  classifier: "Haberin türü tanındı",
+  reader: "Metin okundu",
+  materiality: "Büyüklük tartıldı",
+  evidence: "Benzer olaylar arandı",
+  merge: "Bilgiler birleştirildi",
+  skeptic: "Karşı görüş soruldu",
+  rule_engine: "Kurallar çalıştı",
+  compliance: "Yasak ve tuzak kontrolü",
+  risk_gate: "Para sınırları kontrol edildi",
+  request_approval: "Sana soruldu",
+  approval: "Senin kararın",
+  execute: "İşlem bilgisi hazırlandı",
+  record: "Geçmiş'e yazıldı",
+  filter_action: "Elendi",
+};
+
 /**
- * "Ayrıntılar", for the curious: every rule with what was seen and its threshold, the risk
- * gate's checks and the crew's trace (model, time). Plain lists.
+ * "Teknik kayıt", for the curious: every rule with what was seen and what it looks for, the money
+ * limits' checks and the run step by step (model, time). Plain lists.
  */
 export function Details({ card, explain }: { card: ApprovalCard; explain: Explain | null }) {
   return (
@@ -23,7 +44,7 @@ export function Details({ card, explain }: { card: ApprovalCard; explain: Explai
         ))}
       </Block>
       {explain?.risk_checks.length ? (
-        <Block title="Risk kapısı">
+        <Block title="Para sınırları">
           {explain.risk_checks.map((c) => (
             <Row
               key={`${c.phase}-${c.rule_code}`}
@@ -36,14 +57,14 @@ export function Details({ card, explain }: { card: ApprovalCard; explain: Explai
         </Block>
       ) : null}
       {explain ? (
-        <Block title="Tayfanın izi">
+        <Block title="Adım adım">
           {explain.trace.nodes
             .filter((n) => n.status !== "skipped")
             .map((n) => (
               <Row
                 key={n.node}
                 ok={n.status === "done"}
-                code={NODE_LABELS[n.node].tr}
+                code={STEP_WORDS[n.node]}
                 text={n.note_tr ?? ""}
                 aside={[n.model_id, n.latency_ms !== null ? fmtLatency(n.latency_ms) : null].filter(Boolean).join(" · ")}
               />

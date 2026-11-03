@@ -23,7 +23,7 @@ import {
 describe('Kural Motoru model', () => {
   it('lays out four gates E1–E4 and the end of the rail, with the written thresholds', () => {
     expect(GATES.map((g) => g.code)).toEqual(['E1', 'E2', 'E3', 'E4', 'Eşik altı']);
-    expect(GATES[0].rule.join(' ')).toMatch(/10 seans.*%0,25/);
+    expect(GATES[0].rule.join(' ')).toMatch(/10 borsa günü.*%0,25/);
     expect(GATES[2].rule.join(' ')).toMatch(/%10/);
     for (const input of INPUTS) expect(input.issuer).toMatch(/^ÖRNEK /);
   });

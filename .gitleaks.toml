@@ -21,7 +21,6 @@ paths = [
   '''backend/tests/contract/schemas/''',
   '''kaptan-panel/src/mocks/''',
   '''(^|/)\.env\.example$''',
-  '''backend/prod\.env\.example$''',
   '''(^|/)package-lock\.json$''',
   '''backend/uv\.lock$''',
 ]

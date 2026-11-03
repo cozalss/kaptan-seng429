@@ -60,7 +60,7 @@ def ids(rule: ExitRule, source_proposal: str, day: date) -> tuple[str, str]:
 
 def headline(x: ExitInput) -> str:
     if x.rule == "X1":
-        return f"{x.held_sessions}. seans doldu: pozisyon kapanış seansında satılır."
+        return f"{x.held_sessions}. borsa günü doldu: pozisyon kapanışta satılır."
     if x.rule == "X2":
         stop = fmt_price(x.stop_price) if x.stop_price is not None else "—"
         return f"Kapanış {fmt_price(x.ref_price)} TL, stop {stop} TL: ertesi açılışta satış."
@@ -157,7 +157,6 @@ def card_doc(x: ExitInput, proposal: dict[str, Any]) -> dict[str, Any]:
         "expires_at": iso_ms(x.expires_at),
         "status": "pending",
         "decided_by": None,
-        "decided_role": None,
         "decided_at": None,
         "decision_comment": None,
         "approved_notional_try": None,

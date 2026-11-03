@@ -1,4 +1,4 @@
-"""SimBIST's fill jobs outside DEMO_MODE (FR-26; 04 §4.1 `simbist_open_fill`, 06 §5, §8).
+"""SimBIST's fill jobs (FR-26; 04 §4.1 `simbist_open_fill`, 06 §5, §8).
 
     await run_open_fill(conn, day)   # weekdays ~10:16 Istanbul, after the open is known (15-min delay)
     await run_eod_fills(conn, day)   # weekdays after the 18:30 EOD prices

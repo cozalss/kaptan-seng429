@@ -1,29 +1,23 @@
 import type { ApprovalCard, LimitVersion, LiveArmState, Note, Order, ProposalNote, RestrictedSecurity, Signature, TicketEntry } from "@/lib/domain";
 import type { ChainFields } from "@/lib/audit-chain";
-import type { DemoScenario } from "@/mocks/ids";
 import { SEED_LIMIT_VERSIONS, SEED_LIVE_ARM, SEED_RESTRICTED, SEED_WATCHLIST } from "@/mocks/governance";
 import { liveEquity } from "@/mocks/pnl";
 
-/** Live strategy's P&L at 13:40 on the demo day (örnek değer). */
+/** Live strategy's P&L at 13:40 on the fixture day. */
 const OPENING_DAILY_PNL = 0.0021;
 
 /**
  * Serializable mock session state. Base fixtures (day, runs, chain, P&L) are rebuilt
  * deterministically; only what the session changed lives here and in localStorage, so a
- * reload keeps the story. "Demo verisini sıfırla" clears it.
+ * reload keeps the story. Tests clear it with `db.reset()`.
  */
 export const STORAGE_KEY = "kaptan-mock-state";
-export const STATE_VERSION = 6;
+export const STATE_VERSION = 8;
 
 export type ApprovalPatch = Pick<
   ApprovalCard,
-  "status" | "decided_by" | "decided_role" | "decided_at" | "decision_comment" | "approved_notional_try"
+  "status" | "decided_by" | "decided_at" | "decision_comment" | "approved_notional_try"
 >;
-
-export interface Injection {
-  scenario: DemoScenario;
-  atMs: number;
-}
 
 export interface MockRisk {
   kill_switch: "off" | "on";
@@ -34,7 +28,7 @@ export interface MockRisk {
   /** Daily P&L and drawdown overrides set by the loss simulation. */
   daily_pnl_pct: number;
   drawdown_pct: number;
-  /** The Yönetici's start of a restart (1/2); the Risk Sorumlusu confirms it (2/2). */
+  /** The person asked to restart; the confirm step clears it. */
   reset_started: Signature | null;
 }
 
@@ -43,7 +37,6 @@ export interface MockState {
   startedAtReal: number;
   /** Real-time ms at which each post-13:40 row was released by the live ticker. */
   releasedLate: number[];
-  injections: Injection[];
   approvals: Record<string, ApprovalPatch>;
   orders: Order[];
   canceledOrderIds: string[];
@@ -58,9 +51,9 @@ export interface MockState {
   verifiedAt: string | null;
   /** Your marks on order tickets, by ticket number (girildi / dolmadı / iptal). */
   ticketMarks: Record<string, TicketEntry>;
-  /** Notes on proposals (Analist, Risk Sorumlusu, Yönetici). */
+  /** Your notes on proposals. */
   proposalNotes: ProposalNote[];
-  /** Demo: one audit record changed behind the chain's back (Ayarlar → Kurcalama testi). */
+  /** Tests of the chain walk: one audit record changed behind the chain's back. */
   tamperOn: boolean;
 }
 
@@ -69,7 +62,6 @@ export function initialState(nowReal: number): MockState {
     v: STATE_VERSION,
     startedAtReal: nowReal,
     releasedLate: [],
-    injections: [],
     approvals: {},
     orders: [],
     canceledOrderIds: [],

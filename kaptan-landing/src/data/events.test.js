@@ -9,7 +9,7 @@ describe('EVENT_ARTICLES', () => {
 
   it('states the brief thresholds and holding periods', () => {
     const byCode = Object.fromEntries(EVENT_ARTICLES.map((article) => [article.code, article]));
-    expect(byCode.E1.condition).toContain('10 seans');
+    expect(byCode.E1.condition).toContain('10 borsa günü');
     expect(byCode.E1.condition).toContain('%0,25');
     expect(byCode.E3.condition).toContain('%10');
     expect(EVENT_ARTICLES.map((article) => article.holding)).toEqual(['20–40 gün', '20–60 gün', '5 gün', '5–10 gün']);
@@ -44,7 +44,7 @@ describe('EVENT_ARTICLES', () => {
 describe('EVENT_FILTERS', () => {
   it('carries the leak filter and the 16-rule risk gate that only shrinks or rejects', () => {
     const byId = Object.fromEntries(EVENT_FILTERS.map((filter) => [filter.id, filter]));
-    expect(byId.sizinti.condition).toBe('Son 5 seansta > %8 yükseliş.');
+    expect(byId.sizinti.condition).toBe('Son 5 borsa gününde > %8 yükseliş.');
     expect(byId['risk-kapisi']).toMatchObject({ code: 'R01–R16', effect: 'Bir öneriyi yalnızca küçültür ya da reddeder.' });
   });
 
@@ -66,7 +66,7 @@ describe('bench constants', () => {
     const byId = Object.fromEntries(EVENT_FILTERS.map((filter) => [filter.id, filter]));
     expect(byId.sizinti.effect).toBe('Öneri atlanır ya da yarıya indirilir.');
     expect(BENCH_COPY.leakEffect).toBe(byId.sizinti.effect);
-    expect(BENCH_COPY.result).toBe('Öneri adayı → filtreler → insan onayı. Otomatik emir yok.');
+    expect(BENCH_COPY.result).toBe('Öneri adayı → filtreler → senin onayın. Otomatik işlem yok.');
     const copy = [...Object.values(BENCH_COPY), ...EVENT_ARTICLES.flatMap((a) => [a.condition, a.trigger ?? ''])].join(' ');
     expect(copy).not.toMatch(/(^|\s)(al|kazandırır|garanti)(\s|[.,!]|$)/iu);
   });

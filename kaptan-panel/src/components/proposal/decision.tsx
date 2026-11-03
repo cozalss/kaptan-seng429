@@ -2,24 +2,35 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ApprovalCard, ApprovalStatus, OrderTicket } from "@/lib/domain";
-import { fmtInt, fmtTime } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import { STATUS_LABEL } from "@/components/approvals/approvals-logic";
-import { DecisionActions } from "./decision-actions";
+import { fmtInt } from "@/lib/format";
+import { confidenceSentence, fmtLira } from "@/lib/solo/words";
+import { useApiMutation } from "@/lib/api/react";
+import { useNow } from "@/lib/clock";
+import { decideGate } from "@/components/approvals/approvals-logic";
+import { useDesk } from "@/components/shell/desk-state";
+import { answerByLine } from "@/components/story/plain";
+import { Button } from "@/components/ui/button";
+import { closedFor } from "./decide-logic";
 import { OrderSlip } from "./order-slip";
-import { SignatureLines } from "./signatures";
-import "./oneri.css";
+import { InkSeal, useLanded } from "./seal";
+import { pressSays } from "./suggestion-object";
+
+/** The note a "Geç" leaves on the proposal (the backend may ask for a reason on a rejection). */
+const SKIP_COMMENT = "Neden sayfasından geçildi.";
+
+/** How sure, from the evidence behind the card: the same scale the home's suggestion uses. */
+const STRENGTH_SURE: Readonly<Record<ApprovalCard["evidence_summary"]["strength"], number>> = { strong: 0.8, moderate: 0.6, weak: 0.4, insufficient: 0.25 };
 
 const CLOSED: Partial<Record<ApprovalStatus, { title: string; body: string }>> = {
-  rejected: { title: "Reddedildi.", body: "Emir yazılmadı. Ret denetim defterine geçti." },
+  rejected: { title: "Geçtin.", body: "İşlem yapılmadı. Kararın Geçmiş'e yazıldı." },
   cancelled: { title: "İptal oldu.", body: "Her şey durdurulduğu için bu öneri düştü." },
   expired: { title: "Süresi doldu.", body: "Karar için son saat geçti; öneri kendiliğinden düştü." },
 };
 
 /**
- * The decision box: the two signatures, then Onayla / Reddet. Once decided, the outcome takes
- * the buttons' place (focus moves to it when decided here), and after a signature the emir fişi
- * follows under the box. `justSigned`: signed here and now, so the stamp and the slip animate once.
+ * The decision beside the story. Pressing Onayla seals the sheet at once; if the server refuses,
+ * the seal lifts and the reason is said. Once approved, the sheet turns into the order to enter at
+ * the bank. `justSigned`: approved here and now, so the order opens once (never on a reload).
  */
 export function Decision({
   card,
@@ -34,71 +45,117 @@ export function Decision({
   justSigned: boolean;
   onDecided: (c: ApprovalCard) => void;
 }) {
-  const outcomeRef = useRef<HTMLHeadingElement>(null);
+  const desk = useDesk();
+  const outcome = useRef<HTMLParagraphElement>(null);
   const [decidedHere, setDecidedHere] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  const landed = useLanded(pressed);
+  const decide = useApiMutation((api, decision: "approve" | "reject") => api.decideApproval(card.proposal_id, { decision, approved_notional_try: null, comment: decision === "reject" ? SKIP_COMMENT : "" }));
+
+  const run = async (decision: "approve" | "reject") => {
+    setPressed(decision === "approve");
+    const r = await decide.run(decision);
+    if (!r) {
+      setPressed(false);
+      return;
+    }
+    setDecidedHere(true);
+    onDecided(r);
+    void desk.refresh();
+  };
 
   useEffect(() => {
-    if (decidedHere && status !== "pending") outcomeRef.current?.focus();
+    if (decidedHere && status !== "pending" && status !== "approved") outcome.current?.focus();
   }, [decidedHere, status]);
 
-  const decided = (c: ApprovalCard) => {
-    setDecidedHere(true);
-    onDecided(c);
-  };
-  const pending = status === "pending";
+  const open = status === "pending" || status === "claimed";
+  // The sheet stays sealed until the press has landed, even when the server answers sooner.
+  const sealing = pressed && (!landed || open);
+
+  if (status === "approved" && !sealing) {
+    return (
+      <section id="karar" aria-label="Kararın" className="oneri-decide scroll-mt-24">
+        {ticket ? (
+          <OrderSlip ticket={ticket} laid={justSigned} focusOnMount={justSigned} proposedQty={card.qty} />
+        ) : (
+          <div className="oneri-paper oneri-slip">
+            <InkSeal word="ONAYLADIN" className="oneri-slip-seal" />
+            <p className="u-chapter oneri-slip-head">Onayladın. İşlem henüz yapılmadı.</p>
+            <p className="oneri-slip-body">KAPtan senin yerine işlem yapmaz. Bankana gireceğin bilgiler hazırlanıyor; birazdan burada olur, Param’da da görürsün.</p>
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  if (!open && !sealing) {
+    return (
+      <section id="karar" aria-label="Kararın" className="oneri-decide scroll-mt-24">
+        <div className="oneri-outcome">
+          <p ref={outcome} tabIndex={-1} className="u-chapter oneri-outcome-head">
+            {CLOSED[status]?.title ?? "Bu öneri için artık karar verilemez."}
+          </p>
+          {CLOSED[status] ? <p className="oneri-outcome-body">{CLOSED[status]?.body}</p> : null}
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section aria-labelledby="karar" className="space-y-6">
-      <div className="overflow-hidden rounded-xl border border-line bg-panel shadow-card">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 pt-5 pb-3 sm:px-6">
-          <h2 id="karar" tabIndex={-1} className="scroll-mt-24 text-[19px] leading-7 font-semibold text-ink outline-none">
-            Karar
-          </h2>
-          <p className="text-dense text-muted">Emir için iki imza gerekir.</p>
-        </div>
-        <div className="px-5 sm:px-6">
-          <SignatureLines card={card} status={status} justSigned={justSigned} />
-        </div>
-        <div className="px-5 pt-5 pb-6 sm:px-6">
-          <div role="status" aria-live="polite">
-            {pending ? null : (
-              <div className="space-y-1">
-                <h3
-                  ref={outcomeRef}
-                  tabIndex={-1}
-                  className={cn("text-[19px] leading-7 font-semibold text-ink tabular-nums outline-none", status === "rejected" && "text-north")}
-                >
-                  {status === "approved"
-                    ? `İmzalandı${card.decided_at ? ` · ${fmtTime(card.decided_at)}` : ""}`
-                    : (CLOSED[status]?.title ?? STATUS_LABEL[status])}
-                </h3>
-                <p className="text-[16px] leading-6 text-ink-soft">
-                  {status === "approved"
-                    ? "Emir fişi aşağıda: aracı kurum uygulamana gir, sonra burada işaretle."
-                    : (CLOSED[status]?.body ?? "Bu öneri için artık karar verilemez.")}
-                </p>
-              </div>
-            )}
-          </div>
-          {pending ? <DecisionActions card={card} status={status} onDecided={decided} /> : null}
-        </div>
-      </div>
-
-      {status === "approved" ? <Slip card={card} ticket={ticket} laid={justSigned} /> : null}
+    <section id="karar" aria-label="Kararın" className="oneri-decide scroll-mt-24">
+      <OpenSheet card={card} status={status} sealing={sealing} pending={decide.pending} error={decide.error} onDecide={(d) => void run(d)} />
     </section>
   );
 }
 
-function Slip({ card, ticket, laid }: { card: ApprovalCard; ticket: OrderTicket | null; laid: boolean }) {
-  if (!ticket) return <p className="text-[16px] text-ink-soft">Emir fişi hazırlanıyor…</p>;
+function OpenSheet({
+  card,
+  status,
+  sealing,
+  pending,
+  error,
+  onDecide,
+}: {
+  card: ApprovalCard;
+  status: ApprovalStatus;
+  sealing: boolean;
+  pending: boolean;
+  error: string | null;
+  onDecide: (d: "approve" | "reject") => void;
+}) {
+  const desk = useDesk();
+  const nowMs = useNow(30_000);
+  const stopped = desk.risk?.kill_switch === "on";
+  const halted = desk.risk?.halted_today ?? false;
+  const gate = decideGate({ status, killSwitchOn: stopped, haltedToday: halted });
+  const closed = closedFor({ stopped, halted });
+  const sell = card.side === "sell";
+  const by = answerByLine(card.expires_at, nowMs);
   return (
-    <div className="space-y-3">
-      <OrderSlip ticket={ticket} laid={laid} />
-      {ticket.qty !== card.qty ? (
-        <p className="text-dense text-muted tabular-nums">
-          Öneri {fmtInt(card.qty)} lot idi; fiş hesabının büyüklüğüne göre {fmtInt(ticket.qty)} lot.
+    <div data-state={sealing ? "sealing" : "open"} className={`oneri-paper oneri-decide-sheet${sealing ? " oneri-thud" : ""}`}>
+      <p className="oneri-decide-title">{sell ? "Bu satışın tutarı" : "Bu alımın tutarı"}</p>
+      <p className="oneri-decide-amount">{fmtLira(card.final_notional_try)}</p>
+      <p className="oneri-decide-line">
+        {fmtInt(card.qty)} adet, tanesi {sell ? "en az" : "en fazla"} {fmtLira(card.limit_price, true)}
+      </p>
+      <p className="oneri-decide-line">{confidenceSentence(STRENGTH_SURE[card.evidence_summary.strength])}</p>
+      {by ? <p className="oneri-decide-line font-semibold">{by}</p> : null}
+      {closed.reason ? <p className="oneri-closed">{closed.reason}</p> : null}
+      <div className="oneri-decide-buttons">
+        <Button variant="primary" size="lg" className="oneri-object-approve" disabled={!gate.canApprove} aria-disabled={pending || undefined} onClick={() => (pending ? undefined : onDecide("approve"))}>
+          Onayla
+        </Button>
+        <Button variant="outline" size="lg" className="oneri-object-skip" disabled={!gate.canDecide} aria-disabled={pending || undefined} onClick={() => (pending ? undefined : onDecide("reject"))}>
+          Geç
+        </Button>
+      </div>
+      <p className="oneri-object-says">{pressSays(sell ? "sat" : "al")}</p>
+      {error && !sealing ? (
+        <p role="alert" className="oneri-object-error">
+          Olmadı. {error}
         </p>
       ) : null}
+      {sealing ? <InkSeal word="ONAYLADIN" pressing className="oneri-object-seal" /> : null}
     </div>
   );
 }

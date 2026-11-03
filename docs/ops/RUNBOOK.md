@@ -1,181 +1,196 @@
-# KAPtan işletim el kitabı (runbook)
+# KAPtan el kitabı
 
-Yerel yığın ve üretim yığını için günlük işler: başlat/durdur, Postgres yedeği ve geri yükleme, Durdur
-(kill switch) sıfırlama, denetim zinciri doğrulama, anahtar döndürme. Komutlar depo kökünden çalışır.
+KAPtan bu Windows bilgisayarda çalışır. Dışarıya açık değildir: yalnız bu bilgisayardan `http://localhost:3100`
+adresiyle girilir. Barındırma ücreti yoktur. Bütün komutlar proje klasöründe çalışır.
 
-| Yığın | Dosya | Proje adı | Açık portlar (yalnız 127.0.0.1) |
-|---|---|---|---|
-| Yerel (tek komut, demo günü) | `docker-compose.yml` | `kaptan-stack` | API `KAPTAN_API_PORT` (8000), panel `KAPTAN_PANEL_PORT` (3100) |
-| Üretim biçimli (panel yok) | `backend/docker-compose.prod.yml` + `backend/prod.env` | `kaptan-prod` | API `API_PORT` (8000) |
-| Geliştirme servisleri (yalnız Postgres + Redis) | `backend/docker-compose.yml` + `backend/.env` | `kaptan` | 5432, 6379 |
+Komutların yanındaki işaretler:
 
-Üretim komutlarında kısaltma: `PROD="docker compose -f backend/docker-compose.prod.yml --env-file backend/prod.env"`.
+- **[denendi]** Bu komut ayrı bir deneme kurulumunda çalıştırıldı ve sonucu görüldü.
+- **[denenmedi]** Bu komut çalıştırılmadı. Yazıldığı gibi çalışması beklenir, ama görülmedi.
 
-## 1. Başlat / durdur
+## 1. Kurulum (bir kez)
 
-```bash
-# Yerel: Postgres+pgvector, Redis, migrate, seed (demo günü bir kez), API, scheduler, panel
-docker compose up -d --build
-docker compose ps                          # api, panel, scheduler, postgres, redis: healthy · migrate, seed: Exited (0)
-docker compose logs -f api                 # ya da seed / migrate / scheduler / panel
-docker compose stop                        # durdur (veri kalır)
-docker compose down                        # konteynerleri sil (veri kalır)
-docker compose down -v                     # her şeyi sil, veritabanı dahil (sonraki up demo gününü yeniden yükler)
+1. Docker Desktop kurulu olsun ve açık olsun. Sol alttaki simge yeşil olmalı.
+2. Proje klasöründe **`kur.cmd`** dosyasına çift tıkla. **[denendi]**
+   - Bir parola seç. En az 10 karakter. Yazarken ekranda görünmez. Bu parolayı unutma; kopyası hiçbir yerde
+     durmaz, yalnız özeti saklanır.
+   - Sağlayıcı anahtarlarını sorar. Kayıtlı olanlar için Enter'a basman yeter. En az bir anahtar gerekir.
+   - Yedek klasörünü sorar. Enter'a basarsan kullanıcı klasöründe `KAPtan-Yedek` olur.
+   - İlk seferde derleme 5-10 dakika sürer.
+3. **`baslat.cmd`** dosyasına çift tıkla. Hazır olunca tarayıcı giriş sayfasını açar. **[denendi]**
+4. Seçtiğin parolayla gir.
 
-# Üretim biçimli
-cp backend/prod.env.example backend/prod.env   # doldur; asla commit etme
-$PROD up -d --build
-curl -s http://127.0.0.1:8000/readyz           # {"status":"ready","checks":{"db":"ok","redis":"ok","migrations":"ok"},…}
-$PROD down
+`kur.ps1`, gizli değerleri proje klasöründeki `.env` dosyasına yazar. Bu dosya git'e girmez ve yalnız senin
+Windows kullanıcın okuyabilir. Kimseyle paylaşma.
+
+**Neden `.cmd`?** Windows bazı bilgisayarlarda imzasız betikleri engeller; bu bilgisayarda da öyle (`AllSigned`).
+`.\kur.ps1` yazınca engellenirse `.cmd` dosyasına çift tıkla ya da şunu yaz: **[denendi]**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\kur.ps1
 ```
 
-Sıra: postgres/redis healthy → (üretim: `db-roles`) → `migrate` (alembic head, sahip rolü) → yerel: `seed`
-(demo günü) / üretim: `bootstrap` (ekip, limitler v1, risk_state, kotalar, live_arm kapalı) → `api` + işçiler.
+**İlk açılışta:** KAPtan son günlerin bildirimlerini ve fiyat geçmişini yükler. 15-25 dakika sürer. Bu sırada
+öneri çıkmaz. Yeni kurulum dürüstçe boştur: gerçek bildirimler gelene kadar ekranda gösterilecek az şey vardır.
 
-Sağlık: `GET /healthz` (canlılık), `GET /readyz` (DB, Redis, şema = alembic head; işçi kalp atışları),
-`GET /api/v1/health` (demo/LLM modu ve uygulama saati). Konteyner sağlığı `python -m kaptan.ops.healthcheck`.
+## 2. Her gün
 
-Demo gününü baştan almak: panelde ⚙ Ayarlar → Senaryolar → "Verileri sıfırla" (Yönetici), ya da
-`docker compose run --rm seed seed_demo --force` ve ardından `docker compose restart api` (demo saati API
-açılışında okunur).
-
-### Güncel veri (canlı mod, `live.env`)
-
-Bugünün gerçek KAP bildirimleri, gerçek Borsa İstanbul fiyatları, gerçek saat ve canlı LLM ajanları. Kayıtlı
-gün verisi silinmez: canlı mod kendi veritabanı ve Redis birimlerini (`pgdata_live`, `redisdata_live`) kullanır.
-
-```bash
-docker compose down                                               # kayıtlı gün yığınını durdur (veri kalır)
-docker compose --env-file live.env --profile live up -d --build   # canlı yığın, aynı portlar (:8000 / :3100)
-docker compose --env-file live.env logs -f warmup                 # ilk açılış ısınması (~15-25 dk)
-curl -s http://localhost:8000/api/v1/health                       # demo_mode=false, llm_mode=live, now=bugün
-# Kayıtlı güne dönüş:
-docker compose --env-file live.env --profile live down && docker compose up -d
-```
-
-- **Anahtarlar** `backend/.env`'den gelir (`GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY`; compose
-  `env_file`). `live.env`'de sır yoktur.
-- **İlk açılış (`warmup`, bir kez, tekrar çalıştırılabilir):** KAP üye listesi + son `LIVE_BACKFILL_DAYS` (5) günün
-  bildirimleri (geçmiş olarak); İş Yatırım hisse listesi (sektör, piyasa değeri, halka açıklık); U4 eşiğini geçen
-  en büyük `LIVE_WARMUP_MAX_TICKERS` (300) hisseye ~14 aylık günlük bar (hisse başına bir istek, ≥ 2 s arayla),
-  XU100 Yahoo'dan; ardından `market_changes`, `tedbir_sync`, sıradaki seansın evreni, son seansların `pnl_eod`
-  satırları (kâğıt portföy `PAPER_CAPITAL_TRY` ile nakit başlar), `regime`, `morning_brief`. `agent_worker`
-  ısınma bitince başlar (öncesinde evren boş, her koşu R03'te durur).
-- **Bugünün akışı:** `ingest_worker` KAP'ı seans içinde 30 s'de bir yoklar; `GET /api/v1/disclosures` günün
-  bildirimlerini, `/disclosures/counters` yalnız bugünün (İstanbul) sayılarını verir.
-- **Harcama sınırı:** önce LLM'siz ön eleme (gürültü/arşiv rotası, R03 evren, R04 tedbir, R13); modele giden koşu
-  saatte `AGENT_MAX_RUNS_PER_HOUR` (4), günde `AGENT_MAX_RUNS_PER_DAY` (20); sağlayıcı günlük sınırları
-  (`LLM_CAP_*`, DeepSeek günde $0.50) ayrıca geçerli. Sınıra takılan bildirim `capped` olur, sonradan koşmaz.
-- **Gecikmeler:** KAP ~30 s; fiyat işaretleri gün sonu (18:30 `eod_prices`) ve seans içinde ~15 dk gecikmeli
-  (`quotes`, yalnız açık pozisyonlar). Kaynaklar: kap.org.tr, isyatirim.com.tr, Yahoo Finance; hepsi kibar
-  hızda, tek tek istek.
-- Isınmayı elle tekrar: `docker compose --env-file live.env --profile live run --rm warmup` (yalnız eksikleri
-  doldurur).
-
-`DEMO_MODE` kapalıyken `seed` servisi demo günü yerine bootstrap'ı çalıştırır.
-
-## 2. Postgres yedeği ve geri yükleme
-
-`backend/ops/backup.sh`: `pg_dump -Fc`, isteğe bağlı age şifreleme (`AGE_RECIPIENTS`, yalnız `age1…` açık
-anahtarlar), `.sha256` dosyası, `BACKUP_KEEP_DAYS` (14) gün saklama. Parola komut satırına hiç düşmez.
-
-```bash
-# Üretim: gece yedeği (cron'a koy); dosya BACKUP_HOST_DIR'e (varsayılan backend/backups) düşer
-$PROD --profile backup run --rm backup
-
-# Yerel yığın: aynı betik, postgres konteynerinin içinde
-docker compose exec -T postgres sh -c \
-  'BACKUP_DATABASE_URL=postgresql://kaptan_owner:$POSTGRES_PASSWORD@127.0.0.1:5432/kaptan BACKUP_OUT=- sh -s' \
-  < backend/ops/backup.sh > kaptan-local.dump
-```
-
-Geri yükleme `backend/ops/restore.sh` ile ve **boş** bir veritabanına yapılır (dolu hedef için
-`RESTORE_CLEAN=1`). Roller döküme girmez: önce `kaptan_app` rolü olmalı (`python -m kaptan.bootstrap roles`).
-
-Yerel örnek: yeni bir veritabanına geri yükle, sonra zinciri doğrula.
-
-```bash
-docker compose exec postgres createdb -U kaptan_owner kaptan_restore
-docker compose cp backend/ops/restore.sh postgres:/tmp/restore.sh
-docker compose cp kaptan-local.dump postgres:/tmp/kaptan.dump
-docker compose exec postgres sh -c \
-  'RESTORE_DATABASE_URL=postgresql://kaptan_owner:$POSTGRES_PASSWORD@127.0.0.1:5432/kaptan_restore sh /tmp/restore.sh /tmp/kaptan.dump'
-docker compose run --rm --no-deps api python -m kaptan.ops.backup verify --url postgresql://kaptan_owner:kaptan-local-owner@postgres:5432/kaptan_restore
-```
-
-Şifreli döküm (`*.dump.age`): `AGE_IDENTITY_FILE=<gizli anahtar dosyası>`. `verify` çıktısı
-`audit verify: ok=True checked=<n> head=<hash>...` olmalıdır; `ok=False` ise o yedeği kullanma.
-
-## 3. Durdur (kill switch) ve yeniden başlatma
-
-Durdur: yeni emir çıkmaz, açık emirler iptal edilir (`cancel_reason = kill_switch`), pozisyon satılmaz.
-Kim: Risk Sorumlusu ya da Yönetici (panel: Portföy → Durdur; API `POST /api/v1/risk/kill-switch {"reason"}`,
-gerekçe ≥ 5 karakter). Otomatik olarak da devreye girer: risk monitörü zirveden −%5'te `system:risk_monitor`
-adına durdurur (yalnız `DEMO_MODE` kapalıyken; günlük −%1 ise yalnız o günün yeni emirlerini keser).
-
-Yeniden başlatma iki imza ister ve iki farklı kişi atar:
-
-1. **Yönetici başlatır (1/2):** panelde Portföy → durdurulmuş kart → yeniden başlat; ya da
-   `POST /api/v1/risk/kill-switch/reset/request {"reason": "<en az 10 karakter>"}`.
-2. **Risk Sorumlusu onaylar (2/2):** `POST /api/v1/risk/kill-switch/reset/confirm {"reason": "<en az 10 karakter>"}`.
-   Başlatan kişi onaylayamaz (403). Onaydan sonra düşüş ölçüsü −%4,9'a tabanlanır.
-
-409 yanıtları: `not_on` (sistem zaten çalışıyor), `already_started` (1/2 zaten verildi), `not_started` (önce
-Yönetici başlatmalı). `KAPTAN_MODE=personal` iken iki imza arasında ≥ 24 saat ve durdurmadan bu yana ≥ 5 seans
-gerekir (o zamana kadar 409 `conflict`). Her adım denetim defterine yazılır (`kill_switch.on`,
-`kill_switch.reset_started`, `kill_switch.reset`) ve SSE `desk` akışında `kill_switch` olayı yayımlanır.
-
-## 4. Denetim zincirini doğrulama
-
-Her kayıt bir öncekinin SHA-256 özetini taşır; uygulama rolü (`kaptan_app`) `audit.audit_log` üzerinde yalnız
-INSERT/SELECT yapabilir, UPDATE/DELETE/TRUNCATE tetikleyiciyle herkese kapalıdır.
-
-| Nasıl | Kim / ne zaman |
-|---|---|
-| Panel: Denetim → "Defteri doğrula" | Risk Sorumlusu, Yönetici, Denetçi |
-| `POST /api/v1/audit/verify` (Bearer) | Aynı roller; yanıt `{"ok", "first_bad_pos", "kind", "checked", "head_hash", …}` |
-| `python -m kaptan.ops.backup verify --url <postgres url>` | Bir yedeği ya da geri yüklenmiş veritabanını çevrim dışı yürür |
-| Scheduler `audit_anchor`, her gün 23:30 (İstanbul) | Zinciri doğrular, başı `audit.anchors`'a yazar (`AUDIT_ANCHOR_FILE` doluysa JSON satırı olarak dosyaya da); kırık zincir: ERROR log, `audit.verify_failed` kaydı, Redis `kaptan:audit:chain_ok=0`. `DEMO_MODE`'da yalnız doğrular |
-| `GET /metrics` → `audit_chain_ok` | İzleme (`METRICS_TOKEN` Bearer ya da loopback) |
-
-Yerel yığında örnek:
-
-```bash
-TOKEN=$(curl -s -H 'Content-Type: application/json' -d '{"passphrase":"kaptan2026","role":"auditor"}' \
-  http://localhost:3100/api/v1/auth/login | python -c 'import sys,json;print(json.load(sys.stdin)["access_token"])')
-curl -s -X POST -H "Authorization: Bearer $TOKEN" http://localhost:3100/api/v1/audit/verify
-```
-
-Zincir kırıksa: o andan sonra karar verme (Durdur), `first_bad_pos` kaydını ve son sağlam yedeği bul, yedeği
-boş bir veritabanına geri yükleyip `verify` ile doğrula, farkı incele. Demo gününde bilerek bozmak için:
-Yönetici `POST /api/v1/demo/tamper {"on": true}` (yalnız `DEMO_MODE`).
-
-## 5. Anahtar ve parola döndürme
-
-Değerleri hiçbir zaman log'a, terminal geçmişine ya da depoya yazma; `prod.env` gitignore'dadır, SOPS/age için
-[`SOPS-AGE.md`](SOPS-AGE.md).
-
-| Ne | Nasıl | Etkisi |
+| Ne | Nasıl | |
 |---|---|---|
-| `JWT_SECRET` (≥ 32 bayt, rastgele) | `python -c "import secrets;print(secrets.token_urlsafe(48))"` → `prod.env` → `$PROD up -d api` | Açık erişim token'ları (15 dk) geçersiz olur; panel yenileme çereziyle yeni token alır |
-| `PASSPHRASE_HASH` (giriş parolası) | `cd backend && uv run python scripts/hash_passphrase.py` → `prod.env`'e tek tırnak içinde → `$PROD up -d api` | Eski parola hemen reddedilir |
-| `KAPTAN_APP_PASSWORD` (`kaptan_app` rolü) | Yeni değeri `prod.env`'e yaz → `$PROD run --rm db-roles bootstrap roles --rotate` → `$PROD up -d` (tüm uygulama servisleri yeni URL ile yeniden kurulur) | Kısa kesinti |
-| `POSTGRES_PASSWORD` (`kaptan_owner`) | `$PROD run --rm -e KAPTAN_OWNER_PASSWORD=<yeni> db-roles bootstrap roles --rotate`, sonra aynı değeri `POSTGRES_PASSWORD` olarak yaz → `$PROD up -d` | migrate/bootstrap/backup yeni parolayı kullanır |
-| `REDIS_PASSWORD` | `prod.env` → `$PROD up -d` (redis ve her uygulama servisi yeniden oluşur) | Kısa kesinti; Redis verisi (AOF) korunur |
-| `METRICS_TOKEN` | `prod.env` → `$PROD up -d api` | İzleme tarafını güncelle |
-| `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY`, `AZURE_OPENAI_API_KEY` | Sağlayıcı panelinde yeni anahtar → `prod.env` → `$PROD up -d` → eskisini iptal et | Kesintisiz |
-| age anahtarları (yedek şifreleme) | [`SOPS-AGE.md`](SOPS-AGE.md): `sops updatekeys`, `AGE_RECIPIENTS` | Eski yedekler eski anahtarla açılır |
+| Başlat | `baslat.cmd` | [denendi] |
+| Durdur | `durdur.cmd` (veriler silinmez) | [denendi] |
+| Parolayı değiştir | `kur.cmd`, sorunca `e` yaz. Açık oturumlar kapanır. | [denendi] |
+| Ne durumda? | Panelin üstündeki uyarı, ya da `docker compose ps` | [denendi: `docker compose ps`. Paneldeki uyarıyı panel çalışması ekleyecek] |
 
-Bir ekip üyesi ayrıldığında: tüm yukarıdakileri döndür, `sops updatekeys` çalıştır.
+`durdur.cmd` ile durdurduktan sonra bilgisayar yeniden açılsa da KAPtan kendiliğinden başlamaz. Durduğu sürece
+bildirim okunmaz.
+
+### Bilgisayar yeniden başladığında
+
+KAPtan, Docker açılınca kendiliğinden geri gelir. Veritabanı önce hazır olur, diğerleri onu bekler. Bir kez
+ayarla:
+
+1. **Docker Desktop Windows ile açılsın:** Docker Desktop → Settings → General → *Start Docker Desktop when you
+   sign in to your computer*.
+2. **Bilgisayar uyumasın:** Windows Ayarları → Sistem → Güç ve pil → Ekran, uyku ve hazırda bekletme → *Prize takılıyken
+   uyku: Hiçbir zaman*. Dizüstü bilgisayarda kapak kapanınca ne olacağını da Denetim Masası → Güç Seçenekleri'nden ayarla.
+3. **Oturum aç:** Docker Desktop oturum açılmadan başlamaz. Bilgisayar yeniden başlayınca oturum açman gerekir.
+
+**Bilgisayar kapalıysa ya da uyuyorsa KAPtan bildirim okuyamaz.** O sürede çıkan bildirimleri canlı olarak
+kaçırırsın. Bilgisayar açılınca KAPtan kaçırdığı borsa günlerinin fiyatlarını ve bildirimlerini en fazla 30 gün geriye
+giderek geçmiş olarak yükler, ama onlar için öneri üretmez. Çalışmıyorsa KAPtan bunu açıkça söyler:
+*KAPtan şu an bildirim okumuyor.*
+
+Docker Desktop'ı elle yeniden başlatıp bakmak istersen: Docker Desktop → Troubleshoot → Restart. 1-2 dakika sonra
+`http://localhost:3100` açılmalı. **[denenmedi: bu bilgisayardaki Docker yeniden başlatılmadı. Aynı sınama ayrı bir
+Docker içinde yapıldı; bütün servisler 45 saniye içinde geri geldi.]**
+
+## 3. Yedek ve geri dönüş
+
+Her gece 03:00'te (İstanbul) bir yedek alınır. Bilgisayar o saatte uyuyorsa uyanınca alınır. Yeni kurulum ilk
+yedeğini hemen alır. Yedekler `kur.ps1`'de seçtiğin klasörde durur, son 14 gün saklanır. Aynı klasörde
+`audit-anchors.jsonl` da vardır: her gece kayıtların o anki özeti buraya yazılır. Docker silinse bile bu klasör kalır.
+
+Bu klasör yalnız bu bilgisayardadır. Disk bozulursa yedekler de gider. Arada bir başka bir diske kopyalaman iyi olur.
+
+**Şimdi bir yedek al:** [denendi]
+
+```powershell
+docker compose exec backup sh /ops/backup-once.sh
+```
+
+**Yedeğin işe yaradığını sına (canlı veriye dokunmaz):** [denendi] Ayda bir yap. Şu satırları görmelisin:
+`audit verify: ok=True`, `anchors: ... mismatched=[]`, `Deneme başarılı`.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\geri-yukle.ps1 -Deneme
+```
+
+**Yedeğe dön:** [denendi] Önce yedek ayrı bir veritabanına açılır ve kayıtlar doğrulanır. Doğrulanmazsa hiçbir şey
+değişmez. Doğrulanırsa KAPtan durur, o yedeğe geçer. Bugünkü veri silinmez, `kaptan_eski_<tarih>` adıyla kenarda kalır.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\geri-yukle.ps1
+powershell -ExecutionPolicy Bypass -File .\baslat.ps1
+```
+
+Belirli bir yedek için: `.\geri-yukle.ps1 -Dosya kaptan-20261103T000000Z.dump` [denenmedi]
+
+Her şey yolundaysa kenardaki eski veriyi silebilirsin: [denenmedi]
+
+```powershell
+docker compose exec -T postgres psql -U kaptan_owner -d postgres -c "DROP DATABASE kaptan_eski_<tarih>"
+```
+
+**Başka bir bilgisayara taşıma:** [denenmedi] Projeyi ve yedek klasörünü yeni bilgisayara kopyala. `kur.cmd` ile
+kur, yedek klasörü olarak kopyaladığın klasörü göster, `baslat.cmd` ile başlat, sonra `geri-yukle.ps1` çalıştır.
+
+## 4. Güncelleme
+
+1. Bir yedek al (bölüm 3). [denendi]
+2. Yeni kodu al: `git pull` [denenmedi]
+3. Yeniden derle ve başlat: [denendi]
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\baslat.ps1 -Guncelle
+```
+
+Veritabanı değişiklikleri başlarken kendiliğinden uygulanır.
+
+## 5. Eski deneme verisini temizleme
+
+Docker'da eski deneme gününden iki birim kaldı: `kaptan-stack_pgdata` ve `kaptan-stack_redisdata`. Artık
+kullanılmıyorlar. **Gerçek geçmişin `kaptan-stack_pgdata_live` içindedir: onu asla silme.**
+
+1. `kur.cmd` ve `baslat.cmd` ile yeni sisteme geç, girip verilerini gör.
+2. Sonra şunu çalıştır: [denenmedi: gerçek birimler silinmedi; `docker volume rm` yalnız deneme birimiyle çalıştırıldı]
+
+```powershell
+docker volume rm kaptan-stack_pgdata kaptan-stack_redisdata
+```
 
 ## 6. Sık sorunlar
 
-| Belirti | Neden / çözüm |
+| Belirti | Ne yap |
 |---|---|
-| `seed` "exit 1", `FileNotFoundError …/tests/fixtures/demo/expected/…` | Eski imaj: `docker compose build --no-cache api` (demo fikstürleri imajda olmalı) |
-| `api` unhealthy, log'da `KAPTAN_ENV=prod: api refuses to start` | `prod.env` eksik/zayıf: listelenen her maddeyi düzelt (değerler log'a yazılmaz) |
-| `/readyz` 503 `migrations` | Şema geride: `$PROD run --rm migrate` |
-| Girişte 429 `rate_limited` | Dakikada `LOGIN_RATE_PER_MINUTE` (5) deneme; bir dakika bekle |
-| Panelde giriş olur ama yenilemede oturum düşer | Paneli `localhost`/`127.0.0.1` dışında bir adla açtın: `ALLOWED_ORIGINS`'e ekle; düz http'de `COOKIE_SECURE=false` |
-| Port çakışması (8000/3100) | `KAPTAN_API_PORT=8300 KAPTAN_PANEL_PORT=3300 docker compose up -d` |
-| `readyz` → `ingest_worker` / `agent_worker` `missing` | Normal: canlı işçiler yalnız `--profile live` ile çalışır |
+| `kur.ps1` "imzalı değil" ya da "betik çalıştırma kapalı" diyor | `.cmd` dosyasına çift tıkla (bölüm 1) |
+| `docker compose` "KAPtan kurulu değil" diyor | Kurulum yapılmamış: `kur.cmd` |
+| Docker Desktop çalışmıyor | `baslat.cmd` kendisi açmayı dener. Açılmazsa elle aç, simge yeşil olunca yeniden dene |
+| "password authentication failed" | `.env`'deki veritabanı parolası elle değişmiş. `kur.cmd` çalıştır, eşitler |
+| API açılmıyor, kayıtta `refuses to start` | Eksikleri listeler. Çoğunlukla sağlayıcı anahtarı yoktur: `kur.cmd` |
+| Girişte "Çok fazla deneme" | Dakikada 5 deneme hakkın var. Bir dakika bekle |
+| Giriş olur ama yenileyince düşüyor | Adresi `localhost` ile aç. Başka bir adla çerez çalışmaz |
+| 3100 portu dolu | `.env` dosyasına `KAPTAN_PANEL_PORT='3300'` ekle, `baslat.cmd` |
+| "KAPtan şu an bildirim okumuyor" | `docker compose ps` ile `ingest_worker` satırına bak. Çalışıyorsa KAP o an yanıt vermiyor olabilir: `docker compose logs --tail=20 ingest_worker` |
+| "Son yedek ... gün önce alındı" | `docker compose logs --tail=20 backup`. Yedek klasörü silinmiş ya da taşınmış olabilir |
+
+## 7. Teknik notlar
+
+**Tek sistem:** Kökteki `docker-compose.yml` tek doğrudur. `backend/docker-compose.yml` yalnız testler için Postgres
+ve Redis açar. Gizli değerler `.env`, gizli olmayan ayarlar `live.env` içindedir.
+
+**Servisler:** `postgres`, `redis` → `db-roles`, `migrate`, `bootstrap` (bir kez çalışıp biter) → `api`, `ingest_worker`,
+`agent_worker`, `scheduler`, `warmup`, `backup` → `panel`. Yalnız panel açıktır, o da yalnız `127.0.0.1` üzerinde.
+
+**Durum:** `GET /api/v1/system/status` (oturum gerekir): son KAP yoklaması, son değerlendirme, günlük işler, son yedek.
+Yanıttaki `message` kişiye gösterilecek tek cümledir, sorun yoksa `null`.
+
+**Isınma:** `warmup` servisi saatte bir sorar: ilk kurulum mu, kaçırılmış borsa günü var mı? Yoksa hiçbir kaynağa
+gitmez. Varsa eksikleri kibarca doldurur (istekler arası ≥ 2 s); başarısız kaynakları 6 saat içinde yeniden denemez.
+`agent_worker` ilk ısınma bitene kadar bekler: öncesinde evren boştur, her koşu R03'te durur.
+
+**Harcama sınırı:** Önce LLM'siz ön eleme (gürültü/arşiv rotası, R03 evren, R04 tedbir, R13); modele giden koşu saatte
+`AGENT_MAX_RUNS_PER_HOUR`, günde `AGENT_MAX_RUNS_PER_DAY` (`live.env`); sağlayıcı günlük sınırları (`LLM_CAP_*`, DeepSeek
+günde en çok $0,50) ayrıca geçerli. Sınıra takılan bildirim `deferred` olur ve giriş penceresi açıkken öncelik sırasıyla
+yeniden koşar; pencere kapanırsa `expired_unrun` olur. Sayılar `/disclosures/counters` yanıtındaki `agent_feed` alanında.
+Barındırma ücreti yoktur. DeepSeek ücretlidir ve zincirde açıktır; en fazla harcamayı günlük tavanı sınırlar. Diğer
+sağlayıcılar ücretsiz katmandadır.
+
+**Geçmiş bildirim hafızası:** `RAG_INDEX_ON_INGEST=true`. Yeni metinler `gemini-embedding-001` ile kaydedilir: kendi
+modeli ve kendi günlük tavanları (`RAG_EMBED_CAP_RPD` 500 istek, `RAG_EMBED_CAP_TPD`), ajanların Flash-Lite kotasından
+ayrı sayılır. Bir hata bildirim okumayı durdurmaz; tavan dolunca o gün dizine eklenmez.
+
+**Denetim zinciri:** Panel: Geçmiş → "Kayıtlar sağlam mı?". API: `POST /api/v1/audit/verify`. Zincir her gece 23:30'da
+doğrulanır ve başı hem `audit.anchors` tablosuna hem yedek klasöründeki `audit-anchors.jsonl` dosyasına yazılır.
+Geri dönüş bu dosyayla da karşılaştırır: yedekle birlikte tablosu da yeniden yazılmış bir kayıt defteri dosyayla uyuşmaz.
+Zincir kırıksa: o andan sonra karar verme (Durdur), `first_bad_pos` kaydını bul, son sağlam yedeği `-Deneme` ile sına.
+
+**Durdur ve yeniden başlatma:** Durdur: yeni öneri işlenmez, açık işler iptal edilir, sahip olduğun hisse satılmaz.
+Zirveden −%5'te kendiliğinden de durur. Yeniden başlatmak iki adımdır: istek ve onay. Arada en az 24 saat ve durdurmadan
+bu yana en az 5 borsa günü olmalıdır; yanıttaki `reset.ready_at` en erken onay anını söyler. Her adım kayıt defterine
+yazılır.
+
+**Parolalar ve anahtarlar:**
+
+| Ne | Nasıl |
+|---|---|
+| Giriş parolası | `kur.cmd`, `e` |
+| Sağlayıcı anahtarı | `kur.cmd`, yeni anahtarı yapıştır; eskisini sağlayıcının panelinden iptal et |
+| `JWT_SECRET`, Redis ve veritabanı parolaları | `.env`'den satırı sil, `kur.cmd` yenisini üretir ve veritabanını eşitler [denendi: veritabanı parolaları için] |
+
+**Giriş sınırı:** İstemci başına dakikada 5 (`LOGIN_RATE_PER_MINUTE`), hepsi birden dakikada 30
+(`LOGIN_OVERALL_RATE_PER_MINUTE`). Panel, tarayıcının gönderdiği `X-Forwarded-For` başlığını olduğu gibi iletir ve bu
+başlık sahte olabilir; ikinci sınır bu yüzden vardır. Sınırlar Redis'te tutulur.
+
+**Çerez:** `KAPTAN_ENV=prod` ile `__Host-kaptan_rt` çerezi `Secure` işaretlidir. `localhost` güvenli sayıldığı için düz
+http üzerinde çalışır: Chromium'da denendi. Edge ve Firefox için bilinen davranış budur, burada denenmedi. Safari doğrulanmadı.

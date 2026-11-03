@@ -84,23 +84,22 @@ async def test_tick_runs_each_slot_once_and_one_failure_does_not_stop_the_others
     )
     monkeypatch.setattr(s, "JOBS", jobs)
     running: dict[str, asyncio.Task[s.RunResult]] = {}
-    started = await s.tick(ctx, NOW, running, demo=False)
+    started = await s.tick(ctx, NOW, running)
     assert {j.name for j, _ in started} == {"test_tick_bad", "test_tick_ok"}
     await asyncio.gather(*running.values())
     assert {r.result().job: r.result().ok for r in running.values()} == {"test_tick_bad": False, "test_tick_ok": True}
-    second = await s.tick(ctx, NOW, running, demo=False)  # the chained job, now that its predecessor is done
+    second = await s.tick(ctx, NOW, running)  # the chained job, now that its predecessor is done
     assert [j.name for j, _ in second] == ["test_tick_after"]
     await asyncio.gather(*running.values())
-    assert await s.tick(ctx, NOW, running, demo=False) == []  # restart the same day: nothing twice
+    assert await s.tick(ctx, NOW, running) == []  # restart the same day: nothing twice
     assert len(await _rows(ctx, "test_tick_ok")) == 1
     assert len(await _rows(ctx, "test_tick_bad")) == 1  # a failed slot is not retried by the loop
-    assert await s.tick(ctx, NOW, running, demo=True) == []  # DEMO_MODE: not demo-safe
 
 
 async def test_daily_catchup_is_marked(ctx: s.Ctx, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(s, "JOBS", (s.Job("test_catchup", ok_job, at=time(8, 0), days="daily"),))
     running: dict[str, asyncio.Task[s.RunResult]] = {}
-    await s.tick(ctx, datetime(2026, 10, 20, 15, 0, tzinfo=IST), running, demo=False)
+    await s.tick(ctx, datetime(2026, 10, 20, 15, 0, tzinfo=IST), running)
     await asyncio.gather(*running.values())
     (row,) = await _rows(ctx, "test_catchup")
     assert row["trigger"] == "catchup" and row["slot"] == "2026-10-20"

@@ -11,13 +11,13 @@ import pytest
 
 from kaptan.api.main import API_PREFIX
 from kaptan.db import DictConn
-from kaptan.demo.fixtures import FIXTURE_DIR
 from kaptan.domain.schemas import Position
 from kaptan.portfolio import open_position
 from kaptan.portfolio.positions import PositionError, list_positions
 from kaptan.settings import Settings
 from tests.conftest import bearer, login, reseed_test_db
 from tests.contract.harness import assert_matches
+from tests.harness.fixtures import FIXTURE_DIR, DemoFixtures
 
 pytestmark = pytest.mark.integration
 
@@ -26,20 +26,26 @@ def _expected(name: str) -> Any:
     return json.loads((FIXTURE_DIR / "expected" / name).read_text(encoding="utf-8"))
 
 
-async def _get(client: httpx.AsyncClient, path: str, role: str = "analyst") -> httpx.Response:
-    session = await login(client, role)  # type: ignore[arg-type]
+async def _get(client: httpx.AsyncClient, path: str) -> httpx.Response:
+    session = await login(client)
     return await client.get(f"{API_PREFIX}{path}", headers=bearer(session["access_token"]))
 
 
-async def test_positions_match_the_mock_at_13_40(client: httpx.AsyncClient) -> None:
+async def test_positions_read_the_book_and_mark_at_the_issuer_price(client: httpx.AsyncClient) -> None:
     res = await _get(client, "/portfolio/positions")
     assert res.status_code == 200, res.text
     assert_matches("Position", res.json(), many=True)
-    assert res.json() == _expected("positions.json")
+    prices = {i["ticker"]: i["price"] for i in DemoFixtures().json("issuers.json")}
+    marked = ("last_price", "unrealized_pnl")
+    got = [{k: v for k, v in p.items() if k not in marked} for p in res.json()]
+    assert got == [{k: v for k, v in p.items() if k not in marked} for p in _expected("positions.json")]
+    for p in res.json():  # no stored price in this database (PRICES_LIVE off): nothing invents a move
+        assert p["last_price"] == prices[p["ticker"]]
+        assert p["unrealized_pnl"] == round((p["last_price"] - p["avg_cost"]) * p["qty"])
 
 
 async def test_pnl_matches_the_fixture_and_filters_inclusively(client: httpx.AsyncClient) -> None:
-    full = await _get(client, "/portfolio/pnl", "auditor")
+    full = await _get(client, "/portfolio/pnl")
     assert full.status_code == 200
     assert_matches("PnlPoint", full.json(), many=True)
     fixture = json.loads((FIXTURE_DIR / "pnl.json").read_text(encoding="utf-8"))

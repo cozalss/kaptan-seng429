@@ -39,14 +39,15 @@ LIST_COLUMNS: Final = (
     "note_count",
 )
 
-DEMO_RUN_SQL: Final = """
-SELECT run_id, disclosure_index, ticker, company_name, strategy_version, is_fixture, injected_at
-  FROM trading.agent_runs WHERE scenario = %s AND run_set = 'demo' ORDER BY run_id LIMIT 1
-"""
 DISCLOSURE_SQL: Final = f"SELECT {', '.join(LIST_COLUMNS)} FROM core.disclosures WHERE disclosure_index = %s"  # noqa: S608
 TEXTS_SQL: Final = (
     "SELECT lang, body FROM core.disclosure_texts WHERE disclosure_index = %s ORDER BY lang <> 'tr', lang"
 )
+ATTACHMENTS_SQL: Final = (
+    "SELECT status, reason_tr, body, lang FROM core.disclosure_attachments "
+    "WHERE disclosure_index = %s ORDER BY position, obj_id"
+)
+PARSED_SQL: Final = "SELECT parsed FROM core.disclosures WHERE disclosure_index = %s"
 ISSUER_SQL: Final = "SELECT in_universe, price, adv20_try, free_float FROM core.issuers WHERE ticker = %s"
 RESTRICTIONS_SQL: Final = (
     "SELECT kind, source_ref FROM core.restricted_securities WHERE ticker = %s ORDER BY added_at, id"
@@ -103,13 +104,6 @@ async def _all(conn: AsyncConnection[Any], sql: str, params: tuple[Any, ...]) ->
         return [dict(r) for r in await cur.fetchall()]
 
 
-async def demo_run(conn: AsyncConnection[Any], scenario: str) -> dict[str, Any]:
-    row = await _one(conn, DEMO_RUN_SQL, (scenario,))
-    if row is None:
-        raise LookupError(f"no demo run for scenario {scenario}")
-    return row
-
-
 async def disclosure(conn: AsyncConnection[Any], index: int) -> dict[str, Any]:
     row = await _one(conn, DISCLOSURE_SQL, (index,))
     if row is None:
@@ -119,6 +113,15 @@ async def disclosure(conn: AsyncConnection[Any], index: int) -> dict[str, Any]:
 
 async def texts(conn: AsyncConnection[Any], index: int) -> list[dict[str, str]]:
     return [{"lang": r["lang"], "body": r["body"]} for r in await _all(conn, TEXTS_SQL, (index,))]
+
+
+async def attachments(conn: AsyncConnection[Any], index: int) -> list[dict[str, Any]]:
+    return await _all(conn, ATTACHMENTS_SQL, (index,))
+
+
+async def parsed_document(conn: AsyncConnection[Any], index: int) -> dict[str, Any] | None:
+    row = await _one(conn, PARSED_SQL, (index,))
+    return None if row is None else row["parsed"]
 
 
 async def issuer(conn: AsyncConnection[Any], ticker: str) -> dict[str, Any]:

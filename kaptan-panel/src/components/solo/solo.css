@@ -1,16 +1,13 @@
 /* ──────────────────────────────────────────────────────────────────────────
-   "Benim KAPtan'ım" — the single-user home. The same paper, ink and indigo as the desk, plus
-   two things the desk does not need:
-   - a dark reading (the person checks their money at night on a phone): the desk's tokens are
-     re-stepped for a dark surface, only while this screen (or its dialogs) is on the page, so
-     every shared component (buttons, dialogs, toasts) follows without a fork;
-   - the allocation palette: six categorical inks in a fixed order, validated for colour-vision
-     deficiency on both surfaces (light: worst adjacent CVD ΔE 10.4; dark: 8.8), plus cash and
-     "Diğer" in neutral greys. Colour follows the holding, never its rank on screen.
+   The app's frame and home: the bar, the horizon, the map of the money, the log.
+   Tokens live in globals.css; this file adds the allocation palette: six categorical inks in a
+   fixed order, validated for colour-vision deficiency on both surfaces (light: worst adjacent CVD
+   ΔE 10.4; dark on #0b0f1d: 8.8), plus cash and "Diğer" in neutral inks. Colour follows the
+   holding, never its rank on screen. Words never sit on these inks directly: each tile carries a
+   paper label (≥ 7:1 whatever the ink).
    ────────────────────────────────────────────────────────────────────────── */
 
-:root:has([data-solo]) {
-  color-scheme: light dark;
+:root {
   --solo-c1: #2f5aa8;
   --solo-c2: #d06a2a;
   --solo-c3: #14a07a;
@@ -19,41 +16,12 @@
   --solo-c6: #6a50c8;
   --solo-other: #6e6a62;
   --solo-cash: #c9c3b6;
-  --solo-area-top: rgb(12 47 99 / 0.16);
-  --solo-area-bottom: rgb(12 47 99 / 0);
+  --bar-h: 72px;
+  --tab-h: 62px;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:has([data-solo]) {
-    --paper: #121419;
-    --panel: #1a1d24;
-    --sunk: #252832;
-    --ink: #eeebe3;
-    --ink-lift: #d8d4ca;
-    --ink-soft: #dcd8cf;
-    --muted: #b9b4a9;
-    --wash: #a9bff0;
-    --wash-tint: rgb(169 191 240 / 0.12);
-    --wash-tint-strong: rgb(169 191 240 / 0.22);
-    --rule-ui: rgb(238 235 227 / 0.62);
-    --rule-soft: rgb(238 235 227 / 0.4);
-    --hairline: rgb(238 235 227 / 0.2);
-    --scrim: rgb(10 11 14 / 0.78);
-    --north: #ff8f80;
-    --north-deep: #ffaea3;
-    --north-tint: rgb(255 143 128 / 0.12);
-    --gain: #72d69e;
-    --loss: #ff9dbb;
-    --brand: #a9c1f5;
-    --on-dark: #121419;
-    --shadow-ink: 3px 3px 0 rgb(0 0 0 / 0.55);
-    --line: rgb(238 235 227 / 0.12);
-    --line-strong: rgb(238 235 227 / 0.24);
-    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
-    --shadow-raise: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -8px rgb(0 0 0 / 0.6);
-    --shadow-pop: 0 0 0 1px rgb(238 235 227 / 0.08), 0 12px 32px -8px rgb(0 0 0 / 0.7);
-    --shadow-ink-lg: 6px 6px 0 rgb(0 0 0 / 0.55);
-
+  :root {
     --solo-c1: #3d7ad6;
     --solo-c2: #d4642a;
     --solo-c3: #1a9a72;
@@ -62,8 +30,31 @@
     --solo-c6: #8a7ae6;
     --solo-other: #8d8a84;
     --solo-cash: #4a4e5a;
-    --solo-area-top: rgb(169 193 245 / 0.2);
-    --solo-area-bottom: rgb(169 193 245 / 0);
+  }
+}
+
+/* Night: the wordmark in paper ink; filled buttons stay saturated with white words. */
+@media (prefers-color-scheme: dark) {
+  .solo-wordmark {
+    color: var(--ink);
+  }
+  .bg-brand.border-brand:not(:disabled) {
+    background-color: #3d6bd0;
+    border-color: #3d6bd0;
+    color: #ffffff;
+  }
+  .bg-brand.border-brand:not(:disabled):hover {
+    background-color: #5281e3;
+    border-color: #5281e3;
+  }
+  .bg-north.border-north:not(:disabled) {
+    background-color: #c4392f;
+    border-color: #c4392f;
+    color: #ffffff;
+  }
+  .bg-north.border-north:not(:disabled):hover {
+    background-color: #d84a40;
+    border-color: #d84a40;
   }
 }
 
@@ -73,119 +64,643 @@
   font-weight: 600;
   font-feature-settings: "tnum", "case";
   letter-spacing: -0.035em;
-  line-height: 0.95;
+  line-height: 1;
 }
 
-/* Cash is not a holding: a fine diagonal hatch so it never reads as one more colour. */
+/* Cash is not a holding: fine engraved lines on bare paper, so it never reads as one more colour. */
 .solo-cash-fill {
-  background-color: var(--solo-cash);
-  background-image: repeating-linear-gradient(135deg, rgb(255 255 255 / 0.28) 0 2px, transparent 2px 6px);
-}
-@media (prefers-color-scheme: dark) {
-  .solo-cash-fill {
-    background-image: repeating-linear-gradient(135deg, rgb(255 255 255 / 0.1) 0 2px, transparent 2px 6px);
-  }
+  background-color: var(--panel);
+  background-image: repeating-linear-gradient(135deg, var(--rule-soft) 0 1px, transparent 1px 6px);
+  box-shadow: inset 0 0 0 2px var(--ink);
 }
 
 @media (forced-colors: active) {
-  .solo-swatch,
-  .solo-segment {
+  .map-tile__fill,
+  .hz-boat {
     forced-color-adjust: none;
-    border: 1px solid CanvasText;
   }
 }
 
-/* ── The navy hero (money + its line). Light inks on the desk's navy in both readings. ── */
-:root:has([data-solo]) {
-  --solo-hero-line: #b9cdf7;
-  --solo-hero-area: rgb(185 205 247 / 0.3);
-  --solo-hero-grid: rgb(255 255 255 / 0.08);
-  --solo-hero-base: rgb(255 255 255 / 0.42);
-  --solo-hero-ring: rgb(185 205 247 / 0.28);
-  --solo-up-on-navy: #7ee2ab; /* 10.9:1 on navy */
-  --solo-down-on-navy: #ffadc4; /* 10.2:1 on navy */
+/* ── The bar: sits in the sky, no box; a rule arrives only once the page has scrolled under it ── */
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--paper) var(--grain);
+  view-transition-name: app-bar;
+  transition: box-shadow var(--dur-quick) var(--ease-ink);
 }
-@media (prefers-color-scheme: dark) {
-  :root:has([data-solo]) .solo-hero {
-    background: #0d2652;
-    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 16px 40px -16px rgb(0 0 0 / 0.7);
-  }
+.bar[data-scrolled="true"] {
+  box-shadow: 0 2px 0 var(--ink);
 }
-.solo-up {
-  color: var(--solo-up-on-navy);
-}
-.solo-down {
-  color: var(--solo-down-on-navy);
-}
-
-/* Today's move under the big figure: a soft pill that tints with the move. */
-.solo-chip {
-  display: inline-flex;
+.bar__row {
+  display: flex;
   align-items: center;
-  gap: 0.4rem;
-  border-radius: 9999px;
-  background: rgb(255 255 255 / 0.08);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
-  padding: 0.2rem 0.75rem;
+  gap: 0.75rem;
+  height: var(--bar-h);
+}
+
+.nav-link {
+  position: relative;
+  display: inline-flex;
+  height: 44px;
+  align-items: center;
+  padding-inline: 0.75rem;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  transition: color var(--dur-quick) var(--ease-ink);
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0.75rem;
+  bottom: 6px;
+  height: 2px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-base) var(--ease-out-expo);
+}
+.nav-link:hover {
+  color: var(--ink);
+}
+.nav-link:hover::after {
+  transform: scaleX(1);
+}
+.nav-link[aria-current="page"] {
+  font-weight: 600;
+  color: var(--ink);
+}
+.nav-link[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+.nav-link:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 0;
+}
+.nav-link__icon {
+  display: none;
+}
+
+/* The current page flies the boat's pennant; it slides between pages. */
+.nav-flag {
+  position: absolute;
+  left: 0.75rem;
+  top: 1px;
+  width: 15px;
+  height: 11px;
+  background: var(--flag);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  view-transition-name: nav-flag;
+}
+
+.stop-chip {
+  display: inline-flex;
+  height: 44px;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 0.625rem;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--north);
+  white-space: nowrap;
+  border-radius: 2px;
+  transition: background-color var(--dur-quick) var(--ease-ink);
+}
+.stop-chip:hover {
+  background: var(--north-tint);
+}
+.stop-chip:focus-visible {
+  outline: 3px solid var(--north);
+  outline-offset: 0;
+}
+.stop-chip__mark {
+  width: 11px;
+  height: 11px;
+  background: currentColor;
+}
+
+/* A phone: the nav leaves the top bar for the thumb. One <nav>, moved by CSS. */
+@media (max-width: 639px) {
+  :root {
+    --bar-h: 60px;
+  }
+  .bar {
+    position: static;
+  }
+  .bar-nav {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 40;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--paper);
+    border-top: 2px solid var(--ink);
+    view-transition-name: app-nav;
+  }
+  .bar-nav ul {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .nav-link {
+    display: flex;
+    height: var(--tab-h);
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    padding-inline: 0;
+    font-size: 13px;
+  }
+  .nav-link::after {
+    display: none;
+  }
+  .nav-link__icon {
+    display: block;
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .nav-link[aria-current="page"] {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .nav-flag {
+    left: calc(50% + 1px);
+    top: 5px;
+  }
+}
+
+/* ── The horizon ──────────────────────────────────────────────────────────── */
+/* The words and the plot share one grid cell: the plot lies under the sky behind the words, and
+   the geometry keeps the line out of them (it rises beside them instead). The words' bottom
+   padding is the band that is always the line's. */
+.hz-stage {
+  position: relative;
+  overflow: hidden;
+}
+.hz-top {
+  display: grid;
+  --hz-band: clamp(150px, 24vh, 300px);
+}
+.hz-top--short {
+  --hz-band: clamp(110px, 16vh, 180px);
+}
+.hz-top > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+.hz-head {
+  position: relative;
+  z-index: 5;
+  padding-top: 0.25rem;
+  padding-bottom: var(--hz-band);
+  pointer-events: none;
+}
+.hz-head h1,
+.hz-head p {
+  pointer-events: auto;
+}
+.hz-plot {
+  position: relative;
+  height: 100%;
+}
+.hz-boat {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  pointer-events: none;
+  transform-origin: 50% 90%;
+  --boat-fill: var(--paper);
+  color: var(--ink);
+}
+.hz-boat--free {
+  transition: transform 150ms var(--ease-out-expo);
+}
+.hz-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  cursor: crosshair;
+  touch-action: pan-y;
+  user-select: none;
+}
+.hz-hit:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: -3px;
+}
+.hz-read {
+  position: absolute;
+  z-index: 6;
+  width: max-content;
+  max-width: min(300px, 86vw);
+  padding: 0.5rem 0.75rem;
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-ink);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-quick) var(--ease-ink);
+}
+.hz-read[data-open="true"] {
+  opacity: 1;
+}
+.hz-start {
+  position: absolute;
+  z-index: 1;
+  left: max(1rem, calc((100% - 1240px) / 2 + 2rem));
+  padding: 0.125rem 0.5rem;
+  margin-left: -0.5rem;
+  background: var(--sea);
+  color: var(--on-sea);
   font-size: 14px;
   line-height: 20px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.hz-pin {
+  position: absolute;
+  z-index: 1;
+  translate: -50% calc(-100% - var(--pin-rise));
+  padding: 0 0.25rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 13px;
   font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: fade-in 200ms var(--ease-ink) var(--pin-delay) both;
+}
+.hz-pin::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 2px;
+  height: calc(var(--pin-rise) - 4px);
+  margin-left: -1px;
+  background: var(--ink);
+}
+.hz-note {
+  position: absolute;
+  z-index: 1;
+  left: max(1rem, calc((100% - 1240px) / 2 + 2rem));
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.hz-dates {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  display: flex;
+  justify-content: space-between;
+  padding-inline: max(1rem, calc((100vw - 1240px) / 2 + 2rem)) 0;
+  color: var(--on-sea-soft);
+  font-size: 14px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.hz-sea {
+  position: relative;
+  padding-bottom: 1.25rem;
+  background: transparent;
+  color: var(--on-sea);
+}
+.hz-table-toggle {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--on-sea);
+  text-decoration: underline;
+  text-decoration-color: var(--sea-rule);
+  text-underline-offset: 4px;
+}
+.hz-table-toggle:hover {
+  text-decoration-color: var(--on-sea);
+}
+.hz-table-toggle:focus-visible {
+  outline: 3px solid var(--on-sea);
+  outline-offset: 2px;
+}
+.hz-period {
+  min-width: 56px;
+  min-height: 44px;
+  padding-inline: 0.75rem;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--on-sea-soft);
+  border-bottom: 2px solid transparent;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--dur-quick) var(--ease-ink), border-color var(--dur-quick) var(--ease-ink);
+}
+.hz-period:hover:not(:disabled) {
+  color: var(--on-sea);
+  border-bottom-color: var(--sea-rule);
+}
+.hz-period[aria-pressed="true"] {
+  color: var(--on-sea);
+  font-weight: 600;
+  border-bottom-color: var(--on-sea);
+}
+.hz-period:disabled {
+  cursor: not-allowed;
+  text-decoration: line-through transparent;
+  color: var(--on-sea-soft);
+  opacity: 0.72;
+}
+.hz-period:focus-visible {
+  outline: 3px solid var(--on-sea);
+  outline-offset: -3px;
+}
+.hz-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.25rem;
+  border-top: 2px solid var(--sea-rule);
+}
+.hz-fact {
+  min-width: 0;
+  padding: 0.75rem 1.5rem 0.25rem 0;
+}
+.hz-fact + .hz-fact {
+  padding-left: 1.5rem;
+  border-left: 2px solid var(--sea-rule);
+}
+/* A phone: three short ledger lines, so the decisions are not pushed away from the money. */
+@media (max-width: 639px) {
+  .hz-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hz-fact {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: 0.75rem;
+    padding: 0.5rem 0;
+  }
+  .hz-fact dd:first-of-type {
+    margin-top: 0;
+    font-size: 20px;
+    line-height: 28px;
+  }
+  .hz-fact dd:last-of-type {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+  .hz-fact + .hz-fact {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 2px solid var(--sea-rule);
+  }
+}
+@media (max-width: 639px) {
+  .hz-top {
+    --hz-band: clamp(200px, 32vh, 300px);
+  }
+  /* A finger hides what is beside it: on a phone the reading stays at the top of the plot. */
+  .hz-read {
+    top: 0 !important;
+    left: 0.75rem !important;
+    right: 0.75rem;
+    translate: none !important;
+    width: auto;
+    max-width: none;
+    padding-block: 0.25rem;
+  }
 }
 
-/* The line draws itself once (and again when the period changes): a left-to-right reveal. */
-.solo-draw {
-  animation: solo-draw 900ms var(--ease-out-expo) both;
+/* ── The page below the sea ───────────────────────────────────────────────── */
+/* The decisions rise out of the water: their sentence is the last line on the sea (a full-bleed
+   band that grows with the sentence, so it can never spill onto paper), and whatever follows it
+   is laid over the band's lower edge. */
+.home-sheet {
+  position: relative;
+  z-index: 3;
 }
-@keyframes solo-draw {
-  from {
-    clip-path: inset(0 100% 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
+.home-sheet .oneri-section-head {
+  padding-bottom: 4.5rem;
+  margin-bottom: -2.75rem;
+  background: var(--sea);
+  color: var(--on-sea);
+  box-shadow: 0 0 0 100vmax var(--sea);
+  clip-path: inset(0 -100vmax);
+}
+.home-sheet .oneri-section-head ~ * {
+  position: relative;
+}
+.home-sheet .oneri-closed {
+  background: var(--paper);
+  z-index: 1;
+}
+.home-band {
+  padding-block: clamp(3rem, 7vw, 6rem);
+}
+.home-close {
+  position: relative;
+  overflow: hidden;
+  background: var(--sea);
+  color: var(--on-sea);
+}
+
+/* ── Param nerede? A map where area is money ──────────────────────────────── */
+.map {
+  position: relative;
+  height: clamp(420px, 46vw, 560px);
+}
+@media (max-width: 639px) {
+  .map {
+    height: 620px;
   }
 }
-/* "Now" breathes softly on the line's last point. */
-.solo-pulse {
-  animation: solo-pulse 2.4s var(--ease-ink) infinite;
+/* All cash: one block needs no map's height. */
+.map--single,
+.map.map--single {
+  height: 176px;
 }
-@keyframes solo-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgb(185 205 247 / 0.45);
+.map-tile {
+  position: absolute;
+  display: block;
+  padding: 1px;
+  outline-offset: -4px;
+  color: var(--ink);
+}
+.map-tile:focus-visible {
+  z-index: 2;
+  outline: 3px solid var(--ink);
+}
+.map-tile__fill {
+  position: absolute;
+  inset: 1px;
+  transition: opacity var(--dur-quick) var(--ease-ink);
+}
+/* A holding's ink is printed, not a flat screen colour: fine engraved lines over the wash. */
+.map-tile__fill:not(.solo-cash-fill) {
+  background-image: repeating-linear-gradient(135deg, rgb(255 255 255 / 0.16) 0 1px, transparent 1px 5px);
+}
+.map:has(.map-tile:hover) .map-tile:not(:hover) .map-tile__fill,
+.map:has(.map-tile:focus-visible) .map-tile:not(:focus-visible) .map-tile__fill {
+  opacity: 0.45;
+}
+.map-tile__label {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  max-width: calc(100% - 18px);
+  padding: 0.375rem 0.625rem 0.4375rem;
+  background: var(--panel);
+  font-variant-numeric: tabular-nums;
+  transition: padding-right var(--dur-base) var(--ease-out-expo);
+}
+.map-tile__go {
+  position: absolute;
+  right: 0.625rem;
+  bottom: 0.5rem;
+  padding: 0 0.375rem;
+  background: var(--panel);
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity var(--dur-quick) var(--ease-ink), transform var(--dur-quick) var(--ease-out-expo);
+}
+.map-tile:hover .map-tile__go,
+.map-tile:focus-visible .map-tile__go {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Son işlemler: a log, not a list of cards ─────────────────────────────── */
+.log {
+  border-top: 2px solid var(--ink);
+}
+.log-row {
+  border-bottom: 1.5px solid var(--hairline);
+}
+.log-line {
+  display: grid;
+  grid-template-columns: 4.25rem 3.25rem 1.5rem minmax(0, 1fr) auto 1.25rem;
+  align-items: baseline;
+  column-gap: 0.5rem;
+  padding-block: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--dur-quick) var(--ease-ink);
+}
+a.log-line:hover {
+  background: var(--wash-tint);
+}
+a.log-line:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: -3px;
+}
+.log-go {
+  justify-self: end;
+  font-weight: 600;
+  transition: transform var(--dur-quick) var(--ease-out-expo);
+}
+a.log-line:hover .log-go {
+  transform: translateX(3px);
+}
+@media (max-width: 519px) {
+  .log-line {
+    grid-template-columns: 1.5rem minmax(0, 1fr) auto 1rem;
+    grid-template-areas: "mark what money go" "mark when when go";
+    row-gap: 0.125rem;
   }
-  60% {
-    box-shadow: 0 0 0 10px rgb(185 205 247 / 0);
+  .log-mark {
+    grid-area: mark;
+  }
+  .log-what {
+    grid-area: what;
+  }
+  .log-money {
+    grid-area: money;
+  }
+  .log-go {
+    grid-area: go;
+  }
+  .log-when {
+    grid-area: when;
+    display: flex;
+    gap: 0.375rem;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .solo-draw,
-  .solo-pulse {
-    animation: none;
+@media (min-width: 520px) {
+  .log-when {
+    display: contents;
   }
 }
 
-/* Dark reading: the wordmark in paper ink; filled buttons stay saturated with white words. */
-@media (prefers-color-scheme: dark) {
-  :root:has([data-solo]) .solo-wordmark {
-    color: var(--ink);
+/* ── Sign-in and 404: one calm scene ──────────────────────────────────────── */
+.scene {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  overflow: hidden;
+}
+.scene-sea {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: -1;
+  height: 38vh;
+  min-height: 220px;
+  border-top: 2px solid var(--ink);
+}
+.scene-boat {
+  position: absolute;
+  z-index: -1;
+  /* the keel, at 90% of its height, on the horizon */
+  bottom: calc(max(38vh, 220px) - var(--boat-w) * 0.075);
+  width: var(--boat-w);
+  height: calc(var(--boat-w) * 0.75);
+  --boat-fill: var(--paper);
+}
+.scene-boat--login {
+  --boat-w: clamp(96px, 11vw, 176px);
+  left: 8%;
+}
+@media (min-width: 1024px) {
+  .scene-boat--login {
+    left: 46%;
   }
-  :root:has([data-solo]) .bg-brand.border-brand:not(:disabled) {
-    background-color: #3d6bd0;
-    border-color: #3d6bd0;
-    color: #ffffff;
+}
+.scene-boat--far {
+  --boat-w: 72px;
+  right: 14%;
+}
+.scene-title {
+  font-size: clamp(2.625rem, 9vw, 5rem);
+  line-height: 1;
+  text-wrap: wrap;
+}
+@media (min-width: 1024px) {
+  .scene-title {
+    font-size: clamp(2.625rem, min(5.7vw, 12vh), 6.25rem);
   }
-  :root:has([data-solo]) .bg-brand.border-brand:not(:disabled):hover {
-    background-color: #5281e3;
-    border-color: #5281e3;
+}
+/* On a wide screen the sheet straddles the horizon: laid over the water, not floating above it. */
+@media (min-width: 1024px) {
+  .scene-sheet {
+    align-self: end;
+    margin-bottom: calc(max(38vh, 220px) - 10rem - 3.5rem);
   }
-  :root:has([data-solo]) .bg-north.border-north:not(:disabled) {
-    background-color: #c4392f;
-    border-color: #c4392f;
-    color: #ffffff;
-  }
-  :root:has([data-solo]) .bg-north.border-north:not(:disabled):hover {
-    background-color: #d84a40;
-    border-color: #d84a40;
-  }
+}
+.sheet {
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-ink-lg);
 }

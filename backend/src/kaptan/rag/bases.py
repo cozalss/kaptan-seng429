@@ -128,7 +128,7 @@ def event_text(row: dict[str, Any]) -> str:
     subject = row["subject"] or row["subtype"] or row["event_code"]
     return (
         f"{head} Olay: {subject} ({row['subtype'] or 'alt tür yok'}), yön {direction}. "
-        f"{row['horizon']} seanslık birikimli anormal getiri {_pct(row['car'])} "
+        f"{row['horizon']} borsa günlük birikimli anormal getiri {_pct(row['car'])} "
         f"(hisse {_pct(row['raw_ret'])}, endeks {_pct(row['bench_ret'])}, model {row['model']})."
     )
 

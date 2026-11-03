@@ -1,16 +1,14 @@
-"""Limits with two signatures — owner: wave-2 package B.
+"""Limits and their changes — owner: wave-2 package B.
 
-    GET  /limits                                                 -> LimitsView (all roles)
-    POST /limits/proposals                    LimitProposalInput -> LimitsView (limits.propose: admin, 1/2)
-    POST /limits/proposals/{version}/decision LimitDecisionInput -> LimitsView (limits.decide: risk_officer, 2/2)
+    GET  /limits                                                 -> LimitsView
+    POST /limits/proposals                    LimitProposalInput -> LimitsView (1/2)
+    POST /limits/proposals/{version}/decision LimitDecisionInput -> LimitsView (2/2)
 
 LimitsView = {active, pending (status proposed) | null, history (newest first, proposed excluded)}.
-Propose (mock enterprise.ts): 409 pending_exists "İkinci imzayı bekleyen bir değişiklik zaten var." ·
-422 no_change "Yeni değer şimdikiyle aynı." · 422 looser = first of limit_violations() · version =
-max+1; values = the active values with the one key changed · audit `limits.proposed`
-{key, from, to, role}. Decide: 409 conflict "Bu değişiklik artık imza beklemiyor." · 403 same_person
-via ensure_second_signer(proposed_by.uid, actor, "limits") · approve: new active, old active
-superseded, effective_from = now · audit `limits.approved|limits.rejected` {proposed_by, role}.
+Propose (mock enterprise.ts): 409 pending_exists · 422 no_change · 422 looser = first of limit_violations() ·
+version = max+1; values = the active values with the one key changed · audit `limits.proposed` {key, from, to, role}.
+Decide: 409 conflict · audit `auth.single_user_waiver` · approve: new active, old active superseded,
+effective_from = now · audit `limits.approved|limits.rejected` {proposed_by, role}.
 SSE desk `limits.changed` after each.
 """
 
@@ -18,9 +16,9 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path, Request
+from fastapi import APIRouter, Path, Request
 
-from kaptan.api.deps import Actor, ClockDep, CurrentUser, SettingsDep, require
+from kaptan.api.deps import ClockDep, CurrentUser
 from kaptan.db import Conn
 from kaptan.domain.schemas import LimitDecisionInput, LimitProposalInput, LimitsView
 from kaptan.events.publish import publish
@@ -45,7 +43,7 @@ async def limits(user: CurrentUser, conn: Conn) -> Any:
 @router.post("/limits/proposals", response_model=LimitsView)
 async def propose(
     body: LimitProposalInput,
-    actor: Annotated[Actor, Depends(require("limits.propose"))],
+    actor: CurrentUser,
     conn: Conn,
     clock: ClockDep,
     request: Request,
@@ -58,20 +56,10 @@ async def propose(
 async def decide(
     version: Annotated[int, Path(gt=0)],
     body: LimitDecisionInput,
-    actor: Annotated[Actor, Depends(require("limits.decide"))],
+    actor: CurrentUser,
     conn: Conn,
     clock: ClockDep,
     request: Request,
-    settings: SettingsDep,
 ) -> Any:
-    await svc.decide(
-        conn,
-        version,
-        body,
-        uid=actor.uid,
-        name=actor.name,
-        role=actor.role,
-        now=clock.now(),
-        single_user=settings.kaptan_single_user,
-    )
+    await svc.decide(conn, version, body, uid=actor.uid, name=actor.name, role=actor.role, now=clock.now())
     return await _view_after_write(request, conn)

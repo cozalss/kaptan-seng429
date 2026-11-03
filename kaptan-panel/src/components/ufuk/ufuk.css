@@ -1,0 +1,112 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   "Ufuk": the shared vocabulary of every screen (see SPEC.md). Scoped helpers on top of the
+   tokens in globals.css, so one sentence, one hatch and one rule look the same on the home,
+   Param, Geçmiş and the rest. Loaded by the root layout.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* The one big sentence a screen opens with. Bodoni: never below 32px. The stroke keeps its
+   hairlines alive on a washed-out projector. */
+.u-sentence {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.5rem, 1.5rem + 3.6vw, 5.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+  -webkit-text-stroke: 0.012em currentColor;
+}
+
+/* The home's and the sign-in's sentence: the biggest type in the app; it minds short screens. */
+.u-sentence--hero {
+  font-size: clamp(2.625rem, min(8vw, 13vh), 7.25rem);
+  line-height: 1;
+  letter-spacing: -0.022em;
+  text-wrap: wrap;
+}
+@media (max-width: 639px) {
+  .u-sentence--hero {
+    font-size: clamp(2.625rem, 13vw, 3.75rem);
+  }
+}
+
+/* The landing's title habit: the second line is set in from the left. */
+.u-sentence__line {
+  display: block;
+}
+.u-sentence__line--indent {
+  padding-left: 0.5em;
+}
+@media (min-width: 768px) {
+  .u-sentence__line--indent {
+    padding-left: 1.05em;
+  }
+}
+
+/* The ₺ sign inside a Bodoni line is Inter: the display cut has no such glyph on every system. */
+.u-lira {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 0.74em;
+  letter-spacing: 0;
+  -webkit-text-stroke: 0;
+}
+
+/* A quieter sentence for a chapter inside a screen. Still ≥ 32px. */
+.u-chapter {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2rem, 1.7rem + 1.2vw, 3rem);
+  line-height: 1.06;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+  -webkit-text-stroke: 0.012em currentColor;
+}
+
+/* The small label that names what a figure is. */
+.u-caption {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--muted);
+}
+
+/* Engraved ink: the fill of the money line and of cash. Lines, not a flat tint, so it
+   survives a washed-out projector. Set --u-hatch-ink to change the colour. */
+.u-hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--u-hatch-ink, var(--hairline)) 0 1px,
+    transparent 1px 6px
+  );
+}
+
+/* The waterline: where the person started. Solid, because a dashed line drops out on a projector. */
+.u-waterline {
+  border-top: 2px solid var(--u-waterline-ink, var(--ink));
+}
+
+/* The page column every screen but the home sits in. */
+.u-page {
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+@media (min-width: 640px) {
+  .u-page {
+    padding-inline: 2rem;
+  }
+}
+
+/* Break out of .u-page to the window's edges (a full-bleed band). --u-scrollbar is measured by
+   the shell, so the band stays centred beside a classic scrollbar. */
+.u-bleed {
+  width: calc(100vw - var(--u-scrollbar, 0px));
+  margin-inline: calc(50% - 50vw + var(--u-scrollbar, 0px) / 2);
+}
+
+/* A printed sea: water colour with engraved strokes on it (components/ufuk/sea.tsx). */
+.u-sea {
+  background-color: var(--sea);
+  color: var(--on-sea);
+}

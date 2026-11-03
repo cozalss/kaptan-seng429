@@ -36,7 +36,7 @@ flat washes, paper left bare, one focal prop, economical faces.
   use scale 0.9–1.2 (a hand ≈ the face's height). Foreshorten with `scale: [along, across]`.
 - **Props:** one focal prop, big enough to read at 400 px, drawn crisply (flags, paper, brass)
   with `straight: true` edges for ruled objects. Text on props: tiny Inter labels only
-  (fictional, "Temsili" rules of KAPTAN-BRIEF.md — no real brands, names or prices).
+  (fictional: no real brands, names or prices).
 - **Cast:** Turkish crew, modern: knit caps, oilskins, sweaters. **No captain's cap** — the
   captain is the human who approves and is never shown. Vary age, gender and build across 1–8
   (done: 01 young woman, beanie + oilskin; 02 old man, watch cap + cable sweater + spectacles).

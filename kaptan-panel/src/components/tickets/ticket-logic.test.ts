@@ -3,6 +3,7 @@ import { DEMO_ORDER_TICKET } from "@/mocks/governance";
 import { istanbulIso } from "@/lib/time";
 import {
   accountShare,
+  AFTER_APPROVAL,
   buildMarkInput,
   defaultFillClock,
   fillIso,
@@ -17,6 +18,8 @@ import {
   ticketCopyText,
   ticketPhase,
   validFrom,
+  validityWords,
+  whenWords,
   type MarkDraft,
 } from "./ticket-logic";
 
@@ -66,11 +69,37 @@ describe("reading the slip", () => {
 
   it("copies the fields you type into the broker app, nothing else", () => {
     const text = ticketCopyText(T);
-    expect(text).toContain("AL ORNEK · LİMİT 48,40 TL · 620 lot");
+    expect(text).toContain("AL ORNEK · en fazla 48,40 TL · 620 adet");
     expect(text).not.toContain("\u00a0");
     expect(text).toContain("T-2027-0111-003");
     expect(text).toContain("13:46–14:16");
+    expect(text).toContain("Borsa açıkken (10:00–18:00)");
+    expect(text).not.toMatch(/SÜREKLİ|kovalamak|seans/i);
     expect(text).not.toContain(T.audit_hash);
+  });
+});
+
+describe("what the person is told after approving", () => {
+  it("says it must be entered by hand and that KAPtan never places it", () => {
+    expect(AFTER_APPROVAL.heading).toBe("Onayladın. İşlem henüz yapılmadı.");
+    expect(AFTER_APPROVAL.body).toContain("KAPtan senin yerine işlem yapmaz");
+    expect(AFTER_APPROVAL.body).toContain("sen gir");
+    expect(AFTER_APPROVAL.announce).toContain("bankana");
+  });
+  it("says the session in plain words, and nothing when the window has already passed", () => {
+    expect(whenWords({ ...T, session_tr: "SÜREKLİ İŞLEM (10:00–18:00) · GÜNLÜK" })).toBe("Borsa açıkken (10:00–18:00)");
+    // Valid 13:46–14:16 today: the 09:40 opening is not when this can be entered.
+    expect(whenWords({ ...T, session_tr: "AÇILIŞTA (09:40–09:55) · GÜNLÜK" })).toBeNull();
+    const dawn = { ...T, created_at: istanbulIso("2027-01-11", "08:00"), valid_until: istanbulIso("2027-01-11", "10:10") };
+    expect(whenWords({ ...dawn, session_tr: "AÇILIŞTA (09:40–09:55) · GÜNLÜK" })).toBe("Borsa açılırken (09:40–09:55)");
+    expect(whenWords({ ...T, session_tr: "bilinmeyen" })).toBeNull();
+  });
+  it("says how long it stays valid", () => {
+    expect(validityWords(T, at("14:00"))).toBe("16 dk 20 sn içinde gir. 14:16’dan sonra geçmez.");
+    expect(validityWords(T, at("13:40"))).toBe("13:46’da açılır, 14:16’ya kadar girebilirsin.");
+    // Opening within a couple of minutes is simply open.
+    expect(validityWords(T, at("13:46"))).toBe("30 dk 20 sn içinde gir. 14:16’dan sonra geçmez.");
+    expect(validityWords(T, at("14:17"))).toBe("Süresi doldu, artık girme. Girdiysen yine de işaretle.");
   });
 });
 
@@ -102,11 +131,11 @@ describe("the mark form", () => {
 
   it("applies the API's own rules: qty ≤ ticket, price ≤ limit, time ≤ valid-until", () => {
     expect(hasMarkErrors(markErrors(draft(), T))).toBe(false);
-    expect(markErrors(draft({ qty: "621" }), T).qty).toMatch(/620 lot/);
+    expect(markErrors(draft({ qty: "621" }), T).qty).toMatch(/\(620\)/);
     expect(markErrors(draft({ qty: "0" }), T).qty).toMatch(/tam sayı/);
     expect(markErrors(draft({ price: "48,41" }), T).price).toMatch(/aşamaz/);
     expect(markErrors(draft({ price: "" }), T).price).toMatch(/fiyatı yaz/);
-    expect(markErrors(draft({ time: "14:17" }), T).time).toMatch(/R16/);
+    expect(markErrors(draft({ time: "14:17" }), T).time).toMatch(/sonrası sayılmaz/);
     expect(markErrors(draft({ time: "nope" }), T).time).toMatch(/SS:DD/);
     expect(markErrors(draft({ note: "x".repeat(501) }), T).note).toMatch(/500/);
   });
@@ -135,6 +164,6 @@ describe("sell tickets (Satış: an exit, no short selling)", () => {
     expect(ticketCopyText(T)).toMatch(/^AL /m);
     expect(markErrors(draft({ price: "48,39" }), S).price).toMatch(/altında olamaz/);
     expect(markErrors(draft({ price: "48,45" }), S).price).toBeNull();
-    expect(markErrors(draft({ qty: "621", price: "48,40" }), S).qty).toMatch(/620 lot/);
+    expect(markErrors(draft({ qty: "621", price: "48,40" }), S).qty).toMatch(/\(620\)/);
   });
 });

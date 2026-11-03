@@ -13,7 +13,6 @@ unknown amount). Replay keeps `last × 1.1` and the recorded snapshot, byte for 
 
 from __future__ import annotations
 
-import re
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Final
 
@@ -21,6 +20,7 @@ from langgraph.runtime import Runtime
 
 from kaptan.agents.context import RunContext
 from kaptan.agents.nodes._common import step
+from kaptan.agents.source_amounts import AMOUNT_TOLERANCE, SourceAmounts, amount_basis, read_source, regex_amounts
 from kaptan.agents.state import KaptanState
 from kaptan.domain.schemas._base import iso_ms
 from kaptan.domain.schemas.rules import MergedFeatures
@@ -28,24 +28,13 @@ from kaptan.evidence.toolbox import LiveToolbox, live_tools
 from kaptan.market.features import MergeInputs, amount_try, fx_text_amounts, limits_of, live_features
 from kaptan.rules.params import BINDING_STATUSES
 
-AMOUNT_RE: Final = re.compile(r"(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d+))?\s*(?:TL|₺)")
-AMOUNT_TOLERANCE: Final = Decimal("0.005")
 CENT: Final = Decimal("0.01")
-
-
-def regex_amounts(text: str, duration_months: float | None = None) -> list[Decimal]:
-    """TL amounts written in the text, plus their monthly equivalents when a duration is stated."""
-    found: list[Decimal] = []
-    for whole, frac in AMOUNT_RE.findall(text):
-        value = Decimal(whole.replace(".", "") + (f".{frac}" if frac else ""))
-        if value > 0 and value not in found:
-            found.append(value)
-    if duration_months and duration_months > 0:
-        # A model may write the duration as a float (24.0, 24.5); go through str so Decimal stays exact.
-        months = Decimal(str(duration_months))
-        monthly = [(v / months).quantize(Decimal(1), rounding=ROUND_HALF_UP) for v in found]
-        found.extend(m for m in monthly if m not in found)
-    return found
+#: Trace notes for a figure the document implies but does not write (`source_amounts.Basis`).
+DERIVED_NOTES: Final = {
+    "table_sum": "Tutar tablodaki satırların toplamıyla doğrulandı: metinde yazılı değil, kodla hesaplandı",
+    "table_cumulative": "Tutar tablodaki önceki toplam + son satırla doğrulandı: metinde yazılı değil, kodla hesaplandı",
+    "nominal_x_price": "Tutar nominal × metindeki fiyatla doğrulandı: metinde yazılı değil, kodla hesaplandı",
+}
 
 
 def amount_in_text(amount: Decimal | None, amounts: list[Decimal]) -> bool | None:
@@ -54,19 +43,44 @@ def amount_in_text(amount: Decimal | None, amounts: list[Decimal]) -> bool | Non
     return any(abs(a - amount) <= abs(amount) * AMOUNT_TOLERANCE for a in amounts)
 
 
+def e2_stated_value(reader: dict[str, Any] | None) -> Decimal | None:
+    """The TL value the Reader wrote for an E2's trades (none written: None, never a nominal)."""
+    value = sum((t.get("value_tl") or 0) for t in (reader or {}).get("trades") or [])
+    return Decimal(str(value)) if value else None
+
+
 def reader_amount(reader: dict[str, Any] | None) -> Decimal | None:
+    """The Reader's figure R14 checks (06 R14): E1 nominal, E2 trade value or else nominal, E3 contract amount."""
     if not reader:
         return None
     kind = reader.get("kind")
     if kind == "E3":
         value = reader.get("amount_try_stated") or reader.get("amount")
     elif kind == "E2":
-        value = sum((t.get("value_tl") or 0) for t in reader.get("trades", [])) or None
+        stated = e2_stated_value(reader)
+        if stated is not None:
+            return stated
+        value = sum((t.get("qty") or 0) for t in reader.get("trades", [])) or None
     elif kind == "E1":
         value = reader.get("cumulative_nominal_tl")
+        if value is None:  # most forms state no running total: the Reader's own rows, added up here
+            value = sum((t.get("nominal_tl") or 0) for t in reader.get("transactions") or []) or None
     else:
         value = None
     return None if value is None else Decimal(str(value))
+
+
+def source_of(state: KaptanState, ctx: RunContext) -> SourceAmounts:
+    """What the document itself says, for R14. Never reads the Reader's figures, only the duration of an E3."""
+    d, reader = ctx.disclosure, state.get("reader")
+    duration = reader.get("duration_months") if reader else None
+    return read_source(str(state.get("event_type")), d.text_tr, d.ticker, duration_months=duration, attachment=d.attachment)
+
+
+def amount_note(merged: dict[str, Any], source: SourceAmounts, amount: Decimal | None) -> str:
+    if merged.get("amount_in_text") is False:
+        return "Tutar metinde yok ✗"
+    return DERIVED_NOTES.get(str(amount_basis(amount, source)), "Oranlar Decimal ile hesaplandı")
 
 
 def _num(x: Decimal | None) -> float | int | None:
@@ -167,8 +181,7 @@ def build_features(
     event = str(state.get("event_type"))
     snapshot = dict(ctx.tools.features(d.fingerprint) or {})
     amount = reader_amount(reader)
-    duration = reader.get("duration_months") if reader else None
-    amounts = regex_amounts(d.text_tr, duration)
+    amounts = list(source_of(state, ctx).values)
     last = Decimal(str((mat or {}).get("trade_day_close", {}).get("value") or desk.last_price))
     computed: dict[str, Any] = {
         "run_id": d.run_id,
@@ -224,7 +237,7 @@ async def merge(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, A
     if live is not None:  # LLM_MODE=live, a real disclosure: point-in-time history first
         inputs = await live.prepare_merge(str(state.get("event_type")), state.get("reader"))
     merged = build_features(state, ctx, card, inputs)
-    note = "Tutar metinde yok ✗" if merged.get("amount_in_text") is False else "Oranlar Decimal ile hesaplandı"
+    note = amount_note(merged, source_of(state, ctx), reader_amount(state.get("reader")))
     return {
         "merged": merged,
         "evidence_card": card,

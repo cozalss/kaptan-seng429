@@ -23,7 +23,7 @@ function drawCanal(parent) {
   s('path', { d: inkPath([[4, BOTB], [396, BOTB]], 32, 0.5), class: 'inst__ink is-strong' }, svg);
   const bank = s('g', { class: 'inst__ruling' }, svg);
   for (let bx = 8; bx < 396; bx += 8) s('path', { d: `M${bx} ${BOTB + 2}l-4 5` }, bank);
-  s('text', { x: W - 4, y: 12, class: 'inst__axis is-end is-muted', text: 'yapay zekâ ajanlarına →' }, svg);
+  s('text', { x: W - 4, y: 12, class: 'inst__axis is-end is-muted', text: 'yapay zekâya →' }, svg);
   const arms = GX.map((gx, i) => {
     s('rect', { x: gx - 2.5, y: TOPB - 9, width: 5, height: 9, class: 'inst__post' }, svg);
     s('text', { x: gx, y: H - 6, class: 'inst__axis is-mid', text: GATES[i].name }, svg);

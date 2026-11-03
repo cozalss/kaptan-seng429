@@ -1,6 +1,6 @@
 """`GET /me/overview` (single-user dashboard): the existing services read once and folded into MeOverview.
 
-- equity_now: `/risk/status` equity (the demo's fixture curve in DEMO_MODE, the marked paper book otherwise);
+- equity_now: `/risk/status` equity (the marked book);
 - capital_start: PAPER_CAPITAL_TRY; pnl_abs / pnl_pct against it;
 - equity_series: the live strategy's daily closes (`/portfolio/pnl`, strategy kaptan:v1.1-fwd);
 - allocations: the paper book's open positions at their last price (`/portfolio/positions`), weight of equity;
@@ -60,12 +60,10 @@ async def me_overview(
     conn: AsyncConnection[Any],
     *,
     now: datetime,
-    wall: datetime,
-    live: bool,
     prices_live: bool,
     capital: float,
 ) -> dict[str, Any]:
-    status = await risk_status(conn, now, live=live, capital=capital)
+    status = await risk_status(conn, now, capital=capital)
     equity = float(status["equity"])
     paper = [p for p in await list_positions(conn, now, live=prices_live) if p["book"] == "paper"]
     allocations = _allocations(paper, equity)
@@ -79,7 +77,7 @@ async def me_overview(
         "pnl_pct": round(pnl_abs / capital, 6),
         "equity_series": [{"date": p["d"], "equity": float(p["equity"])} for p in series],
         "allocations": allocations,
-        "open_suggestions": _suggestions(await list_cards(conn, now=now, wall=wall)),
+        "open_suggestions": _suggestions(await list_cards(conn, now=now)),
     }
 
 

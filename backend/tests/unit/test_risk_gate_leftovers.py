@@ -86,7 +86,7 @@ def test_crisis_entry_cap_is_a_limit_key() -> None:
 def test_reset_halves_a_buy_at_r01() -> None:
     r = r01(ORDER, replace(CTX, reset_active=True), LIM, "pre_trade")
     assert (r.outcome, r.new_qty) == ("resize", 500)
-    assert r.detail_tr == "Kill switch yeniden başlatması sonrası boyut ×0,5."
+    assert r.detail_tr == "Yeniden başlatma sonrası boyut ×0,5."
 
 
 def test_reset_resize_flows_through_the_gate_and_escalates() -> None:

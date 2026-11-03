@@ -52,7 +52,7 @@ describe('Önemlilik renderer', () => {
   it('carries its plate copy: a legend keyed a–c and a spoken description', () => {
     expect(scene.id).toBe('onemlilik');
     expect(scene.legend.map((l) => l.key)).toEqual(['a', 'b', 'c']);
-    expect(scene.description).toMatch(/^Canlı şema: /);
+    expect(scene.description).toMatch(/^Hareketli şema: /);
     expect(scene.description).toMatch(/yıllık gelir/);
     expect(scene.description).toMatch(/karar vermez/);
     expect(scene.stillElapsed).toBe(STILL_ELAPSED);

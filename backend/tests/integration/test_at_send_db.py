@@ -11,7 +11,6 @@ import httpx
 import pytest
 
 from kaptan.api.main import API_PREFIX
-from kaptan.approvals.execute import wait_for_fills
 from kaptan.db import DictConn, connect
 from kaptan.portfolio.pnl import LIVE_STRATEGY
 from kaptan.settings import Settings
@@ -38,12 +37,11 @@ async def live_card(migrated: Settings, seeded: object) -> AsyncIterator[DictCon
     finally:
         await conn.rollback()
         await conn.close()
-        await wait_for_fills()
         await reseed_test_db(migrated)
 
 
 async def _approve(client: httpx.AsyncClient) -> httpx.Response:
-    token = (await login(client, "risk_officer"))["access_token"]
+    token = (await login(client))["access_token"]
     return await client.post(
         f"{API_PREFIX}/approvals/{PROPOSAL}/decision",
         json={"decision": "approve", "approved_notional_try": None, "comment": ""},

@@ -1,7 +1,7 @@
 """KAP ingestion against the compose Postgres (+ Redis for SSE), offline from recorded fixtures.
 
 The demo day is seeded in the same database: these tests also prove that ingestion never touches
-`origin = 'demo'` rows and that DEMO_MODE stays undisturbed (KAP rows invisible, nothing published).
+`origin = 'demo'` rows.
 """
 
 from __future__ import annotations
@@ -16,7 +16,6 @@ import redis.asyncio as aioredis
 from psycopg_pool import AsyncConnectionPool
 
 from kaptan.db import DictConn, create_pool
-from kaptan.demo.seed import SeedResult
 from kaptan.events import bus
 from kaptan.ingest import repo
 from kaptan.ingest.detail_fetcher import fetch_one
@@ -25,6 +24,7 @@ from kaptan.ingest.kap_client import KapBlockedError, KapError
 from kaptan.ingest.kap_poller import KapPoller, PollConfig
 from kaptan.settings import Settings
 from tests.conftest import skip_or_fail
+from tests.harness.seed import SeedResult
 from tests.ingest_support import DAY_15, DAY_16, FakeKap, list_main
 
 pytestmark = pytest.mark.integration
@@ -89,9 +89,9 @@ async def last_id(redis: aioredis.Redis) -> str:
     return str(entries[0][0]) if entries else "0"
 
 
-def poller(pool: Any, kap: FakeKap, redis: Any, *, demo: bool = False, now: datetime = NOW) -> KapPoller:
+def poller(pool: Any, kap: FakeKap, redis: Any, *, now: datetime = NOW) -> KapPoller:
     clock = {"now": now}
-    p = KapPoller(pool=pool, client=kap, cfg=PollConfig(demo_mode=demo), redis=redis, now=lambda: clock["now"])  # type: ignore[arg-type]
+    p = KapPoller(pool=pool, client=kap, cfg=PollConfig(), redis=redis, now=lambda: clock["now"])  # type: ignore[arg-type]
     p.clock = clock  # type: ignore[attr-defined]
     return p
 
@@ -196,21 +196,6 @@ async def test_next_day_hides_yesterday_and_reads_both_days(
         " FROM core.disclosures WHERE origin = 'kap'",
     )
     assert (vis["today"], vis["old"]) == (481, 247)
-
-
-async def test_demo_mode_stores_invisible_and_publishes_nothing(
-    ipool: AsyncConnectionPool[DictConn], redis: aioredis.Redis
-) -> None:
-    before = await last_id(redis)
-    visible_demo = await one(ipool, "SELECT count(*) AS n FROM core.disclosures WHERE origin = 'demo' AND visible")
-    res = await poller(ipool, FakeKap(lists={DAY_16: list_main(DAY_16)}), redis, demo=True).poll_once()
-    assert res.inserted == 481 and res.published == 0
-    row = await one(ipool, "SELECT count(*) FILTER (WHERE visible) AS v FROM core.disclosures WHERE origin = 'kap'")
-    assert row["v"] == 0
-    assert (
-        await one(ipool, "SELECT count(*) AS n FROM core.disclosures WHERE origin = 'demo' AND visible") == visible_demo
-    )
-    assert await feed_events(redis, before) == []
 
 
 async def test_a_real_index_colliding_with_a_demo_row_is_skipped(ipool: AsyncConnectionPool[DictConn]) -> None:
@@ -394,7 +379,7 @@ async def test_worker_runs_both_loops_until_stopped(
 
     kap = FakeKap(lists={})
     monkeypatch.setattr(ingest_worker, "KapClient", _ClientFactory(kap))
-    settings = migrated.model_copy(update={"kap_live": True, "demo_mode": False})
+    settings = migrated.model_copy(update={"kap_live": True})
     stop = asyncio.Event()
     task = asyncio.create_task(ingest_worker.run_worker(settings, stop))
     for _ in range(100):

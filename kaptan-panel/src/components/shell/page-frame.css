@@ -1,0 +1,83 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   What every screen but the home opens with: the screen's name, the one sentence, a line under
+   it; full-bleed bands; and the designed loading, empty and error place.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.pf-header {
+  padding-block: clamp(1rem, 0.5rem + 2vw, 2.5rem) clamp(1.5rem, 1rem + 2vw, 3rem);
+}
+.pf-name {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.pf-under {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 2rem;
+  margin-top: clamp(1rem, 0.75rem + 1vw, 1.5rem);
+}
+.pf-lead {
+  max-width: 60ch;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* Full-bleed paint: `border-image` with an outset is ink overflow, so it never scrolls sideways. */
+.pf-band {
+  border-image: conic-gradient(var(--sunk) 0 0) fill 0 / 0 / 0 100vw;
+}
+
+/* Engraved water: horizontal lines from edge to edge, the same pitch on every screen. */
+.pf-water {
+  height: var(--pf-water-h, 28px);
+  border-top: 2px solid var(--ink);
+  border-image: repeating-linear-gradient(180deg, var(--ink) 0 2px, transparent 2px 6px, var(--hairline) 6px 7px, transparent 7px 12px, var(--hairline) 12px 13px, transparent 13px 20px, var(--hairline) 20px 21px, transparent 21px 30px) 2 0 0 0 fill / 2px 0 0 0 / 0 100vw;
+}
+
+/* A loading, empty or error place. */
+.pf-state {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem 1.75rem;
+  align-items: start;
+  padding-block: clamp(1.5rem, 1rem + 2vw, 3rem);
+}
+.pf-state-boat {
+  position: relative;
+  width: 72px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--ink);
+  display: grid;
+  justify-items: center;
+}
+.pf-state[data-kind="loading"] .pf-state-mark {
+  animation: pf-bob 2.6s var(--ease-ink) infinite alternate;
+}
+.pf-state[data-kind="error"] .pf-state-mark {
+  transform: rotate(-9deg);
+}
+@keyframes pf-bob {
+  from {
+    transform: translateY(1px) rotate(-1.5deg);
+  }
+  to {
+    transform: translateY(-3px) rotate(1.5deg);
+  }
+}
+@media (max-width: 479px) {
+  .pf-state {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-state[data-kind="loading"] .pf-state-mark {
+    animation: none;
+  }
+}

@@ -17,6 +17,7 @@ from kaptan.evidence.market import MaterialityInputs, PriceContext, materiality_
 from kaptan.evidence.params import (
     DEFAULT_HORIZONS,
     ESTIMATION_WINDOW,
+    MAX_COMPUTED_EVENTS,
     MIN_EVENTS,
     RECENT_ACTION_SESSIONS,
     RET_3M_SESSIONS,
@@ -84,18 +85,19 @@ async def study_events(
 ) -> StudyResult:
     """Load each company's adjusted series once (up to the last known session) and run the study."""
     session = last_known_session(as_of)
+    # Materialised CARs (core.event_returns, nightly) are used as they are; only the newest rest is computed.
+    pre = await repo.materialised_cars(conn, events, horizons, as_of)
+    rest = sorted((e for e in events if e.ref_id not in pre), key=lambda e: e.published_at, reverse=True)
     sessions = []
-    for e in events:
+    for e in rest[:MAX_COMPUTED_EVENTS]:
         try:
             sessions.append(event_session(e.published_at))
         except CalendarRangeError:
             continue
     if not sessions:
-        return study(events, {}, {}, as_of, horizons)
+        return study(events, {}, {}, as_of, horizons, precomputed=pre)
     start = _back(min(sessions), -ESTIMATION_WINDOW[0] + 1)
-    # Materialised CARs (core.event_returns, nightly) are used as they are; only the rest is computed.
-    pre = await repo.materialised_cars(conn, events, horizons, as_of)
-    tickers = sorted({e.ticker for e in events if e.ref_id not in pre})
+    tickers = sorted({e.ticker for e in rest[:MAX_COMPUTED_EVENTS]})
     series: dict[str, Series] = {t: await repo.series(conn, t, start, session) for t in tickers}
     bench = await repo.benchmark(conn, start, session) if tickers else {}
     excluded = await repo.excluded_days(conn, tickers, as_of, session) if tickers else {}

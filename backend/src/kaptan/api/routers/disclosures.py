@@ -3,7 +3,7 @@
     GET /disclosures/counters?day=YYYY-MM-DD -> DayCounters   (all roles; default today, Istanbul)
     GET /disclosures?day=YYYY-MM-DD&limit=200&ticker=THYAO -> DisclosureListItem[]  (all roles; newest first)
 
-Counters for "today" (demo clock, Istanbul day): kaptan.disclosures.counters.day_counters(), the port
+Counters for "today" (Istanbul day): kaptan.disclosures.counters.day_counters(), the port
 of the panel mock's selectors.counters(). SSE `counters` (feed) via publish_counters() after changes.
 """
 
@@ -41,8 +41,8 @@ async def counters(
     clock: ClockDep,
     day: Annotated[str | None, Query(pattern=r"^\d{4}-\d{2}-\d{2}$")] = None,
 ) -> Any:
-    """Today's counters (Istanbul, API clock); `?day=YYYY-MM-DD` counts that day instead (not in DEMO_MODE)."""
-    return await day_counters(conn, clock.now(), demo=clock.demo, day=_day(day))
+    """Today's counters (Istanbul, API clock); `?day=YYYY-MM-DD` counts that day instead."""
+    return await day_counters(conn, clock.now(), day=_day(day))
 
 
 @router.get("/disclosures", response_model=list[DisclosureListItem])
@@ -56,4 +56,4 @@ async def disclosures(
 ) -> Any:
     """The day's disclosures (default: today on the API clock), newest first."""
     on = _day(day) or istanbul_date(clock.now())
-    return await list_disclosures(conn, on, demo=clock.demo, limit=limit, ticker=ticker)
+    return await list_disclosures(conn, on, limit=limit, ticker=ticker)

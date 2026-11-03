@@ -1,4 +1,4 @@
-"""The in-session risk monitor (06 §11, FR-20): meant to run every 5 minutes outside DEMO_MODE.
+"""The in-session risk monitor (06 §11, FR-20): meant to run every 5 minutes.
 
     result = await run_risk_monitor(conn, now, redis=app)      # the scheduler comes later
 
@@ -10,9 +10,9 @@ into trading.risk_state, and with the *active* limit version (FR-33)
   (open orders cancelled, positions kept; audit `kill_switch.on` with the equity/peak snapshot)
   → SSE desk `kill_switch`.
 After a confirmed restart (risk_state.reset_at) the peak is not reset: the monitor records the
-equity it sees then, keeps the gate's drawdown just inside the threshold (−4.9 %, as the demo does)
+equity it sees then, keeps the gate's drawdown just inside the threshold (−4.9 %)
 until a further −3 % from that level kills again, and ends the reset mode once the drawdown is back
-inside −2.5 % (06 §11 step 4). The demo's loss simulation (risk/loss_simulation.py) is untouched.
+inside −2.5 % (06 §11 step 4).
 """
 
 from __future__ import annotations
@@ -85,15 +85,10 @@ async def run_risk_monitor(
     *,
     redis: Any = None,
     capital: float | None = None,
-    demo: bool | None = None,
 ) -> MonitorResult:
-    """One monitor tick. `demo` (default: DEMO_MODE) → does nothing: the demo has its own loss simulation.
-    `redis`: an app / request / Redis client for the SSE events (after commit); None = no events.
+    """One monitor tick. `redis`: an app / request / Redis client for the SSE events (after commit); None = no events.
     Use a connection that is not inside a transaction block: the tick commits before publishing."""
-    settings = get_settings()
-    if settings.demo_mode if demo is None else demo:
-        return MonitorResult(ran=False)
-    cap = capital or settings.paper_capital_try
+    cap = capital or get_settings().paper_capital_try
     today = istanbul_date(now)
     halted = cleared = killed = False
     async with conn.transaction():
@@ -138,7 +133,7 @@ async def run_risk_monitor(
             extra = {"drawdown_pct": _f(drawdown), **snapshot}
             await engage(conn, by=RISK_MONITOR, reason=reason, role=None, now=now, check_off=False, extra=extra)
             killed = True
-    status = await risk_status(conn, now, live=True, capital=cap)
+    status = await risk_status(conn, now, capital=cap)
     await conn.commit()
     fired: list[MonitorEvent] = []
     if halted:

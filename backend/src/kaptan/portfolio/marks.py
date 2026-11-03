@@ -1,12 +1,4 @@
-"""JavaScript-compatible rounding, the BIST session calendar and the M1 replay quotes.
-
-All three reproduce the panel mock exactly in DEMO_MODE (kaptan-panel/src/mocks/rng.ts `round`, lib/time.ts,
-api/mock/selectors.ts `positions()`), because positions and risk numbers must match it to the lira.
-
-Replay quotes: M1 has no market-data feed, so a position's last price is the mock's deterministic
-mark (the issuer's reference price moved by the disclosure index; the demo E3 run is pinned to
-48.51). M2 replaces `mark_price()` with live quotes.
-"""
+"""JavaScript-compatible rounding (the panel's `round`, so both sides agree to the lira) and session arithmetic."""
 
 from __future__ import annotations
 
@@ -14,17 +6,10 @@ import math
 from datetime import date, datetime
 from typing import Final
 
-from kaptan.rules.calendar import HOLIDAYS as PANEL_HOLIDAYS
 from kaptan.rules.calendar import is_trading_day as is_trading_day  # re-exported (#32)
 from kaptan.rules.calendar import next_trading_day as next_trading_day
 
-#: The panel calendar's holidays (lib/time.ts HOLIDAYS). Trading days come from the one market
-#: calendar (`kaptan.rules.calendar`: BIST outside DEMO_MODE, this list in DEMO_MODE, #32).
-HOLIDAYS: Final = PANEL_HOLIDAYS
 DAY_MS: Final = 86_400_000
-#: The demo E3 run's mark (selectors.ts positions()).
-DEMO_E3_RUN: Final = "run-demo-e3-ornek"
-DEMO_E3_MARK: Final = 48.51
 #: A ticket marked "entered" is held for five sessions (selectors.ts personalPositions()).
 PERSONAL_HOLD_SESSIONS: Final = 5
 
@@ -52,12 +37,3 @@ def holding_days(opened_at: datetime, now: datetime) -> int:
     """max(0, Math.round((now − opened) / 1 day))."""
     ms = (now - opened_at).total_seconds() * 1000
     return max(0, js_round(ms / DAY_MS))
-
-
-def mark_price(*, book: str, run_id: str, issuer_price: float, disclosure_index: int) -> float:
-    """The unrounded last price of a position (replay quotes, see the module docstring)."""
-    if book == "personal":
-        return issuer_price
-    if run_id == DEMO_E3_RUN:
-        return DEMO_E3_MARK
-    return issuer_price * (1 + ((disclosure_index % 7) - 2) / 100)

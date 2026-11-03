@@ -24,7 +24,7 @@ HARD_RESTRICTIONS: Final = frozenset(
 AT_SEND_RULES: Final[tuple[RiskRuleCode, ...]] = ("R01", "R02", "R03", "R04", "R09", "R12", "R13")
 CENT: Final = Decimal("0.01")
 #: P8 (06 §7.2): the one refusal text, shared with GuardedBroker (kaptan.brokers.guarded).
-COOLDOWN_TR: Final = "Stop sonrası bekleme: bu hisseye 10 seans yeni giriş yok (P8)."
+COOLDOWN_TR: Final = "Stop sonrası bekleme: bu hisseye 10 borsa günü yeni giriş yok (P8)."
 
 
 @dataclass(frozen=True, slots=True)
@@ -202,14 +202,14 @@ def _f(x: Decimal) -> float:
 def r01(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
     obs, cap = fmt_pct(_f(c.drawdown_pct), 1), fmt_pct(_f(lim.kill_drawdown_pct), 0)
     if o.side == "buy" and (c.kill_switch_on or c.drawdown_pct <= lim.kill_drawdown_pct):
-        why = "Kill switch açık" if c.kill_switch_on else "Zirveden düşüş −%5 sınırında"
+        why = "Her şey durduruldu" if c.kill_switch_on else "Zirveden düşüş −%5 sınırında"
         return _no("R01", ph, "reject", f"{why}; yeni alım yok.", observed=obs, limit=cap)
     if o.side == "buy" and c.reset_active and ph == "pre_trade":  # 06 §11 step 4: m_reset (sizing only)
         mult = fmt_dec(_f(lim.reset_size_mult), 1)
-        why = f"Kill switch yeniden başlatması sonrası boyut ×{mult}."
+        why = f"Yeniden başlatma sonrası boyut ×{mult}."
         res = _no("R01", ph, "resize", why, observed=obs, limit=cap)
         return replace(res, new_qty=_floor_qty(Decimal(o.qty) * lim.reset_size_mult))
-    return _ok("R01", ph, f"Kill switch kapalı; zirveden düşüş {obs}.", observed=obs, limit=cap)
+    return _ok("R01", ph, f"Sistem çalışıyor; zirveden düşüş {obs}.", observed=obs, limit=cap)
 
 
 def r02(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
@@ -236,7 +236,7 @@ def r04(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
 
 def r13(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
     if o.side == "buy" and c.team_blocklisted:
-        return _no("R13", ph, "reject", "Hisse ekip içeriden-öğrenen engel listesinde.")
+        return _no("R13", ph, "reject", "Hisse içeriden-öğrenen engel listende.")
     return _ok("R13", ph)
 
 

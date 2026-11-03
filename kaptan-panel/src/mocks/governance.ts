@@ -1,3 +1,4 @@
+import { MOCK_USER } from "@/lib/auth/mock-user";
 import type { LimitVersion, LiveArmState, OrderTicket, RestrictedSecurity, UniverseEntry } from "@/lib/domain";
 import { LIMITS_V1 } from "@/lib/domain";
 import { istanbulIso } from "@/lib/time";
@@ -6,19 +7,18 @@ import { DEMO_TICKET, DEMO_TICKET_ORDER, DEMO_E3_PROPOSAL, DEMO_E3_RUN } from ".
 import { ISSUERS } from "./issuers";
 
 /**
- * Limits: v1 (the canonical set), proposed by the Yönetici and signed by the Risk Sorumlusu
- * before the forward test started. Any change goes through the same two signatures.
+ * Limits: v1 (the canonical set), set before the forward test started.
  */
 export const SEED_LIMIT_VERSIONS: readonly LimitVersion[] = [
   {
     version: 1,
     status: "active",
-    reason: "Kanonik başlangıç limitleri (rules-v1.0 ön kaydı ile birlikte).",
+    reason: "Başlangıç sınırları.",
     created_at: "2026-11-08T09:00:00.000Z",
     effective_from: "2026-11-09T06:00:00.000Z",
     values: [...LIMITS_V1],
-    proposed_by: { uid: "uye-1", name: "Üye 1", role: "admin", at: "2026-11-08T09:00:00.000Z", reason: "Kanonik başlangıç limitleri." },
-    decided_by: { uid: "uye-3", name: "Üye 3", role: "risk_officer", at: "2026-11-08T11:30:00.000Z", reason: "Kanonik değerlerle aynı; onay." },
+    proposed_by: { uid: MOCK_USER.uid, name: MOCK_USER.name, at: "2026-11-08T09:00:00.000Z", reason: "Başlangıç sınırları." },
+    decided_by: { uid: MOCK_USER.uid, name: MOCK_USER.name, at: "2026-11-08T11:30:00.000Z", reason: "Başlangıç sınırları." },
   },
 ];
 
@@ -59,7 +59,7 @@ export const SEED_LIVE_ARM: LiveArmState = {
 export const PERSONAL_ACCOUNT_TRY = 350_000;
 
 /**
- * Demo step 6 (11 Adım 6): "ÖRNEK ENERJİ A.Ş. · LİMİT 48,40 · 620 lot · 30 dk geçerli · Manuel giriş".
+ * Demo step 6 (11 Adım 6): "MİSAL ENERJİ A.Ş. · LİMİT 48,40 · 620 lot · 30 dk geçerli · Manuel giriş".
  * The personal account value is a sample (350.000 TL) so the ticket respects R07's 10% cap
  * (FRONTEND-SPEC §9 Ç-18).
  */
@@ -76,7 +76,7 @@ export const DEMO_ORDER_TICKET: OrderTicket = {
   mode_keys: { config: true, env: true, ui: true },
   side: "buy",
   ticker: "ORNEK",
-  company_name: "ÖRNEK ENERJİ A.Ş.",
+  company_name: "MİSAL ENERJİ A.Ş.",
   market: "Ana Pazar",
   order_type: "limit",
   session_tr: "SÜREKLİ İŞLEM (10:00–18:00) · GÜNLÜK",
@@ -89,14 +89,14 @@ export const DEMO_ORDER_TICKET: OrderTicket = {
   event_line_tr: "E3 — Yeni iş ilişkisi (bağlayıcı hizmet sözleşmesi)",
   kap_line_tr: "idx 1651901, 11.01.2027 13:41 “Özel Durum Açıklaması (Genel)”",
   materiality_line_tr: "Yıllıklandırılmış tutar yıllık gelirin %18'i (eşik %10) ✓",
-  leakage_line_tr: "Son 5 seans +%4,1 (eşik %8) ✓",
-  evidence_line_tr: "Benzer 23 olay · ort. 5 günlük anormal getiri +%1,4 · isabet %61 (örnek değer)",
+  leakage_line_tr: "Son 5 borsa günü +%4,1 (eşik %8) ✓",
+  evidence_line_tr: "Benzer 23 olay · ort. 5 günlük anormal getiri +%1,4 · isabet %61",
   cost_line_tr: "Gidiş-dönüş maliyet %0,33 (komisyon + yarı-spread + etki + manuel kayma)",
   edge_cost_line_tr: "Avantaj / maliyet = %0,70 / %0,33 = 2,1× (eşik 2,0) ✓",
-  skeptic_line_tr: "“2 seansta +%3,6 hareket; ×0,5 küçültüldü”",
+  skeptic_line_tr: "“2 borsa gününde +%3,6 hareket; ×0,5 küçültüldü”",
   amount_check_line_tr: "Okuyucu tutarı metindeki regex tutarıyla eşleşti (R14) ✓",
   stop_line_tr: "Kapanış bazlı stop 43,30 TL (−%8,7)",
-  planned_exit_tr: "5. seans kapanışı → 18.01.2027",
+  planned_exit_tr: "5. borsa günü kapanışı → 18.01.2027",
   entry: { status: "awaiting", filled_qty: null, avg_price: null, filled_at: null, note: null, marked_at: null },
   stage: "paper",
   gate_results: ["R01", "R02", "R03", "R04", "R13", "R11", "R14", "R05", "R06", "R09", "R12", "R07", "R08", "R10", "R15", "R16"].map((code) => ({

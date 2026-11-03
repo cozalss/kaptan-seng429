@@ -7,7 +7,6 @@ from typing import Annotated, Literal
 
 from pydantic import Field, field_validator
 
-from kaptan.domain.roles import Role
 from kaptan.domain.schemas._base import (
     Confidence,
     IsoDate,
@@ -121,7 +120,6 @@ class ApprovalCard(KModel):
     expires_at: IsoDateTime
     status: ApprovalStatus
     decided_by: str | None
-    decided_role: Role | None
     decided_at: IsoDateTime | None
     decision_comment: str | None
     approved_notional_try: float | None
@@ -357,9 +355,12 @@ class PnlPoint(KModel):
 
 
 class KillReset(KModel):
-    """Restarting after Durdur takes two people: Yönetici starts (1/2), Risk Sorumlusu confirms (2/2)."""
+    """Restarting after a stop: you request (1/2), then confirm (2/2) once `ready_at` has passed (06 §11).
+
+    `ready_at`: when the confirm opens; null = it may be confirmed now (or nothing is requested yet)."""
 
     started: Signature | None
+    ready_at: IsoDateTime | None
 
 
 class QuotaRow(KModel):

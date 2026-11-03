@@ -34,14 +34,13 @@ RUN groupadd --system --gid 10001 kaptan \
  && useradd --system --uid 10001 --gid kaptan --home-dir /app --no-create-home --shell /usr/sbin/nologin kaptan
 WORKDIR /app
 COPY --from=build /app/.venv /app/.venv
-# settings.BACKEND_DIR = /app: config/, migrations/, alembic.ini and the demo fixtures (replay LLM) live here.
+# settings.BACKEND_DIR = /app: config/, data/, migrations/ and alembic.ini live here. tests/ is never copied: the
+# recorded fixtures and the replay LLM do not exist in a running system.
 COPY src ./src
 COPY config ./config
 COPY data ./data
 COPY migrations ./migrations
 COPY alembic.ini pyproject.toml ./
-COPY tests/__init__.py ./tests/__init__.py
-COPY tests/fixtures/demo ./tests/fixtures/demo
 COPY --chmod=0755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 ENV PATH=/app/.venv/bin:$PATH \
     PYTHONUNBUFFERED=1 \

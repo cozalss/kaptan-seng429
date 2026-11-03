@@ -1,23 +1,20 @@
-"""LLM access for the agent graph: one `LLMProvider` protocol, replay (M1) and live (M2) behind it."""
+"""LLM access for the agent graph: one `LLMProvider` protocol, the live provider chain behind it."""
 
 from __future__ import annotations
 
 from typing import Any
 
 from kaptan.llm.provider import LLMProvider, LLMRequest, LLMResult, LLMUsage, ProviderChain, ProviderError
-from kaptan.llm.replay import ReplayMissError, ReplayProvider
 
 _LIVE: dict[int, LLMProvider] = {}
 
 
 def get_provider(llm_mode: str, *, settings: Any = None, redis: Any = None) -> LLMProvider:
-    """`replay` → recorded answers (no network). `live` → the masked, cached, budgeted provider chain
-    (Gemini Flash-Lite → DeepSeek → Groq gpt-oss, Prompt Guard 2 for `guard`); one per process and Redis
-    client, so the cache, counters and HTTP connections are shared across runs."""
-    if llm_mode == "replay":
-        return ReplayProvider()
+    """`live` → the masked, cached, budgeted provider chain (Gemini Flash-Lite → DeepSeek → Groq gpt-oss, Prompt
+    Guard 2 for `guard`); one per process and Redis client, so the cache, counters and HTTP connections are shared
+    across runs. Nothing else exists here: the test suite hands its recorded provider to the code it tests."""
     if llm_mode != "live":
-        raise ValueError(f"unknown LLM_MODE: {llm_mode!r}")
+        raise ValueError(f"no provider for LLM_MODE={llm_mode!r}: a running system only has `live`")
     from kaptan.llm.factory import build_live_provider
     from kaptan.settings import Settings, get_settings
 
@@ -35,7 +32,5 @@ __all__ = [
     "LLMUsage",
     "ProviderChain",
     "ProviderError",
-    "ReplayMissError",
-    "ReplayProvider",
     "get_provider",
 ]

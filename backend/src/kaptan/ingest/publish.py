@@ -1,8 +1,7 @@
 """SSE for newly ingested KAP rows: `disclosure` (DisclosureListItem) per row, then one `counters`.
 
-Called after the ingest transaction committed, outside DEMO_MODE only, with the worker's own Redis
-client (`kaptan.events.publish` accepts a client). The panel's feed stream is the same one the demo
-ticker uses, so the panel needs nothing new.
+Called after the ingest transaction committed, with the worker's own Redis client (`kaptan.events.publish`
+accepts a client).
 
 `publish_to_agents()` feeds the agent worker (kaptan.agents.feed): one entry per disclosure and stage on
 the Redis stream `kaptan:kap.disclosures` (`listed` when the list row is stored, `text` when its full
@@ -19,8 +18,8 @@ from typing import Any, Final
 from pydantic import ValidationError
 from redis.exceptions import RedisError
 
-from kaptan.demo.ticker import LIST_ITEM_COLUMNS, list_item
 from kaptan.disclosures.counters import day_counters
+from kaptan.disclosures.listing import LIST_ITEM_COLUMNS, list_item
 from kaptan.events.publish import publish
 
 log = logging.getLogger("kaptan.ingest.publish")

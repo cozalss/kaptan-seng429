@@ -19,9 +19,9 @@ const at = (pos: number, actor: string, action: string, hhmm: string): AuditEntr
 const read = (pos: number, hhmm: string) => at(pos, "system:kap_poller", "disclosure.ingested", hhmm);
 
 describe("groupRuns", () => {
-  it("folds consecutive KAP okuyucu fetches into one run and leaves everything else alone", () => {
+  it("folds consecutive reads into one run and leaves everything else alone", () => {
     // Newest first, as the ledger lists them.
-    const entries = [read(10, "05:38"), read(9, "05:00"), read(8, "04:30"), at(7, "user:uye-3", "approval.decided", "04:20"), read(6, "04:10"), at(5, "agent:classifier", "classification.done", "04:00"), read(4, "03:50"), read(3, "03:22")];
+    const entries = [read(10, "05:38"), read(9, "05:00"), read(8, "04:30"), at(7, "user:sen", "approval.decided", "04:20"), read(6, "04:10"), at(5, "agent:classifier", "classification.done", "04:00"), read(4, "03:50"), read(3, "03:22")];
     const before = [...entries];
     const rows = groupRuns(entries);
     expect(entries).toEqual(before);
@@ -32,20 +32,20 @@ describe("groupRuns", () => {
     const veto = (pos: number) => at(pos, "system:risk_gate", "risk.rejected", "09:00");
     const rows = groupRuns([veto(5), veto(4), veto(3), at(2, "system:risk_gate", "risk.checked", "08:00"), veto(1)]);
     expect(rows.map((r) => (r.kind === "one" ? r.entry.chain_pos : r.entries.map((e) => e.chain_pos)))).toEqual([[5, 4, 3], 2, 1]);
-    expect(runSentence("Kurallar", "risk.rejected", 19)).toBe("Kurallar 19 şirket için öneriyi baştan reddetti.");
-    expect(runSentence("KAP okuyucu", "disclosure.ingested", 9)).toBe("KAP okuyucu 9 bildirim getirdi.");
-    expect(runSentence("Ön eleme", "pregate.decided", 3)).toBe("Ön eleme 3 bildirimi süzdü.");
-    expect(runSentence("Zamanlayıcı", "x.y", 2)).toBe("Zamanlayıcı: 2 benzer kayıt.");
+    expect(runSentence("KAPtan", "risk.rejected", 19)).toBe("KAPtan 19 şirket için öneriyi baştan eledi.");
+    expect(runSentence("KAPtan", "disclosure.ingested", 9)).toBe("KAPtan 9 duyuru okudu.");
+    expect(runSentence("KAPtan", "pregate.decided", 3)).toBe("KAPtan 3 bildirimi eledi.");
+    expect(runSentence("KAPtan", "x.y", 2)).toBe("KAPtan: 2 benzer kayıt.");
   });
 
   it("never folds a person's acts, even when they repeat", () => {
-    const sign = (pos: number) => at(pos, "user:uye-3", "disclosure.ingested", "09:00");
+    const sign = (pos: number) => at(pos, "user:sen", "disclosure.ingested", "09:00");
     expect(groupRuns([sign(2), sign(1)]).every((r) => r.kind === "one")).toBe(true);
     expect(groupRuns([])).toEqual([]);
   });
 
   it("says the span a run covers, oldest first", () => {
-    expect(runMeta([read(4802, "05:38"), read(4785, "03:22")], (iso) => iso.slice(11, 16))).toBe("03:22–05:38 · #4.785–#4.802");
+    expect(runMeta([read(4802, "05:38"), read(4785, "03:22")], (iso) => iso.slice(11, 16))).toBe("03:22–05:38");
     expect(runMeta([])).toBe("");
   });
 });

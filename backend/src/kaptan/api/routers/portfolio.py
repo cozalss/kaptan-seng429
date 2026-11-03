@@ -4,7 +4,7 @@
     GET /portfolio/pnl?from=&to=      -> PnlPoint[]  (all roles; inclusive YYYY-MM-DD bounds)
 
 Positions: trading.positions (paper book from SimBIST fills, personal book from tickets marked
-"entered"); holding_days and unrealized_pnl computed at read time (demo clock, last_price);
+"entered"); holding_days and unrealized_pnl computed at read time (last_price);
 managed_by_exit_rule from trading.risk_state. P&L: trading.pnl_daily in fixture order (`ord`).
 """
 

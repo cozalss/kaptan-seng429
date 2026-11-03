@@ -1,5 +1,7 @@
 # KAPtan — Sistem Mimarisi ve Tasarım
 
+> **Tek kullanıcı (02.11.2026):** Bu belgede rol, iki imza ve ekip anlatımları tek kişinin onayı olarak okunur; "tek kullanıcı" tek mod anlamındadır. Karar `_KANONIK-KARARLAR.md` Revizyon 4'tür. Rol sütunları ve kill switch reset satırları hizalanmıştır.
+
 > **Doküman 04** · SENG 429 Enterprise Application Development Lab · Güz 2026
 > Doğruluk kaynağı: `_KANONIK-KARARLAR.md` (**REVİZYON 3 bölümü Revizyon 2'ye, Revizyon 2 orijinal kararlara üstündür**; bu doküman 30.09.2026'da Revizyon 3'e hizalandı). Bu doküman kanonik kararlardan birini değiştirmez; itirazlar ve durumları en sondaki **"Önerilen değişiklikler — durum (Revizyon 2)"** bölümündedir.
 > Risk kapısı kurallarının tek kaynağı `06-strateji-ve-kurallar.md` §10'dur (R01–R16); bu doküman yalnızca ID ile referans verir. Ajan şemalarının ayrıntılı kaynağı `05-ajan-spesifikasyonlari.md`'dir.
@@ -31,9 +33,9 @@
 
 ## 1. Amaç, kapsam ve kalite nitelikleri
 
-**Amaç.** BIST'te yayımlanan her KAP bildirimini yapılandırılmış bir olaya çevirmek; yalnızca E1–E4 olay türleri için geçmiş veriden kanıt toplamak; al/sat kararını **deterministik kural motoruna** bıraktırmak; her öneriyi uyum ajanı + risk kapısı + Risk Officer onayından geçirip paper (SimBIST) ya da emir fişi (kişisel mod) olarak yürütmek; her adımı hash zincirli audit log'a yazmak.
+**Amaç.** BIST'te yayımlanan her KAP bildirimini yapılandırılmış bir olaya çevirmek; yalnızca E1–E4 olay türleri için geçmiş veriden kanıt toplamak; al/sat kararını **deterministik kural motoruna** bıraktırmak; her öneriyi uyum ajanı + risk kapısı + kullanıcının onayından geçirip paper (SimBIST) ya da emir fişi olarak yürütmek; her adımı hash zincirli audit log'a yazmak.
 
-**Kapsam dışı:** açığa satış, kaldıraç/VİOP, gerçek zamanlı (saniye altı) tepki ticareti, sinyallerin üçüncü kişilerle paylaşılması, otomatik gerçek para emri (kişisel modda son buton her zaman insandadır).
+**Kapsam dışı:** açığa satış, kaldıraç/VİOP, gerçek zamanlı (saniye altı) tepki ticareti, sinyallerin üçüncü kişilerle paylaşılması, otomatik gerçek para emri (son buton her zaman kullanıcıdadır).
 
 ### 1.1 Kalite nitelikleri (öncelik sırasıyla)
 
@@ -43,10 +45,10 @@
 | Q2 | **Denetlenebilirlik (auditability)** | SPK denetçisi herhangi bir emir için bildirim → sınıflandırma → kanıt → kural → onay → dolum zincirini 1 ekranda görür; zincir bozulmuşsa doğrulama butonu hangi `chain_pos`'ta bozulduğunu söyler. | Yalnızca eklenebilir, hash zincirli `audit_log` · her ajan çıktısı Pydantic JSON olarak saklanır · `strategy_version` + `graph_version` + `limits_version` her kararda · gece dış çıpalama |
 | Q3 | **Açıklanabilirlik (explainability)** | "Neden bu işlem?" ekranı, kararın hangi kuraldan (ör. `E3.materiality` — yıllıklandırılmış tutar / yıllık gelir ≥ 0,10) ve hangi kanıt kartından (benzer N olay, ortalama anormal getiri) çıktığını gösterir. | Kural motoru her kural için `RuleTrace` üretir · kanıt kartı yalnızca gerçekten getirilen olay/chunk kimliklerine atıf yapabilir (`06` R05) · kanıt istatistiklerini LLM değil kod hesaplar |
 | Q4 | **Zaman doğruluğu (point-in-time)** | Backtest ve canlı çalışmada hiçbir sorgu karar anından sonra erişilebilir olan veriyi göremez. | Her satırda `published_at` + `first_seen_at` + `available_at` · RAG filtresi `available_at <= as_of` · kararlar ertesi açılışta |
-| Q5 | **Maliyet** | Yılda ~68.600 bildirim (iş günü başına ~270); ≤ 60 tam karar (× 4 Gemini ajanı ≈ 120–240 istek/gün; Flash-Lite ~500 RPD'ye sığar); LLM maliyeti ~0 $ (ücretsiz katmanlar). Kota biterse sistem HOLD'a düşer, çökmez. | **Her LLM çağrısından önce LLM'siz ön eleme** (`on_eleme`: gürültü/devre kesici ~%20, "Düzeltme", işlem görebilirlik, SPK/VBTS tedbiri, evren, ekip engel listesi) + `subject` haritası (%90 LLM'siz tipleme) · Redis LLM cache · token kovası (`quotas.yaml`; Groq günlük token tavanı dahil) · Gemini Flash-Lite ⇄ Groq gpt-oss → Azure for Students → Ollama Qwen → HOLD zinciri |
+| Q5 | **Maliyet** | Yılda ~68.600 bildirim (iş günü başına ~270); ≤ 60 tam karar (× 4 Gemini ajanı ≈ 120–240 istek/gün; Flash-Lite ~500 RPD'ye sığar); LLM maliyeti ~0 $ (ücretsiz katmanlar). Kota biterse sistem HOLD'a düşer, çökmez. | **Her LLM çağrısından önce LLM'siz ön eleme** (`on_eleme`: gürültü/devre kesici ~%20, "Düzeltme", işlem görebilirlik, SPK/VBTS tedbiri, evren, içeriden-öğrenen engel listesi) + `subject` haritası (%90 LLM'siz tipleme) · Redis LLM cache · token kovası (`quotas.yaml`; Groq günlük token tavanı dahil) · Gemini Flash-Lite ⇄ Groq gpt-oss → Azure for Students → Ollama Qwen → HOLD zinciri |
 | Q6 | **Dayanıklılık** | Worker çökse bile bildirim kaybolmaz; onay bekleyen bir akış sunucu yeniden başlasa da devam eder. | Redis Streams consumer group + `XAUTOCLAIM` · `AsyncPostgresSaver` checkpoint · idempotent upsert'ler · deterministik `client_order_id` |
 | Q7 | **Değiştirilebilirlik** | Yeni broker, yeni LLM sağlayıcısı veya yeni olay türü (E5) diğer modüllere dokunmadan eklenir. | `Broker` Protocol · `config/models.yaml` · kurallar sürümlü YAML + Python fonksiyon kaydı |
-| Q8 | **Güvenlik (security)** | Bildirim metnine gizlenmiş talimat hiçbir emre dönüşmez (red-team seti: 0 emir). | Ingest'te temizleme · **Türkçe kural tabanlı injection kontrolü + Prompt Guard skoru** · kişi adlarının LLM/LangSmith öncesi maskelenmesi (KVKK; ilk LLM çağrısından itibaren, W3 — ücretsiz Gemini girdileri ürün geliştirmede kullanılabilir) · spotlighting · Uyum ajanı · kanıt kuralı · RBAC + JWT |
+| Q8 | **Güvenlik (security)** | Bildirim metnine gizlenmiş talimat hiçbir emre dönüşmez (red-team seti: 0 emir). | Ingest'te temizleme · **Türkçe kural tabanlı injection kontrolü + Prompt Guard skoru** · kişi adlarının LLM/LangSmith öncesi maskelenmesi (KVKK; ilk LLM çağrısından itibaren, W3 — ücretsiz Gemini girdileri ürün geliştirmede kullanılabilir) · spotlighting · Uyum ajanı · kanıt kuralı · JWT + oturum kontrolü |
 
 ### 1.2 Mimari ilkeler (değişmez)
 
@@ -64,12 +66,9 @@
 
 ```mermaid
 flowchart LR
-    FM["Fon yöneticisi / Analist<br/>(görür, not ekler)"]
-    RO["Risk Officer<br/>(onay/ret, kill switch, limitler)"]
-    AD["Admin<br/>(kullanıcı, evren, config)"]
-    AUD["Auditor / SPK denetçisi<br/>(salt okunur rol)"]
+    U["Sen (tek kullanıcı)<br/>(görür, onaylar ya da reddedersin, durdurursun)"]
 
-    K(("KAPtan<br/>çok ajanlı yatırım masası"))
+    K(("KAPtan<br/>çok ajanlı karar destek"))
 
     KAP["kap.org.tr<br/>JSON uçları + /tr/Bildirim<br/>+ /tr/api/BildirimPdf"]
     PX["Fiyat kaynakları<br/>İş Yatırım (ham + düzeltilmiş, SERMAYE, PD)<br/>· yfinance · borsapy"]
@@ -78,12 +77,9 @@ flowchart LR
     LLM["LLM sağlayıcıları<br/>Gemini Flash-Lite ⇄ Groq gpt-oss (+Prompt Guard 2)<br/>→ Azure for Students → Ollama Qwen"]
     LS["LangSmith<br/>(iz paneli)"]
     ALP["Alpaca Paper + Benzinga<br/>(ABD karşılaştırma kolu — stretch)"]
-    BRK["Aracı kurum uygulaması<br/>(kişisel mod, manuel giriş)"]
+    BRK["Aracı kurum uygulaması<br/>(manuel giriş)"]
 
-    FM --> K
-    RO --> K
-    AD --> K
-    AUD --> K
+    U --> K
     KAP --> K
     PX --> K
     RSS --> K
@@ -167,12 +163,12 @@ flowchart TB
 | **Stream** | Redis Streams | Ingest ile ajanlar arası kalıcı kuyruk; consumer group `agents`; `XACK`, `XAUTOCLAIM` ile asılı mesaj kurtarma; DLQ `kap.dlq` | — | 1 + 2 |
 | **Agent graph** | `agents/graph.py` | LLM'siz ön eleme + koruma + 6 LLM ajanı + deterministik **Birleştirme**, kural motoru, risk kapısı + onay `interrupt()`; checkpointer `AsyncPostgresSaver` | `DisclosureEnvelope` → `TradeProposal` / HOLD / arşiv | 2 Ajanlar |
 | **Kural motoru** | `rules/` | E1–E4 kuralları, sızıntı filtresi, maliyet eşiği; saf fonksiyonlar; `RuleTrace` üretir | `StructuredEvent`+`MergedFeatures` (Birleştirme)+`EvidenceCard`+`SkepticReview` → `RuleDecision` | 3 Strateji |
-| **Risk kapısı** | `risk/` | `06` §10 R01–R16 (boyut %0,5 risk / ≤%10 / ≤%1 ADV / 8–10 pozisyon, ±%2 bant, tavan/taban, tedbir vetosu, günlük −%1 / zirveden −%5, kriz rejimi, LLM kotası → HOLD, ekip engel listesi, tutar regex kontrolü); saf fonksiyon, %100 dal kapsamı | `TradeProposal`+`GateContext`+`Limits` → `RiskVerdict` | 3 |
-| **Approval service** | `approvals/` | Bekleyen onay kaydı, süre (**bir sonraki seansın 09:50'sinde düşer**, `06` R15), iyimser kilit (`claim`), `Command(resume=)`; backtest modunda onay simüle edilir | Risk Officer kararı → graf devamı | 2 + 4 |
+| **Risk kapısı** | `risk/` | `06` §10 R01–R16 (boyut %0,5 risk / ≤%10 / ≤%1 ADV / 8–10 pozisyon, ±%2 bant, tavan/taban, tedbir vetosu, günlük −%1 / zirveden −%5, kriz rejimi, LLM kotası → HOLD, içeriden-öğrenen engel listesi, tutar regex kontrolü); saf fonksiyon, %100 dal kapsamı | `TradeProposal`+`GateContext`+`Limits` → `RiskVerdict` | 3 |
+| **Approval service** | `approvals/` | Bekleyen onay kaydı, süre (**bir sonraki seansın 09:50'sinde düşer**, `06` R15), iyimser kilit (`claim`), `Command(resume=)`; backtest modunda onay simüle edilir | Kullanıcının kararı → graf devamı | 2 + 4 |
 | **Broker adapter'ları** | `brokers/` | `Broker` Protocol; SimBIST, OrderTicket, AlpacaPaper (**stretch**), BtcTurk (stub), MatriksDEK (stub); `GuardedBroker`; `BrokerRouter` | `OrderIntent` → `OrderAck` / `Fill` | 3 |
 | **Portföy** | `portfolio/` | Pozisyon projeksiyonu (dolumla aynı transaction), günlük P&L, zirve öz sermaye, drawdown; kill switch tetiği | fills + fiyat → `positions`, `pnl_daily` | 3 |
 | **Audit** | `audit/` | `audit.write(action, entity, payload)`; DB trigger zinciri: `hash = sha256(prev_hash ‖ canonical)`, `canonical` = `run_id` dahil tüm alanların **kanonik JSON dizisi** (`jsonb_build_array(...)::text`, `09` §7.1); doğrulama; gece çıpası; W7'de devrede | olaylar → `audit_log` | 3 + 4 |
-| **API** | `api/` | REST + SSE, JWT, RBAC, 4-göz kuralları, rate limit | HTTP | 4 |
+| **API** | `api/` | REST + SSE, JWT, rate limit (rol ve dört göz kuralı yok) | HTTP | 4 |
 | **Frontend** | `web/` | 7 ana ekran (§12) | — | 4 |
 | **Scheduler** | `workers/scheduler.py` | Zamanlı işler (§4.1) | — | 3 + 1 |
 | **Observability** | `obs/` | LangSmith izleri (örneklemeli; CI/replay'de kapalı), JSON log (structlog), Prometheus metrikleri, sağlık uçları | — | herkes |
@@ -190,7 +186,7 @@ flowchart TB
 | `risk_monitor` | Seans içi her 5 dk | Öz sermaye/drawdown hesabı → günlük -%1 → `halted_today`; zirveden -%5 → **kill switch** |
 | `corporate_actions` | Pazartesi 07:00 | borsapy `.splits` / `.dividends` → `corporate_actions` |
 | `event_returns` | Hafta içi 20:00 | Olgunlaşan 1/5/20/60 günlük anormal getirileri `core.event_returns`'e yazar (`available_at` = ufuk kapanışı + EOD). **Chunk metadata'sına getiri yazılmaz**; kanıt istatistikleri yalnızca bu tablodan `available_at <= as_of` filtresiyle okunur |
-| `tedbir_sync` | Her 30 dk | SPK tedbir / volatilite tedbiri listesini (DUY bildirimleri + SPK bülteni) `restricted_securities` tablosuna yazar (ekip engel listesi aynı tabloda, Admin elle yönetir) |
+| `tedbir_sync` | Her 30 dk | SPK tedbir / volatilite tedbiri listesini (DUY bildirimleri + SPK bülteni) `restricted_securities` tablosuna yazar (kişisel engel listesi aynı tabloda, elle yönetilir) |
 | `audit_anchor` | Her gece 23:55 | Zincir başı hash'ini dışarıya (özel Git repo) yazar |
 | `reconcile` | Hafta içi 18:50 | Broker (SimBIST defteri/Alpaca) ↔ DB pozisyon mutabakatı |
 | `backfill_resume` | Manuel / gece | Yarım kalan backfill ve tam metin işlerini sürdürür |
@@ -205,7 +201,7 @@ Düğüm adları bu dokümanda Türkçe, `05-ajan-spesifikasyonlari.md`'de İngi
 
 | Düğüm | Tür | Model / araç | Çıktı (Pydantic) | Not | 05 kod adı |
 |---|---|---|---|---|---|
-| `on_eleme` | **Deterministik (LLM'siz)** | `subject` haritası + `universe_daily` + `restricted_securities` + `market_calendar` | `PreScreenResult{passed, route, reasons[]}` | **Hiçbir LLM/Prompt Guard çağrısından önce** çalışır: gürültü, "Düzeltme" (yalnızca düzeltme yeni olay değildir), işlem görebilirlik, SPK/VBTS tedbiri (`06` R04), evren (`06` R03), ekip engel listesi (`06` R13) | `route` + `pre_gate` |
+| `on_eleme` | **Deterministik (LLM'siz)** | `subject` haritası + `universe_daily` + `restricted_securities` + `market_calendar` | `PreScreenResult{passed, route, reasons[]}` | **Hiçbir LLM/Prompt Guard çağrısından önce** çalışır: gürültü, "Düzeltme" (yalnızca düzeltme yeni olay değildir), işlem görebilirlik, SPK/VBTS tedbiri (`06` R04), evren (`06` R03), içeriden-öğrenen engel listesi (`06` R13) | `route` + `pre_gate` |
 | `koruma` | Deterministik + küçük sınıflandırıcı | Sanitize · **Türkçe kural tabanlı injection kontrolü** (regex) · **kişi adı maskeleme** (`KİŞİ_n`) · Prompt Guard skoru | `GuardResult{quarantined, injection_score, regex_hits[]}` | Yalnızca ön elemeyi geçenler; maskelenmiş metin sonraki tüm LLM'lere ve LangSmith'e gider | `guard` |
 | `siniflandirici` | LLM **koşullu** | Deterministik `subject → EventCode` haritası; yalnızca "Özel Durum Açıklaması (Genel)" ve serbest metinlerde LLM | `Classification` | ~%90 LLM'siz | `classifier` |
 | `okuyucu` | LLM | Tam metin (`BildirimPdf` + RSC) + PDF ekleri | `StructuredEvent` (**tutar**, para birimi, karşı taraf, süre, bağlayıcılık, ilişkili taraf mı, alıntılar) | `Send` dalı; tutarı çıkaran **tek** ajan | `reader` |
@@ -216,8 +212,8 @@ Düğüm adları bu dokümanda Türkçe, `05-ajan-spesifikasyonlari.md`'de İngi
 | `kural_motoru` | **Deterministik** | `rules.evaluate()` | `RuleDecision` → `TradeProposal` veya `NoTrade` | LLM yok | `rule_engine` |
 | `uyum` | LLM + deterministik | Kural ve mevzuat RAG + tedbir listesi + injection skorları | `ComplianceResult` (`pass`/`veto`, bulgular) | Yalnızca veto | `compliance` |
 | `risk_kapisi` | **Deterministik** | `risk.evaluate()` (`06` R01–R14, pre_trade) | `RiskVerdict` | Yalnızca küçültür/reddeder/HOLD | `risk_gate` |
-| `onay_talebi` | Yan etki | `approvals.create_pending` (`expires_at` = bir sonraki seans 09:50), SSE bildirimi | — | `interrupt` öncesi yan etkiler burada | `request_approval` |
-| `onay` | **`interrupt()`** | Risk Officer | `ApprovalDecision` | Resume'da düğüm baştan çalışır → saf tutulur. **Backtest modunda** atlanır, onay simüle edilir | `approval` |
+| `onay_talebi` | Yan etki | `approvals.create_pending` (`expires_at` = bir sonraki seans 09:50), SSE bildirimi | — | `interrupt()` öncesi yan etkiler burada | `request_approval` |
+| `onay` | **`interrupt()`** | Kullanıcı (tek kişi) | `ApprovalDecision` | Resume'da düğüm baştan çalışır → saf tutulur. **Backtest modunda** atlanır, onay simüle edilir | `approval` |
 | `yurut` | Deterministik | `risk.evaluate(phase="at_send")` (`06` R16) + `BrokerRouter` | `OrderAck` | `client_order_id` ile idempotent | `execute` |
 | `kaydet` | Deterministik | `decisions`, `agent_runs`, `agent_outputs`, audit | — | Tüm yollar buradan END'e | `record` |
 
@@ -225,7 +221,7 @@ Düğüm adları bu dokümanda Türkçe, `05-ajan-spesifikasyonlari.md`'de İngi
 
 ```mermaid
 flowchart TD
-    S((START)) --> PE["on_eleme<br/>(LLM'siz: gürültü, Düzeltme, işlem görebilirlik,<br/>SPK/VBTS tedbiri, evren, ekip engel listesi)"]
+    S((START)) --> PE["on_eleme<br/>(LLM'siz: gürültü, Düzeltme, işlem görebilirlik,<br/>SPK/VBTS tedbiri, evren, içeriden-öğrenen engel listesi)"]
     PE -- "elendi" --> REC["kaydet"]
     PE -- "geçti" --> G["koruma<br/>(sanitize, TR kural tabanlı injection,<br/>kişi adı maskeleme, Prompt Guard)"]
     G -- "karantina" --> REC
@@ -438,7 +434,7 @@ LLM_RETRY = RetryPolicy(max_attempts=3, initial_interval=2.0)
 BRANCHES = ("okuyucu", "onemlilik", "kanit")
 
 def route_after_prescreen(state: KaptanState) -> Literal["koruma", "kaydet"]:
-    # LLM'siz ön eleme: işlem görebilirlik, SPK/VBTS tedbiri, evren, ekip engel listesi, "Düzeltme"
+    # LLM'siz ön eleme: işlem görebilirlik, SPK/VBTS tedbiri, evren, içeriden-öğrenen engel listesi, "Düzeltme"
     return "koruma" if state["prescreen"]["passed"] else "kaydet"
 
 def route_after_guard(state: KaptanState) -> Literal["siniflandirici", "kaydet"]:
@@ -641,10 +637,10 @@ E1: `buyback_10d_pct_capital >= 0.0025` ve en az 2 ayrı işlem günü (küme) �
 | R10 | Kriz rejimi → maruziyet ×0,5, yeni E3 yok | RESIZE / REJECT | `risk_kapisi` |
 | R11 | Veri ve LLM sağlığı (kota bitti → **HOLD**, KAP gecikmesi, şema, injection) | HOLD / REJECT | `risk_kapisi` |
 | R12 | Mod, canlı silahlanma (3 anahtar), yalnızca long, kaldıraçsız | REJECT | `risk_kapisi`, `yurut` |
-| R13 | Ekip içeriden-öğrenen engel listesi | REJECT (BUY) | `on_eleme` + `risk_kapisi` + `yurut` |
+| R13 | İçeriden-öğrenen engel listesi (kişisel) | REJECT (BUY) | `on_eleme` + `risk_kapisi` + `yurut` |
 | R14 | Tutar çapraz kontrolü: Okuyucu tutarı ∈ metinden regex ile çıkarılan tutarlar | REJECT | `risk_kapisi` (girdi `birlestirme`'den) |
 | R15 | **Zorunlu insan onayı** (otomatik yürütme yok); kart seviyesi normal/escalate; `expires_at` = bir sonraki seansın 09:50'si; backtest'te simüle onay | APPROVAL_REQUIRED | `risk_kapisi` → `onay_talebi` |
-| R16 | Gönderim anı yeniden kontrol (onay süresi, R01–R04, R09, R12, R13; kişisel fiş 30 dk) | REJECT | `yurut` |
+| R16 | Gönderim anı yeniden kontrol (onay süresi, R01–R04, R09, R12, R13; emir fişi 30 dk) | REJECT | `yurut` |
 
 Özellik testleri (Hypothesis, `06` §10.1): `final_notional ≤ requested`; kill switch → reject; tedbirli → reject; `mode ≠ "backtest"` → onaysız emir yok; kanıt kimliği getirilmemişse reject; regex dışı tutar → reject. CI kapısı: `kaptan.risk` ve `kaptan.rules` için %100 satır + dal kapsamı.
 
@@ -664,7 +660,7 @@ sequenceDiagram
     participant AG as worker-agents (LangGraph)
     participant LLM as LLM (Gemini Flash-Lite/Groq)
     participant API as api (SSE)
-    participant RO as Risk Officer (web)
+    participant RO as Sen (tek kullanıcı, web)
     participant SCH as scheduler
     participant SIM as SimBIST
 
@@ -680,7 +676,7 @@ sequenceDiagram
         ING->>RD: XADD kap.disclosures {payload}
     end
     AG->>RD: XREADGROUP agents
-    AG->>PG: on_eleme (LLM'siz): Düzeltme, işlem görebilirlik, tedbir, evren, ekip engel listesi
+    AG->>PG: on_eleme (LLM'siz): Düzeltme, işlem görebilirlik, tedbir, evren, içeriden-öğrenen engel listesi
     alt elendi
         AG->>PG: kaydet (LLM çağrısı yok)
     else geçti
@@ -723,14 +719,14 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
-    participant RO as Risk Officer (web)
+    participant RO as Sen (tek kullanıcı, web)
     participant API as FastAPI
     participant PG as Postgres
     participant G as Derlenmiş graf (api süreci)
     participant B as GuardedBroker → SimBIST
 
     RO->>API: POST /api/v1/approvals/{proposal_id}/decision {decision, approved_notional, comment} + JWT + CSRF
-    API->>API: require_role("risk_officer"), Pydantic doğrulama
+    API->>API: oturum doğrulama (JWT), Pydantic doğrulama (rol kontrolü yok)
     API->>PG: UPDATE approvals SET status='claimed' WHERE proposal_id=$1 AND status='pending' AND expires_at>now() RETURNING thread_id
     alt 0 satır
         API-->>RO: 409 "onay beklemede değil / süresi doldu / başka biri karar verdi"
@@ -749,14 +745,14 @@ sequenceDiagram
     end
 ```
 
-Kural: resume isteği **tek kazanan** üretir (iyimser kilit). Karar veren kullanıcı öneriyi başlatan kullanıcı olamaz (sistem başlatır; limit değişikliklerinde 4-göz ayrıca geçerli). `approved_notional` yalnızca **küçültme** olabilir.
+Kural: resume isteği **tek kazanan** üretir (iyimser kilit). Tek kullanıcı modunda karar veren kişi öneriyi başlatan kişiyle aynıdır; atlanan ikinci imza `auth.single_user_waiver` olarak denetim defterine yazılır. `approved_notional` yalnızca **küçültme** olabilir.
 
 ### 7.3 (c) Kill switch tetiklenmesi
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant T as Tetik (Risk Officer butonu / risk_monitor / CLI)
+    participant T as Tetik (kullanıcının düğmesi / risk_monitor / CLI)
     participant API as api
     participant PG as Postgres
     participant RD as Redis
@@ -765,7 +761,7 @@ sequenceDiagram
     participant UI as web (SSE)
 
     alt manuel
-        T->>API: POST /api/v1/risk/kill-switch {reason} (risk_officer | admin)
+        T->>API: POST /api/v1/risk/kill-switch {reason} (oturum açmış kullanıcı)
     else otomatik
         T->>PG: risk_monitor: drawdown_from_peak ≤ -%5
     end
@@ -778,13 +774,13 @@ sequenceDiagram
     API->>PG: orders → canceled, approvals pending → cancelled, audit "orders.cancelled"
     API-->>UI: SSE "kill_switch" (kırmızı banner, onay butonları devre dışı)
     Note over PG,GB: Sonraki her submit_order: GuardedBroker flag'i okur → BrokerError
-    T->>API: POST /api/v1/risk/kill-switch/reset/request (admin)
-    API->>PG: reset talebi (pending, requested_by=admin, inceleme formu)
-    T->>API: POST /api/v1/risk/kill-switch/reset/confirm (risk_officer, ≠ requester)
-    API->>PG: kill_switch = off, audit "kill_switch.reset" (iki aktör)
+    T->>API: POST /api/v1/risk/kill-switch/reset/request (kullanıcı; RiskStatus.reset.started)
+    API->>PG: reset talebi (pending, requested_by=uid, ready_at = en erken onay anı)
+    T->>API: POST /api/v1/risk/kill-switch/reset/confirm (kullanıcı; ready_at geçmeden 409)
+    API->>PG: kill_switch = off, audit "kill_switch.reset"; demo modunda bekleme muaf ise auth.single_user_waiver
 ```
 
-Kill switch'i **Admin veya Risk Officer** tetikleyebilir (ayrıca otomatik: zirveden −%5; sistem: aynı gün ≥3 R11 REJECT). Açık pozisyonlar kill switch ile **otomatik satılmaz** (BIST, 15 dk gecikme, ertesi açılış mantığı); yalnızca açık emirler iptal edilir ve yeni emir engellenir; pozisyonlar kendi çıkış kurallarıyla (`06` X1–X4) kapanır. Reset = **Admin + Risk Officer** (iki ayrı hesap). **Kişisel mod (tek kişi):** iki onay arasında ≥ 24 saat ve en az 5 seans bekleme (`06` §11).
+Kill switch'i kullanıcı tetikleyebilir (ayrıca otomatik: zirveden −%5; sistem: aynı gün ≥3 R11 REJECT). Açık pozisyonlar kill switch ile **otomatik satılmaz** (BIST, 15 dk gecikme, ertesi açılış mantığı); yalnızca açık emirler iptal edilir ve yeni emir engellenir; pozisyonlar kendi çıkış kurallarıyla (`06` X1–X4) kapanır. **Yeniden başlatma** iki adımdır (istek ve onay), ikisi de kullanıcıdadır. Gerçek veride iki adım arasında ≥ 24 saat ve durdurmadan sonra ≥ 5 seans geçmeden onay yapılmaz (`06` §11); `RiskStatus.reset.ready_at` en erken anı gösterir. Demo modunda bekleme muaftır ve muafiyet denetime yazılır.
 
 ---
 
@@ -840,15 +836,15 @@ class Broker(Protocol):
 |---|---|---|---|
 | **`SimBIST`** | paper | **Ders ana** | Gerçek BIST fiyatlarıyla deterministik simülatör. `opg` emirleri `pending_open` kuyruğuna; 10:16'da günün açılış fiyatıyla dolum. Dolum, fiyat bandı ve tavan/taban kontrolü **ham fiyatla** (İş Yatırım `HG_KAPANIS`/açılış); getiri hesabı düzeltilmiş fiyatla. Kayma = `max(5 bps, k·√(qty/ADV20))` (hacme bağlı); maliyet `config/costs.yaml`: **baz senaryo %0,05 / taraf + kayma**, **duyarlılık senaryosu %0,20 / taraf** (banka aracı kurumları binde ~1,9–2 + komisyon üzerinden %5 BSMV; borsa payı %0,0025). Tavan/taban kilitliyse dolum yok → `rejected`. Tam lot. Replay/backtest de aynı sınıfı kullanır (enjekte saat + fiyat beslemesi). |
 | **`AlpacaPaper`** | paper | **Stretch** — ABD karşılaştırma kolu (ana kapsam dışı) | `alpaca-py` `TradingClient(paper=True)`; Benzinga haberleri `NewsDataStream` ile ayrı ingest'e; aynı graf ABD olay tanımlarıyla (ablation). DST sonrası ABD açılışı 17:30 TR. |
-| **`OrderTicket`** | manual | Kişisel mod | Emir göndermez; emir fişi üretir (ticker, adet, limit fiyat bandı, geçerlilik, gerekçe linki, fiş no = `client_order_id`) → PDF + ekranda kopyalanabilir metin; durum `awaiting_manual_entry`. Kullanıcı aracı kurum uygulamasından girer, sonra "Dolumu gir" formuyla fiyat/adet kaydeder → `fills`. |
+| **`OrderTicket`** | manual | Tek kullanıcı (emir fişi) | Emir göndermez; emir fişi üretir (ticker, adet, limit fiyat bandı, geçerlilik, gerekçe linki, fiş no = `client_order_id`) → PDF + ekranda kopyalanabilir metin; durum `awaiting_manual_entry`. Kullanıcı aracı kurum uygulamasından girer, sonra "Dolumu gir" formuyla fiyat/adet kaydeder → `fills`. |
 | **`BtcTurk`** | live | Opsiyonel stub (**önerilmiyor**) | Tüm metotlar `NotImplementedError`; yalnızca Protocol uyumluluğu testi. |
 | **`MatriksDEK`** | live | Gelecek (~5.000 TL/ay) | Stub; "Dışarıdan Emir Kabulü" entegrasyonu Aşama 3'te değerlendirilir. |
 
 **Algolab 31.12.2025'te kapandı** → adapter yok.
 
-`GuardedBroker(inner)` her adapter'ı sarar: kill switch, `halted_today`, canlı mod için **3 anahtar** (config `live.enabled` + env `KAPTAN_LIVE_ENABLED=true` + UI'da iki kullanıcılı `live_armed` bayrağı) ve emir başına sert tavan. `BrokerRouter.for_(market, mode)`: `bist/paper → SimBIST`, `bist/manual → OrderTicket`, `us/paper → AlpacaPaper` (yalnızca stretch uygulanırsa). Backtest/replay modunda da `SimBIST` kullanılır ve onay simüle edilir (`06` R15).
+`GuardedBroker(inner)` her adapter'ı sarar: kill switch, `halted_today`, canlı mod için **3 anahtar** (config `live.enabled` + env `KAPTAN_LIVE_ENABLED=true` + UI'da tek kişilik `live_armed` onayı (ikinci imza muaf, denetime yazılır)) ve emir başına sert tavan. `BrokerRouter.for_(market, mode)`: `bist/paper → SimBIST`, `bist/manual → OrderTicket`, `us/paper → AlpacaPaper` (yalnızca stretch uygulanırsa). Backtest/replay modunda da `SimBIST` kullanılır ve onay simüle edilir (`06` R15).
 
-**Demo modu (kanonik):** `DEMO_MODE=true` iken `scripts/inject_disclosure.py` / `POST /admin/demo/inject` ile `tests/fixtures/demo/` altındaki bildirim fixture'ları enjekte edilir (`ingest_source='demo'`) ve kaydedilmiş LLM yanıtları + fiyat beslemesiyle **replay** edilir; canlı KAP/LLM'e bağımlılık olmadan final demo akışı tekrarlanabilir.
+**Demo modu (kanonik):** `DEMO_MODE=true` iken `scripts/inject_disclosure.py` / `POST /demo/inject` ile `tests/fixtures/demo/` altındaki bildirim fixture'ları enjekte edilir (`ingest_source='demo'`) ve kaydedilmiş LLM yanıtları + fiyat beslemesiyle **replay** edilir; canlı KAP/LLM'e bağımlılık olmadan final demo akışı tekrarlanabilir.
 
 ---
 
@@ -941,10 +937,10 @@ Tüm portlar `127.0.0.1`'e bağlıdır. Uzak demo için Tailscale / Cloudflare T
 
 | Dosya | İçerik | Değişim kuralı |
 |---|---|---|
-| `config/universe.yaml` | Likidite (ADV20 ≥ X TL) ve halka açıklık (≥ %Y) alt sınırları, hariç listeler | Admin, audit |
+| `config/universe.yaml` | Likidite (ADV20 ≥ X TL) ve halka açıklık (≥ %Y) alt sınırları, hariç listeler | Kullanıcı, denetim kaydı |
 | `config/subject_map.v1.yaml` | KAP `subject` → E-kodu / gürültü / kaçınma bayrağı | Sürümlü, `v1.0-fwd`'de donuk |
 | `config/rules.v1.yaml` | E1–E4 eşikleri, tutma süreleri, sızıntı politikası | W5'te donuk |
-| `config/limits.default.yaml` | Risk parametreleri (kanonik tek set) → DB `limits` v1 seed | Sonraki değişiklikler DB'de, 4-göz |
+| `config/limits.default.yaml` | Risk parametreleri (kanonik tek set) → DB `limits` v1 seed | Sonraki değişiklikler DB'de, denetim kaydıyla |
 | `config/costs.yaml` | Komisyon, BSMV, kayma modeli (baz %0,05 / taraf + hacme bağlı kayma; duyarlılık %0,20 / taraf) | Sürümlü |
 | `config/models.yaml` | Rol → birincil/yedek model kimlikleri — **tam sürüm ID'siyle dondurulur (alias/`-latest` yok)**; ana model Gemini Flash-Lite (tam ID W1'de AI Studio'dan okunur), Sınıflandırıcı ve Şüpheci Groq gpt-oss; zincir Gemini Flash-Lite ⇄ Groq gpt-oss → Azure for Students → Ollama Qwen → HOLD | Sürümlü; `manifests/v1.0-fwd.json` (9 Kas) ve `manifests/v1.1-fwd.json` (23 Kas) prompt hash'leri + model ID'leri + eşikler; uyuşmazlık = başlatma reddi |
 | `config/quotas.yaml` | Sağlayıcı RPM/RPD/TPM (W1'de panellerden okunur) | Serbest |
@@ -981,7 +977,7 @@ KAPTAN_LIVE_ENABLED=false     # canlı modun 1. anahtarı
 AUDIT_ANCHOR_REPO=            # gece çıpası hedefi
 ```
 
-Secret yönetimi: **SOPS + age** ile `secrets/*.enc.yaml` (üye başına age anahtarı); `gitleaks` pre-commit + CI; sızıntıda **anahtar rotasyonu** (runbook). CI gerçek anahtar kullanmaz (`LLM_MODE=replay`, `BROKER_MODE=paper`). DB rolleri: `kaptan_owner` (migration), `app_rw` (servisler, audit'e yalnızca INSERT/SELECT), `app_ro` (dashboard), `auditor_ro`.
+Secret yönetimi: **SOPS + age** ile `secrets/*.enc.yaml` (anahtar başına age anahtarı); `gitleaks` pre-commit + CI; sızıntıda **anahtar rotasyonu** (runbook). CI gerçek anahtar kullanmaz (`LLM_MODE=replay`, `BROKER_MODE=paper`). DB rolleri: `kaptan_owner` (migration), `app_rw` (servisler, audit'e yalnızca INSERT/SELECT), `app_ro` (dashboard), `auditor_ro`.
 
 ---
 
@@ -1015,7 +1011,7 @@ kaptan/
 │   │   ├── approvals/     service.py
 │   │   ├── audit/         writer.py verify.py anchor.py
 │   │   ├── repos/         (psycopg3 async, parametreli SQL)
-│   │   ├── api/           main.py deps.py (JWT/RBAC) sse.py routers/{auth,disclosures,runs,approvals,portfolio,risk,limits,audit,eval,brief,admin}.py
+│   │   ├── api/           main.py deps.py (JWT) sse.py routers/{auth,disclosures,runs,approvals,portfolio,risk,limits,audit,eval,brief,admin}.py
 │   │   ├── obs/           logging.py metrics.py
 │   │   ├── workers/       ingest_worker.py agent_worker.py embed_worker.py scheduler.py migrate.py
 │   │   └── eval/          replay.py event_study.py baselines.py ablation.py ragas_eval.py redteam.py classify_f1.py
@@ -1035,45 +1031,45 @@ kaptan/
 
 ## 11. API uç noktaları
 
-Önek `/api/v1`. Kimlik doğrulama: kısa ömürlü JWT (15 dk) + httpOnly/Secure/SameSite=strict refresh cookie; argon2id parola; cookie ile yapılan değiştirici isteklerde CSRF token; `slowapi` ile auth ve değiştirici uçlarda hız sınırı. Rol kısaltmaları: **A** = Analist, **R** = Risk Officer, **D** = Admin, **U** = Auditor (kanonik salt okunur rol; hiçbir değiştirici uca erişemez, tek POST'u yan etkisiz `/audit/verify`).
+Önek `/api/v1`. Kimlik doğrulama: kısa ömürlü JWT (15 dk) + httpOnly/Secure/SameSite=strict refresh cookie; argon2id parola; cookie ile yapılan değiştirici isteklerde CSRF token; `slowapi` ile auth ve değiştirici uçlarda hız sınırı. **Rol yoktur** (Revizyon 4, 02.11.2026): oturum açmış kullanıcı her uca erişir; uçlarda `403` yoktur. Sözleşmenin tek kaynağı [`kaptan-panel/API.md`](../../kaptan-panel/API.md); bu tablo mimari özettir.
 
-| Metot | Yol | Rol | Açıklama |
-|---|---|---|---|
-| POST | `/auth/login` · `/auth/refresh` · `/auth/logout` | herkes | JWT + refresh cookie |
-| GET | `/me` | A R D U | Kullanıcı + roller |
-| GET | `/disclosures?date=&ticker=&event_code=&noise=` | A R D U | Inbox listesi (sayfalı) |
-| GET | `/disclosures/{index}` | A R D U | Detay: metin TR/EN, ekler, sınıflandırma, bağlı haberler |
-| POST | `/disclosures/{index}/notes` | A R D | Not ekle (audit) |
-| GET | `/runs?status=&from=` · `/runs/{run_id}` | A R D U | Ajan çalıştırmaları, ajan çıktıları |
-| GET | `/runs/{run_id}/explain` | A R D U | "Neden bu işlem?" yükü: bildirim, kural izi, kanıt kartı (20 olay), şüpheci notu, uyum bulguları, risk sonuçları |
-| GET | `/approvals?status=pending` | A R D U | Onay kuyruğu |
-| POST | `/approvals/{proposal_id}/decision` | **R** | Onay/ret/küçült → `Command(resume=)`; 409 eşzamanlılık / süre dolmuş (09:50) |
-| GET | `/orders` · `/orders/{id}` | A R D U | Emirler, dolumlar |
-| POST | `/orders/{id}/manual-fill` | **R** (kişisel modda sahibi) | OrderTicket dolum girişi |
-| GET | `/orders/{id}/ticket.pdf` | R D | Emir fişi |
-| GET | `/portfolio/positions` · `/portfolio/pnl?from=&to=` | A R D U | Pozisyonlar, P&L vs BIST-100 |
-| GET | `/risk/status` | A R D U | Kill switch, günlük P&L, drawdown, rejim, kota |
-| POST | `/risk/kill-switch` | **R D** | Aç (açık emirleri iptal eder, pozisyon satmaz) |
-| POST | `/risk/kill-switch/reset/request` · `/reset/confirm` | **D** başlatır · **R** onaylar | 2 aktörlü reset (kişisel mod: ≥24 saat + 5 seans) |
-| GET | `/limits` · `/limits/history` | A R D U | Geçerli ve geçmiş limit sürümleri |
-| POST | `/limits/proposals` | R D | Limit değişikliği önerisi |
-| POST | `/limits/proposals/{id}/approve` | R D (**≠ öneren**) | İkinci onay → yeni sürüm |
-| GET | `/audit?entity=&from=&actor=` | R D U | Audit görüntüleyici |
-| POST | `/audit/verify` | R D U | Zinciri doğrula → `{ok, first_bad_pos}` |
-| GET | `/eval/summary` · `/eval/ablations` · `/eval/classification` · `/eval/rag` | A R D U | Değerlendirme panosu |
-| GET | `/brief/today` · `/brief/{date}` | A R D | Sabah özeti |
-| GET/PUT | `/admin/users` · `/admin/universe` · `/admin/config` | **D** | Yönetim |
-| POST | `/admin/live/arm` · `/admin/live/confirm` | D başlatır · R onaylar | Canlı modun 3. anahtarı |
-| POST | `/admin/demo/inject` | D (yalnızca `DEMO_MODE`) | Demo bildirimi enjekte et |
-| GET | `/healthz` · `/readyz` · `/metrics` | iç ağ | Sağlık, Prometheus |
+| Metot | Yol | Açıklama |
+|---|---|---|
+| POST | `/auth/login` · `/auth/refresh` · `/auth/logout` | Tek parola; JWT + refresh cookie |
+| GET | `/me` · `/me/overview` | Kullanıcı (kimlik, ad); tek kullanıcı ana sayfası |
+| GET | `/disclosures?date=&ticker=&event_code=&noise=` | Bildirim listesi (sayfalı) |
+| GET | `/disclosures/{index}` | Detay: metin TR/EN, ekler, sınıflandırma, bağlı haberler |
+| POST | `/disclosures/{index}/notes` | Not ekle (denetim kaydı) |
+| GET | `/runs?status=&from=` · `/runs/{run_id}` | Ajan çalıştırmaları, ajan çıktıları |
+| GET | `/runs/{run_id}/explain` | "Neden bu işlem?" yükü: bildirim, kural izi, kanıt kartı (20 olay), şüpheci notu, uyum bulguları, risk sonuçları |
+| GET | `/approvals?status=pending` | Bekleyen öneriler |
+| POST | `/approvals/{proposal_id}/decision` | Onay / ret / küçültme → `Command(resume=)`; 409 eşzamanlılık / süre dolmuş (09:50) |
+| GET | `/orders` · `/orders/{id}` | Emirler, dolumlar |
+| POST | `/orders/{id}/manual-fill` | Emir fişine dolum girişi |
+| GET | `/orders/{id}/ticket.pdf` | Emir fişi (PDF) |
+| GET | `/portfolio/positions` · `/portfolio/pnl?from=&to=` | Pozisyonlar, P&L vs BIST-100 |
+| GET | `/risk/status` | Durdurma, günlük P&L, drawdown, rejim, kota, yeniden başlatma durumu (`reset.ready_at`) |
+| POST | `/risk/kill-switch` | Durdur (açık emirleri iptal eder, pozisyon satmaz) |
+| POST | `/risk/kill-switch/reset/request` · `/reset/confirm` | İki adımlı yeniden başlatma; gerçek veride ≥24 saat + ≥5 seans (`ready_at`); demo'da muaf, muafiyet denetime yazılır |
+| GET | `/limits` · `/limits/history` | Geçerli ve geçmiş limit sürümleri |
+| POST | `/limits/proposals` | Limit değişikliği önerisi |
+| POST | `/limits/proposals/{id}/approve` | Onay → yeni sürüm (ikinci imza muaf, denetime yazılır) |
+| GET | `/audit?entity=&from=&actor=` | Geçmiş (denetim defteri) |
+| POST | `/audit/verify` | Zinciri doğrula → `{ok, first_bad_pos}` (yan etkisiz) |
+| GET | `/eval/summary` · `/eval/ablations` · `/eval/classification` · `/eval/rag` | Değerlendirme panosu |
+| GET | `/brief/today` · `/brief/{date}` | Sabah özeti |
+| GET/PUT | `/admin/universe` · `/admin/config` | Evren ve yapılandırma |
+| POST | `/admin/live/arm` (`start`, `confirm`, `disarm`) | Canlı modun 3. anahtarı; tek kişi, ikinci adımın muafiyeti denetime yazılır |
+| POST | `/demo/inject` | Demo bildirimi enjekte et (yalnızca `DEMO_MODE`) |
+| GET | `/healthz` · `/readyz` · `/metrics` | Sağlık, Prometheus (erişim: iç ağ) |
 
 **SSE** (`response_class=EventSourceResponse`, `ServerSentEvent(data=..., event=..., id=...)` **[D]**):
 
-| Yol | Olaylar | Rol |
-|---|---|---|
-| `GET /stream/feed` | `disclosure` (yeni bildirim), `classification`, `news_linked` | A R D |
-| `GET /stream/runs/{run_id}` | `node` (düğüm başladı/bitti), `progress`, `interrupt`, `done` | A R D |
-| `GET /stream/desk` | `approval.requested`, `order`, `fill`, `kill_switch`, `halt`, `limits.changed` | A R D U |
+| Yol | Olaylar |
+|---|---|
+| `GET /stream/feed` | `disclosure` (yeni bildirim), `classification`, `news_linked`, `counters` |
+| `GET /stream/runs/{run_id}` | `node` (düğüm başladı/bitti), `progress`, `interrupt`, `done` |
+| `GET /stream/desk` | `approval.requested`, `approval.decided`, `ticket`, `order`, `fill`, `kill_switch`, `halt`, `limits.changed` |
 
 SSE kaynağı Redis pub/sub'dır (`desk.events`); worker'lar yayınlar, api abonedir → api süreci ile graf süreci ayrık kalır. `id` alanı olayın Redis stream kimliğidir; yeniden bağlanmada `Last-Event-ID` ile kaçırılanlar `XRANGE` ile gönderilir. 15 sn'de bir `comment` keep-alive.
 
@@ -1081,17 +1077,19 @@ SSE kaynağı Redis pub/sub'dır (`desk.events`); worker'lar yayınlar, api abon
 
 ## 12. Frontend ekranları
 
-| Ekran | Yol | Rol | İçerik |
-|---|---|---|---|
-| **Inbox** | `/inbox` | A R D | Canlı bildirim akışı (SSE); bugünkü toplam / gürültü / E-adayı sayaçları; filtre (ticker, E-kodu, sınıf); satırda sınıflandırma rozeti, bağlı haber sayısı, not |
-| **Onay kuyruğu** | `/approvals` | R (A görür) | Kartlar: ticker, olay, önerilen → risk sonrası tutar, kalan süre (09:50'ye), kural izi özeti, kanıt özeti, şüpheci notu; Onayla / Küçült / Reddet (yorum zorunlu) |
-| **"Neden bu işlem?"** | `/runs/[id]` | A R D U | Bildirim metni (TR/EN, vurgulu `source_spans`), ön eleme sonucu, sınıflandırma yöntemi, Birleştirme hesabı (Okuyucu tutarı + regex eşleşmesi / payda / dönem / kur), **kanıt kartı** (seçilen benzer olaylar + kodla hesaplanan anormal getiri dağılımı), şüpheci notu, kural izi (✓/✗ tablo), uyum bulguları, risk kuralları (`06` R01–R16), onaylayan, emir/dolum, audit zincir konumları; ajan iz zaman çizelgesi (LangSmith linki) |
-| **Portföy** | `/portfolio` | A R D U | Açık pozisyonlar (giriş, tutma süresi, planlanan çıkış tarihi), P&L eğrisi vs BIST-100 ve eşit ağırlık, drawdown, risk durumu paneli, kill switch butonu (R/D) |
-| **Audit görüntüleyici** | `/audit` | R D U | Filtreli tablo (aktör, eylem, varlık), JSON payload, `prev_hash`/`hash`; **"Zinciri doğrula"** butonu; son dış çıpa |
-| **Limitler** | `/limits` | A R D U (değişiklik R D) | Geçerli sürüm, geçmiş, bekleyen öneriler; diff görünümü; ikinci onay |
-| **Değerlendirme panosu** | `/eval` | A R D U | 4 katman: sınıflandırma macro-F1 (kilitli test seti, model × E-kodu), RAGAS metrikleri trendi, olay çalışması / **holdout backtest (ana kanıt)**, ileri dönük paper (`v1.0-fwd` ve `v1.1-fwd`) vs baseline'lar ve ablation'lar; red-team yakalama oranı; token/karar maliyeti |
-| **Sabah özeti** | `/brief` | A R D | 08:30 raporu: dünkü seans sonrası önemli bildirimler, bugün açılışta girilecek onaylı emirler, bekleyen onaylar, açık pozisyon riskleri, tedbir değişiklikleri |
-| Yönetim | `/admin` | D | Kullanıcılar/roller, evren, config, canlı mod anahtarı, demo enjeksiyonu |
+Tek kullanıcı panelinin rotaları (Revizyon 4). Ürün kuralı [`kaptan-panel/SPEC.md`](../../kaptan-panel/SPEC.md) §1'dir.
+
+| Ekran | Yol | İçerik |
+|---|---|---|
+| **Ana sayfa** | `/benim` | Tek cümle ("Paran bugün … arttı."), başladığından beri çizgi (ufuk), bekleyen öneriler, son işlemler; ilk açılışta "KAPtan nasıl çalışır" |
+| **Öneri** | `/oneri/[id]` | Fiil (AL / TUT / SAT), tek cümle, tutar, "Neden?" (ne oldu, neden önemli, geçmişte ne oldu), belirsizlik, onayla / reddet; onaylanan öneri mühürle "Son işlemler"e gider |
+| **Param** | `/portfoy` | "Param nerede?" orantılı harita, elindekiler, girilecek emirler, durdurma ve yeniden başlatma durumu |
+| **Okunanlar** | `/bildirimler` | Bugün KAPtan hangi bildirimleri okudu ve ne yaptı (sayılar ve liste) |
+| **Geçmiş** | `/gecmis` | Olan her şeyin zaman çizelgesi; "Kayıtlar sağlam mı?" zincir doğrulaması |
+| **Ayarlar** | `/ayarlar` | Limitler (cümleler, değişiklik önerisi ve onayı), parola, çıkış, "KAPtan nasıl çalışır" |
+| Giriş | `/login` | Tek parola |
+
+Eski yollar (`/bugun`, `/denetim`, `/portfolio`, `/limits`, `/admin` ve benzerleri) en yakın ekrana yönlenir.
 
 ---
 
@@ -1149,7 +1147,7 @@ Yatay ölçek yolu (kapsam dışı, not): `worker-agents` N replika (consumer gr
 
 ### ADR-005 — Yürütme: SimBIST (kendi paper broker'ımız), broker API değil
 - **Seçenekler:** Algolab (**31.12.2025'te kapandı**) · Matriks DEK (~5.000 TL/ay) · kendi simülatörümüz · yalnızca Alpaca.
-- **Karar:** Ders için `SimBIST` (gerçek BIST fiyatları, komisyon + kayma, ertesi açılış dolumu); kişisel mod için `OrderTicket` (manuel giriş); `AlpacaPaper` ABD karşılaştırma kolu **stretch** hedeftir.
+- **Karar:** Ders için `SimBIST` (gerçek BIST fiyatları, komisyon + kayma, ertesi açılış dolumu); emir fişi için `OrderTicket` (manuel giriş); `AlpacaPaper` ABD karşılaştırma kolu **stretch** hedeftir.
 - **Gerekçe:** Ücretsiz ve erişilebilir BIST emir API'si yok; strateji 5–60 gün tuttuğu için otomatik hıza gerek yok; son buton zaten insanda. Aynı sınıf backtest/replay'de kullanılır → paper ile backtest arasında model tutarlılığı.
 - **Sonuçlar:** Dolum modeli bir varsayımdır (ham açılış seansı fiyatı + kayma; baz %0,05 / taraf, duyarlılık %0,20 / taraf); raporda açıkça belirtilir. Canlı adapter'lar stub; Protocol sayesinde sonradan eklenebilir.
 
@@ -1166,10 +1164,10 @@ Kanonik dosyanın REVİZYON 2 bölümüne göre durum. Gövde metni bu durumlara
 
 1. **Önemlilik ↔ Okuyucu bağımlılığı.** ✅ Kabul edildi ve uygulandı — ancak kanonun **nihai** biçimiyle: Önemlilik tutar çıkarmaz, yalnızca sayıları getirir; oranları deterministik `birlestirme` düğümü Okuyucu'nun tutarıyla hesaplar; tutar ↔ metin regex kontrolü (`06` R14). Bu dokümandaki eski "ikisi de tutar çıkarır, >%5 fark → `NoTrade`" seçeneği ❌ kanonda yerine geçildiği için kaldırıldı (§5.1–5.2, §6.1).
 2. **Risk kapısında otomatik onay yolu yok.** ✅ Kabul edildi ve uygulandı (kanon: "Otomatik yürütme yok"; `06` R15; backtest'te onay simüle edilir).
-3. **Onay süresi 09:50.** ✅ Kabul edildi ve uygulandı: onay **bir sonraki seansın 09:50'sinde** düşer (`06` R15/R16). ❌ Seans içi bildirimler için ayrı "60 dk" süresi reddedildi: kanon tek kural benimsedi; kişisel modda ayrıca fiş TTL'si 30 dk (`06` R16).
+3. **Onay süresi 09:50.** ✅ Kabul edildi ve uygulandı: onay **bir sonraki seansın 09:50'sinde** düşer (`06` R15/R16). ❌ Seans içi bildirimler için ayrı "60 dk" süresi reddedildi: kanon tek kural benimsedi; ayrıca fiş geçerlilik süresi 30 dk (`06` R16).
 4. **Kriz rejimi tanımı.** ✅ Kabul edildi ve uygulandı — tanım `06` §9'da (XU100 < SMA50 ∧ RV20 ≥ P80, veya günlük ≤ −%5, veya endeks devre kesici; 5 seans histerezis). Buradaki "−%15 zirveden / 90. yüzdelik" taslağı ❌ `06` tanımı tek kaynak olduğu için kullanılmıyor.
 5. **Stop tanımı.** ✅ Kabul edildi ve uygulandı (kanon: kapanış bazlı ATR; %0,5 risk `stop_pct` ile) — formül `06` §6.1 (`clamp(k × ATR20 / fiyat, lo, hi)`, tip bazlı); buradaki `max(2·ATR20/fiyat, %5)` taslağı ❌ `06` tek kaynak olduğu için kullanılmıyor.
-6. **Kill switch açık pozisyonları satmaz.** ✅ Kabul edildi ve uygulandı (§7.3; Admin veya Risk Officer tetikler; reset Admin + Risk Officer; kişisel mod ≥24 saat + 5 seans).
+6. **Kill switch açık pozisyonları satmaz.** ✅ Kabul edildi ve uygulandı (§7.3; kullanıcı tetikler; yeniden başlatma iki adım, gerçek veride ≥24 saat + ≥5 seans; demo'da muaf).
 7. **ADR-006 → kanonik "Teknoloji" satırına referans.** ⏳ Açık (belge düzeni kararı; içerik çelişkisi yok).
 8. **(Yeni) Düğüm adlandırması.** ✅ Karar verildi (Revizyon 2): **kodda `05`'teki İngilizce adlar** (`pre_gate`, `guard`, `classifier`, `reader`, `materiality`, `evidence`, `merge`, `skeptic`, `rules`, `compliance`, `risk_gate`, `approval`); dokümanlarda Türkçe adlar + §5.1 eşleme tablosu.
 9. **(Revizyon 3) Doğrulanmış bulgular işlendi.** ✅ `kap-client` fallback'i kaldırıldı (tek yol kendi httpx istemcimiz; WAF/HTTP 666 geri çekilmesi); tip bazlı gövde ayrıştırıcıları; ham fiyat İş Yatırım'dan (SimBIST dolumu, R09 ham fiyatla), yfinance `Volume == 0` filtresi, `ticker_history`, borsadan çıkanlar için İş Yatırım, ≥ 90 sn timeout sarmalayıcısı; `fundamentals_pit.available_at` kuralı; ana model Gemini Flash-Lite ve zincir Gemini Flash-Lite ⇄ Groq gpt-oss → Azure for Students → Ollama → HOLD; maskeleme ilk LLM çağrısından (W3); LangSmith örnekleme; `stream_events(version="v3")`; bge-m3 yalnızca filtrelenmiş belgeler; maliyet modeli baz %0,05 / duyarlılık %0,20 (§3, §4, §5.1, §8, §9, §13–§15).

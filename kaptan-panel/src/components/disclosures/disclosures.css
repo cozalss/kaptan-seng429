@@ -1,0 +1,375 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Okunanlar: the hill of paper sliding into the sea, the day's few big things, then every duyuru
+   on a tabular rhythm.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ── The funnel. ── */
+.ok-funnel {
+  --ok-hill-h: clamp(160px, 110px + 12vw, 280px);
+}
+.ok-stages {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  padding-bottom: 1.25rem;
+}
+.ok-stage {
+  display: grid;
+  align-content: end;
+  gap: 0.125rem;
+  padding-inline-end: 0.5rem;
+}
+.ok-stage-n {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(2.25rem, 1.5rem + 4vw, 5.25rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.ok-stage-label {
+  font-size: clamp(0.8125rem, 0.75rem + 0.3vw, 1rem);
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.ok-stage:last-child .ok-stage-n {
+  color: var(--north);
+}
+.ok-hill-wrap {
+  position: relative;
+  height: var(--ok-hill-h);
+}
+.ok-hill {
+  --u-hatch-ink: var(--ink);
+  position: absolute;
+  inset: 0;
+  animation: ok-pour 900ms var(--ease-out-expo) both;
+}
+@keyframes ok-pour {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ok-boat {
+  position: absolute;
+  right: 0;
+  bottom: -4px;
+  width: clamp(48px, 36px + 4vw, 88px);
+  height: clamp(48px, 36px + 4vw, 88px);
+}
+.ok-filters {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: 0.75rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.ok-filter {
+  display: grid;
+  align-content: start;
+  gap: 0.25rem;
+  min-height: 44px;
+  padding: 0.75rem 0.875rem 0.875rem 0;
+  text-align: left;
+  color: var(--ink-soft);
+  border-top: 3px solid transparent;
+  transition: border-color var(--dur-quick) var(--ease-out-expo), color var(--dur-quick) var(--ease-out-expo);
+}
+.ok-filter:hover {
+  color: var(--ink);
+  border-top-color: var(--hairline);
+}
+.ok-filter:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+.ok-filter-on {
+  color: var(--ink);
+  border-top-color: var(--ink);
+}
+.ok-filter-top {
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  font-weight: 600;
+}
+.ok-filter-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.ok-filter-note {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+@media (max-width: 859px) {
+  .ok-filters {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 1rem;
+    border-bottom: 0;
+  }
+  .ok-filter {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.625rem 0.75rem;
+    border-top: 0;
+    border-left: 3px solid transparent;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .ok-filter:hover {
+    border-left-color: var(--hairline);
+  }
+  .ok-filter-on {
+    border-left-color: var(--ink);
+    background: var(--wash-tint);
+  }
+}
+
+.ok-days {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 1.5rem;
+  margin-top: 0.25rem;
+}
+
+/* ── The day's few big things. ── */
+.ok-worth {
+  margin-top: clamp(3rem, 2rem + 4vw, 6rem);
+}
+.ok-worth-head {
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--ink);
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+.ok-worth-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(2rem, 1rem + 4vw, 5rem);
+}
+.ok-worth-row {
+  padding-block: clamp(1.25rem, 1rem + 1vw, 2rem);
+  border-bottom: 1px solid var(--hairline);
+}
+.ok-worth-ticker {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.ok-worth-name {
+  margin-top: 0.125rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  -webkit-text-stroke: 0.25px currentColor;
+  font-size: clamp(2rem, 1.75rem + 1vw, 2.75rem);
+  line-height: 1.08;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+}
+.ok-worth-said {
+  margin-top: 0.625rem;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.ok-worth-did {
+  margin-top: 0.25rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ok-worth-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 1.5rem;
+  margin-top: 0.375rem;
+}
+@media (max-width: 859px) {
+  .ok-worth-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ok-go,
+.ok-kap {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--rule-ui);
+  transition: text-decoration-color var(--dur-quick) var(--ease-out-expo);
+}
+.ok-go:hover,
+.ok-kap:hover {
+  text-decoration-color: var(--ink);
+}
+.ok-go:focus-visible,
+.ok-kap:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.ok-kap {
+  gap: 0.25rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Everything read. ── */
+.ok-all {
+  margin-top: clamp(3rem, 2rem + 4vw, 6rem);
+}
+.ok-all-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--ink);
+}
+.ok-hour-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 0 0.5rem;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.ok-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 0.25rem 1.5rem;
+  align-items: baseline;
+  padding-block: 0.75rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.ok-row-time {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.ok-row-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.5rem;
+}
+.ok-row-name {
+  font-size: 1rem;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ok-row-ticker {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+.ok-row-said {
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+.ok-row-did {
+  display: grid;
+  grid-template-columns: 0.75rem minmax(0, 1fr);
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+.ok-row .ok-kap {
+  min-height: 24px;
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-decoration-color: var(--hairline);
+}
+.ok-row .ok-kap:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+}
+.ok-mark {
+  display: block;
+  width: 0.625rem;
+  height: 0.625rem;
+  margin-top: 0.3125rem;
+  border-radius: 9999px;
+  border: 1.5px solid var(--rule-soft);
+}
+.ok-row[data-fate="noise"] .ok-mark {
+  width: 0.625rem;
+  height: 2px;
+  margin-top: 0.625rem;
+  border: 0;
+  border-radius: 0;
+  background: var(--rule-soft);
+}
+.ok-row[data-fate="processed"] .ok-mark {
+  border-color: var(--ink);
+  background: var(--ink);
+}
+.ok-row[data-fate="useful"] .ok-mark {
+  border-color: var(--north);
+  background: var(--north);
+}
+.ok-row[data-fate="useful"] .ok-row-did,
+.ok-row[data-fate="processed"] .ok-row-did {
+  font-weight: 600;
+  color: var(--ink);
+}
+@media (max-width: 859px) {
+  .ok-row {
+    grid-template-columns: 48px minmax(0, 1fr);
+    padding-block: 0.875rem;
+  }
+  .ok-row-did,
+  .ok-row .ok-kap {
+    grid-column: 2;
+  }
+  .ok-row .ok-kap {
+    min-height: 44px;
+    justify-self: start;
+  }
+}
+.ok-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-block: 1.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ok-hill {
+    animation: none;
+  }
+}
+@media (forced-colors: active) {
+  .ok-hill {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+}

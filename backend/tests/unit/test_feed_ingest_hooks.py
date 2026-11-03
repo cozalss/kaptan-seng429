@@ -33,7 +33,7 @@ class FakeRedis:
 async def test_detail_loop_publishes_the_text_stage(monkeypatch: pytest.MonkeyPatch) -> None:
     stop = asyncio.Event()
 
-    async def fake_fetch(pool: Any, client: Any, on_stored: Any = None) -> int:
+    async def fake_fetch(pool: Any, client: Any, on_stored: Any = None, attachments: bool = False) -> int:
         await on_stored(42)
         stop.set()
         return 42
@@ -48,7 +48,7 @@ async def test_detail_loop_without_redis_has_no_hook(monkeypatch: pytest.MonkeyP
     stop = asyncio.Event()
     seen: list[Any] = []
 
-    async def fake_fetch(pool: Any, client: Any, on_stored: Any = None) -> int:
+    async def fake_fetch(pool: Any, client: Any, on_stored: Any = None, attachments: bool = False) -> int:
         seen.append(on_stored)
         stop.set()
         return 1
@@ -73,7 +73,7 @@ async def test_detail_loop_indexes_the_text_for_rag_then_publishes(monkeypatch: 
     stop = asyncio.Event()
     calls: list[tuple[Any, list[int]]] = []
 
-    async def fake_fetch(pool: Any, client: Any, on_stored: Any = None) -> int:
+    async def fake_fetch(pool: Any, client: Any, on_stored: Any = None, attachments: bool = False) -> int:
         await on_stored(42)
         stop.set()
         return 42
@@ -93,7 +93,7 @@ async def test_detail_loop_indexes_for_rag_even_without_the_agent_feed(monkeypat
     stop = asyncio.Event()
     calls: list[list[int]] = []
 
-    async def fake_fetch(pool: Any, client: Any, on_stored: Any = None) -> int:
+    async def fake_fetch(pool: Any, client: Any, on_stored: Any = None, attachments: bool = False) -> int:
         await on_stored(7)
         stop.set()
         return 7
@@ -132,3 +132,47 @@ async def test_a_redis_outage_never_stops_ingestion(delete_fails: bool) -> None:
     assert await publish_to_agents(redis, [7, 8]) == 0
     if not delete_fails:
         assert redis.deleted == [sent_key(7, "listed"), sent_key(8, "listed")]  # the next poll retries
+
+
+async def test_detail_loop_passes_the_attachment_switch_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    stop = asyncio.Event()
+    seen: list[bool] = []
+
+    async def fake_fetch(pool: Any, client: Any, on_stored: Any = None, attachments: bool = False) -> int:
+        seen.append(attachments)
+        stop.set()
+        return 1
+
+    monkeypatch.setattr(ingest_worker, "fetch_one", fake_fetch)
+    await ingest_worker.detail_loop(None, None, stop, attachments=True)  # type: ignore[arg-type]
+    assert seen == [True]
+
+
+async def test_attachment_loop_publishes_the_text_stage_once_settled(monkeypatch: pytest.MonkeyPatch) -> None:
+    stop = asyncio.Event()
+
+    async def fake_fetch(pool: Any, client: Any, on_settled: Any = None) -> int:
+        await on_settled(42)
+        stop.set()
+        return 42
+
+    monkeypatch.setattr(ingest_worker, "fetch_attachments_one", fake_fetch)
+    redis = FakeRedis()
+    await ingest_worker.attachment_loop(None, None, stop, redis=redis)  # type: ignore[arg-type]
+    assert redis.entries == [{"disclosure_index": "42", "stage": "text"}]
+
+
+async def test_attachment_loop_pauses_on_a_waf_signal_and_lives_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    stop = asyncio.Event()
+    slept: list[float] = []
+
+    async def fake_fetch(pool: Any, client: Any, on_settled: Any = None) -> int:
+        raise ingest_worker.KapBlockedError("waf")
+
+    async def fake_sleep(_stop: asyncio.Event, seconds: float) -> None:
+        slept.append(seconds)
+        stop.set()
+
+    monkeypatch.setattr(ingest_worker, "fetch_attachments_one", fake_fetch)
+    await ingest_worker.attachment_loop(None, None, stop, sleep=fake_sleep)  # type: ignore[arg-type]
+    assert slept == [ingest_worker.EMPTY_BACKOFF_S[-1]]

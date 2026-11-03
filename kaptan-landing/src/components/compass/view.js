@@ -1,5 +1,5 @@
 // DOM side of the ink scene: the mode flag the CSS reads, the act (strip, caption panels), the
-// counter set as a sentence ("350 bildirim · bugün" → "1 öneri · insan onayına") on a paper tag
+// counter set as a sentence ("350 bildirim · bugün" → "1 öneri · senin onayına") on a paper tag
 // that hangs in the scene, the docked act caption, the progress rail variable and the ring
 // labels that hang off the drawn rings. No canvas, no scroll reading; box sizes are measured once
 // per resize, and every write is skipped when nothing changed, so a frame touches the DOM only
@@ -68,7 +68,7 @@ export const MODES = Object.freeze({
 });
 
 /** What the counter's unit says in each act; it reads on from the number as one sentence. */
-export const COUNTER_UNITS = Object.freeze(['bildirim · bugün', 'bildirim · süzgeçte', 'öneri · insan onayına', 'yön · kanıtın gösterdiği']);
+export const COUNTER_UNITS = Object.freeze(['bildirim · bugün', 'bildirim · süzgeçte', 'öneri · senin onayına', 'yön · kanıtın gösterdiği']);
 
 // one formatter: building an Intl.NumberFormat per frame was a measurable share of the scene's frame
 const COUNT_FORMAT = new Intl.NumberFormat('tr-TR');

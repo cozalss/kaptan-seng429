@@ -52,13 +52,6 @@ async function brokenEntry(api: KaptanApi, result: ChainVerifyResult): Promise<A
   }
 }
 
-/** The guided demo asks the open Denetim screen to verify (no query string needed). */
-export const VERIFY_EVENT = "kaptan:verify-ledger";
-
-export function requestVerify(): void {
-  if (typeof window !== "undefined") window.dispatchEvent(new Event(VERIFY_EVENT));
-}
-
 export function useChainWalk(length: number) {
   const api = useApi();
   const [walk, setWalk] = useState<Walk>({ phase: "idle" });
@@ -73,7 +66,7 @@ export function useChainWalk(length: number) {
     let chainLength = length;
     try {
       result = await api.verifyAudit();
-      // Asked before the list arrived (the guided demo does this): read the length first.
+      // Asked before the list arrived: read the length first.
       if (chainLength === 0) chainLength = (await api.auditList({ scope: "all", limit: 1 })).length;
       bad = await brokenEntry(api, result);
     } catch (e) {

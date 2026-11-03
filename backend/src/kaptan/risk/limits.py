@@ -1,6 +1,6 @@
-"""Limits with two signatures (mock enterprise.ts limitsView() / proposeLimit() / decideLimit()).
+"""Limits and their changes (mock enterprise.ts limitsView() / proposeLimit() / decideLimit()).
 
-A change is proposed by the Yönetici (1/2) and approved or rejected by someone else (2/2). Limits
+A change is proposed (1/2), then approved or rejected (2/2) by the same person, with the waiver on record. Limits
 may only tighten the canonical v1 set (`limit_violations()`). Writes run in one transaction with
 their audit record; the caller publishes SSE desk `limits.changed` after the commit.
 """
@@ -16,14 +16,13 @@ from psycopg.types.json import Jsonb
 from kaptan.api.errors import ApiError
 from kaptan.audit.writer import AuditDraft, append
 from kaptan.auth.four_eyes import second_signature
-from kaptan.domain.permissions import SAME_PERSON_TEXT
 from kaptan.domain.schemas import LimitDecisionInput, LimitProposalInput
 from kaptan.domain.schemas.governance import limit_violations
 from kaptan.risk.kill_switch import signature
 
-PENDING_EXISTS: Final = "İkinci imzayı bekleyen bir değişiklik zaten var."
+PENDING_EXISTS: Final = "Onay bekleyen bir değişiklik zaten var."
 NO_CHANGE: Final = "Yeni değer şimdikiyle aynı."
-NOT_PENDING: Final = "Bu değişiklik artık imza beklemiyor."
+NOT_PENDING: Final = "Bu değişiklik artık onay beklemiyor."
 NO_ACTIVE: Final = "Geçerli sınır sürümü bulunamadı."
 
 VERSIONS_SQL: Final = """
@@ -113,7 +112,6 @@ async def decide(
     name: str,
     role: str,
     now: datetime,
-    single_user: bool | None = None,
 ) -> None:
     """Approve (new active, the old one superseded, effective now) or reject a proposed version."""
     async with conn.transaction():
@@ -125,19 +123,17 @@ async def decide(
             if row is None or row["status"] != "proposed":
                 raise ApiError(409, "conflict", NOT_PENDING)
             proposed_by = row["proposed_by"]["uid"]
-            waived = await second_signature(
+            await second_signature(
                 conn,
                 first_uid=str(proposed_by),
                 uid=uid,
                 flow="limits",
-                refusal=SAME_PERSON_TEXT["limits"],
                 entity_type="limit_version",
                 entity_id=str(version),
                 now=now,
-                single_user=single_user,
             )
-            if waived:  # migration 0021: the two-person CHECK admits this audited waiver only
-                await cur.execute("SET LOCAL kaptan.single_user_waiver = 'on'")
+            # migration 0021: the two-person CHECK admits this audited waiver only
+            await cur.execute("SET LOCAL kaptan.single_user_waiver = 'on'")
             approve = body.decision == "approve"
             decided = Jsonb(signature(uid, name, role, now, body.comment or None))
             if approve:

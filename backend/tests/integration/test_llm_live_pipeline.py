@@ -13,16 +13,16 @@ import respx
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
-from kaptan.agents import run_scenario
-from kaptan.clock import Clock
 from kaptan.db import DictConn
 from kaptan.llm.factory import build_live_provider
 from kaptan.llm.live import LiveProvider, UsageEvent
-from kaptan.llm.replay import ReplayProvider, default_cassette
 from kaptan.llm.store import MemoryStore, RedisStore
 from kaptan.llm.usage import sync_usage
 from kaptan.settings import Settings
 from tests.conftest import reseed_test_db
+from tests.harness.clock import FixedDayClock
+from tests.harness.replay import ReplayProvider, default_cassette
+from tests.harness.scenario import run_scenario
 from tests.unit.llm_support import GEMINI_URL, GROQ_URL, RecordedAgents, fake_settings
 
 pytestmark = pytest.mark.integration
@@ -95,7 +95,7 @@ async def test_inject_e3_on_the_live_chain(pg: DictConn, migrated: Settings) -> 
     live = build_live_provider(fake_settings(), store=MemoryStore(), http=httpx.AsyncClient())
     try:
         await pg.commit()
-        result = await run_scenario(pg, "e3_contract", Clock(demo=True, started_at=datetime.now(UTC)), provider=live)
+        result = await run_scenario(pg, "e3_contract", FixedDayClock(started_at=datetime.now(UTC)), provider=live)
         assert result.explain["approval"] is not None
         assert result.explain["run"]["outcome"] == "PROPOSE"
         rows = await _rows(

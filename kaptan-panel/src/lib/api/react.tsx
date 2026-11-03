@@ -1,35 +1,17 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useOptionalSession } from "@/lib/auth/session-context";
 import { createClient } from "@/lib/api/client";
-import type { Role } from "@/lib/domain/user";
-import { ApiError, errorMessage, type KaptanApi } from "./types";
+import { errorMessage, type KaptanApi } from "./types";
 
 const ApiContext = createContext<KaptanApi | null>(null);
 
-/** Mock mode: keep the chosen role in the session cookie so a reload keeps it. */
-async function storeMockRole(role: Role): Promise<void> {
-  const res = await fetch("/api/mock/session", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role }) });
-  if (!res.ok) throw new ApiError(res.status, "role", "Rol değiştirilemedi; oturum süresi dolmuş olabilir.");
-}
-
 /**
- * Provides the one API client for the tree. Mock or http is decided at build time by
- * NEXT_PUBLIC_API_MODE: `@/lib/api/client` is aliased to client.mock.ts or client.http.ts
- * (next.config.ts), so each build carries only its own client.
+ * Provides the one API client for the tree: `@/lib/api/client` is the http client in every
+ * real build, and only the test flag swaps it for the double (config.ts).
  */
 export function ApiProvider({ children, api }: { children: ReactNode; api?: KaptanApi }) {
-  const session = useOptionalSession();
-  const uid = session?.uid ?? null;
-  const name = session?.name ?? "";
-  const role = session?.role ?? null;
-  // One client per signed-in person and role (signing out or switching role replaces it).
-  const client = useMemo<KaptanApi>(() => {
-    if (api) return api;
-    const actor = uid && role ? { uid, name, role } : null;
-    return createClient({ getActor: () => actor, onRoleChange: storeMockRole });
-  }, [api, uid, name, role]);
+  const client = useMemo<KaptanApi>(() => api ?? createClient(), [api]);
   return <ApiContext.Provider value={client}>{children}</ApiContext.Provider>;
 }
 

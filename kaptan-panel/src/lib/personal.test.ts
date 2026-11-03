@@ -32,16 +32,15 @@ describe("crew registry", () => {
 });
 
 describe("actorName", () => {
-  it("names team members with their role, the agents and the system", () => {
+  it("says Sen for the person and KAPtan for every part of the system", () => {
     expect(actorName(null)).toBe("—");
-    expect(actorName("uye-3")).toBe("Üye 3 (Risk Sorumlusu)");
-    expect(actorName("user:uye-1")).toBe("Üye 1 (Yönetici)");
-    expect(actorName("user:biri")).toBe("biri");
-    expect(actorName("agent:compliance")).toBe("Uyum");
-    expect(actorName("agent:yok")).toBe("yok");
-    expect(actorName("system:risk_monitor")).toBe("Risk izleyici");
-    expect(actorName("system:bilinmez")).toBe("bilinmez");
-    expect(actorName("başka")).toBe("başka");
+    expect(actorName("sen")).toBe("Sen");
+    expect(actorName("user:sen")).toBe("Sen");
+    expect(actorName("user:biri")).toBe("Sen");
+    expect(actorName("agent:compliance")).toBe("KAPtan");
+    expect(actorName("agent:yok")).toBe("KAPtan");
+    expect(actorName("system:risk_monitor")).toBe("KAPtan");
+    expect(actorName("auth")).toBe("KAPtan");
   });
 });
 

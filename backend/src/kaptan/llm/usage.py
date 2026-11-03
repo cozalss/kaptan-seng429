@@ -1,9 +1,8 @@
 """Live LLM usage → Postgres: one `trading.llm_usage` row per call (migration 0009) and today's real
 counters into `trading.quota_usage`, the table the panel's risk card reads (RiskStatus.quota).
 
-`sync_usage(conn, provider)` is a no-op for replay providers, so callers can run it unconditionally.
-Quota rows keep the larger of the stored and the real count (the demo seed's base never goes backwards)
-and take the configured daily cap as their limit.
+`sync_usage(conn, provider)` is a no-op for a provider that has no live usage, so callers can run it unconditionally.
+Quota rows keep the larger of the stored and the real count and take the configured daily cap as their limit.
 """
 
 from __future__ import annotations

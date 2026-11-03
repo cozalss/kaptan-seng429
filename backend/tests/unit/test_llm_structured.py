@@ -15,9 +15,9 @@ from kaptan.domain.schemas.agents import ClassifierOutput, ContractExtraction
 from kaptan.llm.budget import BudgetExceededError, Caps
 from kaptan.llm.clients import GeminiClient, Message, OpenAICompatClient, RawAnswer
 from kaptan.llm.provider import LLMRequest, ProviderError
-from kaptan.llm.replay import default_cassette
 from kaptan.llm.structured import StructuredProvider, event_type_of, prompt_for
 from kaptan.llm.transport import InvalidOutputError, QuotaExhaustedError
+from tests.harness.replay import default_cassette
 from tests.unit.llm_support import DEEPSEEK_URL, GEMINI_URL, MODELS, chat_body, fresh_budget, gemini_body, no_sleep
 
 REC = next(r for r in default_cassette()._by_fp.values() if r.run_id == "run-demo-e3-ornek")

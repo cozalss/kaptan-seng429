@@ -25,7 +25,6 @@ def test_the_table_has_every_job_of_the_day_once() -> None:
     for job in s.JOBS:
         assert (job.at is None) != (job.every_min is None), job.name
         assert job.after is None or job.after in s.BY_NAME
-    assert [j.name for j in s.JOBS if j.demo_safe] == ["audit_anchor"]
 
 
 def test_daily_slot_is_due_from_its_time_on_and_skips_holidays() -> None:
@@ -63,16 +62,13 @@ def test_interval_slots_round_down_and_respect_the_session() -> None:
 
 def test_due_skips_done_running_and_waits_for_the_predecessor() -> None:
     now = ist(2026, 10, 20, 18, 31)
-    names = {j.name for j, _ in s.due(now, set(), set(), demo=False)}
+    names = {j.name for j, _ in s.due(now, set(), set())}
     assert "eod_prices" in names and "eod_fills" not in names and "exits" not in names
     done = {("eod_prices", "2026-10-20")}
-    names = {j.name for j, _ in s.due(now, done, set(), demo=False)}
+    names = {j.name for j, _ in s.due(now, done, set())}
     assert "eod_prices" not in names and "eod_fills" in names
-    names = {j.name for j, _ in s.due(now, done, {"eod_fills"}, demo=False)}
+    names = {j.name for j, _ in s.due(now, done, {"eod_fills"})}
     assert "eod_fills" not in names
-    late = ist(2026, 10, 20, 23, 45)
-    demo = s.due(late, set(), set(), demo=True)
-    assert [(j.name, slot) for j, slot in demo] == [("audit_anchor", "2026-10-20")]
 
 
 def test_trigger_marks_a_late_start_as_catchup() -> None:
@@ -107,17 +103,6 @@ def test_cli_list_and_args(capsys: pytest.CaptureFixture[str]) -> None:
     assert args.job == "dq" and args.day == date(2026, 10, 20)
     with pytest.raises(SystemExit):
         s.parse_args(["run", "no_such_job"])
-
-
-def test_cli_refuses_a_non_demo_safe_job_in_demo_mode(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    from kaptan.settings import get_settings
-
-    settings = get_settings().model_copy(update={"demo_mode": True})
-    monkeypatch.setattr(s, "get_settings", lambda: settings)
-    assert s.main(["run", "eod_prices"]) == 2
-    assert "DEMO_MODE" in capsys.readouterr().err
 
 
 class _Conn:

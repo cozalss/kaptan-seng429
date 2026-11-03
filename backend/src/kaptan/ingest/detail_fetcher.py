@@ -3,6 +3,9 @@
 Priority 0 = live, 1 = holdout (2025–2026), 2 = development backfill. Failures retry with growing
 delays (5, 10, 20 … min, ≤ 6 h); after `MAX_ATTEMPTS` the row is 'failed' (kept for DQ). A WAF signal
 re-queues the row for 10 min and propagates `KapBlockedError` so the worker pauses all KAP traffic.
+
+With `attachments=True` an E2 whose trade table is in an attachment goes on to the attachment queue in the same
+transaction, and its `text` stage waits for that row (`ingest.attachment_fetcher`).
 """
 
 from __future__ import annotations
@@ -20,6 +23,7 @@ from kaptan.ingest.parsers import parse_detail
 log = logging.getLogger("kaptan.ingest.detail")
 
 MAX_ATTEMPTS: Final = 5
+ATTACHMENT_ROUTE: Final = "E2"
 BLOCKED_RETRY: Final = timedelta(minutes=10)
 
 
@@ -40,15 +44,24 @@ def reason_from(parsed: dict[str, Any] | None) -> str | None:
     return None
 
 
+def _wants_attachments(job: dict[str, Any], parsed: dict[str, Any] | None) -> bool:
+    """An E2 with attachments whose own form has no trade table. Nothing else pays for these requests."""
+    count = int(job["attachment_count"] or 0)
+    return job["subject_route"] == ATTACHMENT_ROUTE and count > 0 and not (parsed or {}).get("rows")
+
+
 async def fetch_one(
     pool: Any,
     client: KapClient,
     now: Callable[[], datetime] = lambda: datetime.now(UTC),
     on_stored: Callable[[int], Awaitable[Any]] | None = None,
+    *,
+    attachments: bool = False,
 ) -> int | None:
     """Process the next due queue row. Returns its index, or None when nothing is due.
 
-    `on_stored(index)` runs after the text is committed (the agent feed's `text` stage)."""
+    `on_stored(index)` runs after the text is committed (the agent feed's `text` stage), unless an attachment
+    is still to come: then the attachment loop calls it."""
     async with pool.connection() as conn:
         async with conn.transaction():
             job = await repo.claim_detail(conn, now())
@@ -71,8 +84,11 @@ async def fetch_one(
         parsed = parse_detail(str(job["subject"] or ""), detail.tr)
         if parsed is not None and parsed.get("status") == "failed":
             log.warning("detail %s: parser failed (%s)", idx, parsed.get("error") or parsed.get("kind"))
+        waits = attachments and _wants_attachments(job, parsed)
         async with conn.transaction():
             await repo.store_detail(conn, detail, parsed, reason_from(parsed))
-    if on_stored is not None:
+            if waits:
+                await repo.enqueue_attachments(conn, idx, int(job["priority"]))
+    if on_stored is not None and not waits:
         await on_stored(idx)
     return idx

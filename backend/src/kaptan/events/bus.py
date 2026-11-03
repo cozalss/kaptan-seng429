@@ -22,8 +22,6 @@ from typing import Any, Final
 
 from redis.asyncio import Redis
 
-from kaptan.domain.roles import Role, is_role
-
 log = logging.getLogger("kaptan.events")
 
 KEY_PREFIX: Final = "kaptan:"
@@ -77,12 +75,11 @@ async def append(redis: Redis, stream: str, event: str, data_json: str) -> str:
 @dataclass(frozen=True, slots=True)
 class TicketHolder:
     uid: str
-    role: Role
 
 
-async def issue_ticket(redis: Redis, uid: str, role: Role) -> str:
+async def issue_ticket(redis: Redis, uid: str) -> str:
     ticket = secrets.token_urlsafe(32)
-    await redis.set(f"{TICKET_PREFIX}{ticket}", f"{uid},{role}", ex=TICKET_TTL_S)
+    await redis.set(f"{TICKET_PREFIX}{ticket}", uid, ex=TICKET_TTL_S)
     return ticket
 
 
@@ -91,12 +88,11 @@ async def redeem_ticket(redis: Redis, ticket: str) -> TicketHolder | None:
     value = await redis.getdel(f"{TICKET_PREFIX}{ticket}")
     if value is None:
         return None
-    raw = _text(value)
-    uid, _, role = raw.partition(",")
-    if not uid or not is_role(role):
+    uid = _text(value)
+    if not uid:
         log.warning("sse ticket with a malformed value ignored")
         return None
-    return TicketHolder(uid=uid, role=role)
+    return TicketHolder(uid=uid)
 
 
 # ── reading ──────────────────────────────────────────────────────────────────

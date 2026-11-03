@@ -1,9 +1,9 @@
 """Access tokens (JWT, HS256, 15 min) and opaque refresh tokens (09 §6).
 
-Access token claims: sub (uid), name, role, fam (refresh family), jti, iat, exp, iss, aud.
+Access token claims: sub (uid), name, fam (refresh family), jti, iat, exp, iss, aud.
 The access token lives only in the browser's memory; the refresh token is an opaque 256-bit
 value in the `__Host-kaptan_rt` cookie, stored server-side only as its sha256.
-JWT times use the wall clock, never the demo clock.
+JWT times use the wall clock.
 """
 
 from __future__ import annotations
@@ -17,7 +17,6 @@ from typing import Any, Final
 
 import jwt
 
-from kaptan.domain.roles import Role, is_role
 from kaptan.settings import Settings
 
 ALGORITHM: Final = "HS256"
@@ -27,7 +26,6 @@ ALGORITHM: Final = "HS256"
 class AccessClaims:
     uid: str
     name: str
-    role: Role
     family: str
     jti: str
     expires_at: datetime
@@ -37,14 +35,11 @@ class InvalidTokenError(Exception):
     """The token is missing, malformed, expired or signed with another key."""
 
 
-def create_access_token(
-    settings: Settings, *, uid: str, name: str, role: Role, family: str, now: datetime | None = None
-) -> str:
+def create_access_token(settings: Settings, *, uid: str, name: str, family: str, now: datetime | None = None) -> str:
     issued = now or datetime.now(UTC)
     claims: dict[str, Any] = {
         "sub": uid,
         "name": name,
-        "role": role,
         "fam": family,
         "jti": uuid.uuid4().hex,
         "iat": int(issued.timestamp()),
@@ -63,17 +58,13 @@ def decode_access_token(settings: Settings, token: str) -> AccessClaims:
             algorithms=[ALGORITHM],
             audience=settings.jwt_audience,
             issuer=settings.jwt_issuer,
-            options={"require": ["sub", "role", "fam", "jti", "exp", "iat", "iss", "aud"]},
+            options={"require": ["sub", "fam", "jti", "exp", "iat", "iss", "aud"]},
         )
     except jwt.PyJWTError as exc:
         raise InvalidTokenError(str(exc)) from exc
-    role = claims.get("role")
-    if not is_role(role):
-        raise InvalidTokenError("unknown role")
     return AccessClaims(
         uid=str(claims["sub"]),
         name=str(claims.get("name", claims["sub"])),
-        role=role,
         family=str(claims["fam"]),
         jti=str(claims["jti"]),
         expires_at=datetime.fromtimestamp(int(claims["exp"]), UTC),

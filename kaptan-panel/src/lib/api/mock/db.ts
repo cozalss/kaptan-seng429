@@ -1,6 +1,5 @@
 import type { ChainFields } from "@/lib/audit-chain";
 import type { AuditEntry } from "@/lib/domain";
-import type { Role } from "@/lib/domain/user";
 import { EventBus } from "@/lib/sse/bus";
 import { initialState, loadState, saveState, type MockState } from "./state";
 import { auditChain, nowMs } from "./selectors";
@@ -9,11 +8,10 @@ import { auditChain, nowMs } from "./selectors";
  * The mock "database": one MockState plus the event bus. Every write goes through
  * `update()` (immutable: a new state object each time), is persisted, and may emit events.
  */
-/** The signed-in person and the role they act in (one team member per role). */
+/** The signed-in person. */
 export interface Actor {
   uid: string;
   name: string;
-  role: Role;
 }
 
 export class MockDb {

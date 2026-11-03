@@ -6,9 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from kaptan.demo.fixtures import DemoFixtures
-from kaptan.eval import manifest as mf
-from kaptan.eval.manifest import build_manifest, git_sha, graph_version, manifest_hash_for
+from kaptan.eval.manifest import build_manifest, git_sha, graph_version
 
 
 class _Named:
@@ -50,11 +48,3 @@ def test_the_committed_prompts_hash(monkeypatch: pytest.MonkeyPatch) -> None:
     assert graph_version() == f"{build_manifest().digest}@0123456789ab"
     monkeypatch.delenv("GIT_SHA")
     assert git_sha() == "dev"
-
-
-def test_replay_keeps_the_demo_value_live_gets_the_graph_version(monkeypatch: pytest.MonkeyPatch) -> None:
-    demo = str(DemoFixtures().meta["prompt_manifest_hash"])
-    monkeypatch.delenv("GIT_SHA", raising=False)
-    assert manifest_hash_for(_Named("replay"), demo) == demo
-    assert manifest_hash_for(_Named("redteam"), demo) == demo
-    assert manifest_hash_for(_Named("live"), demo) == f"{mf._digest()}@dev"

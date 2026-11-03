@@ -4,13 +4,13 @@
 
 ## 0. KAPtan nedir (içerik için gerçekler — uydurma yok)
 
-KAPtan, SENG 429 Enterprise Application Development Lab (Çankaya Üniversitesi, Dr. Bilgin Avenoğlu, güz 2026) için 4 kişilik bir ekip projesidir. BIST şirketlerinin KAP'ta (Kamuyu Aydınlatma Platformu) yayımladığı bildirimleri (günde ~350) izler.
-- **İlke:** Yapay zekâ okur ve kanıt toplar → deterministik kurallar karar verir → insan onaylar. LLM asla al/sat demez. Otomatik emir yok.
+KAPtan, SENG 429 Enterprise Application Development Lab (Çankaya Üniversitesi, Dr. Bilgin Avenoğlu, güz 2026) için yapılmış, tek bir kişinin kendi parası için kullandığı bir sistemdir. BIST şirketlerinin KAP'ta (Kamuyu Aydınlatma Platformu) yayımladığı bildirimleri (günde ~350) izler.
+- **İlke:** Yapay zekâ okur ve kanıt toplar → deterministik kurallar karar verir → kullanıcı onaylar. LLM asla al/sat demez. Otomatik emir yok.
 - **LLM ajanları (6):** Sınıflandırıcı (türü bulur: E1–E4, filtre, diğer) · Okuyucu (tutar, karşı taraf, süre) · Önemlilik (şirketin finansallarını, piyasa değerini getirir) · Kanıt (benzer geçmiş olayları **getirilerini görmeden** seçer; istatistiği kod hesaplar) · Şüpheci (açık arar: sızıntı, abartı; büyüklüğü küçültür/veto eder) · Uyum (SPK tedbirleri, prompt-injection).
 - **Deterministik:** Ön eleme (LLM'den önce: işlem görebilirlik, tedbir, evren) · Birleştirme düğümü (oranları hesaplar) · Kural motoru (E1–E4 kuralları) · **Risk kapısı (16 kural, R01–R16)**: yalnızca küçültür veya reddeder.
 - **Olay türleri (yalnızca alım, kaldıraç yok):** E1 pay geri alım işlemleri (10 seansta ≥ sermayenin %0,25'i; 20–40 gün) · E2 yönetici/ana ortak alımı (20–60 gün) · E3 yeni iş ilişkisi/ihale (yıllıklandırılmış tutar ≥ yıllık gelirin %10'u; 5 gün) · E4 finansal sonuç (5–10 gün). Sızıntı filtresi: son 5 seansta >%8 yükseliş → atla/yarıya indir.
 - **Risk:** işlem başına %0,5 risk · pozisyon ≤ %10 · günlük −%1 → yeni emir durur · zirveden −%5 → kill switch (açık emirleri iptal eder, pozisyon satmaz) · onay bir sonraki seansın 09:50'sinde düşer.
-- **RAG:** 3 bilgi tabanı (bildirim arşivi, olay hafızası, SPK kuralları) · pgvector + Chroma karşılaştırma · LangGraph · hash zincirli denetim kaydı · roller: Analist, Risk Officer, Admin, Auditor.
+- **RAG:** 3 bilgi tabanı (bildirim arşivi, olay hafızası, SPK kuralları) · pgvector + Chroma karşılaştırma · LangGraph · hash zincirli denetim kaydı · tek kullanıcı, rol yok.
 - **Ölçüm:** 200 kilitli test bildirimi (macro-F1 ≥ 0,85) · RAGAS faithfulness ≥ 0,85 · kötü niyetli bildirimden çıkan emir = 0 · holdout 2025-01-01 → 2026-10-31 (ana kanıt) · canlı sanal para testi 9 Kasım (kurallar) ve 23 Kasım (tüm ajanlar).
 - **Takvim:** Proposal 12 Eki 2026 · İskelet 26 Eki · Canlı test 9 Kas · Progress 23 Kas · Final Ocak 2027.
 - **Dürüstlük:** Beklenti BIST-100'e göre yılda 0 ile +%5; sıfır olabilir. **Yatırım tavsiyesi değildir.** Ders projesi. Sanal para.
@@ -22,7 +22,7 @@ KAPtan, SENG 429 Enterprise Application Development Lab (Çankaya Üniversitesi,
 
 ## 1. Tasarım yönü (özet)
 
-Site, pirinç kâğıdına basılmış bir **çizgi roman kitabıdır** (SBS "The Boat"tan esinli sumi-e mürekkep): fırtınada küçük bir tekne, okuyan bir tayfa, dümeni tutan kurallar, son imzayı atan bir insan. Tasarım sisteminin tamamı — renk görevleri, tipografi, kitap bileşenleri, hareket haritası, tek WebGL bağlamı kuralı, illüstrasyon hattı, yasaklı "AI izi" kalıpları, erişilebilirlik, bütçeler ve QA — **`DESIGN.md`**'dedir. Kısaca:
+Site, pirinç kâğıdına basılmış bir **çizgi roman kitabıdır** (SBS "The Boat"tan esinli sumi-e mürekkep): fırtınada küçük bir tekne, okuyan bir tayfa, dümeni tutan kurallar, son sözü söyleyen okur. Tasarım sisteminin tamamı — renk görevleri, tipografi, kitap bileşenleri, hareket haritası, tek WebGL bağlamı kuralı, illüstrasyon hattı, yasaklı "AI izi" kalıpları, erişilebilirlik, bütçeler ve QA — **`DESIGN.md`**'dedir. Kısaca:
 
 - Zemin kâğıt `#F3F1EC`, mürekkep `#121318`, deniz ve yıkamalar için koyu çivit `#2A4C8C`; köşeler kare, gölgeler bulanık değil sert ofset.
 - **Kuzey kırmızısı `#B3261E`** yalnızca pusula iğnesi, teknenin bayrağı ve Pusula sahnesindeki tek ONAYLANDI mührü. **Kaptan laciverti `#0C2F63`** ikinci mürekkep: wordmark, odak halkası, seçim rengi, etkin seçim ve odak sayılar. Site güneşli sınıfta projeksiyonla gösterildiği için tüm değerler soluklaşmaya dayanıklıdır (`DESIGN.md` §2.1).
@@ -40,7 +40,7 @@ Site, pirinç kâğıdına basılmış bir **çizgi roman kitabıdır** (SBS "Th
 | Bölüm 3 · Seyir Kuralları | `#olaylar` | "Dört olay. / Yalnızca alım." — Sancak Tezgâhı: E1–E4 maddeleri (statik metin) + her kural için tek paylaşılan yuvada bir alet, tutan kuralın flaması direğe çekilir; filtreler flamayı yalnızca indirir; dipnot (yatırım tavsiyesi değildir) | `src/components/rules-bench/`, `src/components/menu/menu.css`, `src/data/events.js` |
 | Ara · 350'den 1'e | `#pusula` | "350 bildirim. / Tek yön." — Canvas 2D mürekkep sahnesi: Gürültü → Kanıt → Onay → Yön | `src/components/compass/` |
 | Bölüm 4 · Rota | `#yolculuk` | "Bir bildirimin / rotası." — Yakala · Anla · Kanıtla · Onayla | `src/components/ritual/` |
-| Kolofon | `#kolofon` | künye, tayfa rolleri, bağlantılar, yasal satır, "— Son —" | `src/components/footer/` |
+| Kolofon | `#kolofon` | kapanış çağrısı ("Giriş yap"), bağlantılar, yasal satır, "— Son —" | `src/components/footer/` |
 | Katmanlar | — | İçindekiler çekmecesi · "Demo akışı" çekmecesi (6 mürekkep kare, statik; "Final sunumunda gösterilecek") · "Proje hakkında" · "Yasal uyarı" · ajan ayrıntısı (`#ajan-<id>`, 8 ajanın 8 canlı diyoraması) · mobil yapışkan sekme ("İçindekiler · Demo akışı", yalnızca yukarı kaydırırken) | `src/ui/`, `src/components/sticky-cta/` |
 
 Proje bağlantıları `src/config/site.js` → `SITE.links` (yer tutucu `null` → soluk "· yakında"; ölü `#` yok). Ajan sırası `src/data/agents.js`: Sınıflandırıcı, Okuyucu, Önemlilik, Kanıt, Şüpheci, Uyum, Kural Motoru, Risk Kapısı.

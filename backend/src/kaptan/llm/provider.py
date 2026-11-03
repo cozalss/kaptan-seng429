@@ -1,8 +1,7 @@
 """The LLM provider interface every agent node calls (05 §2.4, `_KANONIK-KARARLAR` model chain).
 
-M1 ships one provider, `ReplayProvider` (llm/replay.py): recorded outputs keyed by agent + prompt
-version + input hash. M2 adds Gemini Flash-Lite, Groq gpt-oss and DeepSeek behind the same
-`LLMProvider` protocol and chains them with `ProviderChain` (Flash-Lite ⇄ Groq → … → HOLD):
+Gemini Flash-Lite, Groq gpt-oss and DeepSeek sit behind the same `LLMProvider` protocol and
+`ProviderChain` chains them (Flash-Lite ⇄ Groq → … → HOLD):
 
     provider = ProviderChain([GeminiProvider(...), GroqProvider(...)])      # M2
     result = await provider.complete(LLMRequest(agent="reader", prompt_version="reader@1.1.0",
@@ -18,14 +17,16 @@ import hashlib
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Final, Protocol, runtime_checkable
 
 from pydantic import BaseModel, ValidationError
+
+PROMPT_VERSION: Final = "1.1.0"
 
 
 @dataclass(frozen=True, slots=True)
 class LLMRequest:
-    """One structured call. `inputs` must be JSON-serialisable; it is what the cache/replay key hashes."""
+    """One structured call. `inputs` must be JSON-serialisable; it is what the cache key hashes."""
 
     agent: str  # node code name (05): classifier, reader, materiality, evidence, skeptic, compliance, guard
     prompt_version: str  # "reader@1.1.0" (prompt manifest, 05 §9)
@@ -72,8 +73,21 @@ class LLMProvider(Protocol):
     async def complete(self, request: LLMRequest) -> LLMResult: ...
 
 
+def prompt_version(agent: str) -> str:
+    return f"{agent}@{PROMPT_VERSION}"
+
+
+def fingerprint(ticker: str, text_tr: str) -> str:
+    """What a node hashes into its request: the ticker and the exact (masked) disclosure text."""
+    return hashlib.sha256(f"{ticker}\n{text_tr}".encode()).hexdigest()
+
+
+def agent_inputs(ticker: str, text_tr: str) -> dict[str, str]:
+    return {"ticker": ticker, "text_sha256": fingerprint(ticker, text_tr)}
+
+
 def request_key(request: LLMRequest) -> str:
-    """sha256 over agent + prompt version + canonical inputs: the replay key (and the M2 cache key)."""
+    """sha256 over agent + prompt version + canonical inputs: the cache key."""
     canonical = json.dumps(
         {"agent": request.agent, "prompt_version": request.prompt_version, "inputs": request.inputs},
         ensure_ascii=False,

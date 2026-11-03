@@ -10,8 +10,8 @@ from pydantic import BaseModel
 
 from kaptan.agents.context import RunContext
 from kaptan.agents.state import Step
-from kaptan.llm.provider import LLMRequest, LLMUsage, ProviderError
-from kaptan.llm.replay import agent_inputs, prompt_version
+from kaptan.llm.budget import BudgetExceededError
+from kaptan.llm.provider import LLMRequest, LLMUsage, ProviderError, agent_inputs, prompt_version
 from kaptan.llm.task_context import task_context
 
 FANOUT_GROUP = "fanout-1"
@@ -85,6 +85,11 @@ async def ask(
     return dict(result.output), result.usage, version
 
 
+def failure_note(exc: ProviderError) -> str:
+    """The trace's honest reason: the day's model quota or cost cap ran out, or a model did not answer."""
+    return "Günlük model kotası doldu: HOLD" if isinstance(exc, BudgetExceededError) else "Model yanıt vermedi: HOLD"
+
+
 async def ask_or_fail(
     ctx: RunContext,
     agent: str,
@@ -98,5 +103,5 @@ async def ask_or_fail(
         out, usage, version = await ask(ctx, agent, schema, state=state)
     except ProviderError as exc:
         log.warning("agent %s failed for %s: %s", agent, ctx.disclosure.run_id, exc)
-        return None, step(ctx, agent, status="failed", group=group, note="Model yanıt vermedi: HOLD")
+        return None, step(ctx, agent, status="failed", group=group, note=failure_note(exc))
     return out, step(ctx, agent, usage=usage, prompt=version, group=group)

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { connection } from "next/server";
 import "./globals.css";
+import "@/components/ufuk/ufuk.css";
 
 /*
  * Self-hosted, subset to Latin + Turkish (OFL, see src/app/fonts/OFL.txt). Inter carries
@@ -27,20 +29,25 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: { default: "KAPtan Paneli", template: "%s · KAPtan Paneli" },
-  description: "KAPtan yatırım masası paneli.",
+  title: { default: "KAPtan", template: "%s · KAPtan" },
+  description: "KAPtan şirket bildirimlerini senin için okur, sade öneriler sunar. Karar senin.",
   robots: { index: false, follow: false },
-  applicationName: "KAPtan Paneli",
+  applicationName: "KAPtan",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f3f1ec",
-  colorScheme: "light",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#eef0f4" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0f1d" },
+  ],
+  colorScheme: "light dark",
   width: "device-width",
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Rendered per request: a static page could not carry the CSP nonce (src/proxy.ts) on its scripts.
+  await connection();
   return (
     <html lang="tr" className={`${bodoni.variable} ${inter.variable} antialiased`}>
       <body>{children}</body>

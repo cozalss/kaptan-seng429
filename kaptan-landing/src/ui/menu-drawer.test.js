@@ -6,7 +6,7 @@ describe('createMenuDrawer', () => {
   let SECTION_LINKS;
   let mount;
   let scrollTo;
-  let openDemo;
+  let openSteps;
 
   beforeEach(async () => {
     vi.resetModules();
@@ -18,12 +18,12 @@ describe('createMenuDrawer', () => {
     `;
     mount = document.getElementById('overlays');
     scrollTo = vi.fn();
-    openDemo = vi.fn();
+    openSteps = vi.fn();
     ({ createMenuDrawer, SECTION_LINKS } = await import('./menu-drawer.js'));
   });
 
   function mountDrawer() {
-    return createMenuDrawer({ mount, site: SITE, lockScroll: vi.fn(), unlockScroll: vi.fn(), scrollTo, openDemo });
+    return createMenuDrawer({ mount, site: SITE, lockScroll: vi.fn(), unlockScroll: vi.fn(), scrollTo, openSteps });
   }
 
   it('renders the wordmark, the contents in chapter order and the meta line', () => {
@@ -38,7 +38,7 @@ describe('createMenuDrawer', () => {
       'Bölüm 3 · Seyir Kuralları',
       'Ara · 350’den 1’e',
       'Bölüm 4 · Rota',
-      'Kolofon',
+      'Künye',
     ]);
     const first = mount.querySelector('.menu-drawer__link');
     expect(first.querySelector('.menu-drawer__entry-title').textContent).toBe('Fırtına');
@@ -48,14 +48,14 @@ describe('createMenuDrawer', () => {
     expect(meta).toEqual(['KAPtan · © 2026']);
   });
 
-  it('renders a "Altı adımda" pill that closes the menu and opens the demo drawer', () => {
+  it('renders a "Altı adımda" pill that closes the menu and opens the steps drawer', () => {
     const overlay = mountDrawer();
     overlay.open();
     const cta = mount.querySelector('.menu-drawer__cta');
     expect(cta.textContent).toBe('Altı adımda');
     cta.click();
     expect(overlay.isOpen()).toBe(false);
-    expect(openDemo).toHaveBeenCalledTimes(1);
+    expect(openSteps).toHaveBeenCalledTimes(1);
   });
 
   it.each([

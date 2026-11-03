@@ -142,12 +142,15 @@ def _common(
     except ValueError as exc:
         raise RowError(f"{idx}: {exc}") from exc
     codes, related_codes = split_codes(stock_codes), split_codes(related)
-    primary = codes[0] if codes else (related_codes[0] if related_codes else None)
+    route = route_for(subj)
+    # A holding filing a trade in its subsidiary's shares: the event is the traded company's ("İlgili Şirketler").
+    ordered = (*related_codes, *codes) if route == "E2" else (*codes, *related_codes)
+    primary = ordered[0] if ordered else None
     return {
         "disclosure_index": idx,
         "disclosure_class": disclosure_class,
         "subject": subj,
-        "subject_route": route_for(subj),
+        "subject_route": route,
         "stock_codes": codes,
         "related_stocks": related_codes,
         "primary_ticker": primary,

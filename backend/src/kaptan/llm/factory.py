@@ -101,7 +101,8 @@ def build_live_provider(
         if key is None:
             continue
         pricing = spec.price_usd_per_mtok
-        providers[name] = StructuredProvider(_client(name, spec, key, http, settings), budget, pricing=pricing)
+        client = _client(name, spec, key, http, settings)
+        providers[name] = StructuredProvider(client, budget, pricing=pricing, max_attempts=1 + spec.max_retries)
     guard_key = keys.get(models.guard.provider)
     guard_client = (
         None

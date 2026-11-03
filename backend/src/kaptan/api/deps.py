@@ -1,42 +1,40 @@
-"""Request dependencies: settings, clock, the caller (JWT), and the RBAC guard.
+"""Request dependencies: settings, clock and the caller (JWT).
 
     @router.post("/approvals/{pid}/decision")
-    async def decide(pid: str, actor: Annotated[Actor, Depends(require("proposal.decide"))], conn: Conn): ...
+    async def decide(pid: str, actor: CurrentUser, conn: Conn): ...
 
-`require(action)` refuses with 403 `forbidden` and exactly the panel's deniedReason() text;
-`ensure_second_signer()` refuses with 403 `same_person` (two-person rules, API.md §3.2).
+Signed in = allowed: one person runs KAPtan, so no endpoint asks who the caller is beyond the token.
 """
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 
 from fastapi import Depends, Request
 
-from kaptan.api.errors import ApiError, unauthenticated
+from kaptan.api.errors import unauthenticated
 from kaptan.auth.tokens import InvalidTokenError, decode_access_token
 from kaptan.clock import Clock
-from kaptan.domain.permissions import SAME_PERSON_TEXT, Action, can, denied_reason
-from kaptan.domain.roles import SINGLE_USER, Role
+from kaptan.domain.roles import OWNER, Role
 from kaptan.settings import Settings, get_settings
+
+SESSION_EXPIRED = "Oturumunun süresi doldu. Yeniden giriş yap."
 
 
 @dataclass(frozen=True, slots=True)
 class Actor:
-    """The signed-in person and the role they act in."""
+    """The signed-in person."""
 
     uid: str
     name: str
-    role: Role
     family: str
 
     @property
-    def is_single_user(self) -> bool:
-        """The KAPTAN_SINGLE_USER account (issued only while that mode is on): every role's permissions."""
-        return self.uid == SINGLE_USER.uid
+    def role(self) -> Role:
+        """The fixed value of the stored `role` fields (domain/roles.py)."""
+        return OWNER.role
 
     @property
     def audit_actor(self) -> str:
@@ -47,7 +45,7 @@ class Actor:
         return {"uid": self.uid, "name": self.name, "role": self.role, "at": at, "reason": reason}
 
     def me(self) -> dict[str, str]:
-        return {"id": self.uid, "display_name": self.name, "role": self.role}
+        return {"id": self.uid, "display_name": self.name}
 
 
 def settings_dep() -> Settings:
@@ -72,41 +70,17 @@ def bearer_token(request: Request) -> str | None:
 
 
 async def current_user(request: Request, settings: SettingsDep) -> Actor:
-    """The caller from the Bearer access token, or 401 `unauthenticated`."""
+    """The caller from the Bearer access token, or 401 `unauthenticated` (a token from the team days too)."""
     token = bearer_token(request)
     if token is None:
         raise unauthenticated()
     try:
         claims = decode_access_token(settings, token)
     except InvalidTokenError as exc:
-        raise unauthenticated("Oturumunuzun süresi doldu. Lütfen yeniden giriş yapın.") from exc
-    return Actor(uid=claims.uid, name=claims.name, role=claims.role, family=claims.family)
+        raise unauthenticated(SESSION_EXPIRED) from exc
+    if claims.uid != OWNER.uid:
+        raise unauthenticated(SESSION_EXPIRED)
+    return Actor(uid=claims.uid, name=claims.name, family=claims.family)
 
 
 CurrentUser = Annotated[Actor, Depends(current_user)]
-
-
-def require(action: Action) -> Callable[[Actor, Settings], Awaitable[Actor]]:
-    """Dependency factory: the caller, or 403 `forbidden` with the plain reason ("Bunu Risk Sorumlusu yapar.")."""
-
-    async def checker(actor: CurrentUser, settings: SettingsDep) -> Actor:
-        if settings.kaptan_single_user:  # one person holds every permission (KAPTAN_SINGLE_USER)
-            return actor
-        if not can(actor.role, action):
-            raise ApiError(403, "forbidden", denied_reason(action, actor.role))
-        return actor
-
-    checker.__name__ = f"require_{action.replace('.', '_')}"
-    return checker
-
-
-def ensure_second_signer(first_uid: str, actor: Actor, kind: Literal["kill_reset", "limits"]) -> None:
-    """Two-person rule: the second signature must come from someone else (403 `same_person`)."""
-    if first_uid == actor.uid:
-        raise ApiError(403, "same_person", SAME_PERSON_TEXT[kind])
-
-
-def require_demo_mode(settings: SettingsDep) -> None:
-    """The /demo/* endpoints exist only when DEMO_MODE=true."""
-    if not settings.demo_mode:
-        raise ApiError(404, "not_found", "Demo modu kapalı.")

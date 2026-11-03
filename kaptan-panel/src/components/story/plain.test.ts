@@ -2,26 +2,30 @@ import type { ApprovalCard, Explain } from "@/lib/domain";
 import { buildExplain } from "@/mocks/explain-builder";
 import { DEMO_E3_SPEC } from "@/mocks/runs-demo";
 import { DAY_SPECS } from "@/mocks/runs-day";
+import { NBSP } from "@/lib/format";
 import {
-  cardFooterLine,
-  crewDayLine,
+  answerByLine,
+  counterNote,
   crewLead,
   crewLines,
-  decisionMetaLine,
   disclosureQuote,
-  holdLine,
+  lookHere,
   materialityLine,
+  middleCaseWords,
+  NO_PROMISE,
+  pastWins,
   plainEvent,
   plainHistory,
   plainWhy,
-  proposalLine,
+  realDisclosureUrl,
+  reasonSentence,
   riskSentence,
   riskView,
+  sampleWords,
   shortName,
-  suggestionLine,
-  todayHeadline,
+  shrinkSentence,
 } from "./plain";
-import { dative, lastNumber, lastSpokenWord, locative, possessive, possessiveLocative } from "./turkish";
+import { ablative, dative, lastNumber, lastSpokenWord, locative, possessive, possessiveLocative } from "./turkish";
 
 function fixture(runId: string): { card: ApprovalCard; explain: Explain } {
   const spec = runId === DEMO_E3_SPEC.run_id ? DEMO_E3_SPEC : DAY_SPECS.find((s) => s.run_id === runId);
@@ -58,13 +62,16 @@ describe("Turkish number suffixes", () => {
     expect(locative("13:41")).toBe("13:41’de");
     expect(locative("13:40")).toBe("13:40’ta");
     expect(locative("09:30")).toBe("09:30’da");
+    expect(ablative("14:16")).toBe("14:16’dan");
+    expect(ablative("13:40")).toBe("13:40’tan");
+    expect(ablative("09:50")).toBe("09:50’den");
   });
 });
 
 describe("what happened, in one sentence", () => {
   it("speaks each event type plainly", () => {
     expect(plainEvent(e3.card)).toBe("Yıllık gelirinin %18’i kadar yeni iş aldı.");
-    expect(plainEvent(e1.card)).toBe("Son 10 seansta sermayesinin %0,31’i kadar kendi hissesini geri aldı.");
+    expect(plainEvent(e1.card)).toBe("Son 10 borsa gününde sermayesinin %0,31’i kadar kendi hissesini geri aldı.");
     expect(plainEvent(e2.card)).toBe("Bir yöneticisi borsadan kendi parasıyla hisse aldı.");
     expect(plainEvent({ ...e2.card, sub_type_tr: "Ana ortak alımı" })).toBe("Ana ortağı borsadan kendi hissesini aldı.");
     expect(plainEvent(e4.card)).toBe("Kârı beklentinin belirgin biçimde üstünde geldi.");
@@ -76,75 +83,84 @@ describe("what happened, in one sentence", () => {
   });
 });
 
-describe("why, history and the suggestion", () => {
-  it("names the rule's threshold and what was seen", () => {
-    expect(plainWhy(e3.card)).toMatch(/^Gelirine göre büyük.*Büyüklük için eşiği ≥ %10 yıllık gelir; bu olayda %18\.$/);
-    expect(plainWhy(e4.card)).toContain("Kâr sürprizi için eşiği ≥ 1,0; bu olayda 1,4.");
-    expect(plainWhy({ ...e3.card, rule_trace_summary: [] })).not.toContain("eşiği");
+const words = (text: string) => text.replaceAll(NBSP, " ");
+
+describe("the big sentence of the Neden? page", () => {
+  it("reads on from the verb, whoever the subject is", () => {
+    expect(reasonSentence(e1.card)).toBe("Koru Çelik hissesi, çünkü şirket son 10 borsa gününde sermayesinin %0,31’i kadar kendi hissesini geri aldı.");
+    expect(reasonSentence(e2.card)).toBe("Misal Çimento hissesi, çünkü şirketin bir yöneticisi borsadan kendi parasıyla hisse aldı.");
+    expect(reasonSentence(e4.card)).toBe("Toros Perakende hissesi, çünkü şirketin kârı beklentinin belirgin biçimde üstünde geldi.");
+    expect(reasonSentence({ ...e4.card, side: "sell", headline_tr: "Tutma süresi doldu." })).toBe("Toros Perakende hissesi, çünkü tutma süresi doldu.");
+  });
+});
+
+describe("why and history", () => {
+  it("says what the rule looks for and what was seen", () => {
+    expect(plainWhy(e3.card)).toMatch(/^Gelirine göre büyük.*Büyüklükte KAPtan en az %10 yıllık gelir arıyor; bu olayda %18\.$/);
+    expect(plainWhy({ ...e3.card, rule_trace_summary: [] })).not.toContain("arıyor");
+    // A figure with no unit means nothing to anyone.
+    const bare = { rule: "E3.size", passed: true, detail_tr: "", observed: "1,4", threshold: "≥ 1,0" };
+    expect(plainWhy({ ...e3.card, rule_trace_summary: [bare] })).toMatch(/Bu olay, KAPtan’ın aradığı ölçüyü geçiyor\.$/);
+    expect(plainWhy({ ...e3.card, rule_trace_summary: [bare] })).not.toContain("1,4");
     expect(plainWhy({ ...e3.card, event_type: "EXIT", rule_trace_summary: [] })).toBe("Bu olay türü kurallarımızdan birine uyuyor.");
   });
-  it("tells the history as a count of similar events, read off the events", () => {
-    expect(plainHistory(e3.card.evidence_summary)).toBe("Benzer 23 olayın 14’ünde hisse 5 gün içinde yükseldi.");
-    expect(plainHistory(e4.card.evidence_summary, e4.explain.evidence_events)).toBe("Benzer 12 olayın 7’sinde hisse 5 gün içinde yükseldi.");
+  it("tells the history against the market, read off the events", () => {
+    expect(plainHistory(e3.card.evidence_summary)).toBe("Benzer 23 olayın 14’ünde hisse 5 gün içinde piyasadan iyi gitti.");
+    expect(plainHistory(e4.card.evidence_summary, e4.explain.evidence_events)).toBe("Benzer 12 olayın 7’sinde hisse 5 gün içinde piyasadan iyi gitti.");
     const sixUp = Array.from({ length: 12 }, (_, i) => ({ car_5d: i < 6 ? 0.01 : -0.01 }));
-    expect(plainHistory(e4.card.evidence_summary, sixUp)).toBe("Benzer 12 olayın 6’sında hisse 5 gün içinde yükseldi.");
-    expect(plainHistory({ ...e4.card.evidence_summary, hit_rate_5d: 0 })).toBe("Benzer 12 olayın hiçbirinde hisse 5 gün içinde yükselmedi.");
+    expect(plainHistory(e4.card.evidence_summary, sixUp)).toBe("Benzer 12 olayın 6’sında hisse 5 gün içinde piyasadan iyi gitti.");
+    expect(pastWins(e4.card.evidence_summary, sixUp)).toBe(6);
+    expect(plainHistory({ ...e4.card.evidence_summary, hit_rate_5d: 0 })).toBe("Benzer 12 olayın hiçbirinde hisse 5 gün içinde piyasadan iyi gitmedi.");
     expect(plainHistory({ ...e3.card.evidence_summary, n: 0 })).toBe("Geçmişte buna benzer olay bulunamadı.");
   });
-  it("prints lots, limit and holding period", () => {
-    expect(suggestionLine({ qty: 1240, limit_price: 48.4 })).toBe("1.240 lot al · tanesi en fazla 48,40\u00a0TL");
-    expect(holdLine(e3.card)).toBe("5 gün tut");
-    expect(holdLine(e1.card)).toBe("20–40 gün tut");
-    expect(proposalLine(e4.card)).toBe("Öneri: 560 lot al, tanesi en fazla 77,67\u00a0TL — toplam ≈ 43.495\u00a0TL. 5–10 gün tut.");
+  it("says how far a sample can be trusted, in words", () => {
+    expect(sampleWords(0)).toMatch(/^Geçmişte benzer olay yok/);
+    expect(sampleWords(3)).toBe("Yalnızca 3 benzer olay var. Bu çok az; fazla güvenme.");
+    expect(sampleWords(6)).toBe("6 benzer olay var. Bu az; temkinli oku.");
+    expect(sampleWords(12)).toBe("12 benzer olay var. Bu orta bir sayı; kesin bir şey söylemez.");
+    expect(sampleWords(64)).toBe("64 benzer olay var. Bu iyi bir sayı, yine de kesin bir şey söylemez.");
   });
-  it("says a sell plainly: sat, the limit as a floor, the exit reason as the headline", () => {
-    expect(suggestionLine({ qty: 1800, limit_price: 26.36, side: "sell" })).toBe("1.800 lot sat · tanesi en az 26,36 TL");
-    expect(proposalLine({ ...e4.card, side: "sell" })).toMatch(/^Öneri: 560 lot sat, tanesi en az 77,67\sTL — .* Elindeki pozisyon kapanır\.$/);
-    expect(plainEvent({ ...e4.card, side: "sell", headline_tr: "Tutma süresi doldu." })).toBe("Tutma süresi doldu.");
+  it("says the middle case both ways, and never promises", () => {
+    expect(middleCaseWords(0.012)).toBe("Ortadaki olayda hisse 5 günde piyasadan %1,2 iyi gitti.");
+    expect(middleCaseWords(-0.004)).toBe("Ortadaki olayda hisse 5 günde piyasadan %0,4 kötü gitti.");
+    expect(middleCaseWords(0)).toBe("Ortadaki olayda hisse 5 günde piyasayla aynı gitti.");
+    expect(NO_PROMISE).toContain("sıfır da olabilir");
   });
-  it("says until when a card can be signed, and how much of the portfolio it is", () => {
+  it("says until when a suggestion can be answered", () => {
     const exp = "2027-01-12T06:50:00.000Z";
-    const card = { qty: 560, limit_price: 77.67, expires_at: exp, final_notional_try: 43_495 };
-    const dayBefore = Date.parse(exp) - 20.5 * 3_600_000;
-    expect(cardFooterLine(card, new Date(dayBefore).toISOString())).toBe("560 lot al · tanesi en fazla 77,67\u00a0TL · yarın 09:50’ye kadar");
-    expect(cardFooterLine(card, null)).toBe("560 lot al · tanesi en fazla 77,67\u00a0TL · 09:50’ye kadar");
-    expect(decisionMetaLine(card, 1_016_480, dayBefore)).toBe("Portföyün %4,3’ü · karar için son saat yarın 09:50 (20 saat 30 dakika kaldı)");
-    expect(decisionMetaLine(card, null, null)).toBe("Karar için son saat 09:50");
-    expect(decisionMetaLine(card, null, Date.parse(exp))).toBe("Karar süresi 09:50’de doldu");
+    expect(answerByLine(exp, Date.parse(exp) - 20.5 * 3_600_000)).toBe("Yarın 09:50’ye kadar cevap ver.");
+    expect(answerByLine(exp, Date.parse(exp) - 3_600_000)).toBe("Bugün 09:50’ye kadar cevap ver.");
+    expect(answerByLine(exp, null)).toBe("09:50’ye kadar cevap ver.");
+    expect(answerByLine(exp, Date.parse(exp))).toBe("Cevap süresi doldu.");
+    expect(answerByLine(null, 1)).toBeNull();
   });
-  it("sizes the risk at the stop", () => {
+  it("sizes the risk at the stop and says the loss can be bigger", () => {
     const r = riskView({ qty: 100, limit_price: 50 }, 45);
     expect(r).toMatchObject({ stopPrice: 45, maxLoss: 500 });
     expect(r?.stopPct).toBeCloseTo(-0.1);
     const tmspz = riskView(e4.card, e4.explain.proposal?.stop_price);
     if (!tmspz) throw new Error("no stop");
-    expect(riskSentence(tmspz, null)).toBe("Fiyat 70,06\u00a0TL’ye düşerse satman gerekir; o noktada kaybın en fazla ≈ 4.262\u00a0TL olur.");
-    expect(riskSentence(tmspz, { pct: 0.005, equity: 1_018_600 })).toMatch(/Bu, işlem başına sınırın \(sermayenin %0,5’i ≈ 5.093\u00a0TL\) altında\.$/);
+    expect(words(riskSentence(tmspz, null))).toBe("Fiyat 70,06 ₺’ya düşerse satman gerekir; o noktada kaybın yaklaşık 4.262 ₺ olur. Fiyat bir anda sert düşerse kayıp bundan büyük olabilir.");
+    expect(words(riskSentence(tmspz, { pct: 0.005, equity: 1_018_600 }))).toMatch(/kayıp sınırının \(yaklaşık 5.093 ₺\) altında\.$/);
     expect(riskSentence(tmspz, { pct: 0.004, equity: 1_000_000 })).toMatch(/\) üstünde\.$/);
     expect(riskView({ qty: 100, limit_price: 50 }, null)).toBeNull();
     expect(riskView({ qty: 100, limit_price: 50 }, 55)).toBeNull();
   });
+  it("drops the legal suffix from company names", () => {
+    expect(shortName("MİSAL ENERJİ A.Ş.")).toBe("MİSAL ENERJİ");
+    expect(shortName("KURGU")).toBe("KURGU");
+  });
 });
 
-describe("today", () => {
-  it("has one big sentence for each state", () => {
-    expect(todayHeadline(2, false)).toBe("Bugün 2 öneri var.");
-    expect(todayHeadline(0, false)).toBe("Bugün öneri yok — tayfa izliyor.");
-    expect(todayHeadline(3, true)).toBe("Her şey durduruldu — yeni öneri gelmez.");
+describe("the link to the real disclosure", () => {
+  const card = { disclosure_url: "https://www.kap.org.tr/tr/Bildirim/1640205", is_fixture: false };
+  it("is there for a real KAP record", () => {
+    expect(realDisclosureUrl(card)).toBe(card.disclosure_url);
   });
-  it("tells what the crew did", () => {
-    expect(crewDayLine(null)).toBeNull();
-    const zero = { total: 0, processed: 0, proposals: 0, approvals: 0, rejections: 0 };
-    expect(crewDayLine(zero)).toBe("Tayfa bugün henüz bildirim okumadı.");
-    expect(crewDayLine({ total: 212, processed: 13, proposals: 5, approvals: 1, rejections: 1 })).toBe(
-      "Tayfa bugün 212 bildirim okudu; 199’unu kurallar hemen eledi, 13’ünü inceledi ve 5 öneri çıkardı: 3’ü seni bekliyor, 1’i imzalandı, 1’i reddedildi.",
-    );
-    expect(crewDayLine({ ...zero, total: 40, processed: 2 })).toBe("Tayfa bugün 40 bildirim okudu; 38’ini kurallar hemen eledi ve 2’sini inceledi.");
-    expect(crewDayLine({ ...zero, total: 20, processed: 20, proposals: 2 })).toBe("Tayfa bugün 20 bildirim okudu; 20’sini inceledi ve 2 öneri çıkardı: 2’si seni bekliyor.");
-  });
-  it("drops the legal suffix from company names", () => {
-    expect(shortName("ÖRNEK ENERJİ A.Ş.")).toBe("ÖRNEK ENERJİ");
-    expect(shortName("KURGU")).toBe("KURGU");
+  it("is not there for a fixture or anything that is not KAP", () => {
+    expect(realDisclosureUrl({ ...card, is_fixture: true })).toBeNull();
+    expect(realDisclosureUrl({ ...card, disclosure_url: "https://kap.org.tr.evil.example/x" })).toBeNull();
+    expect(realDisclosureUrl({ ...card, disclosure_url: "http://www.kap.org.tr/x" })).toBeNull();
   });
 });
 
@@ -157,42 +173,51 @@ describe("the disclosure quote", () => {
   });
 });
 
-describe("the crew, one line each", () => {
-  it("gives all eight members a line, in pipeline order", () => {
+describe("the eight steps, one question and one line each", () => {
+  it("gives all eight a plain question and a line, in pipeline order", () => {
     const lines = crewLines(e3.card, e3.explain);
     expect(lines.map((l) => l.agent)).toEqual(["classifier", "reader", "materiality", "evidence", "skeptic", "compliance", "rule_engine", "risk_gate"]);
+    expect(lines.every((l) => l.question.endsWith("?"))).toBe(true);
     const text = Object.fromEntries(lines.map((l) => [l.agent, l.text]));
     expect(text.classifier).toBe("Bunu “bağlayıcı hizmet sözleşmesi” olarak tanıdı (%93 emin).");
-    expect(text.reader).toContain("432.000.000\u00a0TL");
+    expect(words(text.reader ?? "")).toContain("432.000.000 ₺");
     expect(text.materiality).toBe("Tutarı şirketin yıllık geliriyle tarttı: gelirin %18’i.");
     expect(text.evidence).toBe("Geçmişte 23 benzer olay buldu, sonuçlarına bakmadan seçti.");
     expect(text.skeptic).toMatch(/fiyatlanmış olabilir\. Tutarı yarıya indirdi\.$/);
-    expect(text.compliance).toBe("Tedbir yok, metinde gizli talimat yok.");
+    expect(text.compliance).toBe("Bu hisseye konmuş bir borsa yasağı yok; metinde KAPtan'ı yanıltmaya çalışan bir şey de yok.");
     expect(text.rule_engine).toMatch(/kural geçti; yeni iş şartı sağlandı\.$/);
-    expect(text.risk_gate).toMatch(/risk kontrolü geçti\. Tutarı .* ile sınırladı\.$/);
+    expect(text.risk_gate).toMatch(/para sınırı kontrolü geçti\. Tutarı .* ile sınırladı\.$/);
     expect(lines.filter((l) => l.changed).map((l) => l.agent)).toEqual(["skeptic", "risk_gate"]);
   });
-  it("leads with who changed the amount", () => {
+  it("leads with what changed the amount, in plain words", () => {
     const lines = crewLines(e4.card, e4.explain);
-    expect(crewLead(lines, e4.card)).toBe("8 üye çalıştı; 2’si tutarı değiştirdi: Şüpheci dörtte bir azalttı, Risk Kapısı 43.495\u00a0TL ile sınırladı.");
+    expect(words(crewLead(lines, e4.card))).toBe("KAPtan 8 adımda inceledi; 2’si tutarı değiştirdi: karşı görüş dörtte bir azalttı, para sınırları 43.495 ₺ ile sınırladı.");
     const calm = { ...e1.card, final_notional_try: e1.card.requested_notional_try };
-    expect(crewLead(crewLines(calm, null), calm)).toBe("8 üye çalıştı; hiçbiri tutarı değiştirmedi.");
+    expect(crewLead(crewLines(calm, null), calm)).toBe("KAPtan 8 adımda inceledi; tutar değişmedi.");
   });
-  it("names the point Uyum wants a person to look at", () => {
+  it("never says an internal step name", () => {
+    const all = [e1, e2, e3, e4].flatMap((f) => crewLines(f.card, f.explain).flatMap((l) => [l.question, l.text])).join(" ");
+    expect(all).not.toMatch(/Şüpheci|Uyum|Risk Kapısı|Tedbir|injection/);
+    expect(counterNote({ skeptic_note_tr: "Şüpheci ek bir risk bulmadı." })).toBe("Karşı görüş ek bir risk bulmadı.");
+    expect(shrinkSentence(0.5)).toBe("KAPtan bu yüzden tutarı yarıya indirdi.");
+    expect(shrinkSentence(1)).toBeNull();
+  });
+  it("names the point it wants a person to look at", () => {
+    expect(lookHere(e4.card, e4.explain)).toBe("KAPtan’ın senin bakmanı istediği nokta: kârın bir kısmı tek seferlik arsa satışından geliyor; yönetimin “kalıcı iyileşme” dili buna tam uymuyor.");
+    expect(lookHere(e1.card, e1.explain)).toBeNull();
     const text = Object.fromEntries(crewLines(e4.card, e4.explain).map((l) => [l.agent, l.text]));
-    expect(text.compliance).toBe("Tedbir yok. Senin bakmanı istediği nokta: kârın bir kısmı tek seferlik arsa satışından geliyor; yönetimin “kalıcı iyileşme” dili buna tam uymuyor.");
     expect(text.rule_engine).toBe("6/6 kural geçti; kâr sürprizi şartı sağlandı.");
   });
   it("still speaks before the run details arrive", () => {
     const text = Object.fromEntries(crewLines(e4.card, null).map((l) => [l.agent, l.text]));
     expect(text.classifier).toBe("Bunu “finansal sonuç” olarak tanıdı.");
     expect(text.reader).toBe("Metindeki rakamları ve tarafları çıkardı.");
-    expect(text.compliance).toBe("Tedbir yok; bir noktayı insan incelemesi için işaretledi.");
-    expect(text.risk_gate).not.toContain("risk kontrolü");
+    expect(text.compliance).toBe("Bu hisseye konmuş bir borsa yasağı yok. KAPtan bir noktayı senin bakman için işaretledi.");
+    expect(text.risk_gate).not.toContain("para sınırı kontrolü");
     const unshrunk = crewLines({ ...e1.card, final_notional_try: e1.card.requested_notional_try }, null);
     expect(unshrunk.at(-1)?.text).toMatch(/^Tutar: /);
   });
-  it("weighs materiality in each event's own terms", () => {
+  it("weighs size in each event's own terms", () => {
     expect(materialityLine("E1", "%0,31")).toBe("Geri alınan payı sermayeyle tarttı: sermayenin %0,31’i.");
     expect(materialityLine("E4", "1,4")).toBe("Kârı beklentiyle kıyasladı: sürpriz ölçüsü 1,4.");
     expect(materialityLine("E2", "borsada alım")).toBe("Olayı şirketin büyüklüğüyle karşılaştırdı.");

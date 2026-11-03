@@ -595,7 +595,7 @@ export function createScenery(ctx) {
       ctx.textBaseline = 'alphabetic';
       ctx.fillStyle = INK.sumi;
       ctx.font = `500 ${big}px ${SANS}`;
-      ctx.fillText('Kill switch', left, y0 + h * 0.46, w * 0.84);
+      ctx.fillText('Acil durdurma', left, y0 + h * 0.46, w * 0.84);
       ctx.fillStyle = INK.muted;
       ctx.font = `400 ${Math.max(8, big * 0.82)}px ${SANS}`;
       ctx.fillText('zirveden −%5', left, y0 + h * 0.8, w * 0.84);

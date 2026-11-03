@@ -1,5 +1,5 @@
-// Runs a command with the panel in http mode against the local FastAPI backend, the same way
-// in PowerShell, cmd and Git Bash (no cross-env dependency):
+// Runs a command with the panel on the local FastAPI backend, the same way in PowerShell, cmd and
+// Git Bash (no cross-env dependency):
 //   node scripts/api-mode.mjs next dev -p 3100
 //   node scripts/api-mode.mjs playwright test
 // Values already set in the environment win, so another backend is one variable away:
@@ -8,9 +8,7 @@
 import { spawn } from 'node:child_process';
 
 const DEFAULTS = {
-  NEXT_PUBLIC_API_MODE: 'http',
   KAPTAN_API_ORIGIN: 'http://127.0.0.1:8000',
-  NEXT_PUBLIC_DEMO_MODE: 'true',
   // Read by playwright.config.ts: the http-mode project (backend reset, http-only expectations).
   E2E_API: '1',
 };
@@ -22,8 +20,8 @@ if (!cmd) {
 }
 
 const env = { ...DEFAULTS, ...process.env };
-// The mode itself is not overridable: this wrapper exists to run http mode.
-env.NEXT_PUBLIC_API_MODE = 'http';
+// Not overridable: this wrapper exists to run on the real API, never on the test double.
+delete env.NEXT_PUBLIC_KAPTAN_TEST_DOUBLE;
 env.E2E_API = '1';
 
 // One command line through the shell, so npm's .cmd shims resolve on Windows too. The words

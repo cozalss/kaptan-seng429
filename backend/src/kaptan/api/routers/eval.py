@@ -15,7 +15,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Query
 
 from kaptan.admin.config_view import config_hash
-from kaptan.api.deps import ClockDep, CurrentUser, SettingsDep
+from kaptan.api.deps import ClockDep, CurrentUser
 from kaptan.db import Conn
 from kaptan.domain.schemas.forward import ForwardWeeklyReport
 from kaptan.domain.schemas.reports import EvalSummary
@@ -27,14 +27,13 @@ router = APIRouter(tags=["eval"])
 
 
 @router.get("/eval/summary", response_model=EvalSummary)
-async def summary(user: CurrentUser, conn: Conn, clock: ClockDep, settings: SettingsDep) -> Any:
+async def summary(user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
     now = clock.now()
     today = now.astimezone(IST).date()
     return await es.eval_summary(
         conn,
         now=now,
         today=today,
-        is_sample=settings.demo_mode,
         ragas_path=es.RAGAS_REPORT,
         reports_dir=es.REPORTS_DIR,
     )

@@ -31,7 +31,7 @@ function drawLedger(parent, { set }) {
   for (let i = 0; i < 10; i += 1) {
     s('text', { x: X0 + (i + 0.5) * COL, y: H - 5, class: 'inst__axis is-mid', text: String(i + 1) }, svg);
   }
-  s('text', { x: X0 - 8, y: H - 5, class: 'inst__axis is-end', text: 'Seans' }, svg);
+  s('text', { x: X0 - 8, y: H - 5, class: 'inst__axis is-end', text: 'Gün' }, svg);
   s('text', { x: X0 - 8, y: BASE + 4, class: 'inst__axis is-end', text: '0' }, svg);
   s('text', { x: X1, y: 12, class: 'inst__axis is-end is-muted', text: 'geri alım · sermayeye oran' }, svg);
 
@@ -63,8 +63,8 @@ function drawLedger(parent, { set }) {
 }
 
 export const E1_SPEC = {
-  title: 'E1 · 10 seanslık defter',
-  label: '10 seansta geri alınan pay, sermayenin yüzdesi',
+  title: 'E1 · 10 borsa gününün defteri',
+  label: '10 borsa gününde geri alınan pay, sermayenin yüzdesi',
   min: 0,
   max: MAX,
   step: 0.01,

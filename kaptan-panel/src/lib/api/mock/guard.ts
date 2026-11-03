@@ -1,22 +1,14 @@
 import type { z } from "zod";
-import { can, deniedReason, type Action } from "@/lib/auth/permissions";
 import { ApiError } from "../types";
 import type { Actor, MockDb } from "./db";
 
-/**
- * What every mock handler needs: the database, who is calling, a role check that refuses with
- * a typed 403 and the plain reason, and a small latency so loading states are real.
- */
+/** What every mock handler needs: the database, who is calling and a small latency so loading states are real. */
 export interface MockCtx {
   db: MockDb;
-  /** The caller, or 401 when signed out. */
+  /** The person, or 401 when signed out. */
   me: () => Actor;
-  /** The caller, or 403 `forbidden` with "Bunu Risk Sorumlusu yapar." when the role may not. */
-  require: (action: Action) => Actor;
   ok: <T>(value: T, ms?: number) => Promise<T>;
   now: () => string;
-  /** Single-user mode: one person holds every permission and may sign both steps of a two-person flow. */
-  singleUser: boolean;
 }
 
 export function parse<T extends z.ZodType>(schema: T, input: unknown): z.infer<T> {
@@ -30,41 +22,30 @@ function delay<T>(value: T, ms: number): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
 }
 
-export function createCtx(db: MockDb, getActor: () => Actor | null, latency: number, singleUser = false): MockCtx {
-  const me = (): Actor => {
-    const a = getActor();
-    if (!a) throw new ApiError(401, "unauthenticated", "Oturum bulunamadı. Lütfen yeniden giriş yapın.");
-    return a;
-  };
+export function createCtx(db: MockDb, user: Actor | null, latency: number): MockCtx {
   return {
     db,
-    me,
-    require: (action) => {
-      const a = me();
-      if (!singleUser && !can(a.role, action)) throw new ApiError(403, "forbidden", deniedReason(action, a.role));
-      return a;
+    me: () => {
+      if (!user) throw new ApiError(401, "unauthenticated", "Oturum bulunamadı. Yeniden giriş yap.");
+      return user;
     },
     ok: (value, ms = latency) => delay(value, ms),
     now: () => db.nowIso(),
-    singleUser,
   };
 }
 
-/** The audit actor string for a person ("user:uye-3"). */
+/** The audit actor string for the person ("user:sen"). */
 export const userActor = (a: Actor) => `user:${a.uid}`;
 
-/** A signature for a decision: who, in which role, when, why. */
+/** A recorded step: who, when, why. */
 export function signatureOf(a: Actor, at: string, reason: string | null) {
-  return { uid: a.uid, name: a.name, role: a.role, at, reason };
+  return { uid: a.uid, name: a.name, at, reason };
 }
 
 /**
- * The second signature of a two-person flow. A different person: nothing to do. The same person:
- * 403 `same_person` with the flow's own words, unless single-user mode is on, where it is allowed
- * and written to the ledger as `auth.single_user_waiver` (as the backend does).
+ * One person takes both steps of a change that used to need two: allowed, and the ledger says so
+ * as `auth.single_user_waiver` (as the backend does), so the record stays honest.
  */
-export function secondSignature(ctx: MockCtx, a: Actor, firstUid: string, flow: string, entity: [string, string], refusal: string): void {
-  if (firstUid !== a.uid) return;
-  if (!ctx.singleUser) throw new ApiError(403, "same_person", refusal);
-  ctx.db.audit(userActor(a), "auth.single_user_waiver", entity[0], entity[1], { waiver: "single_user_waiver", flow, entity_type: entity[0], entity_id: entity[1], first_uid: firstUid });
+export function recordWaiver(ctx: MockCtx, a: Actor, flow: string, entity: [string, string]): void {
+  ctx.db.audit(userActor(a), "auth.single_user_waiver", entity[0], entity[1], { waiver: "single_user_waiver", flow, entity_type: entity[0], entity_id: entity[1], first_uid: a.uid });
 }

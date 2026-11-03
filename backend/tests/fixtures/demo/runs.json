@@ -12,7 +12,7 @@
      "passed": true,
      "observed": "%0,31",
      "threshold": "≥ %0,25",
-     "detail_tr": "Son 10 seansta sermayenin %0,31'i geri alındı."
+     "detail_tr": "Son 10 borsa gününde sermayenin %0,31'i geri alındı."
     },
     {
      "rule": "E1.execution",
@@ -26,7 +26,7 @@
      "passed": true,
      "observed": "+%1,9",
      "threshold": "< %8",
-     "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+     "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
     },
     {
      "rule": "EDGE.edge_cost",
@@ -153,8 +153,8 @@
    ],
    "disclosure_index": 1651207,
    "publishedAtIso": "2027-01-11T04:13:10.471Z",
-   "headline_tr": "Son 10 seansta sermayenin %0,31'i oranında geri alım",
-   "text_tr": "KORU ÇELİK A.Ş. — Pay Geri Alımına İlişkin Bildirim\n\nŞirketimiz 06–08.01.2027 tarihlerinde toplam 3.720.000 TL nominal değerli pay geri almıştır. Geri alınan payların sermayeye oranı son 10 seansta %0,31'e ulaşmıştır.\n\nBu metin KAPtan fikstürüdür; gerçek bir şirkete veya bildirime ait değildir.",
+   "headline_tr": "Son 10 borsa gününde sermayenin %0,31'i oranında geri alım",
+   "text_tr": "KORU ÇELİK A.Ş. — Pay Geri Alımına İlişkin Bildirim\n\nŞirketimiz 06–08.01.2027 tarihlerinde toplam 3.720.000 TL nominal değerli pay geri almıştır. Geri alınan payların sermayeye oranı son 10 borsa gününde %0,31'e ulaşmıştır.\n\nBu metin KAPtan fikstürüdür; gerçek bir şirkete veya bildirime ait değildir.",
    "text_en": "KORU ÇELİK A.Ş. — illustrative English version of the disclosure.\n\n(Fixture text; not a real company.)",
    "strategy_version": "v1.1-fwd",
    "is_fixture": false,
@@ -192,7 +192,7 @@
     "disclosure_class": "ODA",
     "disclosure_type": "Özel Durum Açıklaması",
     "subject": "Pay Geri Alımına İlişkin Bildirim",
-    "summary": "Son 10 seansta sermayenin %0,31'i oranında geri alım",
+    "summary": "Son 10 borsa gününde sermayenin %0,31'i oranında geri alım",
     "reason": "NEW",
     "related_index": null,
     "is_late": false,
@@ -217,7 +217,7 @@
    "texts": [
     {
      "lang": "tr",
-     "body": "KORU ÇELİK A.Ş. — Pay Geri Alımına İlişkin Bildirim\n\nŞirketimiz 06–08.01.2027 tarihlerinde toplam 3.720.000 TL nominal değerli pay geri almıştır. Geri alınan payların sermayeye oranı son 10 seansta %0,31'e ulaşmıştır.\n\nBu metin KAPtan fikstürüdür; gerçek bir şirkete veya bildirime ait değildir."
+     "body": "KORU ÇELİK A.Ş. — Pay Geri Alımına İlişkin Bildirim\n\nŞirketimiz 06–08.01.2027 tarihlerinde toplam 3.720.000 TL nominal değerli pay geri almıştır. Geri alınan payların sermayeye oranı son 10 borsa gününde %0,31'e ulaşmıştır.\n\nBu metin KAPtan fikstürüdür; gerçek bir şirkete veya bildirime ait değildir."
     },
     {
      "lang": "en",
@@ -1699,7 +1699,7 @@
       "passed": true,
       "observed": "%0,31",
       "threshold": "≥ %0,25",
-      "detail_tr": "Son 10 seansta sermayenin %0,31'i geri alındı."
+      "detail_tr": "Son 10 borsa gününde sermayenin %0,31'i geri alındı."
      },
      {
       "rule": "E1.execution",
@@ -1713,7 +1713,7 @@
       "passed": true,
       "observed": "+%1,9",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -1792,7 +1792,7 @@
      "rule_code": "R01",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Kill switch kapalı; zirveden düşüş −%1,1.",
+     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
      "observed": "−%1,1",
      "limit": "−%5"
     },
@@ -1828,7 +1828,7 @@
      "rule_code": "R13",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Ekip içeriden-öğrenen engel listesinde değil",
+     "detail_tr": "İçeriden-öğrenen engel listende değil",
      "observed": null,
      "limit": null
     },
@@ -1882,7 +1882,7 @@
      "rule_code": "R12",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış",
+     "detail_tr": "Açığa satış yok, kaldıraç yok, gerçek emir kapalı",
      "observed": null,
      "limit": null
     },
@@ -1918,7 +1918,7 @@
      "rule_code": "R15",
      "outcome": "approval_required",
      "reason_code": "APPROVAL_REQUIRED",
-     "detail_tr": "Her öneri insan onayına gider; ertesi seans 09:50'de düşer",
+     "detail_tr": "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer",
      "observed": null,
      "limit": null
     }
@@ -2111,7 +2111,7 @@
     "side": "buy",
     "event_type": "E1",
     "sub_type_tr": "Pay geri alım işlemi",
-    "headline_tr": "Son 10 seansta sermayenin %0,31'i oranında geri alım",
+    "headline_tr": "Son 10 borsa gününde sermayenin %0,31'i oranında geri alım",
     "disclosure_index": 1651207,
     "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651207",
     "final_notional_try": 50542,
@@ -2143,7 +2143,7 @@
       "passed": true,
       "observed": "%0,31",
       "threshold": "≥ %0,25",
-      "detail_tr": "Son 10 seansta sermayenin %0,31'i geri alındı."
+      "detail_tr": "Son 10 borsa gününde sermayenin %0,31'i geri alındı."
      },
      {
       "rule": "E1.execution",
@@ -2157,7 +2157,7 @@
       "passed": true,
       "observed": "+%1,9",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -2180,7 +2180,6 @@
     "expires_at": "2027-01-12T06:50:00.000Z",
     "status": "pending",
     "decided_by": null,
-    "decided_role": null,
     "decided_at": null,
     "decision_comment": null,
     "approved_notional_try": null,
@@ -2406,7 +2405,7 @@
      "passed": true,
      "observed": "+%1,2",
      "threshold": "< %8",
-     "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+     "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
     },
     {
      "rule": "EDGE.edge_cost",
@@ -3446,7 +3445,7 @@
       "passed": true,
       "observed": "+%1,2",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -3525,7 +3524,7 @@
      "rule_code": "R01",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Kill switch kapalı; zirveden düşüş −%1,1.",
+     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
      "observed": "−%1,1",
      "limit": "−%5"
     },
@@ -3561,7 +3560,7 @@
      "rule_code": "R13",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Ekip içeriden-öğrenen engel listesinde değil",
+     "detail_tr": "İçeriden-öğrenen engel listende değil",
      "observed": null,
      "limit": null
     },
@@ -3615,7 +3614,7 @@
      "rule_code": "R12",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış",
+     "detail_tr": "Açığa satış yok, kaldıraç yok, gerçek emir kapalı",
      "observed": null,
      "limit": null
     },
@@ -3651,7 +3650,7 @@
      "rule_code": "R15",
      "outcome": "approval_required",
      "reason_code": "APPROVAL_REQUIRED",
-     "detail_tr": "Her öneri insan onayına gider; ertesi seans 09:50'de düşer",
+     "detail_tr": "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer",
      "observed": null,
      "limit": null
     }
@@ -3832,7 +3831,7 @@
       "passed": true,
       "observed": "+%1,2",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -3855,7 +3854,6 @@
     "expires_at": "2027-01-12T06:50:00.000Z",
     "status": "pending",
     "decided_by": null,
-    "decided_role": null,
     "decided_at": null,
     "decision_comment": null,
     "approved_notional_try": null,
@@ -4081,14 +4079,14 @@
      "passed": true,
      "observed": "+%5,0",
      "threshold": "< %12",
-     "detail_tr": "Son 10 seansta aşırı yükseliş yok."
+     "detail_tr": "Son 10 borsa gününde aşırı yükseliş yok."
     },
     {
      "rule": "LEAK.ret5d",
      "passed": true,
      "observed": "+%3,4",
      "threshold": "< %8",
-     "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+     "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
     },
     {
      "rule": "EDGE.edge_cost",
@@ -4770,14 +4768,14 @@
       "passed": true,
       "observed": "+%5,0",
       "threshold": "< %12",
-      "detail_tr": "Son 10 seansta aşırı yükseliş yok."
+      "detail_tr": "Son 10 borsa gününde aşırı yükseliş yok."
      },
      {
       "rule": "LEAK.ret5d",
       "passed": true,
       "observed": "+%3,4",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -4856,7 +4854,7 @@
      "rule_code": "R01",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Kill switch kapalı; zirveden düşüş −%1,1.",
+     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
      "observed": "−%1,1",
      "limit": "−%5"
     },
@@ -4892,7 +4890,7 @@
      "rule_code": "R13",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Ekip içeriden-öğrenen engel listesinde değil",
+     "detail_tr": "İçeriden-öğrenen engel listende değil",
      "observed": null,
      "limit": null
     },
@@ -4946,7 +4944,7 @@
      "rule_code": "R12",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış",
+     "detail_tr": "Açığa satış yok, kaldıraç yok, gerçek emir kapalı",
      "observed": null,
      "limit": null
     },
@@ -4982,7 +4980,7 @@
      "rule_code": "R15",
      "outcome": "approval_required",
      "reason_code": "APPROVAL_REQUIRED",
-     "detail_tr": "Her öneri insan onayına gider; ertesi seans 09:50'de düşer",
+     "detail_tr": "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer",
      "observed": null,
      "limit": null
     }
@@ -5126,14 +5124,14 @@
       "passed": true,
       "observed": "+%5,0",
       "threshold": "< %12",
-      "detail_tr": "Son 10 seansta aşırı yükseliş yok."
+      "detail_tr": "Son 10 borsa gününde aşırı yükseliş yok."
      },
      {
       "rule": "LEAK.ret5d",
       "passed": true,
       "observed": "+%3,4",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -5156,7 +5154,6 @@
     "expires_at": "2027-01-12T06:50:00.000Z",
     "status": "pending",
     "decided_by": null,
-    "decided_role": null,
     "decided_at": null,
     "decision_comment": null,
     "approved_notional_try": null,
@@ -6959,7 +6956,7 @@
    "leakage5d": 0,
    "guardScore": 0,
    "preGateReasons": [
-    "R13_INSIDER_BLOCKLIST: ekip içeriden-öğrenen engel listesinde (team_insider)",
+    "R13_INSIDER_BLOCKLIST: içeriden-öğrenen engel listende (team_insider)",
     "LLM çağrısı yapılmadı"
    ],
    "llmCalls": 0,
@@ -7049,7 +7046,7 @@
    "pre_gate": {
     "passed": false,
     "reasons": [
-     "R13_INSIDER_BLOCKLIST: ekip içeriden-öğrenen engel listesinde (team_insider)",
+     "R13_INSIDER_BLOCKLIST: içeriden-öğrenen engel listende (team_insider)",
      "LLM çağrısı yapılmadı"
     ]
    },
@@ -8477,7 +8474,7 @@
      "passed": true,
      "observed": "+%1,4",
      "threshold": "< %8",
-     "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+     "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
     },
     {
      "rule": "EDGE.edge_cost",
@@ -8528,7 +8525,7 @@
    },
    "decision": {
     "status": "approved",
-    "by": "uye-3",
+    "by": "sahip",
     "atIso": "2027-01-11T06:12:00.000Z",
     "comment": "Kanıt güçlü, sızıntı yok. Onay.",
     "approvedNotional": null,
@@ -8614,7 +8611,7 @@
    "disclosure_index": 1651222,
    "publishedAtIso": "2027-01-11T04:41:24.339Z",
    "headline_tr": "Geri alımlar sermayenin %0,34'üne ulaştı",
-   "text_tr": "TOROS MAKİNE A.Ş. — Pay Geri Alımına İlişkin Bildirim\n\nŞirketimiz son 10 seansta toplam 4.080.000 TL nominal değerli pay geri almıştır (sermayenin %0,34'ü).\n\nBu metin KAPtan fikstürüdür; gerçek bir şirkete veya bildirime ait değildir.",
+   "text_tr": "TOROS MAKİNE A.Ş. — Pay Geri Alımına İlişkin Bildirim\n\nŞirketimiz son 10 borsa gününde toplam 4.080.000 TL nominal değerli pay geri almıştır (sermayenin %0,34'ü).\n\nBu metin KAPtan fikstürüdür; gerçek bir şirkete veya bildirime ait değildir.",
    "text_en": "TOROS MAKİNE A.Ş. — illustrative English version of the disclosure.\n\n(Fixture text; not a real company.)",
    "strategy_version": "v1.1-fwd",
    "is_fixture": false,
@@ -8677,7 +8674,7 @@
    "texts": [
     {
      "lang": "tr",
-     "body": "TOROS MAKİNE A.Ş. — Pay Geri Alımına İlişkin Bildirim\n\nŞirketimiz son 10 seansta toplam 4.080.000 TL nominal değerli pay geri almıştır (sermayenin %0,34'ü).\n\nBu metin KAPtan fikstürüdür; gerçek bir şirkete veya bildirime ait değildir."
+     "body": "TOROS MAKİNE A.Ş. — Pay Geri Alımına İlişkin Bildirim\n\nŞirketimiz son 10 borsa gününde toplam 4.080.000 TL nominal değerli pay geri almıştır (sermayenin %0,34'ü).\n\nBu metin KAPtan fikstürüdür; gerçek bir şirkete veya bildirime ait değildir."
     },
     {
      "lang": "en",
@@ -8718,7 +8715,7 @@
     "quotes": [
      {
       "field": "event_type",
-      "quote": "Şirketimiz son 10 seansta toplam 4.080.000 TL nominal değerli pay geri almıştır (sermayenin %0,34'ü)."
+      "quote": "Şirketimiz son 10 borsa gününde toplam 4.080.000 TL nominal değerli pay geri almıştır (sermayenin %0,34'ü)."
      }
     ],
     "abstain": null
@@ -10173,7 +10170,7 @@
       "passed": true,
       "observed": "+%1,4",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -10252,7 +10249,7 @@
      "rule_code": "R01",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Kill switch kapalı; zirveden düşüş −%1,1.",
+     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
      "observed": "−%1,1",
      "limit": "−%5"
     },
@@ -10288,7 +10285,7 @@
      "rule_code": "R13",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Ekip içeriden-öğrenen engel listesinde değil",
+     "detail_tr": "İçeriden-öğrenen engel listende değil",
      "observed": null,
      "limit": null
     },
@@ -10342,7 +10339,7 @@
      "rule_code": "R12",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış",
+     "detail_tr": "Açığa satış yok, kaldıraç yok, gerçek emir kapalı",
      "observed": null,
      "limit": null
     },
@@ -10378,7 +10375,7 @@
      "rule_code": "R15",
      "outcome": "approval_required",
      "reason_code": "APPROVAL_REQUIRED",
-     "detail_tr": "Her öneri insan onayına gider; ertesi seans 09:50'de düşer",
+     "detail_tr": "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer",
      "observed": null,
      "limit": null
     },
@@ -10626,7 +10623,7 @@
       "passed": true,
       "observed": "+%1,4",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -10648,8 +10645,7 @@
     "created_at": "2027-01-11T04:42:12.339Z",
     "expires_at": "2027-01-12T06:50:00.000Z",
     "status": "approved",
-    "decided_by": "uye-3",
-    "decided_role": "risk_officer",
+    "decided_by": "sahip",
     "decided_at": "2027-01-11T06:12:00.000Z",
     "decision_comment": "Kanıt güçlü, sızıntı yok. Onay.",
     "approved_notional_try": null,
@@ -10938,7 +10934,7 @@
      "passed": true,
      "observed": "+%6,1",
      "threshold": "< %8",
-     "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+     "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
     },
     {
      "rule": "EDGE.edge_cost",
@@ -10975,7 +10971,7 @@
      {
       "code": "MANIPULATION_MARKERS",
       "severity": "reduce",
-      "detail_tr": "Son 5 seansta +%6,1 ve hacim 3 katı."
+      "detail_tr": "Son 5 borsa gününde +%6,1 ve hacim 3 katı."
      }
     ],
     "counter_tr": "Alım öncesi olağan dışı hacim; ×0,5."
@@ -10995,7 +10991,7 @@
    },
    "decision": {
     "status": "rejected",
-    "by": "uye-3",
+    "by": "sahip",
     "atIso": "2027-01-11T07:20:00.000Z",
     "comment": "Hacim anormal; manipülasyon şüphesi taşıyan bir harekete girmek istemiyorum."
    },
@@ -11517,7 +11513,7 @@
      {
       "code": "MANIPULATION_MARKERS",
       "severity": "reduce",
-      "detail_tr": "Son 5 seansta +%6,1 ve hacim 3 katı.",
+      "detail_tr": "Son 5 borsa gününde +%6,1 ve hacim 3 katı.",
       "supporting_ref": null
      }
     ],
@@ -11552,7 +11548,7 @@
       "passed": true,
       "observed": "+%6,1",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -11631,7 +11627,7 @@
      "rule_code": "R01",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Kill switch kapalı; zirveden düşüş −%1,1.",
+     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
      "observed": "−%1,1",
      "limit": "−%5"
     },
@@ -11667,7 +11663,7 @@
      "rule_code": "R13",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Ekip içeriden-öğrenen engel listesinde değil",
+     "detail_tr": "İçeriden-öğrenen engel listende değil",
      "observed": null,
      "limit": null
     },
@@ -11721,7 +11717,7 @@
      "rule_code": "R12",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış",
+     "detail_tr": "Açığa satış yok, kaldıraç yok, gerçek emir kapalı",
      "observed": null,
      "limit": null
     },
@@ -11757,7 +11753,7 @@
      "rule_code": "R15",
      "outcome": "approval_required",
      "reason_code": "APPROVAL_REQUIRED",
-     "detail_tr": "Her öneri insan onayına gider; ertesi seans 09:50'de düşer",
+     "detail_tr": "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer",
      "observed": null,
      "limit": null
     }
@@ -11865,7 +11861,7 @@
      {
       "code": "MANIPULATION_MARKERS",
       "severity": "reduce",
-      "detail_tr": "Son 5 seansta +%6,1 ve hacim 3 katı."
+      "detail_tr": "Son 5 borsa gününde +%6,1 ve hacim 3 katı."
      }
     ],
     "skeptic_note_tr": "Alım öncesi olağan dışı hacim; ×0,5.",
@@ -11884,7 +11880,7 @@
       "passed": true,
       "observed": "+%6,1",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -11906,8 +11902,7 @@
     "created_at": "2027-01-11T05:17:57.905Z",
     "expires_at": "2027-01-12T06:50:00.000Z",
     "status": "rejected",
-    "decided_by": "uye-3",
-    "decided_role": "risk_officer",
+    "decided_by": "sahip",
     "decided_at": "2027-01-11T07:20:00.000Z",
     "decision_comment": "Hacim anormal; manipülasyon şüphesi taşıyan bir harekete girmek istemiyorum.",
     "approved_notional_try": null,
@@ -12368,7 +12363,7 @@
      "passed": true,
      "observed": "+%1,0",
      "threshold": "< %8",
-     "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+     "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
     },
     {
      "rule": "EDGE.edge_cost",
@@ -12419,7 +12414,7 @@
    },
    "decision": {
     "status": "approved",
-    "by": "uye-3",
+    "by": "sahip",
     "atIso": "2026-12-14T06:05:00.000Z",
     "comment": "Onay.",
     "fill": {
@@ -13589,7 +13584,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -13668,7 +13663,7 @@
      "rule_code": "R01",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Kill switch kapalı; zirveden düşüş −%1,1.",
+     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
      "observed": "−%1,1",
      "limit": "−%5"
     },
@@ -13704,7 +13699,7 @@
      "rule_code": "R13",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Ekip içeriden-öğrenen engel listesinde değil",
+     "detail_tr": "İçeriden-öğrenen engel listende değil",
      "observed": null,
      "limit": null
     },
@@ -13758,7 +13753,7 @@
      "rule_code": "R12",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış",
+     "detail_tr": "Açığa satış yok, kaldıraç yok, gerçek emir kapalı",
      "observed": null,
      "limit": null
     },
@@ -13794,7 +13789,7 @@
      "rule_code": "R15",
      "outcome": "approval_required",
      "reason_code": "APPROVAL_REQUIRED",
-     "detail_tr": "Her öneri insan onayına gider; ertesi seans 09:50'de düşer",
+     "detail_tr": "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer",
      "observed": null,
      "limit": null
     },
@@ -13986,7 +13981,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -14008,8 +14003,7 @@
     "created_at": "2026-12-14T05:20:48.000Z",
     "expires_at": "2026-12-15T06:50:00.000Z",
     "status": "approved",
-    "decided_by": "uye-3",
-    "decided_role": "risk_officer",
+    "decided_by": "sahip",
     "decided_at": "2026-12-14T06:05:00.000Z",
     "decision_comment": "Onay.",
     "approved_notional_try": null,
@@ -14298,7 +14292,7 @@
      "passed": true,
      "observed": "+%1,0",
      "threshold": "< %8",
-     "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+     "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
     },
     {
      "rule": "EDGE.edge_cost",
@@ -14349,7 +14343,7 @@
    },
    "decision": {
     "status": "approved",
-    "by": "uye-3",
+    "by": "sahip",
     "atIso": "2026-12-21T06:05:00.000Z",
     "comment": "Onay.",
     "fill": {
@@ -15487,7 +15481,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -15566,7 +15560,7 @@
      "rule_code": "R01",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Kill switch kapalı; zirveden düşüş −%1,1.",
+     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
      "observed": "−%1,1",
      "limit": "−%5"
     },
@@ -15602,7 +15596,7 @@
      "rule_code": "R13",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Ekip içeriden-öğrenen engel listesinde değil",
+     "detail_tr": "İçeriden-öğrenen engel listende değil",
      "observed": null,
      "limit": null
     },
@@ -15656,7 +15650,7 @@
      "rule_code": "R12",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış",
+     "detail_tr": "Açığa satış yok, kaldıraç yok, gerçek emir kapalı",
      "observed": null,
      "limit": null
     },
@@ -15692,7 +15686,7 @@
      "rule_code": "R15",
      "outcome": "approval_required",
      "reason_code": "APPROVAL_REQUIRED",
-     "detail_tr": "Her öneri insan onayına gider; ertesi seans 09:50'de düşer",
+     "detail_tr": "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer",
      "observed": null,
      "limit": null
     },
@@ -15884,7 +15878,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -15906,8 +15900,7 @@
     "created_at": "2026-12-21T05:20:48.000Z",
     "expires_at": "2026-12-22T06:50:00.000Z",
     "status": "approved",
-    "decided_by": "uye-3",
-    "decided_role": "risk_officer",
+    "decided_by": "sahip",
     "decided_at": "2026-12-21T06:05:00.000Z",
     "decision_comment": "Onay.",
     "approved_notional_try": null,
@@ -16196,7 +16189,7 @@
      "passed": true,
      "observed": "+%1,0",
      "threshold": "< %8",
-     "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+     "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
     },
     {
      "rule": "EDGE.edge_cost",
@@ -16247,7 +16240,7 @@
    },
    "decision": {
     "status": "approved",
-    "by": "uye-3",
+    "by": "sahip",
     "atIso": "2026-12-28T06:05:00.000Z",
     "comment": "Onay.",
     "fill": {
@@ -17417,7 +17410,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -17496,7 +17489,7 @@
      "rule_code": "R01",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Kill switch kapalı; zirveden düşüş −%1,1.",
+     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
      "observed": "−%1,1",
      "limit": "−%5"
     },
@@ -17532,7 +17525,7 @@
      "rule_code": "R13",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Ekip içeriden-öğrenen engel listesinde değil",
+     "detail_tr": "İçeriden-öğrenen engel listende değil",
      "observed": null,
      "limit": null
     },
@@ -17586,7 +17579,7 @@
      "rule_code": "R12",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış",
+     "detail_tr": "Açığa satış yok, kaldıraç yok, gerçek emir kapalı",
      "observed": null,
      "limit": null
     },
@@ -17622,7 +17615,7 @@
      "rule_code": "R15",
      "outcome": "approval_required",
      "reason_code": "APPROVAL_REQUIRED",
-     "detail_tr": "Her öneri insan onayına gider; ertesi seans 09:50'de düşer",
+     "detail_tr": "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer",
      "observed": null,
      "limit": null
     },
@@ -17814,7 +17807,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -17836,8 +17829,7 @@
     "created_at": "2026-12-28T05:20:48.000Z",
     "expires_at": "2026-12-29T06:50:00.000Z",
     "status": "approved",
-    "decided_by": "uye-3",
-    "decided_role": "risk_officer",
+    "decided_by": "sahip",
     "decided_at": "2026-12-28T06:05:00.000Z",
     "decision_comment": "Onay.",
     "approved_notional_try": null,
@@ -18126,7 +18118,7 @@
      "passed": true,
      "observed": "+%1,0",
      "threshold": "< %8",
-     "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+     "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
     },
     {
      "rule": "EDGE.edge_cost",
@@ -18177,7 +18169,7 @@
    },
    "decision": {
     "status": "approved",
-    "by": "uye-3",
+    "by": "sahip",
     "atIso": "2027-01-04T06:05:00.000Z",
     "comment": "Onay.",
     "fill": {
@@ -19315,7 +19307,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -19394,7 +19386,7 @@
      "rule_code": "R01",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Kill switch kapalı; zirveden düşüş −%1,1.",
+     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
      "observed": "−%1,1",
      "limit": "−%5"
     },
@@ -19430,7 +19422,7 @@
      "rule_code": "R13",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Ekip içeriden-öğrenen engel listesinde değil",
+     "detail_tr": "İçeriden-öğrenen engel listende değil",
      "observed": null,
      "limit": null
     },
@@ -19484,7 +19476,7 @@
      "rule_code": "R12",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış",
+     "detail_tr": "Açığa satış yok, kaldıraç yok, gerçek emir kapalı",
      "observed": null,
      "limit": null
     },
@@ -19520,7 +19512,7 @@
      "rule_code": "R15",
      "outcome": "approval_required",
      "reason_code": "APPROVAL_REQUIRED",
-     "detail_tr": "Her öneri insan onayına gider; ertesi seans 09:50'de düşer",
+     "detail_tr": "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer",
      "observed": null,
      "limit": null
     },
@@ -19712,7 +19704,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -19734,8 +19726,7 @@
     "created_at": "2027-01-04T05:20:48.000Z",
     "expires_at": "2027-01-05T06:50:00.000Z",
     "status": "approved",
-    "decided_by": "uye-3",
-    "decided_role": "risk_officer",
+    "decided_by": "sahip",
     "decided_at": "2027-01-04T06:05:00.000Z",
     "decision_comment": "Onay.",
     "approved_notional_try": null,
@@ -20024,7 +20015,7 @@
      "passed": true,
      "observed": "+%1,0",
      "threshold": "< %8",
-     "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+     "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
     },
     {
      "rule": "EDGE.edge_cost",
@@ -20075,7 +20066,7 @@
    },
    "decision": {
     "status": "approved",
-    "by": "uye-3",
+    "by": "sahip",
     "atIso": "2027-01-04T06:05:00.000Z",
     "comment": "Onay.",
     "fill": {
@@ -21219,7 +21210,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -21298,7 +21289,7 @@
      "rule_code": "R01",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Kill switch kapalı; zirveden düşüş −%1,1.",
+     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
      "observed": "−%1,1",
      "limit": "−%5"
     },
@@ -21334,7 +21325,7 @@
      "rule_code": "R13",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Ekip içeriden-öğrenen engel listesinde değil",
+     "detail_tr": "İçeriden-öğrenen engel listende değil",
      "observed": null,
      "limit": null
     },
@@ -21388,7 +21379,7 @@
      "rule_code": "R12",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış",
+     "detail_tr": "Açığa satış yok, kaldıraç yok, gerçek emir kapalı",
      "observed": null,
      "limit": null
     },
@@ -21424,7 +21415,7 @@
      "rule_code": "R15",
      "outcome": "approval_required",
      "reason_code": "APPROVAL_REQUIRED",
-     "detail_tr": "Her öneri insan onayına gider; ertesi seans 09:50'de düşer",
+     "detail_tr": "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer",
      "observed": null,
      "limit": null
     },
@@ -21616,7 +21607,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -21638,8 +21629,7 @@
     "created_at": "2027-01-04T05:20:48.000Z",
     "expires_at": "2027-01-05T06:50:00.000Z",
     "status": "approved",
-    "decided_by": "uye-3",
-    "decided_role": "risk_officer",
+    "decided_by": "sahip",
     "decided_at": "2027-01-04T06:05:00.000Z",
     "decision_comment": "Onay.",
     "approved_notional_try": null,
@@ -21928,7 +21918,7 @@
      "passed": true,
      "observed": "+%1,0",
      "threshold": "< %8",
-     "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+     "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
     },
     {
      "rule": "EDGE.edge_cost",
@@ -21979,7 +21969,7 @@
    },
    "decision": {
     "status": "approved",
-    "by": "uye-3",
+    "by": "sahip",
     "atIso": "2027-01-11T05:31:00.000Z",
     "comment": "Onay; açılış emir toplamada girsin.",
     "fill": {
@@ -23151,7 +23141,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -23230,7 +23220,7 @@
      "rule_code": "R01",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Kill switch kapalı; zirveden düşüş −%1,1.",
+     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
      "observed": "−%1,1",
      "limit": "−%5"
     },
@@ -23266,7 +23256,7 @@
      "rule_code": "R13",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Ekip içeriden-öğrenen engel listesinde değil",
+     "detail_tr": "İçeriden-öğrenen engel listende değil",
      "observed": null,
      "limit": null
     },
@@ -23320,7 +23310,7 @@
      "rule_code": "R12",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış",
+     "detail_tr": "Açığa satış yok, kaldıraç yok, gerçek emir kapalı",
      "observed": null,
      "limit": null
     },
@@ -23356,7 +23346,7 @@
      "rule_code": "R15",
      "outcome": "approval_required",
      "reason_code": "APPROVAL_REQUIRED",
-     "detail_tr": "Her öneri insan onayına gider; ertesi seans 09:50'de düşer",
+     "detail_tr": "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer",
      "observed": null,
      "limit": null
     },
@@ -23548,7 +23538,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -23570,8 +23560,7 @@
     "created_at": "2027-01-08T15:42:48.000Z",
     "expires_at": "2027-01-11T06:50:00.000Z",
     "status": "approved",
-    "decided_by": "uye-3",
-    "decided_role": "risk_officer",
+    "decided_by": "sahip",
     "decided_at": "2027-01-11T05:31:00.000Z",
     "decision_comment": "Onay; açılış emir toplamada girsin.",
     "approved_notional_try": null,
@@ -23860,7 +23849,7 @@
      "passed": true,
      "observed": "+%1,0",
      "threshold": "< %8",
-     "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+     "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
     },
     {
      "rule": "EDGE.edge_cost",
@@ -23911,7 +23900,7 @@
    },
    "decision": {
     "status": "approved",
-    "by": "uye-3",
+    "by": "sahip",
     "atIso": "2027-01-11T05:38:00.000Z",
     "comment": "Onay; açılışta tavan gelirse kovalamıyoruz.",
     "unfilledAtLimitUp": true
@@ -25045,7 +25034,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -25124,7 +25113,7 @@
      "rule_code": "R01",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Kill switch kapalı; zirveden düşüş −%1,1.",
+     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
      "observed": "−%1,1",
      "limit": "−%5"
     },
@@ -25160,7 +25149,7 @@
      "rule_code": "R13",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Ekip içeriden-öğrenen engel listesinde değil",
+     "detail_tr": "İçeriden-öğrenen engel listende değil",
      "observed": null,
      "limit": null
     },
@@ -25214,7 +25203,7 @@
      "rule_code": "R12",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış",
+     "detail_tr": "Açığa satış yok, kaldıraç yok, gerçek emir kapalı",
      "observed": null,
      "limit": null
     },
@@ -25250,7 +25239,7 @@
      "rule_code": "R15",
      "outcome": "approval_required",
      "reason_code": "APPROVAL_REQUIRED",
-     "detail_tr": "Her öneri insan onayına gider; ertesi seans 09:50'de düşer",
+     "detail_tr": "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer",
      "observed": null,
      "limit": null
     },
@@ -25442,7 +25431,7 @@
       "passed": true,
       "observed": "+%1,0",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -25464,8 +25453,7 @@
     "created_at": "2027-01-08T16:06:48.000Z",
     "expires_at": "2027-01-11T06:50:00.000Z",
     "status": "approved",
-    "decided_by": "uye-3",
-    "decided_role": "risk_officer",
+    "decided_by": "sahip",
     "decided_at": "2027-01-11T05:38:00.000Z",
     "decision_comment": "Onay; açılışta tavan gelirse kovalamıyoruz.",
     "approved_notional_try": null,
@@ -25793,10 +25781,10 @@
      {
       "code": "OTHER",
       "severity": "reduce",
-      "detail_tr": "Bildirimden önceki 2 seansta +%3,6 anormal hareket var; bilgi kısmen fiyatlanmış olabilir."
+      "detail_tr": "Bildirimden önceki 2 borsa gününde +%3,6 anormal hareket var; bilgi kısmen fiyatlanmış olabilir."
      }
     ],
-    "counter_tr": "Bildirimden önceki 2 seansta +%3,6 anormal hareket var, bilgi kısmen fiyatlanmış olabilir. Öneri: pozisyon %50 küçültülsün."
+    "counter_tr": "Bildirimden önceki 2 borsa gününde +%3,6 anormal hareket var, bilgi kısmen fiyatlanmış olabilir. Öneri: pozisyon %50 küçültülsün."
    },
    "ruleTrace": [
     {
@@ -25839,7 +25827,7 @@
      "passed": true,
      "observed": "+%4,1",
      "threshold": "< %8",
-     "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+     "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
     },
     {
      "rule": "EDGE.edge_cost",
@@ -26680,13 +26668,13 @@
      {
       "code": "OTHER",
       "severity": "reduce",
-      "detail_tr": "Bildirimden önceki 2 seansta +%3,6 anormal hareket var; bilgi kısmen fiyatlanmış olabilir.",
+      "detail_tr": "Bildirimden önceki 2 borsa gününde +%3,6 anormal hareket var; bilgi kısmen fiyatlanmış olabilir.",
       "supporting_ref": null
      }
     ],
     "size_multiplier": 0.5,
     "veto": false,
-    "strongest_counterargument_tr": "Bildirimden önceki 2 seansta +%3,6 anormal hareket var, bilgi kısmen fiyatlanmış olabilir. Öneri: pozisyon %50 küçültülsün.",
+    "strongest_counterargument_tr": "Bildirimden önceki 2 borsa gününde +%3,6 anormal hareket var, bilgi kısmen fiyatlanmış olabilir. Öneri: pozisyon %50 küçültülsün.",
     "confidence": 0.77,
     "abstain": null
    },
@@ -26747,7 +26735,7 @@
       "passed": true,
       "observed": "+%4,1",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -26826,7 +26814,7 @@
      "rule_code": "R01",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Kill switch kapalı; zirveden düşüş −%1,1.",
+     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
      "observed": "−%1,1",
      "limit": "−%5"
     },
@@ -26862,7 +26850,7 @@
      "rule_code": "R13",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Ekip içeriden-öğrenen engel listesinde değil",
+     "detail_tr": "İçeriden-öğrenen engel listende değil",
      "observed": null,
      "limit": null
     },
@@ -26916,7 +26904,7 @@
      "rule_code": "R12",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış",
+     "detail_tr": "Açığa satış yok, kaldıraç yok, gerçek emir kapalı",
      "observed": null,
      "limit": null
     },
@@ -26952,7 +26940,7 @@
      "rule_code": "R15",
      "outcome": "approval_required",
      "reason_code": "APPROVAL_REQUIRED",
-     "detail_tr": "Her öneri insan onayına gider; ertesi seans 09:50'de düşer",
+     "detail_tr": "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer",
      "observed": null,
      "limit": null
     }
@@ -27092,10 +27080,10 @@
      {
       "code": "OTHER",
       "severity": "reduce",
-      "detail_tr": "Bildirimden önceki 2 seansta +%3,6 anormal hareket var; bilgi kısmen fiyatlanmış olabilir."
+      "detail_tr": "Bildirimden önceki 2 borsa gününde +%3,6 anormal hareket var; bilgi kısmen fiyatlanmış olabilir."
      }
     ],
-    "skeptic_note_tr": "Bildirimden önceki 2 seansta +%3,6 anormal hareket var, bilgi kısmen fiyatlanmış olabilir. Öneri: pozisyon %50 küçültülsün.",
+    "skeptic_note_tr": "Bildirimden önceki 2 borsa gününde +%3,6 anormal hareket var, bilgi kısmen fiyatlanmış olabilir. Öneri: pozisyon %50 küçültülsün.",
     "size_multiplier": 0.5,
     "compliance_summary_tr": "Tedbir yok, injection yok.",
     "rule_trace_summary": [
@@ -27139,7 +27127,7 @@
       "passed": true,
       "observed": "+%4,1",
       "threshold": "< %8",
-      "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+      "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
      },
      {
       "rule": "EDGE.edge_cost",
@@ -27162,7 +27150,6 @@
     "expires_at": "2027-01-12T06:50:00.000Z",
     "status": "pending",
     "decided_by": null,
-    "decided_role": null,
     "decided_at": null,
     "decision_comment": null,
     "approved_notional_try": null,

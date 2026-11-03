@@ -17,7 +17,7 @@ from __future__ import annotations
 import gzip
 import json
 import logging
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
@@ -125,7 +125,9 @@ async def backfill(
     raw_dir: Path | None = None,
     queue_details: bool = False,
     force: bool = False,
+    on_day: Callable[[date, int], None] | None = None,
 ) -> BackfillReport:
+    """`on_day(day, rows stored)` after every day, done earlier (0 rows) or fetched now (progress of a long run)."""
     if end < start:
         raise ValueError("--to is before --from")
     report = BackfillReport()
@@ -135,6 +137,9 @@ async def backfill(
         async with pool.connection() as conn:
             if not force and await repo.run_status(conn, JOB, key) == "done":
                 report.skipped_days += 1
+                await conn.commit()
+                if on_day is not None:
+                    on_day(day, 0)
                 continue
             await conn.commit()  # no transaction stays open across the KAP request
             async with conn.transaction():
@@ -163,5 +168,7 @@ async def backfill(
                 await repo.mark_run(conn, JOB, key, status, rows=stored)
         report.days += 1
         report.rows += stored
-        log.info("backfill %s: %d rows (%s)", key, stored, status)
+        log.debug("backfill %s: %d rows (%s)", key, stored, status)
+        if on_day is not None:
+            on_day(day, stored)
     return report

@@ -1,5 +1,5 @@
 """run_scenario() against Postgres: the demo scenarios through the replay pipeline, and the DoD end to end
-(POST /demo/inject e3_contract → the same Explain as runs.json modulo timestamps, a pending card in /approvals)."""
+(the e3_contract run → the same Explain as runs.json modulo timestamps, a pending card in /approvals)."""
 
 from __future__ import annotations
 
@@ -10,14 +10,15 @@ from typing import Any
 import httpx
 import pytest
 
-from kaptan.agents import run_scenario
 from kaptan.audit.verify import verify_db
-from kaptan.clock import DEMO_ANCHOR, Clock
 from kaptan.db import DictConn
-from kaptan.demo.fixtures import DemoFixtures
 from kaptan.domain.schemas import iso_ms
 from kaptan.settings import Settings
 from tests.conftest import bearer, login, reseed_test_db
+from tests.harness.clock import FIXTURE_ANCHOR as DEMO_ANCHOR
+from tests.harness.clock import FixedDayClock as Clock
+from tests.harness.fixtures import DemoFixtures
+from tests.harness.scenario import run_scenario
 
 pytestmark = pytest.mark.integration
 
@@ -47,7 +48,7 @@ async def _one(conn: DictConn, sql: str, params: tuple[Any, ...] = ()) -> dict[s
 
 
 def _clock() -> Clock:
-    return Clock(demo=True, started_at=datetime.now(UTC))
+    return Clock(started_at=datetime.now(UTC))
 
 
 async def test_e3_contract_writes_run_card_counters_and_ledger(pg: DictConn, migrated: Settings) -> None:
@@ -139,23 +140,15 @@ async def test_unknown_scenario_is_refused(pg: DictConn) -> None:
         await run_scenario(pg, "loss_simulation", _clock())
 
 
-async def test_inject_endpoint_then_pending_card_in_approvals(
+async def test_a_run_then_pending_card_in_approvals(
     client: httpx.AsyncClient, pg: DictConn, migrated: Settings
 ) -> None:
+    await reseed_test_db(migrated)
     try:
-        admin = await login(client, "admin")
-        res = await client.post(
-            "/api/v1/demo/inject", json={"scenario": "e3_contract"}, headers=bearer(admin["access_token"])
-        )
-        assert res.status_code == 200, res.text
-        assert res.json() == {"disclosure_index": 1651901, "run_id": "run-demo-e3-ornek"}
-        # skip the 7.5 s animation: the run was injected long enough ago
-        await pg.execute(
-            "UPDATE trading.agent_runs SET injected_at = injected_at - interval '1 hour' WHERE run_id = %s",
-            ("run-demo-e3-ornek",),
-        )
+        result = await run_scenario(pg, "e3_contract", _clock())
+        assert (result.disclosure_index, result.run_id) == (1651901, "run-demo-e3-ornek")
         await pg.commit()
-        officer = await login(client, "risk_officer")
+        officer = await login(client)
         cards = await client.get("/api/v1/approvals?status=pending", headers=bearer(officer["access_token"]))
         assert cards.status_code == 200, cards.text
         mine = [c for c in cards.json() if c["proposal_id"] == "prop-demo-e3-ornek"]
@@ -167,7 +160,7 @@ async def test_inject_endpoint_then_pending_card_in_approvals(
         want = {k: v for k, v in _fixture("run-demo-e3-ornek").items() if k != "audit_positions"}
         assert _mask(got) == _mask(want)
         actions = [a["action"] for a in explain.json()["audit_positions"]]
-        assert actions[-2:] == ["demo.injected", "proposal.created"]
+        assert actions[-1] == "proposal.created" and "demo.injected" not in actions
     finally:
         await pg.rollback()
         await reseed_test_db(migrated)

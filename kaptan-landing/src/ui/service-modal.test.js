@@ -64,7 +64,7 @@ describe('createServiceModal (agent detail)', () => {
     expect(mount.querySelector('.service-modal__meta').textContent).toBe('Girdi: olay · Çıktı: benzer geçmiş olaylar');
     expect(mount.querySelector('.service-modal__description').textContent).toBe(AGENTS[0].description);
     expect(mount.querySelector('.service-modal__not').textContent).toBe('Ne yapmazGetiri görmez, istatistik hesaplamaz.');
-    expect(mount.querySelector('.service-modal__image').getAttribute('alt')).toBe('Kanıt ajanının çizimi');
+    expect(mount.querySelector('.service-modal__image').getAttribute('alt')).toBe('Kanıt çizimi');
     const nameEl = mount.querySelector('.service-modal__name');
     expect(modal.panel.getAttribute('aria-labelledby')).toBe(nameEl.id);
     expect(modal.panel.hasAttribute('aria-label')).toBe(false);
@@ -74,11 +74,11 @@ describe('createServiceModal (agent detail)', () => {
     const modal = mountModal();
     modal.open('kanit');
     const buttons = [...mount.querySelectorAll('button:not(.service-modal__step)')].map((b) => b.textContent);
-    expect(buttons).toEqual(['✕', 'Rotada görün']);
+    expect(buttons).toEqual(['✕', 'Rotada gör']);
     expect(mount.textContent).not.toMatch(/randevu/i);
   });
 
-  it('"Rotada görün" closes the detail and scrolls to #yolculuk', () => {
+  it('"Rotada gör" closes the detail and scrolls to #yolculuk', () => {
     const modal = mountModal();
     modal.open('kanit');
     mount.querySelector('.service-modal__cta').click();
@@ -205,7 +205,7 @@ describe('createServiceModal (agent detail)', () => {
       modal.open('kanit');
       const [prev, next] = mount.querySelectorAll('.service-modal__step');
       expect(prev.disabled).toBe(true);
-      expect(next.getAttribute('aria-label')).toBe('Sonraki ajan: 08 Risk Kapısı');
+      expect(next.getAttribute('aria-label')).toBe('Sonraki: 08 Risk Kapısı');
       const length = window.history.length;
 
       next.click();

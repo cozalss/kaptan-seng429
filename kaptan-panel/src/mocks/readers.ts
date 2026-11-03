@@ -107,7 +107,7 @@ export function trace(rule: string, passed: boolean, observed: string | null, th
 /** Rows every proposal shares: leakage, edge/cost, evidence count. */
 export function commonTrace(leak: string, leakOk: boolean, edge: string, edgeOk: boolean, n: number): RuleTraceEntry[] {
   return [
-    trace("LEAK.ret5d", leakOk, leak, "< %8", leakOk ? "Son 5 seansta önceden fiyatlanma eşiği aşılmadı." : "Son 5 seansta %8'i aşan yükseliş: atla."),
+    trace("LEAK.ret5d", leakOk, leak, "< %8", leakOk ? "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı." : "Son 5 borsa gününde %8'i aşan yükseliş: atla."),
     trace("EDGE.edge_cost", edgeOk, edge, "≥ 2,0×", edgeOk ? "Beklenen avantaj maliyetin en az iki katı." : "Avantaj maliyeti karşılamıyor."),
     trace("EVIDENCE.n_min", n >= 5, String(n), "≥ 5", n >= 5 ? "Yeterli sayıda benzer olay var." : "Benzer olay sayısı yetersiz."),
   ];

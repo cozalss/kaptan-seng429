@@ -1,115 +1,114 @@
 import Link from "next/link";
 import type { Position } from "@/lib/domain";
-import { fmtInt, fmtPct, fmtSignedPct, NBSP } from "@/lib/format";
-import { href } from "@/lib/nav";
+import { fmtInt, fmtSignedPct } from "@/lib/format";
+import { href, ROUTES } from "@/lib/nav";
+import { fmtLira, fmtSignedLira } from "@/lib/solo/words";
 import { cn } from "@/lib/utils";
 import { shortName } from "@/components/story/plain";
-import { titleTr } from "@/components/story/turkish";
 import { signTone } from "@/components/story/sign-tone";
-import { TH } from "./kit";
-import { holdingProgress, positionReturn } from "./risk-math";
-
-/** "3 gün kaldı" / "bugün çıkılır" / "çıkış günü geçti" — sessions left until the planned exit. */
-export function exitLine(p: Pick<Position, "opened_at" | "planned_exit_date">, today: string): string {
-  const h = holdingProgress(p, today);
-  if (h.overdue) return "çıkış günü geçti";
-  if (h.dueToday) return "bugün çıkılır";
-  return `${Math.max(1, h.planned - h.elapsed)} gün kaldı`;
-}
+import { titleTr } from "@/components/story/turkish";
+import { Boat } from "@/components/ufuk/boat";
+import { ScreenState } from "@/components/shell/page-frame";
+import { Button } from "@/components/ui/button";
+import { dateWords, exitSentence, waterSplit } from "./param-words";
+import { holdingProgress, istanbulDate, positionReturn } from "./risk-math";
 
 /**
- * Whose position it is: the KAPtan account's paper fill, or the slip you entered at your own
- * broker ("Girdim"). One signed öneri can give both, so the same company may show twice.
- */
-const BOOK_LABEL: Readonly<Record<Position["book"], string>> = { paper: "KAPtan hesabı", personal: "Kendi hesabın" };
-
-function signedTry(n: number): string {
-  if (n === 0) return `0${NBSP}TL`;
-  return `${n > 0 ? "+" : "−"}${fmtInt(Math.abs(Math.round(n)))}${NBSP}TL`;
-}
-
-/**
- * What you hold, as a table: company, lots, value now and its weight, gain or loss in TL and
- * in %, sessions left until the planned exit. Figures are tabular and right-aligned; each
- * company opens its öneri. The account is named once (above the table) unless both accounts
- * hold something, then per row. On a phone the lot sits under the name and the % under the TL.
+ * What you own, as things to read: the company first, then in one sentence how many, what you paid
+ * and what it is worth; when KAPtan will suggest selling; the voyage so far. The ledger is cut by the
+ * water: what is up sits above the line, what is down under it.
  */
 export function Holdings({ positions, today }: { positions: readonly Position[]; today: string }) {
-  if (!positions.length) return <p className="px-4 py-8 text-center text-ui text-ink-soft sm:px-6">Şu an elinde hisse yok. İmzalanan bir öneri buraya düşer.</p>;
-  const books = new Set(positions.map((p) => p.book));
-  const oneBook = books.size === 1 ? (positions[0]?.book ?? null) : null;
-  const total = positions.reduce((sum, p) => sum + p.qty * p.last_price, 0);
+  if (!positions.length) {
+    return (
+      <ScreenState
+        kind="empty"
+        title="Henüz hisse almadın."
+        action={
+          <Button asChild variant="secondary">
+            <Link href={ROUTES.benim}>Ana sayfaya dön</Link>
+          </Button>
+        }
+      >
+        KAPtan bir şey önerdiğinde Ana sayfa’da görürsün. Onaylayıp bankana girersen burada yerini alır.
+      </ScreenState>
+    );
+  }
+  const { above, below } = waterSplit(positions);
   return (
-    <table aria-label="Elindekiler" className="w-full border-collapse text-left">
-      {oneBook ? <caption className="px-4 pb-2 text-left text-dense text-muted sm:px-6">{oneBook === "paper" ? "Hepsi KAPtan hesabında" : "Hepsi kendi hesabında"}</caption> : null}
-      <thead className="sticky top-14 z-10 bg-panel/95 backdrop-blur-sm lg:top-0">
-        <tr className="shadow-[inset_0_-2px_0_var(--hairline)]">
-          <th scope="col" className={cn(TH, "py-2.5 pr-3 pl-4 sm:pl-6")}>
-            Şirket
-          </th>
-          <th scope="col" className={cn(TH, "hidden px-3 py-2.5 text-right sm:table-cell")}>
-            Lot
-          </th>
-          <th scope="col" className={cn(TH, "hidden px-3 py-2.5 text-right md:table-cell")}>
-            Değer (TL)
-          </th>
-          <th scope="col" className={cn(TH, "hidden px-3 py-2.5 text-right lg:table-cell")}>
-            Ağırlık
-          </th>
-          <th scope="col" className={cn(TH, "px-3 py-2.5 text-right")}>
-            K/Z (TL)
-          </th>
-          <th scope="col" className={cn(TH, "hidden px-3 py-2.5 text-right sm:table-cell")}>
-            K/Z (%)
-          </th>
-          <th scope="col" className={cn(TH, "py-2.5 pr-4 pl-3 text-right sm:pr-6")}>
-            Çıkış
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {positions.map((p) => {
-          const r = positionReturn(p);
-          const h = holdingProgress(p, today);
-          return (
-            <tr key={`${p.ticker}-${p.book}-${p.opened_at}`} className="border-b border-hairline transition-colors duration-[var(--dur-instant)] last:border-b-0 hover:bg-wash-tint">
-              <th scope="row" className="py-3 pr-3 pl-4 text-left font-normal sm:pl-6">
-                <Link
-                  href={href.proposal(p.source_proposal)}
-                  className="text-ui font-semibold text-ink underline decoration-transparent underline-offset-4 hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                >
-                  {titleTr(shortName(p.company_name))}
-                </Link>
-                {oneBook ? (
-                  <span className="mt-0.5 block text-dense text-muted tabular-nums sm:hidden">{fmtInt(p.qty)} lot</span>
-                ) : (
-                  <span className="mt-0.5 block text-dense text-muted tabular-nums">
-                    <span className="sm:hidden">{fmtInt(p.qty)} lot · </span>
-                    {BOOK_LABEL[p.book]}
-                  </span>
-                )}
-              </th>
-              <td className="hidden px-3 py-3 text-right text-ui text-ink tabular-nums sm:table-cell">{fmtInt(p.qty)}</td>
-              <td className="hidden px-3 py-3 text-right text-ui text-ink tabular-nums md:table-cell">{fmtInt(Math.round(p.qty * p.last_price))}</td>
-              <td className="hidden px-3 py-3 text-right text-ui text-ink-soft tabular-nums lg:table-cell">{total > 0 ? fmtPct((p.qty * p.last_price) / total, 1) : "—"}</td>
-              <td className="px-3 py-3 text-right tabular-nums">
-                <span className={cn("block text-ui font-semibold", signTone(p.unrealized_pnl))}>{signedTry(p.unrealized_pnl)}</span>
-                <span className={cn("mt-0.5 block text-dense sm:hidden", signTone(r))}>{fmtSignedPct(r)}</span>
-              </td>
-              <td className={cn("hidden px-3 py-3 text-right text-ui tabular-nums sm:table-cell", signTone(r))}>{fmtSignedPct(r)}</td>
-              <td className={cn("py-3 pr-4 pl-3 text-right text-ui whitespace-nowrap tabular-nums sm:pr-6", h.dueToday || h.overdue ? "font-semibold text-ink" : "text-ink-soft")}>
-                {exitLine(p, today)}
-                <span aria-hidden className="mt-1.5 ml-auto block h-1 w-20 overflow-hidden rounded-full bg-sunk">
-                  <span
-                    className={cn("block h-full rounded-full", h.dueToday || h.overdue || h.planned - h.elapsed <= 1 ? "bg-ochre" : "bg-[var(--flow-2)]")}
-                    style={{ width: `${Math.round(h.fraction * 100)}%` }}
-                  />
-                </span>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+    <section aria-labelledby="elindekiler" className="pm-ledger">
+      <div className="pm-ledger-head">
+        <h2 id="elindekiler" className="u-chapter text-ink">
+          Elindekiler
+        </h2>
+        <p className="text-body text-ink-soft">Kötü bir haber gelirse KAPtan satmayı daha erken de önerebilir.</p>
+      </div>
+      <ol aria-label="Elindekiler" className="pm-rows">
+        {above.map((p) => (
+          <Holding key={`${p.ticker}-${p.book}-${p.opened_at}`} p={p} today={today} />
+        ))}
+        <li aria-hidden={below.length === 0 ? true : undefined} className="pm-waterline">
+          <Boat className="pm-waterline-boat" />
+          <span className="pm-waterline-text">
+            {below.length === 0 ? "Su seviyesi: aldığın fiyat. Hepsi üstünde." : above.length === 0 ? "Su seviyesi: aldığın fiyat. Hepsi altında." : "Su seviyesi: aldığın fiyat"}
+          </span>
+        </li>
+        {below.map((p) => (
+          <Holding key={`${p.ticker}-${p.book}-${p.opened_at}`} p={p} today={today} />
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function Holding({ p, today }: { p: Position; today: string }) {
+  const r = positionReturn(p);
+  const worth = p.qty * p.last_price;
+  const paid = p.qty * p.avg_cost;
+  return (
+    <li id={`elinde-${p.ticker}`} className="pm-row">
+      <div className="min-w-0">
+        <p className="pm-row-ticker">
+          {p.ticker}
+        </p>
+        <h3 className="pm-row-name">
+          <Link href={href.proposal(p.source_proposal)} className="pm-row-link">
+            {titleTr(shortName(p.company_name))}
+          </Link>
+        </h3>
+        <p className="pm-row-line">
+          {fmtInt(p.qty)} adet aldın, {fmtLira(paid)} ödedin.
+        </p>
+      </div>
+      <Voyage p={p} today={today} />
+      <div className="pm-row-money">
+        <p className="pm-row-worth">{fmtLira(worth)}</p>
+        <p className="u-caption">şimdi ediyor</p>
+        <p className={cn("pm-row-gain", signTone(r))}>
+          <span aria-hidden>{r >= 0 ? "▲" : "▼"}</span> {fmtSignedLira(p.unrealized_pnl)} <span className="font-medium">{fmtSignedPct(r)}</span>
+        </p>
+      </div>
+    </li>
+  );
+}
+
+/** The holding's way from the day you bought to the day KAPtan plans to suggest selling: the boat is today. */
+function Voyage({ p, today }: { p: Position; today: string }) {
+  const h = holdingProgress(p, today);
+  const sentence = exitSentence(p, today);
+  return (
+    <div className="pm-voyage">
+      <p className={cn("pm-voyage-text", (h.dueToday || h.overdue) && "font-semibold")}>
+        {sentence}
+        {p.managed_by_exit_rule ? " Durdurma bu hisseyi satmaz." : ""}
+      </p>
+      <div aria-hidden className="pm-voyage-track">
+        <span className="pm-voyage-from">{dateWords(istanbulDate(Date.parse(p.opened_at)))}</span>
+        <span className="pm-voyage-line" style={{ "--pm-at": h.fraction } as React.CSSProperties}>
+          <Boat className="pm-voyage-boat" />
+        </span>
+        <span className="pm-voyage-to">{dateWords(p.planned_exit_date)}</span>
+      </div>
+    </div>
   );
 }

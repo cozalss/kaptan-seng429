@@ -52,7 +52,7 @@ describe('Risk Kapısı renderer', () => {
     plate.setSize(574, 285, 1);
     log.texts.length = 0;
     plate.render(STILL_ELAPSED);
-    for (const code of ['R01', 'R08', 'R16', 'R01–R16', 'Kill switch', 'zirveden −%5']) expect(log.texts).toContain(code);
+    for (const code of ['R01', 'R08', 'R16', 'R01–R16', 'Acil durdurma', 'zirveden −%5']) expect(log.texts).toContain(code);
   });
 
   it('falls back to a few labels on a phone plate, never to type under 8 px', () => {
@@ -85,10 +85,10 @@ describe('Risk Kapısı renderer', () => {
   it('carries its plate copy: a legend keyed a–c and a spoken description', () => {
     expect(scene.id).toBe('risk-kapisi');
     expect(scene.legend.map((l) => l.key)).toEqual(['a', 'b', 'c']);
-    expect(scene.description).toMatch(/^Canlı şema: /);
+    expect(scene.description).toMatch(/^Hareketli şema: /);
     expect(scene.description).toMatch(/R01–R16/);
     expect(scene.description).toMatch(/büyütmez/);
-    expect(scene.description).toMatch(/pozisyon satılmaz/);
+    expect(scene.description).toMatch(/elindeki paylar satılmaz/);
   });
 });
 

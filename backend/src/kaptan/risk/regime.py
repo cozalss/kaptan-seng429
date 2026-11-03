@@ -29,7 +29,6 @@ from kaptan.audit.writer import AuditDraft, append
 from kaptan.prices.calendar import add_sessions, is_trading_day
 from kaptan.prices.reads import adjusted_series
 from kaptan.risk.kill_switch import RISK_MONITOR
-from kaptan.settings import get_settings
 
 Regime = Literal["normal", "crisis"]
 
@@ -119,10 +118,9 @@ async def _closes(conn: AsyncConnection[Any], day: date) -> list[tuple[date, flo
     return [(d, float(bars[d][1])) for d in sorted(bars)]
 
 
-async def run_regime(conn: AsyncConnection[Any], day: date, *, demo: bool | None = None) -> RegimeResult | None:
-    """Detect `day`'s regime and store it (one transaction). None: DEMO_MODE (the demo keeps its seeded
-    regime), not a session, or no XU100 close for `day`."""
-    if (get_settings().demo_mode if demo is None else demo) or not is_trading_day(day):
+async def run_regime(conn: AsyncConnection[Any], day: date) -> RegimeResult | None:
+    """Detect `day`'s regime and store it (one transaction). None: not a session, or no XU100 close for `day`."""
+    if not is_trading_day(day):
         return None
     closes = await _closes(conn, day)
     if not closes or closes[-1][0] != day:

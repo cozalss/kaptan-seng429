@@ -2,28 +2,28 @@
 // `document`, so this works even if the cards are rendered after initKaptanUI() runs.
 
 import './overlay-base.css';
-import './demo-drawer.css';
+import './steps-drawer.css';
 import './service-modal.css';
 import './menu-drawer.css';
 import './modals.css';
 import { AGENTS } from '../data/agents.js';
 import { createAboutModal } from './about-modal.js';
-import { createDemoDrawer } from './demo-drawer.js';
+import { createStepsDrawer } from './steps-drawer.js';
 import { createLegalModal } from './legal-modal.js';
 import { createMenuDrawer } from './menu-drawer.js';
 import { createServiceModal } from './service-modal.js';
 
-// `open-booking` / `book-now` are the salon-era names of the header CTA; they still open the demo
+// `open-booking` / `book-now` are the salon-era names of the header CTA; they still open the steps
 // drawer so an older trigger (e.g. the hero while it is being rebuilt) never dead-ends.
-const DEMO_ACTIONS = new Set(['open-demo', 'open-booking', 'book-now']);
+const STEPS_ACTIONS = new Set(['open-steps', 'open-booking', 'book-now']);
 
 function createOverlays({ mount, agents, site, lockScroll, unlockScroll, scrollTo }) {
   const aboutModal = createAboutModal({ mount, site, lockScroll, unlockScroll, scrollTo });
   const legalModal = createLegalModal({ mount, lockScroll, unlockScroll });
-  const demoDrawer = createDemoDrawer({ mount, lockScroll, unlockScroll });
-  const menuDrawer = createMenuDrawer({ mount, site, lockScroll, unlockScroll, scrollTo, openDemo: () => demoDrawer.open() });
+  const stepsDrawer = createStepsDrawer({ mount, lockScroll, unlockScroll });
+  const menuDrawer = createMenuDrawer({ mount, site, lockScroll, unlockScroll, scrollTo, openSteps: () => stepsDrawer.open() });
   const agentModal = createServiceModal({ mount, agents, lockScroll, unlockScroll, scrollTo });
-  return { aboutModal, legalModal, demoDrawer, menuDrawer, agentModal };
+  return { aboutModal, legalModal, stepsDrawer, menuDrawer, agentModal };
 }
 
 // An overlay opened from inside another overlay's panel stacks on top instead of closing its parent.
@@ -32,9 +32,9 @@ function stackOptionsFor(actionEl) {
 }
 
 /** Maps a `data-action` to the overlay it opens (null for unknown actions). */
-export function overlayForAction(action, { menuDrawer, demoDrawer, aboutModal, legalModal }) {
+export function overlayForAction(action, { menuDrawer, stepsDrawer, aboutModal, legalModal }) {
   if (action === 'open-menu') return menuDrawer;
-  if (DEMO_ACTIONS.has(action)) return demoDrawer;
+  if (STEPS_ACTIONS.has(action)) return stepsDrawer;
   if (action === 'open-about') return aboutModal;
   if (action === 'open-legal') return legalModal;
   return null;

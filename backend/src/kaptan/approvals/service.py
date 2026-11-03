@@ -15,7 +15,7 @@ from psycopg import AsyncConnection
 
 from kaptan.api.deps import Actor
 from kaptan.api.errors import ApiError
-from kaptan.approvals.execute import Event, FillJob, execute_approved, run_audit
+from kaptan.approvals.execute import Event, execute_approved, run_audit
 from kaptan.approvals.reads import RiskFlags, card_from_row, card_rows, risk_flags, ticket_from_row, ticket_rows
 from kaptan.approvals.ticket_doc import parse_iso
 from kaptan.audit.writer import append
@@ -26,7 +26,7 @@ from kaptan.risk.at_send import check_at_send
 from kaptan.settings import get_settings
 
 NOT_FOUND_PROPOSAL: Final = "Öneri bulunamadı."
-NOT_FOUND_TICKET: Final = "Fiş bulunamadı."
+NOT_FOUND_TICKET: Final = "İşlem bulunamadı."
 MARKABLE: Final = frozenset({"awaiting", "expired"})
 
 
@@ -34,14 +34,13 @@ MARKABLE: Final = frozenset({"awaiting", "expired"})
 class Outcome:
     body: dict[str, Any]
     events: list[Event] = field(default_factory=list)
-    fill: FillJob | None = None
 
 
 async def _card_or_404(
-    conn: AsyncConnection[Any], proposal_id: str, *, now: datetime, wall: datetime, lock: bool
+    conn: AsyncConnection[Any], proposal_id: str, *, now: datetime, lock: bool
 ) -> tuple[dict[str, Any], RiskFlags]:
     flags = await risk_flags(conn, lock=lock)
-    rows = await card_rows(conn, now=now, wall=wall, proposal_id=proposal_id, lock=lock)
+    rows = await card_rows(conn, proposal_id=proposal_id, lock=lock)
     if not rows:
         raise ApiError(404, "not_found", NOT_FOUND_PROPOSAL)
     return card_from_row(rows[0], kill_on=flags.kill_on, now=now), flags
@@ -72,7 +71,7 @@ INSERT INTO trading.approval_decisions (proposal_id, uid, name, role, decision, 
 
 
 async def decide(
-    conn: AsyncConnection[Any], proposal_id: str, d: ApprovalDecision, actor: Actor, *, now: datetime, wall: datetime
+    conn: AsyncConnection[Any], proposal_id: str, d: ApprovalDecision, actor: Actor, *, now: datetime
 ) -> Outcome:
     """decideApproval(): approve (optionally smaller) or reject; an approval executes right away.
 
@@ -80,7 +79,7 @@ async def decide(
     committed, the card stays pending and the caller gets 409 (kill_switch / halted / conflict)."""
     blocked: ApiError | None = None
     async with conn.transaction():
-        card, flags = await _card_or_404(conn, proposal_id, now=now, wall=wall, lock=True)
+        card, flags = await _card_or_404(conn, proposal_id, now=now, lock=True)
         _check_decision(card, d, kill_on=flags.kill_on, halted=flags.halted)
         if d.decision == "approve":
             blocked = await _at_send_block(conn, card, actor, now)
@@ -98,7 +97,7 @@ AT_SEND_CODES: Final = {"R01": "kill_switch", "R02": "halted"}
 async def _at_send_block(
     conn: AsyncConnection[Any], card: dict[str, Any], actor: Actor, now: datetime
 ) -> ApiError | None:
-    """R16 with the desk as it is now, for cards of real runs only (demo cards: M1's path, unchanged)."""
+    """R16 with the desk as it is now, for cards of real runs only (recorded cards: M1's path, unchanged)."""
     async with conn.cursor() as cur:
         await cur.execute(LIVE_RUN_SQL, (card["run_id"],))
         run = await cur.fetchone()
@@ -139,7 +138,6 @@ async def _record_decision(
         **card,
         "status": "approved" if approve else "rejected",
         "decided_by": actor.uid,
-        "decided_role": actor.role,
         "decided_at": iso_ms(now),
         "decision_comment": comment,
         "approved_notional_try": notional,
@@ -159,11 +157,9 @@ async def _record_decision(
     draft = run_audit(actor.audit_actor, "approval.decided", "trade_proposal", proposal_id, payload, card["run_id"])
     await append(conn, [draft], now=now)
     events: list[Event] = [("approval.decided", updated)]
-    fill = None
     if approve:
-        more, fill = await execute_approved(conn, updated, now)
-        events += more
-    return Outcome(updated, events, fill)
+        events += await execute_approved(conn, updated, now)
+    return Outcome(updated, events)
 
 
 NOTES_SQL: Final = """
@@ -184,11 +180,11 @@ async def list_notes(conn: AsyncConnection[Any], proposal_id: str) -> list[dict[
 
 
 async def add_note(
-    conn: AsyncConnection[Any], proposal_id: str, body: str, actor: Actor, *, now: datetime, wall: datetime
+    conn: AsyncConnection[Any], proposal_id: str, body: str, actor: Actor, *, now: datetime
 ) -> dict[str, Any]:
     """addNote(): id `not-<n>`, audit `note.added` {ticker, company, role}."""
     async with conn.transaction():
-        card, _ = await _card_or_404(conn, proposal_id, now=now, wall=wall, lock=False)
+        card, _ = await _card_or_404(conn, proposal_id, now=now, lock=False)
         async with conn.cursor() as cur:
             await cur.execute(
                 """
@@ -207,15 +203,15 @@ async def add_note(
 
 def _check_entered(ticket: dict[str, Any], m: TicketMarkEntered) -> None:
     if m.filled_qty > ticket["qty"]:
-        raise ApiError(422, "over_qty", "Gerçekleşen adet fişteki adetten büyük olamaz.")
+        raise ApiError(422, "over_qty", "Gerçekleşen adet, işlemdeki adetten büyük olamaz.")
     if ticket.get("side", "buy") == "sell":
         # A sell limit is a floor: the average may not fall under it (06 R09 SELL: limit ≥ taban).
         if m.avg_price < ticket["limit_price"]:
-            raise ApiError(422, "under_limit", "Limit satışta ortalama fiyat limit fiyatın altında olamaz.")
+            raise ApiError(422, "under_limit", "Satışta ortalama fiyat, yazdığın en düşük fiyatın altında olamaz.")
     elif m.avg_price > ticket["limit_price"]:
-        raise ApiError(422, "over_limit", "Limit emirde ortalama fiyat limit fiyatı aşamaz.")
+        raise ApiError(422, "over_limit", "Ortalama fiyat, yazdığın en yüksek fiyatı aşamaz.")
     if m.filled_at > parse_iso(ticket["valid_until"]):
-        raise ApiError(422, "after_ttl", "Fişin geçerlilik süresinden sonra girilen emir sayılmaz (R16).")
+        raise ApiError(422, "after_ttl", "Süresi dolduktan sonra girilen işlem sayılmaz.")
 
 
 MARK_SQL: Final = """
@@ -234,7 +230,7 @@ async def mark_ticket(
             raise ApiError(404, "not_found", NOT_FOUND_TICKET)
         ticket = ticket_from_row(rows[0], now)
         if ticket["entry"]["status"] not in MARKABLE:
-            raise ApiError(409, "already_marked", "Bu fiş zaten işaretlendi.")
+            raise ApiError(409, "already_marked", "Bunu zaten işaretledin.")
         entered = m if isinstance(m, TicketMarkEntered) else None
         if entered is not None:
             _check_entered(ticket, entered)

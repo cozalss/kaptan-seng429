@@ -1,43 +1,39 @@
 import { NODE_LABELS, NodeName } from "@/lib/domain";
-import { memberByUid, ROLE_LABEL } from "@/lib/domain/user";
 
-const SYSTEM_NAMES: Readonly<Record<string, string>> = {
-  kap_poller: "KAP okuyucu",
-  simbist: "KAPtan hesabı borsası (SimBIST)",
-  risk_monitor: "Risk izleyici",
-  order_ticket: "Fiş yazıcı",
-  scheduler: "Zamanlayıcı",
-  nightly_verify: "Gece doğrulaması",
-  restrictions_sync: "Tedbir listesi",
-  auth: "Giriş kapısı",
+/** What each part of the system does, in a record's small print (`kind`). */
+const SYSTEM_PARTS: Readonly<Record<string, string>> = {
+  kap_poller: "bildirim okuma",
+  simbist: "işlem kaydı",
+  risk_monitor: "para kuralları",
+  order_ticket: "işlem bilgisi",
+  scheduler: "zamanlayıcı",
+  nightly_verify: "gece kontrolü",
+  restrictions_sync: "tedbir listesi",
 };
 
-/** Crew members whose plain name reads better than the pipeline label. */
-const NODE_NAMES: Readonly<Partial<Record<string, string>>> = {
-  request_approval: "Öneri yazıcı",
-};
+/** One person and KAPtan: every record was done by "Sen" or by "KAPtan". */
+export const YOU = "Sen";
+export const SYSTEM = "KAPtan";
 
-/** Who did it, in words, as two parts: the name and what they are ("Üye 3", "Risk Sorumlusu"). */
-export function actorParts(actor: string | null | undefined): { name: string; kind: string } {
-  if (!actor) return { name: "—", kind: "" };
-  const member = memberByUid(actor);
-  if (member) return { name: member.name, kind: ROLE_LABEL[member.role] };
-  if (actor.startsWith("user:")) return { name: actor.slice(5), kind: "Kullanıcı" };
-  if (actor.startsWith("agent:")) {
-    const id = actor.slice(6);
-    const node = NodeName.safeParse(id);
-    return { name: NODE_NAMES[id] ?? (node.success ? NODE_LABELS[node.data].tr : id), kind: "Tayfa" };
-  }
-  if (actor === "auth") return { name: "Giriş kapısı", kind: "Sistem" };
-  if (actor.startsWith("system:")) return { name: SYSTEM_NAMES[actor.slice(7)] ?? actor.slice(7), kind: "Sistem" };
-  return { name: actor, kind: "" };
+/** Is this actor the person (anything that is not a part of the system)? */
+export function isPerson(actor: string | null | undefined): boolean {
+  if (!actor) return false;
+  return !actor.startsWith("agent:") && !actor.startsWith("system:") && actor !== "auth";
 }
 
-/**
- * Who did it, in one string, for audit actors and `decided_by` values:
- * "uye-3" → "Üye 3 (Risk Sorumlusu)", "agent:skeptic" → "Şüpheci", "system:risk_monitor" → "Risk izleyici".
- */
+/** Who did it, in words, as two parts: "Sen" or "KAPtan", and for KAPtan which part of it. */
+export function actorParts(actor: string | null | undefined): { name: string; kind: string } {
+  if (!actor) return { name: "—", kind: "" };
+  if (isPerson(actor)) return { name: YOU, kind: "" };
+  if (actor === "auth") return { name: SYSTEM, kind: "giriş" };
+  if (actor.startsWith("agent:")) {
+    const node = NodeName.safeParse(actor.slice(6));
+    return { name: SYSTEM, kind: node.success ? NODE_LABELS[node.data].tr : "" };
+  }
+  return { name: SYSTEM, kind: SYSTEM_PARTS[actor.slice(7)] ?? "" };
+}
+
+/** Who did it, in one word, for audit actors and `decided_by` values. */
 export function actorName(actor: string | null | undefined): string {
-  const p = actorParts(actor);
-  return memberByUid(actor) ? `${p.name} (${p.kind})` : p.name;
+  return actorParts(actor).name;
 }

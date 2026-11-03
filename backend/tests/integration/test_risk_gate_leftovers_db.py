@@ -18,7 +18,7 @@ from kaptan.events import bus
 from kaptan.risk.cooldown import cooldown_active
 from kaptan.risk.desk import live_desk
 from kaptan.risk.gate import COOLDOWN_TR, GateContext, GateOrder, evaluate
-from kaptan.risk.kill_switch import confirm_reset, start_reset
+from kaptan.risk.kill_switch import confirm_reset, reset_ready_at, start_reset
 from kaptan.risk.security_kill import SECURITY_MONITOR, announce_kill, check_security_kill, r11_rejected_runs
 from kaptan.settings import Settings
 from tests.conftest import skip_or_fail
@@ -122,10 +122,10 @@ async def test_three_r11_rejects_in_a_day_engage_the_security_kill(pg: DictConn)
     assert not await check_security_kill(pg, NOW)  # already on: no second kill
 
     # the two-key restart lifts it; the day's earlier rejects no longer count after it
-    await start_reset(pg, uid="u-admin", name="Yönetici", role="admin", reason="inceleme", now=NOW)
-    await confirm_reset(pg, uid="u-risk", role="risk_officer", reason="veri temiz", now=NOW + timedelta(minutes=1),
-                        personal=False)  # fmt: skip
-    after = NOW + timedelta(minutes=2)
+    await start_reset(pg, uid="sahip", name="Sahip", role="risk_officer", reason="inceleme", now=NOW)
+    ready = reset_ready_at(NOW, NOW)
+    await confirm_reset(pg, uid="sahip", role="risk_officer", reason="veri temiz", now=ready)
+    after = ready + timedelta(minutes=1)
     assert (await kill_state(pg))["kill_switch"] == "off"
     assert await r11_rejected_runs(pg, after) == []
     await add_live_run(pg, "run-live-sk4", after, outcome="QUARANTINED")
@@ -153,7 +153,7 @@ async def test_security_kill_is_announced_on_sse_desk(pg: DictConn, migrated: Se
             await add_live_run(pg, f"run-live-sse{i}", NOW - timedelta(minutes=10 - i), outcome="QUARANTINED")
         assert await check_security_kill(pg, NOW)
         before = await bus.latest_id(redis, bus.stream_key("desk"))
-        assert await announce_kill(redis, pg, NOW, live=True) is not None
+        assert await announce_kill(redis, pg, NOW) is not None
         events = await redis.xrange(bus.stream_key("desk"), min=f"({before}", max="+")
         assert [f["event"] for _, f in events] == ["kill_switch"]
         status = json.loads(events[0][1]["data"])

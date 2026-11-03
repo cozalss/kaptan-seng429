@@ -11,9 +11,9 @@ from kaptan.domain.schemas.agents import MaterialityOutput
 from kaptan.llm.factory import azure_spec, build_live_provider
 from kaptan.llm.live import LiveProvider
 from kaptan.llm.provider import LLMRequest
-from kaptan.llm.replay import default_cassette
 from kaptan.llm.store import MemoryStore
 from kaptan.settings import Settings, production_problems
+from tests.harness.replay import default_cassette
 from tests.unit.llm_support import DEEPSEEK_URL, GEMINI_URL, GROQ_URL, MODELS, chat_body, fake_settings
 
 ENDPOINT = "https://kaptan-test.openai.azure.com"

@@ -3,14 +3,14 @@
 import { createContext, Fragment, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { ApprovalCard, DayCounters, RiskStatus } from "@/lib/domain";
-import { ROUTES, href } from "@/lib/nav";
+import { HOME, href } from "@/lib/nav";
 import { useApi } from "@/lib/api/react";
 import { errorMessage } from "@/lib/api/types";
 import { useEventStream, type StreamStatus } from "@/lib/sse/use-event-stream";
 import { notify } from "@/components/ui/toast";
 
 /**
- * Desk-wide live state for the shell and the three screens: today's counters,
+ * Live state for the shell and the screens: today's counters,
  * risk status and pending proposals, kept fresh by /stream/feed and
  * /stream/desk. Screens read it with `useDesk()` instead of refetching the same things.
  */
@@ -23,7 +23,7 @@ export interface DeskState {
   /** Why the last refresh failed, in plain words (null once a refresh succeeds). */
   error: string | null;
   refresh: () => Promise<void>;
-  /** Bumped after "Demo verisini sıfırla": screens keyed on it remount and refetch. */
+  /** Bumped by `resetView`: screens keyed on it remount and refetch. */
   epoch: number;
   /** Refetch the shell state and remount the current screen (no full page reload). */
   resetView: () => void;
@@ -57,7 +57,7 @@ export function DeskStateProvider({ children }: { children: ReactNode }) {
       setPending(p);
       setError(null);
     } catch (e) {
-      // The shell itself stays quiet; Bugün and Portföy show this with a retry (ErrorState).
+      // The shell itself stays quiet; Param shows this with a retry (ErrorState).
       setError(errorMessage(e));
     }
   }, [api]);
@@ -74,8 +74,8 @@ export function DeskStateProvider({ children }: { children: ReactNode }) {
   const deskStatus = useEventStream("desk", {
     "approval.requested": (card) => {
       setPending((list) => [card, ...list.filter((x) => x.proposal_id !== card.proposal_id)]);
-      // On Bugün the card arrives in place; elsewhere one quiet slip says so.
-      if (pathname === ROUTES.bugun) return;
+      // On the home the card arrives in place; elsewhere one quiet slip says so.
+      if (pathname === HOME) return;
       notify.event(`Yeni öneri: ${card.company_name}`, undefined, {
         label: "İncele",
         onClick: () => router.push(href.proposal(card.proposal_id)),
@@ -102,7 +102,7 @@ export function DeskStateProvider({ children }: { children: ReactNode }) {
   return <DeskContext.Provider value={value}>{children}</DeskContext.Provider>;
 }
 
-/** Remounts its children whenever the demo data is reset (see `resetView`). */
+/** Remounts its children on `resetView`. */
 export function ResetBoundary({ children }: { children: ReactNode }) {
   const { epoch } = useDesk();
   return <Fragment key={epoch}>{children}</Fragment>;

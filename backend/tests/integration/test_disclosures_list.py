@@ -24,7 +24,7 @@ VALUES (%s, NULL, %s, '{}', %s, 'Türk Hava Yolları A.O.', 'ODA', 'ODA', 'Yeni 
 """
 
 
-async def test_demo_mode_lists_the_visible_demo_day(client: httpx.AsyncClient) -> None:
+async def test_lists_the_fixture_day(client: httpx.AsyncClient) -> None:
     session = await login(client)
     res = await client.get("/api/v1/disclosures?limit=5", headers=bearer(session["access_token"]))
     assert res.status_code == 200, res.text
@@ -54,13 +54,13 @@ async def test_live_lists_one_istanbul_day_with_backfill(pg: DictConn) -> None:
     ]
     for r in rows:
         await pg.execute(INSERT, r)
-    items = await list_disclosures(pg, date(2030, 1, 7), demo=False)
+    items = await list_disclosures(pg, date(2030, 1, 7))
     assert [i["disclosure_index"] for i in items] == [992000002, 992000001]  # 00:30 Istanbul belongs to the 7th
     first = DisclosureListItem.model_validate(items[1])
     assert first.stock_codes == ["THYAO"] and first.classification is not None
     assert first.disclosure_oid == "992000001" and first.first_seen_at == first.available_at
     assert items[0]["classification"] is None
-    only = await list_disclosures(pg, date(2030, 1, 7), demo=False, ticker="PGSUS", limit=10_000)
+    only = await list_disclosures(pg, date(2030, 1, 7), ticker="PGSUS", limit=10_000)
     assert [i["disclosure_index"] for i in only] == [992000002]
 
 

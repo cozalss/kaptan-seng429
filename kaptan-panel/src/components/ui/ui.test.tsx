@@ -83,20 +83,10 @@ describe("buttons", () => {
     expect(b).toBeDisabled();
   });
 
-  it("draws a lock before the words of a button closed for your role", () => {
-    render(
-      <Button locked disabled>
-        Onayla
-      </Button>,
-    );
-    const b = screen.getByRole("button", { name: "Onayla" });
-    expect(b.querySelector("svg[aria-hidden]")).not.toBeNull();
-    expect(b).not.toHaveAttribute("aria-busy");
-  });
 
   it("has a text-button variant with a 44px target and no shadow", () => {
-    render(<Button variant="link">Risk Sorumlusu gözüyle bak →</Button>);
-    const b = screen.getByRole("button", { name: /gözüyle bak/ });
+    render(<Button variant="link">Ayrıntıya bak →</Button>);
+    const b = screen.getByRole("button", { name: /Ayrıntıya bak/ });
     expect(b.className).toMatch(/min-h-11/);
     expect(b.className).not.toMatch(/shadow-ink/);
     expect(b.className).toMatch(/underline/);
@@ -120,7 +110,7 @@ describe("small pieces", () => {
   });
 
   it("shares one menu look", () => {
-    expect(MENU_CONTENT).toMatch(/rounded-xl/);
+    expect(MENU_CONTENT).toMatch(/border-ink/);
     expect(MENU_CONTENT).toMatch(/menu-in/);
     expect(MENU_ITEM).toMatch(/py-3/);
   });

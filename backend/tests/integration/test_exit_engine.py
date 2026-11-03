@@ -42,16 +42,14 @@ async def sign(conn: DictConn, proposal_id: str, now: datetime) -> list[tuple[st
     """The Risk Sorumlusu's approval as service.decide records it, then the execution (the R16 at-send
     check of service.decide belongs to the risk package and is tested there)."""
     await conn.execute(
-        "UPDATE trading.approvals SET status = 'approved', decided_by = 'uye-3', decided_role = 'risk_officer', "
+        "UPDATE trading.approvals SET status = 'approved', decided_by = 'sahip', decided_role = 'risk_officer', "
         "decided_at = %s WHERE proposal_id = %s",
         (now, proposal_id),
     )
     row = await one(conn, "SELECT card FROM trading.approvals WHERE proposal_id = %s", (proposal_id,))
     assert row is not None
     card = {**row["card"], "status": "approved", "decided_at": iso_ms(now), "approved_notional_try": None}
-    events, job = await execute_approved(conn, card, now)
-    assert job is None
-    return events
+    return await execute_approved(conn, card, now)
 
 
 async def held_krgcl(conn: DictConn) -> None:
@@ -101,7 +99,7 @@ async def test_stop_exit_end_to_end(desk: DictConn) -> None:
     row = await one(desk, "SELECT card FROM trading.approvals WHERE proposal_id = %s", (KRGCL,))
     assert row is not None
     card_again = {**row["card"], "status": "approved", "decided_at": "2027-01-15T07:00:00.000Z"}
-    events, _ = await execute_approved(desk, card_again, datetime(2027, 1, 15, 7, 0, tzinfo=UTC))
+    events = await execute_approved(desk, card_again, datetime(2027, 1, 15, 7, 0, tzinfo=UTC))
     assert events[-1][1]["status"] == "rejected"
     audit = await last_audit(desk)
     assert (audit["action"], audit["payload"]["code"]) == ("order.refused", "cooldown")
@@ -152,7 +150,7 @@ async def test_rejected_exit_is_not_raised_again_and_explain_is_valid(desk: Dict
     assert explain is not None
     assert_matches("Explain", explain["explain"])
     await desk.execute(
-        "UPDATE trading.approvals SET status = 'rejected', decided_by = 'uye-3', decided_at = %s "
+        "UPDATE trading.approvals SET status = 'rejected', decided_by = 'sahip', decided_at = %s "
         "WHERE proposal_id = %s",
         (datetime(2027, 1, 13, 16, 0, tzinfo=UTC), card["proposal_id"]),
     )

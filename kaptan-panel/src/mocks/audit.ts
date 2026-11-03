@@ -26,7 +26,7 @@ const GENERIC: ReadonlyArray<{ action: string; actor: string; entity: string; w:
   { action: "proposal.created", actor: "agent:request_approval", entity: "trade_proposal", w: 1 },
   { action: "brief.generated", actor: "system:scheduler", entity: "brief", w: 1 },
   { action: "audit.verified", actor: "system:nightly_verify", entity: "audit_log", w: 1 },
-  { action: "note.added", actor: "user:uye-2", entity: "disclosure", w: 1 },
+  { action: "note.added", actor: "user:sen", entity: "disclosure", w: 1 },
 ];
 const TOTAL_W = GENERIC.reduce((a, g) => a + g.w, 0);
 
@@ -82,13 +82,13 @@ function todayEntries(): Fields[] {
     if (s.decision && s.decision.status !== "pending" && s.decision.atIso) {
       out.push({
         occurred_at: s.decision.atIso,
-        actor: `user:${s.decision.by ?? "uye-3"}`,
+        actor: `user:${s.decision.by ?? "sen"}`,
         action: "approval.decided",
         entity_type: "trade_proposal",
         entity_id: s.run_id.replace(/^run-/, "prop-"),
         run_id: s.run_id,
         strategy_version: s.strategy_version,
-        payload: { ticker: s.ticker, company, decision: s.decision.status, role: "risk_officer", comment: s.decision.comment ?? "" },
+        payload: { ticker: s.ticker, company, decision: s.decision.status, comment: s.decision.comment ?? "" },
       });
       if (s.decision.fill) {
         out.push({
@@ -120,13 +120,13 @@ function build(): AuditEntry[] {
     if (i === limitsAt) {
       fields.push({
         occurred_at: at,
-        actor: "user:uye-3",
+        actor: "user:sen",
         action: "limits.approved",
         entity_type: "limit_version",
         entity_id: "1",
         run_id: null,
         strategy_version: null,
-        payload: { version: 1, proposed_by: "uye-1", reason: "Kanonik başlangıç limitleri" },
+        payload: { version: 1, proposed_by: "sen", reason: "Başlangıç sınırları" },
       });
       continue;
     }
@@ -141,7 +141,7 @@ function build(): AuditEntry[] {
       entity_id: g.entity === "disclosure" ? String(idx) : `${g.entity}-${i}`,
       run_id: g.entity === "agent_run" || g.entity === "trade_proposal" ? `run-hist-${i}` : null,
       strategy_version: g.actor.startsWith("agent:") ? (i < genericCount * 0.12 ? "v1.0-fwd" : "v1.1-fwd") : null,
-      payload: g.entity === "disclosure" ? { ticker: iss.ticker } : { seq_hint: i },
+      payload: g.entity === "disclosure" ? { ticker: iss.ticker, company: iss.name } : { seq_hint: i },
     });
   }
   return appendToChain([], [...fields, ...today]);

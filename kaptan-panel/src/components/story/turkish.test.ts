@@ -11,8 +11,8 @@ describe("titleTr", () => {
   });
 
   it("keeps short dotted abbreviations and the spacing, and does not change its input", () => {
-    const name = "ÖRNEK  T.A.Ş. (BİST)";
-    expect(titleTr(name)).toBe("Örnek  T.A.Ş. (Bist)");
-    expect(name).toBe("ÖRNEK  T.A.Ş. (BİST)");
+    const name = "MİSAL  T.A.Ş. (BİST)";
+    expect(titleTr(name)).toBe("Misal  T.A.Ş. (Bist)");
+    expect(name).toBe("MİSAL  T.A.Ş. (BİST)");
   });
 });

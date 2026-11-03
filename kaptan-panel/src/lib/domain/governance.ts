@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { IsoDateTime } from "./common";
-import { Role, Signature } from "./user";
+import { Signature } from "./user";
 
 /* ── Audit log: hash chain (07 §9 audit_log, 09 §7) ───────────────────── */
 /**
@@ -45,7 +45,7 @@ export const ChainVerifyResult = z.object({
 });
 export type ChainVerifyResult = z.infer<typeof ChainVerifyResult>;
 
-/** GET /audit — read-only slices of the chain for embedded views (Portföy risk log, Tayfa, Neden). */
+/** GET /audit — read-only slices of the chain for embedded views (the risk log in Param, Tayfa, Neden). */
 export const AuditQuery = z.object({
   entity: z.string().optional(),
   actor: z.string().optional(),
@@ -79,7 +79,8 @@ export const ConfigView = z.object({
   fallback_chain: z.array(z.object({ provider: z.string(), model_id: z.string(), note_tr: z.string() })),
   kap_poll_seconds: z.number().int().positive(),
   approval_deadline_tr: z.string(),
-  demo_mode: z.boolean(),
+  /** Being retired with the backend's demo mode; nothing here reads it. */
+  demo_mode: z.boolean().optional(),
 });
 export type ConfigView = z.infer<typeof ConfigView>;
 
@@ -105,8 +106,8 @@ export const LimitValue = z.object({ key: LimitKey, value: z.number() });
 export type LimitValue = z.infer<typeof LimitValue>;
 
 /**
- * A limits version (07 limit_versions). Changing a limit takes two signatures: the Yönetici
- * proposes with a reason (1/2), a different person — the Risk Sorumlusu — approves (2/2);
+ * A limits version (07 limit_versions). A change is recorded in two steps, propose with a
+ * reason and approve, both taken by the one person (the waiver is on the ledger);
  * only then the new version becomes active and the old one is superseded.
  */
 export const LimitVersion = z.object({
@@ -121,7 +122,7 @@ export const LimitVersion = z.object({
 });
 export type LimitVersion = z.infer<typeof LimitVersion>;
 
-/** GET /limits: the active set, the one waiting for its second signature, and the history. */
+/** GET /limits: the active set, a change not applied yet, and the history. */
 export const LimitsView = z.object({
   active: LimitVersion,
   pending: LimitVersion.nullable(),
@@ -170,16 +171,16 @@ export const LIMIT_META: Readonly<
   Record<LimitKey, { label_tr: string; unit: "pct" | "count" | "ratio" | "mult"; rule: string; stricter: "lower" | "higher" }>
 > = {
   risk_per_trade_pct: { label_tr: "İşlem başına risk", unit: "pct", rule: "R07", stricter: "lower" },
-  max_position_pct: { label_tr: "Pozisyon tavanı", unit: "pct", rule: "R07", stricter: "lower" },
-  max_concurrent_positions: { label_tr: "En çok eşzamanlı pozisyon", unit: "count", rule: "R08", stricter: "lower" },
-  target_concurrent_positions: { label_tr: "Hedef eşzamanlı pozisyon", unit: "count", rule: "R08", stricter: "lower" },
+  max_position_pct: { label_tr: "Tek hisse tavanı", unit: "pct", rule: "R07", stricter: "lower" },
+  max_concurrent_positions: { label_tr: "Aynı anda en çok hisse", unit: "count", rule: "R08", stricter: "lower" },
+  target_concurrent_positions: { label_tr: "Aynı anda hedef hisse", unit: "count", rule: "R08", stricter: "lower" },
   max_adv_share: { label_tr: "Günlük hacim payı tavanı", unit: "pct", rule: "R07", stricter: "lower" },
   price_band_pct: { label_tr: "Fiyat bandı", unit: "pct", rule: "R09", stricter: "lower" },
   daily_loss_halt_pct: { label_tr: "Günlük zarar durdurması", unit: "pct", rule: "R02", stricter: "higher" },
-  kill_drawdown_pct: { label_tr: "Kill switch (zirveden düşüş)", unit: "pct", rule: "R01", stricter: "higher" },
+  kill_drawdown_pct: { label_tr: "Her şeyi durdurma (zirveden düşüş)", unit: "pct", rule: "R01", stricter: "higher" },
   min_edge_cost_ratio: { label_tr: "Avantaj / maliyet alt sınırı", unit: "ratio", rule: "R06", stricter: "higher" },
   crisis_exposure_mult: { label_tr: "Kriz maruziyet çarpanı", unit: "mult", rule: "R10", stricter: "lower" },
-  leak_ret5d_threshold: { label_tr: "Sızıntı eşiği (5 seans)", unit: "pct", rule: "E*", stricter: "lower" },
+  leak_ret5d_threshold: { label_tr: "Sızıntı eşiği (5 borsa günü)", unit: "pct", rule: "E*", stricter: "lower" },
   max_sector_pct: { label_tr: "Sektör tavanı", unit: "pct", rule: "R08", stricter: "lower" },
   max_group_pct: { label_tr: "Grup tavanı", unit: "pct", rule: "R08", stricter: "lower" },
 };
@@ -200,9 +201,9 @@ export function limitViolations(values: readonly LimitValue[]): string[] {
       continue;
     }
     if (meta.unit === "count" && (!Number.isInteger(v) || v < 1)) out.push(`${meta.label_tr}: en az 1 olan bir tam sayı olmalı.`);
-    if (Math.sign(v) !== Math.sign(canon.value)) out.push(`${meta.label_tr}: işareti kanonik değerle aynı kalmalı.`);
+    if (Math.sign(v) !== Math.sign(canon.value)) out.push(`${meta.label_tr}: işareti değişemez.`);
     const looser = meta.stricter === "lower" ? v > canon.value : v < canon.value;
-    if (looser) out.push(`${meta.label_tr}: kanonik sınırdan gevşek olamaz (${meta.rule}).`);
+    if (looser) out.push(`${meta.label_tr}: başlangıç sınırından gevşek olamaz.`);
   }
   const target = byKey.get("target_concurrent_positions");
   const max = byKey.get("max_concurrent_positions");
@@ -268,13 +269,12 @@ export const LiveArmState = z.object({
 });
 export type LiveArmState = z.infer<typeof LiveArmState>;
 
-/* ── Notes on a proposal (Analist: "okur, not ekler") ─────────────────── */
+/* ── Your notes on a proposal ─────────────────── */
 export const ProposalNote = z.object({
   id: z.string(),
   proposal_id: z.string(),
   uid: z.string(),
   name: z.string(),
-  role: Role,
   body: z.string().min(1).max(500),
   created_at: IsoDateTime,
 });
@@ -288,8 +288,8 @@ export const AuditPage = z.object({
   total: z.number().int().nonnegative(),
   /** Length of the whole chain (what "Defteri doğrula" walks). */
   length: z.number().int().nonnegative(),
-  /** Demo: a record was changed behind the chain's back (Ayarlar → Kurcalama testi). */
-  tamper_on: z.boolean(),
+  /** Being retired with the backend's /demo routes; nothing here reads it. */
+  tamper_on: z.boolean().optional(),
 });
 export type AuditPage = z.infer<typeof AuditPage>;
 

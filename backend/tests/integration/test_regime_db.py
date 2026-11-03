@@ -33,7 +33,7 @@ async def test_crash_day_then_five_calm_sessions(pg: DictConn) -> None:
         await _bar(pg, add_sessions(CRASH, -i), 10_000.0 + (i % 3))
     await _bar(pg, CRASH, 10_000.0 * (1 - 0.0554))
 
-    crisis = await run_regime(pg, CRASH, demo=False)
+    crisis = await run_regime(pg, CRASH)
     assert crisis is not None and crisis.signal.crisis_raw and crisis.changed
     assert (crisis.regime, crisis.calm_streak) == ("crisis", 0)
     assert (await rows(pg, "SELECT regime FROM trading.risk_state"))[0]["regime"] == "crisis"
@@ -44,13 +44,12 @@ async def test_crash_day_then_five_calm_sessions(pg: DictConn) -> None:
     for n in range(1, 6):
         d = add_sessions(d, 1)
         await _bar(pg, d, 9_446.0 + n)
-        result = await run_regime(pg, d, demo=False)
+        result = await run_regime(pg, d)
         assert result is not None and not result.signal.crisis_raw
         assert (result.regime, result.calm_streak) == ("crisis" if n < 5 else "normal", n)
     assert (await rows(pg, "SELECT regime FROM trading.risk_state"))[0]["regime"] == "normal"
     stored = await rows(pg, "SELECT d, regime, calm_streak FROM trading.regime_daily ORDER BY d")
     assert [s["regime"] for s in stored] == ["crisis"] * 5 + ["normal"]
 
-    assert await run_regime(pg, add_sessions(d, 1), demo=False) is None  # no close stored yet
-    assert await run_regime(pg, date(2026, 9, 19), demo=False) is None  # Saturday
-    assert await run_regime(pg, d, demo=True) is None  # the demo keeps its seeded regime
+    assert await run_regime(pg, add_sessions(d, 1)) is None  # no close stored yet
+    assert await run_regime(pg, date(2026, 9, 19)) is None  # Saturday

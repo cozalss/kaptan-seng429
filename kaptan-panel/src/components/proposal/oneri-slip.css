@@ -1,0 +1,218 @@
+/* The order to enter at the bank: what a sealed suggestion turns into. Also lives in Param. */
+
+.oneri-slip {
+  display: grid;
+  gap: clamp(1rem, 2.2vw, 1.5rem);
+  padding: clamp(1.25rem, 2.6vw, 2.25rem);
+  min-width: 0;
+  overflow: clip;
+}
+.oneri-slip-seal {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.875rem;
+  width: clamp(6.5rem, 22cqw, 10rem);
+  rotate: 4deg;
+  pointer-events: none;
+  opacity: 0.9;
+}
+.oneri-slip-head {
+  padding-right: clamp(7rem, 24cqw, 11rem);
+  color: var(--ink);
+  outline: none;
+}
+.oneri-slip-body {
+  display: grid;
+  gap: 0.75rem;
+  color: var(--ink);
+  font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+.oneri-slip-body > p {
+  max-width: 62ch;
+}
+.oneri-slip-what {
+  display: grid;
+  gap: 0.75rem;
+}
+.oneri-slip-verb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.625rem;
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 650;
+}
+.oneri-slip-verb-word {
+  font-family: var(--font-display);
+  font-size: 2.75rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--gain);
+  -webkit-text-stroke: 0.012em currentColor;
+}
+.oneri-slip[data-side="sell"] .oneri-slip-verb-word {
+  color: var(--loss);
+}
+.oneri-slip-symbol {
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.oneri-slip-boxes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-block: 2px solid var(--ink);
+}
+.oneri-slip-box {
+  display: grid;
+  gap: 0.125rem;
+  padding: 0.75rem 0.875rem 0.875rem 0;
+  min-width: 0;
+}
+.oneri-slip-box:nth-child(3) {
+  grid-column: 1 / -1;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--rule-soft);
+}
+.oneri-slip-box dd {
+  color: var(--ink);
+  font-size: clamp(1.5rem, 1.25rem + 1.2vw, 2.25rem);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+@container (min-width: 620px) {
+  .oneri-slip-boxes {
+    grid-template-columns: 0.8fr 1.1fr 1.1fr;
+  }
+  .oneri-slip-box:nth-child(3) {
+    grid-column: auto;
+    padding-top: 0.75rem;
+    border-top: 0;
+  }
+  .oneri-slip-box + .oneri-slip-box {
+    padding-left: 1rem;
+    border-left: 1px solid var(--rule-soft);
+  }
+}
+.oneri-slip-note {
+  max-width: 62ch;
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+.oneri-slip-valid {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--ink);
+  font-size: 1.0625rem;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.oneri-slip-clock {
+  height: 4px;
+  background: var(--sunk);
+}
+.oneri-slip-clock > div {
+  height: 100%;
+  background: var(--ink);
+  transform-origin: left;
+}
+.oneri-slip-valid[data-phase="expired"] .oneri-slip-clock {
+  display: none;
+}
+.oneri-slip-actions-form {
+  display: grid;
+  gap: 0.75rem;
+}
+.oneri-slip-ask {
+  color: var(--ink);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+.oneri-slip-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.oneri-slip-fields label {
+  display: grid;
+  gap: 0.25rem;
+}
+.oneri-slip-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+.oneri-slip-buttons > * {
+  flex: 1 1 auto;
+}
+@container (min-width: 620px) {
+  .oneri-slip-buttons > * {
+    flex: 0 0 auto;
+    min-width: 8.5rem;
+  }
+}
+.oneri-slip-copyline {
+  min-height: 1.25rem;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+.oneri-slip-marked {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  color: var(--ink);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.oneri-slip-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  margin-block: -0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+.oneri-line {
+  padding: 1rem 1.25rem;
+  border-block: 2px solid var(--ink);
+  color: var(--ink);
+  font-size: 1.125rem;
+}
+
+/* Kopyala: the copied fields flash the wash once, so you see what went to the clipboard. */
+@keyframes oneri-copied {
+  from {
+    background-color: var(--wash-tint-strong);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+.oneri-copied {
+  animation: oneri-copied 1200ms var(--ease-out-expo) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* A colour change, not motion: kept, only shorter. */
+  .oneri-copied {
+    animation: oneri-copied 600ms linear both;
+  }
+}
+
+@media (forced-colors: active) {
+  .oneri-slip-clock > div {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+}

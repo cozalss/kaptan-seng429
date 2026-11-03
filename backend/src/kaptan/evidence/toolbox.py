@@ -7,8 +7,6 @@ point-in-time SQL whose results the sync accessors then serve. The merge node aw
 entry, ATR stop, costs, shrunk edge); once tried, `sizing()` answers from the live sizer only (None →
 HOLD), never from a fixture. What the tools do not compute (labels, recorded latencies) comes from
 the base toolbox.
-
-Replay mode never builds one (`toolbox_for` returns the base), so replay output stays byte-identical.
 """
 
 from __future__ import annotations
@@ -24,7 +22,7 @@ from typing import Any, Final
 from psycopg.pq import TransactionStatus
 
 from kaptan.agents.context import DisclosureInput
-from kaptan.agents.tools import ReplayToolbox, Toolbox
+from kaptan.agents.tools import NoTools, Toolbox
 from kaptan.evidence import card
 from kaptan.evidence.market import MaterialityInputs, PriceContext
 from kaptan.evidence.params import DEFAULT_HORIZONS
@@ -42,7 +40,7 @@ class LiveToolbox:
     def __init__(self, conn: Conn, disclosure: DisclosureInput, base: Toolbox | None = None) -> None:
         self.conn = conn
         self.disclosure = disclosure
-        self.base: Toolbox = base or ReplayToolbox()
+        self.base: Toolbox = base or NoTools()
         self._lock = asyncio.Lock()
         self._price_loaded = False
         self.price: tuple[PriceContext, MaterialityInputs] | None = None
@@ -211,10 +209,10 @@ class _FactsView:
 
 
 def toolbox_for(conn: Conn, disclosure: DisclosureInput, llm_mode: str, base: Toolbox | None = None) -> Toolbox:
-    """The toolbox of one run: live tools for a real disclosure in LLM_MODE=live, else `base` (replay).
+    """The toolbox of one run: live tools for a real disclosure in LLM_MODE=live, else `base`.
 
-    Demo fixtures keep their recorded tool answers even in live mode: their prices do not exist."""
-    fallback = base or ReplayToolbox()
+    A row marked `is_fixture` (an old database) has no prices, so it never gets live tools."""
+    fallback = base or NoTools()
     if llm_mode != "live" or disclosure.is_fixture:
         return fallback
     return LiveToolbox(conn, disclosure, fallback)

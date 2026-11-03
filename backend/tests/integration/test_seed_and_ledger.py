@@ -10,9 +10,9 @@ import pytest
 from kaptan.audit.verify import load_chain, verify_db
 from kaptan.audit.writer import AuditDraft, append
 from kaptan.db import DictConn
-from kaptan.demo.seed import SeedResult
 from kaptan.settings import Settings
 from tests.conftest import reseed_test_db
+from tests.harness.seed import SeedResult
 
 pytestmark = pytest.mark.integration
 
@@ -28,7 +28,6 @@ async def _count(conn: DictConn, table: str) -> int:
 async def test_seed_counts(seeded: SeedResult, pg: DictConn) -> None:
     assert seeded.counts["audit.audit_log"] == 4812
     expected = {
-        "auth.users": 6,  # the team + the inactive single-user account (sahip)
         "core.disclosures": 318 + 3 + 7,
         "trading.agent_runs": 23,
         "trading.approvals": 13,
@@ -53,7 +52,7 @@ async def test_ledger_verifies_as_app_role(pg: DictConn) -> None:
     result = await verify_db(pg, "2027-01-11T10:40:00.000Z")
     assert result["ok"] is True
     assert result["checked"] == 4812
-    assert result["head_hash"] == "9f9c93b0077a1408efc2d91ac7910ab837062d8958c7d99a71cb1a9a3e5ed640"
+    assert result["head_hash"] == "8fa3d02e5cfd3a2e7029d12cee0cda72a19e73d9264dd9bddff6d3bf7005e667"
 
 
 async def test_app_role_cannot_rewrite_the_ledger(pg: DictConn) -> None:

@@ -7,7 +7,7 @@
 
 Marks are point in time (`kaptan.prices.latest_marks`: raw levels, the open from 10:15, the close
 from 18:30 Istanbul); a ticker without a stored price keeps the position's own `last_price`. Used
-outside DEMO_MODE only: the demo keeps its fixture equity (risk/equity.py).
+the one source of equity.
 """
 
 from __future__ import annotations
@@ -175,7 +175,7 @@ async def paper_book(conn: AsyncConnection[Any], as_of: datetime, *, capital: De
 
 def effective_drawdown(book: BookSnapshot, reset_equity: Decimal | None, *, reset_active: bool) -> Decimal:
     """The drawdown the kill rule and the gate see. While a confirmed restart holds (the peak is never
-    reset) it stays just inside −5 % (−4.9 %, as the demo's restart does) until equity is a further
+    reset) it stays just inside −5 % (−4.9 %) until equity is a further
     −3 % below the reset level (`reset_equity`; None = the restart is new: today's equity is that level)."""
     dd = book.drawdown_pct
     if not reset_active:

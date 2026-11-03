@@ -147,22 +147,22 @@ RISK_GATE_ORDER: Final[tuple[RiskRuleCode, ...]] = (
 )
 
 RISK_RULES: Final[dict[RiskRuleCode, tuple[str, str]]] = {
-    "R01": ("Kill switch", "Kill switch açık mı; zirveden düşüş ≤ −%5 mi"),
+    "R01": ("Durdurma", "Her şey durduruldu mu; zirveden düşüş ≤ −%5 mi"),
     "R02": ("Günlük zarar", "Günlük K/Z ≤ −%1 ise yeni emir durur"),
     "R03": ("Evren", "Hisse likidite ve halka açıklık alt sınırıyla evrende mi"),
     "R04": ("Tedbir", "SPK/VBTS tedbiri sert veto; 24 saatten eski tedbir verisi HOLD"),
     "R05": ("Kanıt", "Kanıt kimlikleri getirilenlerin alt kümesi, karar anından önce, n ≥ 5"),
     "R06": ("Avantaj / maliyet", "Beklenen avantaj ≥ 2 × tahmini maliyet"),
     "R07": ("Büyüklük", "%0,5 risk / stop; pozisyon ≤ %10; hacmin ≤ %1'i; nakit"),
-    "R08": ("Portföy limitleri", "Mükerrer, en çok 10 pozisyon, günlük giriş, sektör %25, grup %20"),
+    "R08": ("Param sınırları", "Mükerrer, en çok 10 pozisyon, günlük giriş, sektör %25, grup %20"),
     "R09": ("Fiyat bandı", "Son fiyat ±%2, tavana %1 yakınlık, 20 dakikadan eski fiyat"),
     "R10": ("Kriz rejimi", "Krizde maruziyet ×0,5; E3 reddedilir"),
     "R11": ("Kota ve veri", "LLM kotası, KAP gecikmesi (300 sn), şema, injection"),
-    "R12": ("Yalnızca alım", "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış"),
-    "R13": ("Ekip engel listesi", "Ekip içeriden-öğrenen engel listesinde değil"),
+    "R12": ("Yalnızca alım", "Açığa satış yok, kaldıraç yok, gerçek emir kapalı"),
+    "R13": ("Engel listen", "İçeriden-öğrenen engel listende değil"),
     "R14": ("Tutar uyuşması", "Okuyucu tutarı metindeki regex tutarlarıyla eşleşiyor (±%0,5)"),
-    "R15": ("Onay zorunlu", "Her öneri insan onayına gider; ertesi seans 09:50'de düşer"),
-    "R16": ("Gönderim anı", "Onay süresi; R01–R04, R09, R12, R13 yeniden; fiş 30 dk"),
+    "R15": ("Onay zorunlu", "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer"),
+    "R16": ("Gönderim anı", "Onay süresi; R01–R04, R09, R12, R13 yeniden; işlem bilgisi 30 dk"),
 }
 
 RiskOutcome = Literal["pass", "resize", "reject", "hold", "approval_required"]

@@ -19,7 +19,7 @@ export const SLIP_ROWS = Object.freeze([
   Object.freeze({ label: 'Kural', value: 'E1 kuralı · risk kapısı R01–R16' }),
   Object.freeze({ label: 'Risk', value: 'İşlem başına %0,5' }),
   Object.freeze({ label: 'Tutma', value: '20–40 gün' }),
-  Object.freeze({ label: 'Son söz', value: 'İnsan' }),
+  Object.freeze({ label: 'Son söz', value: 'Sen' }),
 ]);
 
 const DISPLAY = "'Bodoni Moda Display', 'Didot', Georgia, serif";
@@ -148,7 +148,7 @@ export function drawApprovedSlip(doc, height) {
   });
   ctx.font = `${22 * u}px ${SANS}`;
   ctx.fillStyle = INK.muted;
-  ctx.fillText('Otomatik emir yok', pad, h - pad);
+  ctx.fillText('Otomatik işlem yok', pad, h - pad);
   inkRect(ctx, inset, inset, w - inset * 2, h - inset * 2, { width: 5 * u, wobble: 1.2 * u, overshoot: 4 * u, seed: 5 });
   return canvas;
 }

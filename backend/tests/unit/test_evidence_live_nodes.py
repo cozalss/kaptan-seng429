@@ -8,13 +8,14 @@ from typing import Any
 
 import pytest
 
-from kaptan.agents.scenario import run_graph
-from kaptan.agents.tools import ReplayToolbox
+from kaptan.agents.tools import NoTools
 from kaptan.evidence import LiveToolbox, live_tools, toolbox_for
 from kaptan.evidence.card import evidence_store, ground_materiality, ground_selection
 from kaptan.evidence.market import MaterialityInputs, PriceContext
 from kaptan.evidence.service import ScopedStudy
 from kaptan.evidence.study import study
+from tests.harness.replay import ReplayToolbox
+from tests.harness.scenario import run_graph
 from tests.unit.agent_fixtures import context_for, fixture_run
 from tests.unit.test_evidence_study import AS_OF, BENCH, DAYS, STOCK, at, event
 
@@ -107,7 +108,7 @@ def test_toolbox_for_gates_on_live_mode_and_real_disclosures() -> None:
     real = replace(ctx.disclosure, is_fixture=False)
     live = toolbox_for(None, real, "live", base)  # type: ignore[arg-type]
     assert isinstance(live, LiveToolbox) and live_tools(live) is live and live_tools(base) is None
-    assert isinstance(toolbox_for(None, ctx.disclosure, "replay"), ReplayToolbox)  # type: ignore[arg-type]
+    assert isinstance(toolbox_for(None, ctx.disclosure, "replay"), NoTools)  # type: ignore[arg-type]
 
 
 def test_live_toolbox_delegates_what_it_does_not_compute() -> None:

@@ -12,7 +12,6 @@ import pytest
 from psycopg_pool import AsyncConnectionPool
 
 from kaptan.db import DictConn, create_pool
-from kaptan.demo.seed import SeedResult
 from kaptan.live import warmup as w
 from kaptan.prices.calendar import IST, is_trading_day
 from kaptan.prices.http import SourceError
@@ -21,6 +20,7 @@ from kaptan.prices.models import DailyBar
 from kaptan.settings import Settings
 from kaptan.workers.scheduler import Ctx
 from tests.conftest import reseed_test_db
+from tests.harness.seed import SeedResult
 
 pytestmark = pytest.mark.integration
 

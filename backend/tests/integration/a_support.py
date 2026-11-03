@@ -4,24 +4,41 @@ from __future__ import annotations
 
 import json
 from collections.abc import AsyncIterator
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import httpx
 import pytest
+from psycopg.types.json import Jsonb
 
 from kaptan.api.main import API_PREFIX
-from kaptan.approvals.execute import wait_for_fills
-from kaptan.db import connect
-from kaptan.demo.seed import SeedResult
-from kaptan.domain.roles import Role
+from kaptan.db import DictConn, connect
+from kaptan.domain.schemas import iso_ms
 from kaptan.settings import Settings
 from tests.conftest import bearer, login, reseed_test_db
+from tests.harness.seed import SeedResult
 
+WAIT_OVER = timedelta(days=30)
 EXPECTED = Path(__file__).resolve().parents[1] / "fixtures" / "demo" / "expected"
 DEMO_E3_RUN = "run-demo-e3-ornek"
 DEMO_E3_PROPOSAL = "prop-demo-e3-ornek"
-DEMO_TICKET = "T-2027-0111-003"
+DEMO_TICKET = "T-2027-0111-013"  # the running number: 10 + the three seeded tickets
+
+
+async def as_if_the_wait_is_over(conn: DictConn) -> None:
+    """A stop and its restart request, thirty days old: the 24 h and 5 sessions have passed."""
+    async with conn.cursor() as cur:
+        await cur.execute("SELECT kill_at, reset_started FROM trading.risk_state")
+        row = await cur.fetchone()
+    assert row is not None
+    started = row["reset_started"]
+    moved = datetime.fromisoformat(started["at"].replace("Z", "+00:00")) - WAIT_OVER
+    await conn.execute(
+        "UPDATE trading.risk_state SET kill_at = %s, reset_started = %s",
+        (row["kill_at"] - WAIT_OVER, Jsonb({**started, "at": iso_ms(moved)})),
+    )
+    await conn.commit()
 
 
 def expected(name: str) -> Any:
@@ -47,22 +64,21 @@ async def fresh(migrated: Settings, seeded: SeedResult) -> SeedResult:
 async def api(fresh: SeedResult, client: httpx.AsyncClient, migrated: Settings) -> AsyncIterator[httpx.AsyncClient]:
     """`client` on a fresh seed; the test database is reseeded again afterwards (tests mutate it)."""
     yield client
-    await wait_for_fills()
     await reseed_test_db(migrated)
 
 
-_TOKENS: dict[Role, str] = {}
+_TOKEN: list[str] = []
 
 
-async def token(http: httpx.AsyncClient, role: Role) -> str:
-    """One login per role per session (the login rate limit is 5/min); access tokens are plain JWTs."""
-    if role not in _TOKENS:
-        _TOKENS[role] = (await login(http, role))["access_token"]
-    return _TOKENS[role]
+async def token(http: httpx.AsyncClient) -> str:
+    """One login per session (the login rate limit is 5/min); access tokens are plain JWTs."""
+    if not _TOKEN:
+        _TOKEN.append((await login(http))["access_token"])
+    return _TOKEN[0]
 
 
-async def call(http: httpx.AsyncClient, role: Role, method: str, path: str, body: Any = None) -> httpx.Response:
-    headers = bearer(await token(http, role))
+async def call(http: httpx.AsyncClient, method: str, path: str, body: Any = None) -> httpx.Response:
+    headers = bearer(await token(http))
     return await http.request(method, f"{API_PREFIX}{path}", json=body, headers=headers)
 
 

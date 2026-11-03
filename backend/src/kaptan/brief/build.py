@@ -19,7 +19,7 @@ from typing import Any, Final
 from psycopg import AsyncConnection
 
 from kaptan.approvals.reads import _order_doc, list_cards
-from kaptan.demo.ticker import LIST_ITEM_COLUMNS, list_item
+from kaptan.disclosures.listing import LIST_ITEM_COLUMNS, list_item
 from kaptan.domain.schemas._base import iso_ms
 from kaptan.domain.schemas.reports import MorningBrief
 from kaptan.portfolio.pnl import LIVE_STRATEGY
@@ -100,7 +100,7 @@ def risk_warnings(risk: dict[str, Any] | None, pnl: dict[str, Any] | None) -> li
         if risk["regime"] == "crisis":
             out.append({"level": "warn", "text_tr": "Piyasa rejimi kriz: pozisyon büyüklükleri düşürülür."})
     if pnl is not None and float(pnl["daily_return"]) < 0:
-        text = f"Önceki seansın getirisi {fmt_signed_pct(float(pnl['daily_return']), 2)}."
+        text = f"Önceki borsa gününün getirisi {fmt_signed_pct(float(pnl['daily_return']), 2)}."
         level = "warn" if float(pnl["drawdown"]) <= -0.025 else "info"
         out.append({"level": level, "text_tr": text})
     return out
@@ -123,11 +123,11 @@ def summary_text(day: date, doc: dict[str, Any], risk: dict[str, Any] | None, pn
         parts.append(f"Risk: acil durdurma {kill}, rejim {regime}{halt}.")
     if pnl is not None:
         parts.append(
-            f"Önceki seans ({date_tr(pnl['d'])}): getiri {fmt_signed_pct(float(pnl['daily_return']), 2)}, "
+            f"Önceki borsa günü ({date_tr(pnl['d'])}): getiri {fmt_signed_pct(float(pnl['daily_return']), 2)}, "
             f"özsermaye {fmt_try(float(pnl['equity']))}, zirveden düşüş {fmt_pct(float(pnl['drawdown']), 1)}."
         )
     else:
-        parts.append("Önceki seans için gün sonu kâr/zarar kaydı yok.")
+        parts.append("Önceki borsa günü için gün sonu kâr/zarar kaydı yok.")
     n_res = len(doc["restriction_changes"])
     parts.append(f"Yeni kısıtlama değişikliği: {fmt_int(n_res)}." if n_res else "Yeni kısıtlama değişikliği yok.")
     parts.append(f"Son kapanıştan bu yana KAP bildirimi: {fmt_int(len(doc['important_disclosures']))}.")
@@ -142,7 +142,7 @@ async def build_brief(
     since_day = since.astimezone(IST).date()
     disclosures = await _all(conn, DISCLOSURES_SQL, {"since": since, "now": now, "n": MAX_DISCLOSURES})
     orders = await _all(conn, ORDERS_SQL, {"now": now})
-    cards = [c for c in await list_cards(conn, now=now, wall=now) if c["status"] == "pending"]
+    cards = [c for c in await list_cards(conn, now=now) if c["status"] == "pending"]
     positions = await list_positions(conn, now, live=live_marks)
     risk_rows = await _all(conn, RISK_SQL, ())
     risk = risk_rows[0] if risk_rows else None

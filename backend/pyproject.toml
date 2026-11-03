@@ -65,7 +65,7 @@ ignore = [
 "scripts/**" = ["S603", "S607"]
 "migrations/**" = ["E501"]
 # Seed SQL: table/column names are constants; every value is a bound parameter.
-"src/kaptan/demo/seed.py" = ["S608"]
+"tests/harness/seed.py" = ["S608"]
 
 [tool.mypy]
 python_version = "3.11"

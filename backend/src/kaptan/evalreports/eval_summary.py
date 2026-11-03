@@ -9,7 +9,7 @@ count (`questions` is the fixed 50 of the target set), so those stay in the file
 The red-team block, the ablation rows and L1 come from their report files (kaptan.evalreports.offline_layers:
 reports/redteam.json, reports/backtest.json, reports/classify.json for a human-labelled set only); L3 (the
 holdout, run once) stays empty until that run exists. A missing report keeps the empty layer.
-`is_sample` follows DEMO_MODE (the demo day's series is the seed's, labelled as such).
+`is_sample` is always false: every figure comes from the database.
 """
 
 from __future__ import annotations
@@ -22,7 +22,6 @@ from pathlib import Path
 from typing import Any, Final
 
 from kaptan.db import DictConn
-from kaptan.domain.schemas.reports import SAMPLE_LABEL
 from kaptan.evalreports import offline_layers as ol
 from kaptan.portfolio.pnl import list_pnl
 from kaptan.reference._sql import fetch_all, fetch_one
@@ -129,7 +128,6 @@ async def eval_summary(
     *,
     now: datetime,
     today: date,
-    is_sample: bool,
     ragas_path: Path = RAGAS_REPORT,
     reports_dir: Path = REPORTS_DIR,
 ) -> dict[str, Any]:
@@ -154,8 +152,8 @@ async def eval_summary(
         "ablations": ol.ablation_rows(reports_dir / ol.BACKTEST_REPORT.name),
     }
     return {
-        "is_sample": is_sample,
-        "label": SAMPLE_LABEL if is_sample else REAL_LABEL,
+        "is_sample": False,
+        "label": REAL_LABEL,
         "as_of": now,
         **layers,
         "l4": {

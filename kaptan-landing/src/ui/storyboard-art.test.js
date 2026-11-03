@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { DEMO_STEPS } from '../data/demo-flow.js';
+import { SIX_STEPS } from '../data/six-steps.js';
 import { ART_VIEWBOX, STORYBOARD_ART, brush, renderStoryboardArt } from './storyboard-art.js';
 
 describe('storyboard art', () => {
-  it('has a drawing for every demo step', () => {
-    DEMO_STEPS.forEach((step) => expect(STORYBOARD_ART[step.art], step.art).toBeTruthy());
+  it('has a drawing for every step', () => {
+    SIX_STEPS.forEach((step) => expect(STORYBOARD_ART[step.art], step.art).toBeTruthy());
   });
 
   it('renders real SVG elements in the shared view box, decorative only', () => {

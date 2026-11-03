@@ -102,7 +102,7 @@ function drawBalance(parent, { set, reduced }) {
 
 export const E3_SPEC = {
   title: 'E3 · terazi',
-  label: 'Yıllıklandırılmış tutar, yıllık gelirin yüzdesi',
+  label: 'İşin bir yıla düşen tutarı, yıllık gelirin yüzdesi',
   min: 0,
   max: MAX,
   step: 0.5,

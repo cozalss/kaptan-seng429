@@ -25,8 +25,6 @@ from kaptan.brokers.ledger import run_audit
 from kaptan.portfolio.pnl import last_live_point
 from kaptan.risk.cooldown import COOLDOWN_TR, cooldown_active
 
-#: The demo desk's equity (explain-builder.ts) when there is no P&L series.
-DEMO_EQUITY_TRY: Final = Decimal(1_016_480)
 #: Canonical P2 position cap when the limits table has no max_position_pct.
 DEFAULT_POSITION_PCT: Final = Decimal("0.10")
 
@@ -44,8 +42,7 @@ async def hard_cap(conn: AsyncConnection[Any], cfg: ExecConfig) -> Decimal:
         row = await cur.fetchone()
     pct = Decimal(str(row["value"])) if row else DEFAULT_POSITION_PCT
     last = await last_live_point(conn)
-    fallback = DEMO_EQUITY_TRY if cfg.demo_mode else cfg.paper_capital_try
-    equity = Decimal(str(last[0])) if last is not None else fallback
+    equity = Decimal(str(last[0])) if last is not None else cfg.paper_capital_try
     cap = pct * equity
     return cap if cfg.trading.hard_cap_try is None else min(cap, cfg.trading.hard_cap_try)
 

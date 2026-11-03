@@ -6,6 +6,7 @@ effects' data (the card); approval is pure up to `interrupt()` (it re-runs on re
 
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal
 from typing import Any, Final
 
@@ -60,8 +61,9 @@ def rule_input(state: KaptanState, ctx: RunContext, sizing: dict[str, Any] | Non
         buyback_10d_notice_count=m.get("buyback_10d_notice_count"),
         buyback_sale_within_20d=m.get("buyback_sale_within_20d"),
         insider_role=reader.get("role"),
+        insider_threshold_notice=bool(reader.get("holder_threshold_notice")),
         insider_open_market=reader.get("open_market"),
-        insider_net_buy_value_try=m.get("insider_net_buy_value_try") or m.get("reader_amount"),
+        insider_net_buy_value_try=m.get("insider_net_buy_value_try") or _stated_value(reader),
         materiality_ratio=m.get("amount_to_revenue_annualized") or m.get("amount_to_mcap"),
         materiality_denominator=m.get("e3_denominator"),
         binding_status=reader.get("binding_status"),
@@ -151,9 +153,15 @@ async def prepare_live_sizing(state: KaptanState, ctx: RunContext) -> None:
         str(state.get("event_type")),
         equity_try=ctx.desk.equity_try,
         upper_limit=_dec(m["upper_limit"]) if m.get("upper_limit") else None,
-        t_dec=elapsed_until_now(state.get("steps", []), ctx.disclosure.available_at),
+        t_dec=decision_time(state, ctx),
         personal=ctx.desk.mode == "personal",
     )
+
+
+def decision_time(state: KaptanState, ctx: RunContext) -> datetime:
+    """The run's virtual clock, or the wall clock of a run that started later than the disclosure arrived."""
+    virtual = elapsed_until_now(state.get("steps", []), ctx.disclosure.available_at)
+    return virtual if ctx.decided_after is None else max(virtual, ctx.decided_after)
 
 
 async def rule_engine(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, Any]:
@@ -179,7 +187,7 @@ async def rule_engine(state: KaptanState, runtime: Runtime[RunContext]) -> dict[
 
 
 def live_gate_fields(p: dict[str, Any], desk: DeskState) -> dict[str, Any]:
-    """The gate inputs only a real run computes (kaptan.risk.desk); none for the demo (replay stays identical)."""
+    """The gate inputs only a real run computes (kaptan.risk.desk); none for a recorded run."""
     if not desk.live:
         return {}
     try:
@@ -316,7 +324,6 @@ def approval_card(state: KaptanState, ctx: RunContext, created_at: Any) -> dict[
         "expires_at": iso_ms(approval_expiry(created_at)),
         "status": "pending",
         "decided_by": None,
-        "decided_role": None,
         "decided_at": None,
         "decision_comment": None,
         "approved_notional_try": None,
@@ -331,7 +338,7 @@ def _sub_type_tr(state: KaptanState) -> str:
 async def request_approval(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, Any]:
     """Side-effect node: the card is what run_scenario persists and announces (SSE approval.requested)."""
     ctx = runtime.context
-    created = elapsed_until_now(state.get("steps", []), ctx.disclosure.available_at)
+    created = decision_time(state, ctx)
     escalate = (state["risk"] or {}).get("level") == "escalate"
     proposal = {
         **(state["proposal"] or {}),

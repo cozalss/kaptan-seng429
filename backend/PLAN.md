@@ -1,5 +1,15 @@
 # KAPtan backend — wave-2/3 work packages
 
+> **2026-11-03:** the demo described below is gone from the product: `kaptan/demo/*`, `/demo/*`, `DEMO_MODE`, the demo
+> clock, demo fills and the replay LLM moved to `tests/harness/` or were deleted (README, "No demo in a running
+> system"). This file stays as the record of how M1 was built; test databases per agent are set through
+> TEST_DATABASE_URL / TEST_DATABASE_OWNER_URL / REDIS_URL in the environment.
+
+> Revizyon 4 (02.11.2026, tek kullanıcı): bu belge tarihseldir. Paket tanımları ve "DoD" maddeleri yazıldığı
+> dönemin modelini (dört rol, `same_person` 403, iki imza) anlatır; bu kurallar artık geçerli değildir. Güncel sözleşme
+> [`../kaptan-panel/API.md`](../kaptan-panel/API.md), karar [`../docs/proje/_KANONIK-KARARLAR.md`](../docs/proje/_KANONIK-KARARLAR.md)
+> Revizyon 4'tür.
+
 Wave 1 (done): project, compose, settings, migration `0001`, auth router, RBAC, error envelope,
 audit canonical/writer/verify, pydantic mirrors of every zod schema, contract harness, demo fixtures +
 seeder, router stubs (501). Read `README.md` first, then `../kaptan-panel/API.md` and the stub
@@ -149,9 +159,9 @@ Built (tests in brackets):
 - Audit: `auth.login_failed` (hashed client, no secret), `approval.expired` from the feed settle,
   `ticket.issued` names the company; `python -m kaptan.audit.verify_cli` / scripts/verify_audit_chain.py
   checks every anchor line (exit 0/1/2).
-- Single-user mode KAPTAN_SINGLE_USER (account `sahip`, every permission, `auth.single_user_waiver` audit for
-  each waived second signature, migration 0021 relaxes the limit-version CHECK only under that waiver),
-  `/health.single_user`, `GET /me/overview`.
+- Single-user waiver: `auth.single_user_waiver` audit for each waived second signature; migration 0021 relaxes the
+  limit-version CHECK only under that waiver; `GET /me/overview`. Revizyon 4 removes the `KAPTAN_SINGLE_USER` switch
+  and `/health.single_user`: there is one mode, so the switch and its per-mode branches are deleted, not kept behind a flag.
 - Eval: `/eval/summary` red-team block from reports/redteam.json, ablation rows from reports/backtest.json,
   L1 from a human-labelled reports/classify.json; backtest total_return, Sortino, `--cost-scenarios`
   (gross / 5 / 20 / 30 bp); classify per-class P/R/F1, confusion, bootstrap CI, McNemar, CLI;

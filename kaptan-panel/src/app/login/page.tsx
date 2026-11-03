@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
 import { safeNext } from "@/lib/nav";
-import { DEFAULT_ROLE } from "@/lib/domain/user";
-import { isSingleUser } from "@/lib/solo/mode.server";
 import { SoloLoginScreen } from "@/components/solo/solo-login";
-import { LoginScreen } from "./login-screen";
 
 export const metadata: Metadata = { title: "Giriş" };
 
-/** /login — one sign-in screen: choose a team account, type the passphrase. ?next= is kept. */
+/** /login — one password field. ?next= is kept. */
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
-  // Single-user mode: one password field, then "Benim KAPtan'ım".
-  if (await isSingleUser()) return <SoloLoginScreen next={safeNext(next)} />;
-  return <LoginScreen next={safeNext(next)} initialRole={DEFAULT_ROLE} />;
+  return <SoloLoginScreen next={safeNext(next)} />;
 }

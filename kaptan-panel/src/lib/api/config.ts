@@ -1,12 +1,11 @@
 /**
- * API mode switch. `mock` is the default and needs no env (Vercel preview works as-is);
- * `http` targets FastAPI /api/v1 through the rewrite in next.config.ts.
+ * Every real build talks to FastAPI /api/v1 through the rewrite in next.config.ts. The in-browser
+ * test double exists for vitest and playwright only: their configs set
+ * NEXT_PUBLIC_KAPTAN_TEST_DOUBLE=1, and next.config.ts refuses to build or serve production with it.
  */
 export type ApiMode = "mock" | "http";
 
-export const API_MODE: ApiMode = process.env.NEXT_PUBLIC_API_MODE === "http" ? "http" : "mock";
+export const API_MODE: ApiMode = process.env.NEXT_PUBLIC_KAPTAN_TEST_DOUBLE === "1" ? "mock" : "http";
 
-export const IS_MOCK = API_MODE === "mock";
-
-/** Demo mode (FR-40): on in mock; in http mode the backend's DEMO_MODE decides. */
-export const DEMO_MODE = IS_MOCK || process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+/** The public website: built with no KAPTAN_API_ORIGIN, so "/" is the landing and nothing else opens. */
+export const SITE_ONLY = process.env.NEXT_PUBLIC_KAPTAN_SITE_ONLY === "1";

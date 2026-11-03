@@ -15,9 +15,9 @@ export default Object.freeze({
   ]),
   // spoken as the plate's text alternative: one sentence
   summary:
-    'Canlı şema: Şüpheci taslak öneriyi dürbünle tarar; sızıntı ya da abartı bulursa öneriyi küçültür veya veto eder, hiçbir zaman büyütmez.',
+    'Hareketli şema: Şüpheci taslak öneriyi dürbünle tarar; sızıntı ya da abartı bulursa öneriyi küçültür veya veto eder, hiçbir zaman büyütmez.',
   description:
-    'Canlı şema: taslak öneriler sırayla panoya iğnelenir ve dürbünle taranır. Fiyat bildirimden önce yükselmişse (sızıntı) bulgu daire içine alınır ve büyüklük çubuğu bir çizgiyle kısaltılır; abartılı bir ifade bulunursa öneri çizilip veto edilir; açık yoksa öneri olduğu gibi geçer. Büyütme seçeneği çizilir ve üstü çizilir: Şüpheci bir öneriyi büyütemez.',
+    'Hareketli şema: taslak öneriler sırayla panoya iğnelenir ve dürbünle taranır. Fiyat bildirimden önce yükselmişse (sızıntı) bulgu daire içine alınır ve büyüklük çubuğu bir çizgiyle kısaltılır; abartılı bir ifade bulunursa öneri çizilip veto edilir; açık yoksa öneri olduğu gibi geçer. Büyütme seçeneği çizilir ve üstü çizilir: Şüpheci bir öneriyi büyütemez.',
   stillElapsed: STILL_ELAPSED,
   /** @param {{ canvas: HTMLCanvasElement, keys?: Float32Array | null }} options (`keys`: see ../keys.js) */
   create({ canvas, keys = null }) {

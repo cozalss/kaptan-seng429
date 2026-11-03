@@ -1,5 +1,5 @@
 // Fictional disclosure sheet ("bildirim") shared by several plates. Never imitates any real
-// platform: generic layout, fictional issuer, and a visible "Temsili" mark.
+// platform: generic layout, fictional issuer.
 
 import { FAINT, HAIR, INK, INK_SOFT, NAVY, SERIF, SHEET, W, esc, f, group, label, line, rect, text, textBars } from './kit.mjs';
 
@@ -20,7 +20,6 @@ export function disclosureSheet({ x, y, w, h, r, title = 'Özel Durum Açıklama
   parts.push(rect(x, y, w, 7, { fill: NAVY }));
   let cy = y + pad + 14;
   parts.push(label(ix, cy, `${ISSUER}  ·  ${TICKER}`, { size: 15, fill: INK, weight: 600, tracking: 0.12 }));
-  parts.push(label(x + w - pad, cy, 'Temsili', { size: 13, fill: HAIR, anchor: 'end' }));
   cy += 62;
   parts.push(text(ix, cy, title, { family: SERIF, size: 46, fill: INK }));
   cy += 30;

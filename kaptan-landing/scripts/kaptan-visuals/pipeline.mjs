@@ -82,7 +82,7 @@ async function buildAgents(ctx) {
     const name = `ajan-${n}`;
     if (!ctx.wants(name)) continue;
     const body = plate.draw(rng(1000 + n));
-    const caption = { left: `No. ${String(n).padStart(2, '0')}  ·  ${plate.title}`, right: 'Temsili' };
+    const caption = { left: `No. ${String(n).padStart(2, '0')}  ·  ${plate.title}` };
     const svg = svgDoc({ box: CARD_BOX, px: [1200, 1600], body, caption });
     ctx.keep(name, svg);
     await encodeAll(ctx.outDir, name, await rasterise(svg, 1200, CARD_WIDTHS, 17 * n), null, ctx.log);

@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Path
 
-from kaptan.api.deps import Actor, ClockDep, CurrentUser, SettingsDep, require
+from kaptan.api.deps import ClockDep, CurrentUser, SettingsDep
 from kaptan.db import Conn
 from kaptan.domain.schemas.overview import MeOverview, SuggestionHoldInput, SuggestionHoldOut
 from kaptan.domain.schemas.personal import PersonalStageStatus
@@ -23,9 +23,9 @@ router = APIRouter(tags=["personal"])
 
 
 @router.get("/personal/stage", response_model=PersonalStageStatus)
-async def stage(user: CurrentUser, conn: Conn, clock: ClockDep, settings: SettingsDep) -> Any:
+async def stage(user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
     now = clock.now()
-    return await personal_stage(conn, now=now, today=now.astimezone(IST).date(), is_sample=settings.demo_mode)
+    return await personal_stage(conn, now=now, today=now.astimezone(IST).date())
 
 
 @router.get("/me/overview", response_model=MeOverview)
@@ -34,8 +34,6 @@ async def overview(user: CurrentUser, conn: Conn, clock: ClockDep, settings: Set
     return await me_overview(
         conn,
         now=clock.now(),
-        wall=clock.real_now(),
-        live=not settings.demo_mode,
         prices_live=settings.prices_live,
         capital=settings.paper_capital_try,
     )
@@ -45,7 +43,7 @@ async def overview(user: CurrentUser, conn: Conn, clock: ClockDep, settings: Set
 async def hold(
     suggestion_id: Annotated[str, Path(max_length=120)],
     body: SuggestionHoldInput,
-    actor: Annotated[Actor, Depends(require("proposal.decide"))],
+    actor: CurrentUser,
     conn: Conn,
     clock: ClockDep,
 ) -> Any:

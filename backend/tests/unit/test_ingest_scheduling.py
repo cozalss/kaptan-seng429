@@ -73,9 +73,9 @@ def test_detail_retry_delays_grow_and_cap() -> None:
 
 
 def test_poll_config_from_settings() -> None:
-    s = Settings(database_url="postgresql://x@localhost/db", demo_mode=True, kap_poll_offhours_s=90)
+    s = Settings(database_url="postgresql://x@localhost/db", kap_poll_offhours_s=90)
     cfg = PollConfig.from_settings(s)
-    assert cfg.demo_mode is True and cfg.offhours_s == 90 and cfg.session_s == 30
+    assert cfg.offhours_s == 90 and cfg.session_s == 30
 
 
 # ── worker loops ──────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ async def test_detail_loop_idles_pauses_and_stops(monkeypatch: pytest.MonkeyPatc
     script: list[Any] = [123, KapBlockedError("waf"), KapError("x"), ValueError("bug"), None]
     naps: list[float] = []
 
-    async def fake_fetch_one(pool: Any, client: Any) -> Any:
+    async def fake_fetch_one(pool: Any, client: Any, on_stored: Any = None, attachments: bool = False) -> Any:
         item = script.pop(0)
         if isinstance(item, Exception):
             raise item

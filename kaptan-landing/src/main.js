@@ -205,7 +205,7 @@ function bindScrollLinks(scroller) {
   });
 }
 
-/** Overlays (menu, demo drawer, agent detail, modals), loaded separately so a UI failure never takes the page down. */
+/** Overlays (menu, steps drawer, agent detail, modals), loaded separately so a UI failure never takes the page down. */
 async function initInterface(scroller) {
   const ui = await import('./ui/index.js');
   ui.initKaptanUI?.({

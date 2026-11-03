@@ -72,7 +72,7 @@ async def anchor_chain(
     anchor_file: Path | None = None,
     redis: Any = None,
 ) -> AnchorReport:
-    """Verify the ledger; anchor its head when it verifies and `write` (False: verify only, DEMO_MODE)."""
+    """Verify the ledger; anchor its head when it verifies and `write` (False: verify only)."""
     verdict = await verify_db(conn, iso_ms(now))
     checked = int(verdict["checked"])
     head = verdict.get("head_hash")

@@ -18,6 +18,7 @@ from pydantic import BaseModel
 
 from kaptan.agents.context import RunContext
 from kaptan.agents.nodes._common import FANOUT_GROUP, ask_or_fail, step
+from kaptan.agents.reader_facts import ground_insider, unreadable_answer
 from kaptan.agents.state import KaptanState
 from kaptan.domain.schemas.agents import (
     BuybackExtraction,
@@ -89,9 +90,14 @@ def _called(out: dict[str, Any] | None) -> int:
 
 async def reader(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, Any]:
     ctx = runtime.context
-    out, row = await ask_or_fail(
-        ctx, "reader", READER_SCHEMAS[str(state["event_type"])], group=FANOUT_GROUP, state=state
-    )
+    event_type = str(state["event_type"])
+    facts = ctx.disclosure.attachment if event_type == "E2" else None
+    if facts is not None and facts.status == "unreadable":  # nothing to read: no model is asked to guess
+        row = step(ctx, "reader", status="skipped", note=facts.reason or "Ek okunamadı", group=FANOUT_GROUP)
+        return {"reader": unreadable_answer(facts), "steps": [row], "llm_calls": 0}
+    out, row = await ask_or_fail(ctx, "reader", READER_SCHEMAS[event_type], group=FANOUT_GROUP, state=state)
+    if out is not None and facts is not None:
+        out = ground_insider(out, facts, ctx.disclosure.text_tr)
     return {"reader": out, "steps": [row], "llm_calls": _called(out)}
 
 

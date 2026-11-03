@@ -3,7 +3,7 @@
 // markup from data.
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-// Enough SVG for the wordmark <use> and the demo storyboard's ink drawings.
+// Enough SVG for the wordmark <use> and the storyboard's ink drawings.
 const SVG_TAGS = new Set(['svg', 'use', 'g', 'path', 'rect', 'circle', 'ellipse', 'line', 'text']);
 
 function applyAttr(element, key, value) {

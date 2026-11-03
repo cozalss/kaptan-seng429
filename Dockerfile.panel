@@ -20,7 +20,6 @@ COPY kaptan-landing kaptan-landing
 COPY kaptan-panel kaptan-panel
 ARG KAPTAN_API_ORIGIN=http://api:8000
 ENV NEXT_PUBLIC_API_MODE=http \
-    NEXT_PUBLIC_DEMO_MODE=true \
     KAPTAN_API_ORIGIN=${KAPTAN_API_ORIGIN}
 RUN cd kaptan-panel && npm run build
 
@@ -31,7 +30,7 @@ LABEL org.opencontainers.image.title="kaptan-panel" \
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     NEXT_PUBLIC_API_MODE=http \
-    NEXT_PUBLIC_DEMO_MODE=true     KAPTAN_API_ORIGIN=${KAPTAN_API_ORIGIN}
+    KAPTAN_API_ORIGIN=${KAPTAN_API_ORIGIN}
 WORKDIR /app
 COPY --from=build --chown=node:node /src/kaptan-panel /app
 USER node

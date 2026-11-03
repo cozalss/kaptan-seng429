@@ -1,0 +1,215 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   "KAPtan nasıl çalışır": a full sheet of paper with one picture standing on the water and one
+   sentence under it. Reduced motion: every picture is simply there.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.hw-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--scrim);
+}
+.hw-sheet {
+  position: fixed;
+  z-index: 61;
+  inset: clamp(0px, 3vw - 12px, 40px);
+  display: flex;
+  flex-direction: column;
+  max-width: 1120px;
+  margin-inline: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 0 0 2px var(--ink), 0 30px 80px -24px rgb(10 33 72 / 0.5);
+  outline: none;
+  animation: hw-in var(--dur-slow) var(--ease-out-expo) both;
+}
+@keyframes hw-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hw-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem clamp(1.25rem, 1rem + 2vw, 3rem) 0;
+}
+.hw-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.hw-picture {
+  position: relative;
+  flex: 1 1 200px;
+  min-height: 180px;
+  margin-inline: clamp(1.25rem, 1rem + 2vw, 3rem);
+}
+.hw-water {
+  flex: none;
+  height: 22px;
+  background-image: repeating-linear-gradient(180deg, var(--ink) 0 2px, transparent 2px 7px, var(--hairline) 7px 8px, transparent 8px 14px, var(--hairline) 14px 15px, transparent 15px 22px);
+}
+.hw-body {
+  padding: 1rem clamp(1.25rem, 1rem + 2vw, 3rem) clamp(1.25rem, 1rem + 2vw, 2.5rem);
+}
+.hw-count {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.hw-title {
+  margin-top: 0.25rem;
+  outline: none;
+  color: var(--ink);
+}
+.hw-text {
+  margin-top: 0.75rem;
+  max-width: 58ch;
+  font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.hw-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: clamp(1.25rem, 1rem + 1vw, 2rem);
+}
+.hw-pips {
+  display: flex;
+  gap: 0.5rem;
+}
+.hw-pip {
+  width: 28px;
+  height: 3px;
+  background: var(--hairline);
+}
+.hw-pip[data-on] {
+  background: var(--ink);
+}
+
+/* The pictures. */
+.hw-scene {
+  position: absolute;
+  inset: 0;
+}
+.hw-scene-boat {
+  position: absolute;
+  right: 4%;
+  bottom: -5px;
+  width: clamp(72px, 40px + 9vw, 150px);
+  height: clamp(72px, 40px + 9vw, 150px);
+}
+.hw-sheet-paper {
+  position: absolute;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  width: clamp(44px, 30px + 3vw, 72px);
+  aspect-ratio: 3 / 4;
+  padding: 8px 7px;
+  background: var(--panel);
+  box-shadow: 0 0 0 1.5px var(--ink);
+  transform: rotate(var(--hw-r));
+  animation: hw-fall 620ms var(--ease-out-expo) both;
+  animation-delay: calc(var(--hw-i) * 34ms);
+}
+.hw-sheet-paper i {
+  display: block;
+  height: 2px;
+  background: var(--ink);
+}
+.hw-sheet-paper i:nth-child(2) {
+  width: 70%;
+}
+.hw-sheet-paper i:nth-child(3) {
+  width: 85%;
+}
+@keyframes hw-fall {
+  from {
+    opacity: 0;
+    transform: translateY(-26px) rotate(calc(var(--hw-r) * 3));
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--hw-r));
+  }
+}
+.hw-hill {
+  --u-hatch-ink: var(--ink);
+  position: absolute;
+  inset: 8% 0 0;
+  clip-path: polygon(0 0, 22% 0, 32% 34%, 44% 40%, 54% 92%, 74% 96%, 100% 98.5%, 100% 100%, 0 100%);
+  animation: hw-pour 700ms var(--ease-out-expo) both;
+}
+@keyframes hw-pour {
+  from {
+    clip-path: polygon(0 0, 22% 0, 32% 0, 44% 0, 54% 0, 74% 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+.hw-decide {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(1rem, 0.5rem + 3vw, 3rem);
+}
+.hw-verbs {
+  display: flex;
+  gap: clamp(0.75rem, 0.25rem + 2vw, 2rem);
+  padding-bottom: 0.25rem;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(3rem, 1.5rem + 6vw, 7rem);
+  line-height: 1;
+  color: var(--ink);
+}
+.hw-verbs span:not(:first-child) {
+  color: var(--muted);
+}
+.hw-verb-al {
+  position: relative;
+}
+.hw-seal {
+  position: absolute;
+  left: 42%;
+  bottom: 62%;
+  width: clamp(64px, 44px + 6vw, 120px);
+  height: clamp(64px, 44px + 6vw, 120px);
+  color: var(--north);
+  transform: rotate(-12deg);
+  animation: hw-stamp 460ms cubic-bezier(0.2, 1.5, 0.4, 1) 220ms both;
+}
+@keyframes hw-stamp {
+  from {
+    opacity: 0;
+    transform: rotate(-20deg) scale(1.7);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-12deg) scale(1);
+  }
+}
+@media (max-height: 640px) {
+  .hw-picture {
+    min-height: 120px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hw-sheet,
+  .hw-sheet-paper,
+  .hw-hill,
+  .hw-seal {
+    animation: none;
+  }
+}

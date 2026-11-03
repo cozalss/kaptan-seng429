@@ -34,7 +34,7 @@
    {
     "code": "MANIPULATION_MARKERS",
     "severity": "reduce",
-    "detail_tr": "Son 5 seansta +%6,1 ve hacim 3 katı."
+    "detail_tr": "Son 5 borsa gününde +%6,1 ve hacim 3 katı."
    }
   ],
   "skeptic_note_tr": "Alım öncesi olağan dışı hacim; ×0,5.",
@@ -53,7 +53,7 @@
     "passed": true,
     "observed": "+%6,1",
     "threshold": "< %8",
-    "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+    "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
    },
    {
     "rule": "EDGE.edge_cost",
@@ -75,8 +75,7 @@
   "created_at": "2027-01-11T05:17:57.905Z",
   "expires_at": "2027-01-12T06:50:00.000Z",
   "status": "rejected",
-  "decided_by": "uye-3",
-  "decided_role": "risk_officer",
+  "decided_by": "sahip",
   "decided_at": "2027-01-11T07:20:00.000Z",
   "decision_comment": "Hacim anormal; manipülasyon şüphesi taşıyan bir harekete girmek istemiyorum.",
   "approved_notional_try": null,
@@ -145,14 +144,14 @@
     "passed": true,
     "observed": "+%5,0",
     "threshold": "< %12",
-    "detail_tr": "Son 10 seansta aşırı yükseliş yok."
+    "detail_tr": "Son 10 borsa gününde aşırı yükseliş yok."
    },
    {
     "rule": "LEAK.ret5d",
     "passed": true,
     "observed": "+%3,4",
     "threshold": "< %8",
-    "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+    "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
    },
    {
     "rule": "EDGE.edge_cost",
@@ -175,7 +174,6 @@
   "expires_at": "2027-01-12T06:50:00.000Z",
   "status": "pending",
   "decided_by": null,
-  "decided_role": null,
   "decided_at": null,
   "decision_comment": null,
   "approved_notional_try": null,
@@ -236,7 +234,7 @@
     "passed": true,
     "observed": "+%1,4",
     "threshold": "< %8",
-    "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+    "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
    },
    {
     "rule": "EDGE.edge_cost",
@@ -258,8 +256,7 @@
   "created_at": "2027-01-11T04:42:12.339Z",
   "expires_at": "2027-01-12T06:50:00.000Z",
   "status": "approved",
-  "decided_by": "uye-3",
-  "decided_role": "risk_officer",
+  "decided_by": "sahip",
   "decided_at": "2027-01-11T06:12:00.000Z",
   "decision_comment": "Kanıt güçlü, sızıntı yok. Onay.",
   "approved_notional_try": null,
@@ -328,7 +325,7 @@
     "passed": true,
     "observed": "+%1,2",
     "threshold": "< %8",
-    "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+    "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
    },
    {
     "rule": "EDGE.edge_cost",
@@ -351,7 +348,6 @@
   "expires_at": "2027-01-12T06:50:00.000Z",
   "status": "pending",
   "decided_by": null,
-  "decided_role": null,
   "decided_at": null,
   "decision_comment": null,
   "approved_notional_try": null,
@@ -366,7 +362,7 @@
   "side": "buy",
   "event_type": "E1",
   "sub_type_tr": "Pay geri alım işlemi",
-  "headline_tr": "Son 10 seansta sermayenin %0,31'i oranında geri alım",
+  "headline_tr": "Son 10 borsa gününde sermayenin %0,31'i oranında geri alım",
   "disclosure_index": 1651207,
   "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651207",
   "final_notional_try": 50542,
@@ -398,7 +394,7 @@
     "passed": true,
     "observed": "%0,31",
     "threshold": "≥ %0,25",
-    "detail_tr": "Son 10 seansta sermayenin %0,31'i geri alındı."
+    "detail_tr": "Son 10 borsa gününde sermayenin %0,31'i geri alındı."
    },
    {
     "rule": "E1.execution",
@@ -412,7 +408,7 @@
     "passed": true,
     "observed": "+%1,9",
     "threshold": "< %8",
-    "detail_tr": "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+    "detail_tr": "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
    },
    {
     "rule": "EDGE.edge_cost",
@@ -435,7 +431,6 @@
   "expires_at": "2027-01-12T06:50:00.000Z",
   "status": "pending",
   "decided_by": null,
-  "decided_role": null,
   "decided_at": null,
   "decision_comment": null,
   "approved_notional_try": null,

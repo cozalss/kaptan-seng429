@@ -11,7 +11,6 @@ import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import datetime
 from typing import Any, Final
 
 import redis.asyncio as aioredis
@@ -25,7 +24,6 @@ from kaptan.api.routers import (
     audit,
     auth,
     brief,
-    demo,
     disclosures,
     eval,
     limits,
@@ -36,15 +34,14 @@ from kaptan.api.routers import (
     sse,
     tickets,
 )
-from kaptan.approvals.execute import resume_pending_fills
 from kaptan.brokers import config as broker_config
 from kaptan.clock import Clock
 from kaptan.db import create_pool
-from kaptan.demo import control as demo_control
 from kaptan.ops.health import health_router, log_migration_state
 from kaptan.ops.http import RateLimitMiddleware, RequestContextMiddleware, SecurityHeadersMiddleware
 from kaptan.ops.metrics import metrics_router
-from kaptan.settings import Settings, ensure_production_ready, get_settings
+from kaptan.ops.system_status import system_status_router
+from kaptan.settings import Settings, ensure_production_ready, get_settings, has_llm_provider
 
 API_PREFIX: Final = "/api/v1"
 log = logging.getLogger("kaptan.api")
@@ -60,24 +57,11 @@ ROUTERS: Final = (
     limits.router,
     audit.router,
     admin.router,
-    demo.router,
     sse.router,
     brief.router,  # backend-only: GET /brief/today|{date} (M3 B1)
     eval.router,  # backend-only: GET /eval/summary, /reports/forward/weekly (M3 B3)
     personal.router,  # backend-only: GET /personal/stage (M3 B3)
 )
-
-
-async def load_demo_started_at(app: FastAPI) -> datetime | None:
-    """ops.demo_state.started_at (written by the seed / demo reset); None if not seeded yet."""
-    try:
-        async with app.state.pool.connection() as conn, conn.cursor() as cur:
-            await cur.execute("SELECT started_at FROM ops.demo_state WHERE id = 1")
-            row = await cur.fetchone()
-    except Exception:
-        log.warning("demo clock: ops.demo_state unavailable; starting the demo clock now")
-        return None
-    return None if row is None else row["started_at"]
 
 
 def _lifespan(settings: Settings) -> Any:
@@ -90,19 +74,13 @@ def _lifespan(settings: Settings) -> Any:
         )
         await app.state.pool.open(wait=False)
         app.state.redis = aioredis.from_url(settings.redis_url.get_secret_value(), decode_responses=True)
-        app.state.clock = Clock(demo=settings.demo_mode)
-        if settings.demo_mode:
-            app.state.clock.started_at = await load_demo_started_at(app)
+        app.state.clock = Clock()
         await log_migration_state(app.state.pool)  # says clearly when the schema is not at head
-        demo_control.on_startup(app, settings)  # demo timers + live ticker (package C)
         broker_config.install(settings)  # the order path's mode, costs, live keys (M3 A3)
-        if settings.demo_mode:
-            await resume_pending_fills(app)  # demo fills a restart dropped (M3 A3)
         try:
             async with open_saver(settings):  # CHECKPOINTER=postgres: graph threads in agent_ckpt.*
                 yield
         finally:
-            await demo_control.on_shutdown(app)
             await app.state.redis.aclose()
             await app.state.pool.close()
 
@@ -132,9 +110,8 @@ def _health_router() -> APIRouter:
             "status": "ok" if db_ok else "degraded",
             "db": "ok" if db_ok else "down",
             "redis": "ok" if redis_ok else "down",
-            "demo_mode": s.demo_mode,
             "llm_mode": s.llm_mode,
-            "single_user": s.kaptan_single_user,
+            "llm_ready": has_llm_provider(s),
             "now": state.clock.now().isoformat(),
         }
 
@@ -161,6 +138,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(health_router())  # /healthz, /readyz (M3 A5)
     app.include_router(metrics_router())  # /metrics (METRICS_TOKEN or loopback)
     app.include_router(_health_router(), prefix=API_PREFIX)
+    app.include_router(system_status_router(), prefix=API_PREFIX)
     for router in ROUTERS:
         app.include_router(router, prefix=API_PREFIX)
     return app

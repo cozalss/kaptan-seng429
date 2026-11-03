@@ -21,7 +21,7 @@ describe('renderServices', () => {
     expect(cards[0].dataset.agentKind).toBe('llm');
     expect(cards[6].dataset.agentKind).toBe('rule');
     expect(cards[0].getAttribute('aria-label')).toBe(
-      'Sınıflandırıcı, LLM ajanı · 01. Girdi: bildirim · Çıktı: E1–E4 / filtre / diğer. Ayrıntıları gör',
+      'Sınıflandırıcı, Yapay zekâ · 01. Girdi: bildirim · Çıktı: E1–E4 / filtre / diğer. Ayrıntıları gör',
     );
   });
 
@@ -64,7 +64,7 @@ describe('renderServices', () => {
   it('shows the folio, the name, the voice caption and a Girdi / Çıktı row', () => {
     renderServices(track, AGENTS);
     const card = track.querySelectorAll('.service-card')[3];
-    expect(card.querySelector('.service-card__category').textContent).toBe('4 / 8 · LLM ajanı');
+    expect(card.querySelector('.service-card__category').textContent).toBe('4 / 8 · Yapay zekâ');
     expect(card.querySelector('.service-card__name').textContent).toBe('Kanıt');
     expect(card.querySelector('.service-card__voice').textContent).toBe(AGENTS[3].notDoes);
     const cells = [...card.querySelectorAll('.service-card__io')].map((cell) => [
@@ -79,7 +79,7 @@ describe('renderServices', () => {
 
   it('sets rule codes in the Çıktı cell in mono', () => {
     renderServices(track, [AGENTS[6]]);
-    expect(track.querySelector('.service-card__category').textContent).toBe('1 / 1 · Deterministik');
+    expect(track.querySelector('.service-card__category').textContent).toBe('1 / 1 · Yazılı kural');
     expect(track.querySelector('.service-card__code').textContent).toBe('E1–E4');
     expect(track.querySelector('.service-card__io .rule-code').textContent).toBe('E1–E4');
   });
@@ -120,7 +120,7 @@ describe('panel helpers', () => {
   });
 
   it('writes the folio in sentence case with the panel number', () => {
-    expect(agentFolio(3, 8, 'LLM ajanı')).toBe('4 / 8 · LLM ajanı');
+    expect(agentFolio(3, 8, 'Yapay zekâ')).toBe('4 / 8 · Yapay zekâ');
   });
 
   it('wraps only the rule codes', () => {
@@ -132,6 +132,6 @@ describe('panel helpers', () => {
   });
 
   it('names a card with its kind as written', () => {
-    expect(agentCardLabel({ name: 'X', category: 'Deterministik · 07', meta: 'm' })).toBe('X, Deterministik · 07. m. Ayrıntıları gör');
+    expect(agentCardLabel({ name: 'X', category: 'Yazılı kural · 07', meta: 'm' })).toBe('X, Yazılı kural · 07. m. Ayrıntıları gör');
   });
 });

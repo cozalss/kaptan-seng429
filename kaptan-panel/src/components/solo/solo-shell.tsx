@@ -2,101 +2,236 @@
 
 import "./solo.css";
 
-import { useEffect, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/api/client";
 import { ApiProvider } from "@/lib/api/react";
+import { isUnreachable } from "@/lib/api/types";
 import { SessionProvider, type SessionUser } from "@/lib/auth/session-context";
-import { useNow } from "@/lib/clock";
-import { ROLE_LABEL } from "@/lib/domain/role-meta";
-import { dayLabel as longDay, istanbulDay } from "@/lib/session-day";
-import { greeting, marketOpen } from "@/lib/solo/greeting";
-import { FULL_PANEL_HOME, SOLO_HOME } from "@/lib/solo/mode";
-import { rememberView } from "@/lib/solo/view-pref";
+import { activeNavHref, HOME, NAV_ITEMS, ROUTES, type NavKey } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { DropdownMenu as M } from "radix-ui";
 import { Wordmark } from "@/components/brand/marks";
-import { MENU_CONTENT, MENU_ITEM } from "@/components/ui/menu";
-import { notify } from "@/components/ui/toast";
-import { SkeletonLines } from "@/components/ui/primitives";
-import { Toaster } from "@/components/ui/toast";
+import { RiskBanner } from "@/components/shell/banners";
+import { DeskStateProvider, ResetBoundary, useDesk } from "@/components/shell/desk-state";
 import { logout } from "@/components/shell/session-actions";
-import { SoloModeProvider } from "./solo-mode";
+import { UnreachableScreen } from "@/components/shell/unreachable";
+import { MENU_CONTENT, MENU_ITEM } from "@/components/ui/menu";
+import { SkeletonLines } from "@/components/ui/primitives";
+import { notify, Toaster } from "@/components/ui/toast";
+import { ConfirmAction, useStopRestart } from "./stop-panel";
+
+/** A page that has not landed by then simply appears: input is never held longer than this. */
+const TRANSITION_CAP_MS = 240;
 
 /**
- * The frame of the personal home: the wordmark and the screen's name, the way into the full desk
- * ("Gelişmiş görünüm"), who is signed in and "Çıkış"; under it one quiet line with the greeting,
- * the day and whether the market is open. `data-solo` switches on this screen's tokens (dark
- * reading, allocation inks) in solo.css. Opening it remembers "benim" as this browser's view.
+ * After a client-side route change, focus lands on the new screen's big sentence (marked
+ * `data-route-focus`) or, failing that, on <main>, so keyboard and screen-reader users start on
+ * the new page instead of the link they left. The first render keeps the browser's own focus.
  */
-export function SoloShell({ user, singleUser = true, children }: { user: SessionUser; singleUser?: boolean; children: ReactNode }) {
-  useEffect(() => rememberView("benim"), []);
+function useRouteFocus(pathname: string) {
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    const target = document.querySelector<HTMLElement>("main [data-route-focus]") ?? document.querySelector<HTMLElement>("main");
+    target?.focus({ preventScroll: true });
+  }, [pathname]);
+}
+
+/**
+ * Page changes as View Transitions where the browser has them: an internal link click starts the
+ * transition, the route change happens inside it, and the capped wait keeps a slow page from
+ * holding input. Elsewhere, and under reduced motion, links work exactly as they do by default.
+ */
+function useRouteTransition(pathname: string) {
+  const router = useRouter();
+  const landed = useRef<(() => void) | null>(null);
+  useLayoutEffect(() => {
+    landed.current?.();
+    landed.current = null;
+  }, [pathname]);
+  useEffect(() => {
+    if (typeof document.startViewTransition !== "function") return;
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const link = e.target instanceof Element ? e.target.closest("a") : null;
+      if (!link || link.target || link.hasAttribute("download") || link.origin !== window.location.origin) return;
+      // A suggestion carries its own shared-element move into its page (proposal/view-transition.ts).
+      if (link.closest(".oneri-object")) return;
+      // The landing is a separate page, not a route; a same-page link has nothing to transition.
+      const to = link.pathname + link.search + link.hash;
+      if (link.pathname === "/" || link.pathname === window.location.pathname) return;
+      e.preventDefault();
+      e.stopPropagation();
+      document.startViewTransition(
+        () =>
+          new Promise<void>((resolve) => {
+            landed.current = resolve;
+            router.push(to);
+            setTimeout(resolve, TRANSITION_CAP_MS);
+          }),
+      );
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [router]);
+}
+
+/** Tells .u-bleed the width of a classic scrollbar, so full-bleed bands stay centred. */
+function useScrollbarWidth() {
+  useEffect(() => {
+    const measure = () => document.documentElement.style.setProperty("--u-scrollbar", `${window.innerWidth - document.documentElement.clientWidth}px`);
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+}
+
+/**
+ * The app's one frame: the wordmark, the four screens, the stop and the account. The home is a
+ * full-bleed scene; every other screen sits in the page column. `data-solo` marks the frame.
+ */
+export function SoloShell({ user, children }: { user: SessionUser; children: ReactNode }) {
+  const pathname = usePathname();
+  useRouteFocus(pathname);
+  useRouteTransition(pathname);
+  useScrollbarWidth();
+  const isHome = pathname === HOME;
   return (
     <SessionProvider user={user}>
-      <SoloModeProvider singleUser={singleUser}>
-        <ApiProvider>
-          <div data-solo className="min-h-dvh bg-paper text-ink">
-            <a href="#icerik" className="sr-only-focusable fixed top-2 left-2 z-[70] rounded-lg border-2 border-ink bg-panel px-3 py-2 text-ui font-medium">
+      <ApiProvider>
+        <DeskStateProvider>
+          <div data-solo className="flex min-h-dvh flex-col text-ink">
+            <a href="#icerik" className="sr-only-focusable fixed top-2 left-2 z-[70] border-2 border-ink bg-panel px-3 py-2 text-ui font-medium">
               İçeriğe geç
             </a>
-            <SoloHeader user={user} singleUser={singleUser} />
-            <main id="icerik" tabIndex={-1} className="mx-auto w-full max-w-[1200px] px-4 pt-5 pb-20 outline-none sm:px-8 sm:pt-7">
-              <DayLine name={user.name} />
-              {children}
+            <SoloHeader pathname={pathname} />
+            <main id="icerik" tabIndex={-1} className="flex-1 pb-[calc(var(--tab-h)+env(safe-area-inset-bottom))] outline-none sm:pb-0">
+              <div className="u-page">
+                {/* Home and Param carry the stop state themselves, with the way back. */}
+                <RiskBanner showStopped={pathname !== HOME && pathname !== ROUTES.portfoy} />
+              </div>
+              <ResetBoundary>
+                <div key={pathname} className={isHome ? undefined : "u-page pt-4 pb-16 sm:pt-8 sm:pb-24"}>
+                  {children}
+                </div>
+              </ResetBoundary>
             </main>
             <Toaster />
           </div>
-        </ApiProvider>
-      </SoloModeProvider>
+        </DeskStateProvider>
+      </ApiProvider>
     </SessionProvider>
   );
 }
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .map((w) => w[0] ?? "")
-    .join("")
-    .slice(0, 2)
-    .toLocaleUpperCase("tr-TR");
+/** Flips once the page has moved under the bar: only then does the bar get an edge. */
+function useScrolled() {
+  const sentinel = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setScrolled(e ? !e.isIntersecting : false));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return { sentinel, scrolled };
 }
 
-function SoloHeader({ user, singleUser }: { user: SessionUser; singleUser: boolean }) {
+/** Sits in the sky with no box. From 640px the nav is in the row; on a phone it is the bottom bar. */
+function SoloHeader({ pathname }: { pathname: string }) {
+  const { sentinel, scrolled } = useScrolled();
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-panel/85 backdrop-blur-md backdrop-saturate-150">
-      <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center gap-3 px-4 sm:px-8">
-        <Link href={SOLO_HOME} aria-label="Benim KAPtan'ım, ana sayfa" className="shrink-0 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
-          <Wordmark className="solo-wordmark h-8 w-auto" title="KAPtan" />
-        </Link>
-        <span aria-hidden className="hidden h-6 w-px bg-line-strong sm:block" />
-        <span className="hidden text-ui font-semibold text-ink sm:block">Benim KAPtan&apos;ım</span>
-        <nav aria-label="Hesap" className="ml-auto flex items-center gap-1 sm:gap-2">
-          <Link
-            href={FULL_PANEL_HOME}
-            onClick={() => rememberView("masa")}
-            className="inline-flex h-10 items-center gap-2 rounded-lg px-2.5 text-dense font-semibold text-ink transition-colors duration-[var(--dur-quick)] hover:bg-wash-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand max-sm:h-11 sm:px-3"
-          >
-            <svg aria-hidden viewBox="0 0 20 20" className="size-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinejoin="round">
-              <rect x="3" y="3" width="6" height="6" rx="1.5" />
-              <rect x="11" y="3" width="6" height="6" rx="1.5" />
-              <rect x="3" y="11" width="6" height="6" rx="1.5" />
-              <rect x="11" y="11" width="6" height="6" rx="1.5" />
-            </svg>
-            Gelişmiş görünüm
+    <>
+      <div ref={sentinel} aria-hidden className="h-px" />
+      <header className="bar" data-scrolled={scrolled}>
+        <div className="bar__row u-page">
+          <Link href={HOME} aria-label="KAPtan, ana sayfa" className="flex h-11 shrink-0 items-center focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-brand">
+            <Wordmark className="solo-wordmark h-9 w-auto sm:h-10" title="KAPtan" />
           </Link>
-          <SoloAccountMenu user={user} singleUser={singleUser} />
-        </nav>
-      </div>
-    </header>
+          <MainNav pathname={pathname} />
+          <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            <StopControl />
+            <AccountMenu />
+          </div>
+        </div>
+      </header>
+    </>
+  );
+}
+
+/** Drawn for the bottom bar only: a person looking for a screen by its shape. */
+const TAB_ICON: Readonly<Record<NavKey, ReactNode>> = {
+  benim: <path d="M3 16.5c2 1 16 1 18-.5l-2 3.5a1 1 0 0 1-.9.5H6a1 1 0 0 1-.8-.4ZM12 16V3.5l6 11M12 4l-5.5 10.5H12" />,
+  portfoy: <path d="M3.5 4h17v16h-17ZM13.5 4v16M13.5 11h7M3.5 14h10" />,
+  bildirimler: <path d="M6 3.5h9l4 4V20.5H6ZM14.5 3.5V8H19M9 12h7M9 15.5h7" />,
+  gecmis: <path d="M4 12a8 8 0 1 0 2.6-5.9L4 8.5M4 4v4.5h4.5M12 7.5V12l3 2" />,
+};
+
+function MainNav({ pathname }: { pathname: string }) {
+  const active = activeNavHref(pathname);
+  return (
+    <nav aria-label="Ana gezinme" className="bar-nav sm:ml-4">
+      <ul className="flex items-center">
+        {NAV_ITEMS.map((item) => (
+          <li key={item.key}>
+            <Link href={item.href} aria-current={item.href === active ? "page" : undefined} className="nav-link">
+              {item.href === active ? <span aria-hidden className="nav-flag" /> : null}
+              <svg aria-hidden viewBox="0 0 24 24" className="nav-link__icon">
+                {TAB_ICON[item.key]}
+              </svg>
+              {item.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 
 /**
- * Who is signed in, as the desk's user chip: the initials in a navy disc (and the name from
- * 768px). It opens a small menu: name and role, "Gelişmiş görünüm", "Çıkış".
+ * The stop is reachable from every screen, a quiet red word in the bar; it still asks first. Once
+ * stopped it says so and leads home, where the band has the way back.
  */
-function SoloAccountMenu({ user, singleUser }: { user: SessionUser; singleUser: boolean }) {
+function StopControl() {
+  const desk = useDesk();
+  const controls = useStopRestart(() => desk.refresh());
+  if (desk.risk?.kill_switch === "on") {
+    return (
+      <Link href={HOME} className="stop-chip">
+        <span aria-hidden className="stop-chip__mark" />
+        Durduruldu
+      </Link>
+    );
+  }
+  return (
+    <ConfirmAction
+      trigger={
+        <button type="button" className="stop-chip" aria-label="Durdur: tüm işlemler">
+          <span aria-hidden className="stop-chip__mark" />
+          Durdur
+        </button>
+      }
+      title="Tüm işlemler durdurulsun mu?"
+      description="Yeni alım ve satım yapılmaz, bekleyen işlemler iptal edilir. Elindeki hisseler satılmaz."
+      confirm="Evet, durdur"
+      busy="Durduruluyor…"
+      tone="critical"
+      pending={controls.stopPending}
+      error={controls.stopError}
+      onConfirm={controls.onStop}
+    />
+  );
+}
+
+/** The account: a person in a compass ring, "Hesabım" from 768px. The menu: Ayarlar, Çıkış. */
+function AccountMenu() {
   const router = useRouter();
   const [leaving, start] = useTransition();
   const signOut = () =>
@@ -111,33 +246,27 @@ function SoloAccountMenu({ user, singleUser }: { user: SessionUser; singleUser: 
   return (
     <M.Root modal={false}>
       <M.Trigger
-        aria-label={`Hesap: ${user.name}`}
+        aria-label="Hesabım"
         aria-busy={leaving || undefined}
-        className="group ml-1 inline-flex h-11 items-center gap-2.5 rounded-full border border-line py-1 pr-2.5 pl-1 transition-colors duration-[var(--dur-quick)] hover:bg-wash-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand data-[state=open]:bg-wash-tint"
+        className="group inline-flex h-11 items-center gap-2 pr-1 pl-1 transition-colors duration-[var(--dur-quick)] hover:bg-wash-tint focus-visible:outline-3 focus-visible:outline-offset-0 focus-visible:outline-brand data-[state=open]:bg-wash-tint"
       >
-        <span aria-hidden className="grid size-8 place-items-center rounded-full bg-navy text-meta font-semibold text-on-navy ring-1 ring-line-strong">
-          {initials(user.name)}
+        <span aria-hidden className="grid size-9 place-items-center rounded-full border-2 border-ink text-ink">
+          <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={1.75}>
+            <circle cx="12" cy="8.5" r="3.75" />
+            <path d="M5 20c.8-3.9 3.5-6 7-6s6.2 2.1 7 6" />
+          </svg>
         </span>
-        <span className="hidden text-left leading-tight md:block">
-          <span className="block text-dense font-semibold text-ink">{user.name}</span>
-          {singleUser ? null : <span className="block text-meta text-muted">{ROLE_LABEL[user.role]}</span>}
-        </span>
-        <svg aria-hidden viewBox="0 0 10 10" className="size-2.5 text-ink-soft transition-transform duration-[var(--dur-quick)] group-data-[state=open]:rotate-180" fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <span className="hidden text-[15px] leading-tight font-medium text-ink md:block">Hesabım</span>
+        <svg aria-hidden viewBox="0 0 10 10" className="size-2.5 text-ink transition-transform duration-[var(--dur-quick)] group-data-[state=open]:rotate-180" fill="none" stroke="currentColor" strokeWidth={1.75}>
           <path d="M2 4l3 3 3-3" />
         </svg>
       </M.Trigger>
       <M.Portal>
-        <M.Content side="bottom" align="end" sideOffset={8} className={cn(MENU_CONTENT, "w-[240px] py-0")}>
-          <div className="border-b border-line px-4 py-3">
-            <p className="text-ui font-semibold text-ink">{user.name}</p>
-            <p className="text-meta text-ink-soft">{singleUser ? "Benim KAPtan'ım" : ROLE_LABEL[user.role]}</p>
-          </div>
+        <M.Content side="bottom" align="end" sideOffset={8} className={cn(MENU_CONTENT, "w-[220px]")}>
           <M.Item asChild className={MENU_ITEM}>
-            <Link href={FULL_PANEL_HOME} onClick={() => rememberView("masa")}>
-              Gelişmiş görünüm
-            </Link>
+            <Link href={ROUTES.ayarlar}>Ayarlar</Link>
           </M.Item>
-          <M.Item className={cn(MENU_ITEM, "mb-1")} disabled={leaving} onSelect={signOut}>
+          <M.Item className={MENU_ITEM} disabled={leaving} onSelect={signOut}>
             {leaving ? "Çıkılıyor…" : "Çıkış"}
           </M.Item>
         </M.Content>
@@ -146,57 +275,54 @@ function SoloAccountMenu({ user, singleUser }: { user: SessionUser; singleUser: 
   );
 }
 
-/** "İyi günler, Üye 3." · "31 Ekim Cuma · Piyasa kapalı" on the server's clock (empty until known). */
-function DayLine({ name }: { name: string }) {
-  const now = useNow(60_000);
-  const open = now !== null && marketOpen(now);
-  return (
-    <div className="mb-5 flex min-h-6 flex-wrap items-center justify-between gap-x-4 gap-y-1 sm:mb-6">
-      {now === null ? (
-        <span />
-      ) : (
-        <>
-          <p className="text-ui text-ink-soft">
-            {greeting(now)}, <span className="font-semibold text-ink">{name}</span>.
-          </p>
-          <p className="inline-flex items-center gap-2 text-meta font-semibold tracking-[0.06em] text-muted uppercase">
-            <span aria-hidden className={cn("size-2 rounded-full", open ? "bg-gain" : "bg-line-strong")} />
-            {longDay(istanbulDay(now))} · {open ? "Piyasa açık" : "Piyasa kapalı"}
-          </p>
-        </>
-      )}
-    </div>
-  );
-}
-
-/** http mode: resolve the person with GET /me, then render the frame; on failure → /login. */
-export function SoloHttpBoot({ singleUser = true, children }: { singleUser?: boolean; children: ReactNode }) {
+/**
+ * Resolve the person with GET /me, then render the frame. Signed out → /login; the API not
+ * answering is a different thing and says so, with a retry.
+ */
+export function HttpBoot({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [down, setDown] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let alive = true;
-    createClient({ getActor: () => null })
+    createClient()
       .me()
       .then((me) => {
-        if (alive) setUser({ uid: me.id, name: me.display_name, role: me.role });
+        if (alive) setUser({ uid: me.id, name: me.display_name });
       })
-      .catch(() => router.replace(`/login?next=${encodeURIComponent(SOLO_HOME)}`));
+      .catch((e: unknown) => {
+        if (!isUnreachable(e)) router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+        else if (alive) {
+          setDown(true);
+          setChecking(false);
+        }
+      });
     return () => {
       alive = false;
     };
-  }, [router]);
+  }, [router, pathname, attempt]);
+  if (!user && down) {
+    return (
+      <UnreachableScreen
+        pending={checking}
+        onRetry={() => {
+          setChecking(true);
+          setAttempt((n) => n + 1);
+        }}
+      />
+    );
+  }
   if (!user) {
     return (
-      <div data-solo className="min-h-dvh bg-paper">
+      <div data-solo className="min-h-dvh">
         <div className="mx-auto max-w-md p-10">
           <SkeletonLines lines={4} />
         </div>
       </div>
     );
   }
-  return (
-    <SoloShell user={user} singleUser={singleUser}>
-      {children}
-    </SoloShell>
-  );
+  return <SoloShell user={user}>{children}</SoloShell>;
 }

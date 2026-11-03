@@ -1,0 +1,183 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Ayarlar: short and friendly. Each limit is a big value and its meaning on a hairline rhythm;
+   how it works and the account sit side by side; the trial tools are fenced off by a hatch.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.ay-rows {
+  list-style: none;
+}
+.ay-limits > .ay-rows {
+  border-top: 2px solid var(--ink);
+}
+.ay-row {
+  display: grid;
+  grid-template-columns: clamp(92px, 60px + 10vw, 200px) minmax(0, 1fr) auto;
+  gap: 0.5rem clamp(1rem, 0.5rem + 2vw, 2.5rem);
+  align-items: center;
+  padding-block: clamp(1rem, 0.75rem + 1vw, 1.75rem);
+  border-bottom: 1px solid var(--hairline);
+}
+.ay-value {
+  font-size: clamp(2rem, 1.5rem + 2vw, 3.25rem);
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.ay-title {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.ay-sentence {
+  margin-top: 0.125rem;
+  font-size: 1.125rem;
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--ink);
+}
+.ay-you {
+  margin-top: 0.25rem;
+  font-size: 1rem;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+.ay-edit {
+  align-self: center;
+}
+.ay-form {
+  grid-column: 2 / -1;
+  max-width: 640px;
+  margin-top: 0.75rem;
+  padding: 1.25rem 0 0.25rem 1.25rem;
+  border-inline-start: 3px solid var(--ink);
+  animation: ay-open var(--dur-base) var(--ease-out-expo) both;
+}
+.ay-form-new {
+  margin-top: 0.75rem;
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+@keyframes ay-open {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 639px) {
+  .ay-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .ay-value {
+    grid-column: 1;
+  }
+  .ay-row > .min-w-0 {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .ay-edit {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .ay-form {
+    grid-column: 1 / -1;
+  }
+}
+.ay-more-sum {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 44px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-soft);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  list-style: none;
+}
+.ay-more-sum::-webkit-details-marker {
+  display: none;
+}
+.ay-more-sum:hover {
+  text-decoration-color: var(--ink);
+}
+.ay-more-sum:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.ay-more {
+  padding-block: 0.5rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.ay-more[open] {
+  border-bottom: 0;
+}
+.ay-more[open] .ay-rows {
+  border-top: 1px solid var(--hairline);
+  margin-top: 0.5rem;
+}
+.ay-history {
+  margin-top: 0.75rem;
+}
+.ay-history-list {
+  margin-top: 0.25rem;
+}
+.ay-history-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 1rem;
+  padding-block: 0.5rem;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+.ay-pending {
+  padding-block: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-top: 3px solid var(--north);
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* How it works, and you. */
+.ay-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 2.5rem clamp(2rem, 1rem + 4vw, 5rem);
+  margin-top: clamp(3rem, 2rem + 4vw, 6rem);
+}
+.ay-how {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+.ay-how-boat {
+  width: clamp(72px, 56px + 4vw, 120px);
+  height: clamp(72px, 56px + 4vw, 120px);
+}
+@media (max-width: 859px) {
+  .ay-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ay-form {
+    animation: none;
+  }
+}

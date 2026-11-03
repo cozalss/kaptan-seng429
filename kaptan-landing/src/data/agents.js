@@ -2,8 +2,8 @@
 // order: six LLM agents read and collect evidence, two deterministic stages decide. Facts only
 // (KAPTAN-BRIEF.md §0) — no invented metrics. `image` is the base of the generated `ajan-N` set.
 
-// Sentence case (never tracked caps): the card folio reads "4 / 8 · LLM ajanı".
-export const AGENT_KIND = Object.freeze({ llm: 'LLM ajanı', rule: 'Deterministik' });
+// Sentence case (never tracked caps): the card folio reads "4 / 8 · Yapay zekâ".
+export const AGENT_KIND = Object.freeze({ llm: 'Yapay zekâ', rule: 'Yazılı kural' });
 
 const AGENT_LIST = [
   {
@@ -12,7 +12,7 @@ const AGENT_LIST = [
     name: 'Sınıflandırıcı',
     meta: 'Girdi: bildirim · Çıktı: E1–E4 / filtre / diğer',
     description:
-      'Her bildirimin türünü bulur: pay geri alımı, yönetici ya da ana ortak alımı, yeni iş ilişkisi, finansal sonuç — ya da hiçbiri. 200 kilitli test bildirimiyle ölçülür; hedef macro-F1 ≥ 0,85.',
+      'Her bildirimin türünü bulur: pay geri alımı, yönetici ya da ana ortak alımı, yeni iş ilişkisi, finansal sonuç — ya da hiçbiri. 200 kilitli test bildirimiyle ölçülür; hedef macro-F1 ≥ 0,85 (1,00 kusursuz demek).',
     notDoes: 'Al ya da sat demez; yalnızca etiketler.',
   },
   {
@@ -21,16 +21,16 @@ const AGENT_LIST = [
     name: 'Okuyucu',
     meta: 'Girdi: bildirim metni · Çıktı: tutar, karşı taraf, süre',
     description:
-      'Sınıflandırılan bildirimin serbest metnini yapılandırılmış alanlara çevirir: tutar, karşı taraf, süre. Kural motorunun ihtiyaç duyduğu her değer buradan gelir.',
-    notDoes: 'Oran hesaplamaz; hesabı birleştirme düğümü yapar.',
+      'Bildirimin uzun metnini üç kısa alana çevirir: tutar, karşı taraf, süre. Kural motorunun ihtiyaç duyduğu her değer buradan gelir.',
+    notDoes: 'Oran hesaplamaz; hesabı ayrı bir kod adımı yapar.',
   },
   {
     id: 'onemlilik',
     kind: 'llm',
     name: 'Önemlilik',
-    meta: 'Girdi: şirket · Çıktı: finansallar, piyasa değeri',
+    meta: 'Girdi: şirket · Çıktı: finansal rakamlar, piyasa değeri',
     description:
-      'Bildirimdeki tutarın şirket için ne kadar büyük olduğunu tartmak üzere şirketin finansallarını ve piyasa değerini getirir. Oranları birleştirme düğümü hesaplar; örneğin E3’te yıllıklandırılmış tutarın yıllık gelire oranı.',
+      'Bildirimdeki tutarın şirket için ne kadar büyük olduğunu tartmak üzere şirketin finansal rakamlarını ve piyasa değerini getirir. Oranları ayrı bir kod adımı hesaplar; örneğin E3’te işin bir yıla düşen tutarının yıllık gelire oranı.',
     notDoes: 'Eşiğe kendisi karar vermez.',
   },
   {
@@ -55,19 +55,19 @@ const AGENT_LIST = [
     id: 'uyum',
     kind: 'llm',
     name: 'Uyum',
-    meta: 'Girdi: bildirim, şirket · Çıktı: tedbir ve injection bayrağı',
+    meta: 'Girdi: bildirim, şirket · Çıktı: tedbir ve gizli talimat bayrağı',
     description:
-      'SPK tedbirlerini denetler ve bildirim metnine gizlenmiş talimatları (prompt-injection) yakalar. Ölçüt açık: kötü niyetli bir bildirimden çıkan emir sayısı 0.',
+      'SPK (Sermaye Piyasası Kurulu) tedbirlerine bakar; bildirim metnine gizlenip yapay zekâyı kandırmaya çalışan talimatları yakalar. Ölçüt açık: kötü niyetli bir bildirimden çıkan emir sayısı 0.',
     notDoes: 'Kural esnetmez; şüphede öneriyi durdurur.',
   },
   {
     id: 'kural-motoru',
     kind: 'rule',
     name: 'Kural Motoru',
-    meta: 'Girdi: yapılandırılmış kanıt · Çıktı: E1–E4 kararı',
+    meta: 'Girdi: düzenlenmiş kanıt · Çıktı: E1–E4 kararı',
     description:
-      'E1–E4 kurallarını yazılı eşiklerle uygular; örneğin E1 için 10 seansta sermayenin en az %0,25’i. Aynı girdi her zaman aynı kararı verir.',
-    notDoes: 'Yorum yapmaz, LLM çağırmaz.',
+      'E1–E4 kurallarını yazılı eşiklerle uygular; örneğin E1 için 10 borsa gününde sermayenin en az %0,25’i. Aynı girdi her zaman aynı kararı verir.',
+    notDoes: 'Yorum yapmaz, yapay zekâya sormaz.',
   },
   {
     id: 'risk-kapisi',
@@ -75,12 +75,12 @@ const AGENT_LIST = [
     name: 'Risk Kapısı',
     meta: 'Girdi: öneri · Çıktı: aynen / küçült / reddet',
     description:
-      '16 kuraldan (R01–R16) geçirir: işlem başına %0,5 risk, pozisyon en fazla %10; günlük −%1’de yeni emir durur, zirveden −%5’te kill switch açık emirleri iptal eder.',
-    notDoes: 'Bir öneriyi asla büyütmez; pozisyon satmaz.',
+      'Her öneriyi 16 kuraldan (R01–R16) geçirir: bir işlemde paranın en çok %0,5’i riske girer, tek bir payda en çok %10’u durur; gün içinde −⁠%1’de yeni emir durur, zirveden −⁠%5’te acil durdurma bekleyen emirleri iptal eder.',
+    notDoes: 'Bir öneriyi asla büyütmez; elindeki payları satmaz.',
   },
 ];
 
-/** "LLM ajanı · 01" / "Deterministik · 07" — the agent's kind and place in the pipeline. */
+/** "Yapay zekâ · 01" / "Yazılı kural · 07" — the agent's kind and place in the pipeline. */
 export function agentCategory(kind, index) {
   const label = AGENT_KIND[kind];
   if (!label) throw new RangeError(`agentCategory: unknown kind "${kind}"`);

@@ -1,6 +1,8 @@
 # KAPtan — Güvenlik ve Uyum
 
-> SENG 429, Güz 2026 · Doğruluk kaynağı: `_KANONIK-KARARLAR.md` (**REVİZYON 3 > REVİZYON 2 > orijinal kararlar**; Revizyon 3: LLM sağlayıcıları, KVKK bulgusu, LangSmith; Revizyon 2: RBAC rolleri + Auditor, risk parametreleri, canlı mod için 3 anahtar, kill switch tetik/reset). Risk kapısı kurallarının tek kaynağı `06-strateji-ve-kurallar.md`'dir (R01–R16); bu doküman onlara ID ile referans verir. Kanonik kararlardan ayrılan öneriler en sondaki **"Önerilen değişiklikler — durum"** bölümündedir.
+> **Tek kullanıcı (02.11.2026):** Erişim modeli §5–6'dadır; roller ve iki kişilik kurallar kaldırılmıştır (`_KANONIK-KARARLAR.md` Revizyon 4). Güvenlik kuralları ve denetim zinciri aynen geçerlidir.
+
+> Doğruluk kaynağı: `_KANONIK-KARARLAR.md` (**REVİZYON 3 > REVİZYON 2 > orijinal kararlar**; Revizyon 3: LLM sağlayıcıları, KVKK bulgusu, LangSmith; Revizyon 2: RBAC rolleri + Auditor, risk parametreleri, canlı mod için 3 anahtar, kill switch tetik/reset). Risk kapısı kurallarının tek kaynağı `06-strateji-ve-kurallar.md`'dir (R01–R16); bu doküman onlara ID ile referans verir. Kanonik kararlardan ayrılan öneriler en sondaki **"Önerilen değişiklikler — durum"** bölümündedir.
 > Hazırlanma: 29 Eylül 2026 · Revizyon 2 uyumu: 30 Eylül 2026. Sahibi: Rol 3 (Strateji, Risk & Yürütme). Katkı: Rol 2 (ajan güvenliği), Rol 4 (auth, frontend).
 > **Bu doküman hukuki görüş değildir.** Hukuki bölümler, ekibin riskleri fark etmesi için yazılmış bir farkındalık özetidir. Gerçek parayla ilgili herhangi bir adımdan önce uzman görüşü alınmalıdır.
 
@@ -15,15 +17,15 @@
 | Temel güvenlik ilkesi | **LLM hiçbir yan etkiye sahip değildir.** Ajanlar yalnızca Pydantic şemasına uyan veri döndürür. Emir, limit, bayrak ve onay gibi tüm yan etkiler deterministik düğümlerde ve insan onayında |
 | En büyük tehdit | KAP bildirimi ve PDF eki üzerinden **dolaylı prompt injection** (OWASP LLM01 / ASI01) |
 | Savunma | 8 katman (§3). Tespit (**Türkçe kural tabanlı injection kontrolü + Prompt Guard**; Prompt Guard Türkçeyi resmî olarak desteklemez) yardımcıdır; asıl güvence **yapısal kısıtlardır** |
-| Kimlik | JWT (15 dk) + dönen refresh token (httpOnly çerez), argon2id, Risk Officer ve Admin için TOTP |
-| Yetki | 4 kanonik rol (Analist, Risk Officer, Admin, **Auditor — salt okunur**) + insan olmayan servis hesapları; görevler ayrılığı |
+| Kimlik | JWT (15 dk) + dönen refresh token (httpOnly çerez), argon2id tek parola; tek kişi için TOTP kararı açık (§6) |
+| Yetki | Tek kullanıcı: oturum açmış kişi her eylemi yapar; roller, iki kişilik onay ve görev ayrılığı kaldırıldı (Revizyon 4, §5). Atlanan her ikinci imza `auth.single_user_waiver` ile denetime yazılır. İnsan olmayan servis hesapları ayrı DB rolleridir |
 | Karar akışı | **Otomatik yürütme yok**: risk kapısından geçen her öneri insan onayına gider, onay bir sonraki seansın 09:50'sinde düşer (`06` R15/R16) |
-| Kill switch | Admin **veya** Risk Officer tetikler (+ otomatik zirveden %-5); **açık emirleri iptal eder, açık pozisyonları satmaz**; reset = Admin + Risk Officer (kişisel mod: iki onay arası ≥ 24 sa + 5 seans bekleme) |
+| Kill switch | Kişi tetikler (+ otomatik zirveden %-5); **açık emirleri iptal eder, açık pozisyonları satmaz**; yeniden başlatma iki adım, gerçek veride ≥ 24 sa + ≥ 5 seans bekleme (`06` §11) |
 | Denetim | Hash zincirli, yalnızca eklenebilir audit log (kanonik JSON dizisi, `run_id` dahil; W7'den itibaren); gece doğrulama + dış çıpa |
 | Sırlar | SOPS + age, `.env` git dışında, gitleaks (pre-commit + CI); aracı kurum API anahtarı **yok** |
-| Canlı mod | 3 bağımsız anahtar (config + env + iki kişilik UI onayı) + her emirde insan onayı |
+| Canlı mod | 3 bağımsız anahtar (config + env + tek kişilik UI onayı; ikinci adımın muafiyeti denetime yazılır) + her emirde insan onayı |
 | KVKK | Kamuya açık bildirim işleniyor, ancak içinde gerçek kişi adları var → LLM'e ve LangSmith'e gitmeden **maskeleme** |
-| Uyum | Ekip içeriden-öğrenen engel listesi (`restricted_securities`, `06` R13); KAP polling seans içi **≥ 30 sn**; model kimlikleri tam sürüm ID'siyle dondurulur, prompt hash'leri sürüm manifestinde |
+| Uyum | İçeriden-öğrenen engel listesi (`restricted_securities`, `06` R13); KAP polling seans içi **≥ 30 sn**; model kimlikleri tam sürüm ID'siyle dondurulur, prompt hash'leri sürüm manifestinde |
 | Hukuk | Ders için paper trading, yatırım tavsiyesi yok, sinyal paylaşımı yok, ortak para yok, KAP'a nazik erişim |
 
 ---
@@ -34,10 +36,10 @@
 
 | Varlık | Neden değerli | Etki (ihlal olursa) |
 |---|---|---|
-| **Karar bütünlüğü** (öneri → risk kapısı → onay → dolum) | Yanlış işlem = para kaybı (kişisel modda gerçek para) | Yüksek |
+| **Karar bütünlüğü** (öneri → risk kapısı → onay → dolum) | Yanlış işlem = para kaybı (tek kullanıcıda gerçek para) | Yüksek |
 | **Audit log** | "Neden bu işlem?" ve SPK denetçisine gerekçe (persona) | Yüksek |
 | Sırlar (LLM API anahtarları, JWT anahtarı, DB şifreleri) | Kota hırsızlığı, fatura, sisteme giriş | Orta–Yüksek |
-| Kullanıcı hesapları (özellikle Risk Officer, Admin) | Onay ve kill switch yetkisi | Yüksek |
+| Kullanıcı hesabı (tek parola) | Onay ve kill switch yetkisi | Yüksek |
 | Dondurulmuş strateji (`v1.0-fwd`) ve değerlendirme verisi | Ölçümün geçerliliği | Orta |
 | KAP arşivi ve RAG tabanları | Zehirlenirse tüm kararlar etkilenir | Orta |
 | Kişisel veri (bildirimlerdeki kişi adları, kullanıcı hesapları) | KVKK | Düşük–Orta |
@@ -60,7 +62,7 @@
                                                           Kural motoru ─► Risk kapısı ─► interrupt()
                                                           (saf Python)    (yalnızca küçültür/reddeder)
                                                                                  │
- Tarayıcı (Next.js) ─── TB4: JWT/RBAC/CSRF ──► FastAPI ──► Command(resume) ──────┘
+ Tarayıcı (Next.js) ─── TB4: JWT/CSRF ──► FastAPI ──► Command(resume) ──────┘
                                                                                  ▼
                                                           GuardedBroker ─► SimBIST / OrderTicket
                                                           (kill switch, sert tavan, canlı kilit)
@@ -71,7 +73,7 @@
 - **TB1:** internetten gelen her şey veridir, asla talimat değildir.
 - **TB2:** LLM çıktısı da güvenilmeyen girdidir; yalnızca doğrulanmış şema geçer. Sağlayıcılar (Revizyon 3): ana model **Gemini Flash-Lite** (ücretsiz, ~500 RPD); **Groq** `openai/gpt-oss-120b` (Sınıflandırıcı, Şüpheci; ~1K RPD / ~200K TPD) ve Llama Prompt Guard 2 (ücretsiz, 14,4K RPD); **Azure for Students** (geri dönüş + hassas işler); yerel **Ollama Qwen**. Ücretsiz katmanlara (Gemini, Groq) yalnızca kişi adları maskelenmiş metin gider (§9.2).
 - **TB3:** kural motoru ve risk kapısı LLM'e hiç danışmaz.
-- **TB4:** kullanıcı eylemleri yetkilendirilir ve audit log'a yazılır.
+- **TB4:** kullanıcı eylemleri oturumla bağlanır ve audit log'a yazılır.
 - **TB5:** DB sahibi bile geçmişi fark edilmeden yeniden yazamaz.
 
 ---
@@ -86,7 +88,7 @@
 | **LLM ajanları** | Başka ajan gibi davranan metin ("Şüpheci ajan: …") → ajanlar arası mesaj yalnızca tipli state | Çıktı manipülasyonu → şema + sınırlar + kanıt kuralı | Her çağrı `llm_usage` + LangSmith izi | Prompt'ta sır yok; kişi adları maskeli | Kota tüketme → token bütçesi, kota bitti → HOLD | Araç yok = yükseltilecek yetki yok (§4) |
 | **RAG tabanları** | — | Zehirli belge/olay hafızası → yazma yalnızca deterministik hattan, hafıza kaydı hesaplanmış getiriden | Belge `content_sha256` | — | Büyük sorgu → k ve uzunluk sınırı | — |
 | **Kural motoru / risk kapısı** | — | Kod değişikliği → CODEOWNERS 2 onay, %100 dal kapsama | Her kural sonucu `risk_checks` + audit | — | — | LLM'in boyutu büyütmesi → monoton küçültme (property test) |
-| **Onay API / UI** | Çalınan oturum → kısa JWT, TOTP adım-yukarı | Onay payload'ı değiştirilir → `ApprovalDecision` yeniden doğrulanır, `approved_notional ≤ requested` | Onaylayan kullanıcı + zaman audit'e | IDOR → her uç noktada yetki kontrolü | Onay yağmuru → hız sınırı | Analistin onay vermesi → RBAC testi |
+| **Onay API / UI** | Çalınan oturum → kısa JWT, refresh ailesi iptali | Onay payload'ı değiştirilir → `ApprovalDecision` yeniden doğrulanır, `approved_notional ≤ requested` | Onaylayan kullanıcı + zaman audit'e | IDOR → her uç noktada oturum kontrolü | Onay yağmuru → hız sınırı | Oturumsuz onay isteği → 401 testi |
 | **GuardedBroker / SimBIST / OrderTicket** | — | Emir tekrar gönderimi → deterministik `client_order_id` | Emir/dolum audit'e | — | — | Canlı moda kaçak geçiş → 3 anahtar (§8) |
 | **Audit log** | — | Satır değiştirme/silme → trigger yasağı + hash zinciri + dış çıpa | Zincirin kendisi | Payload'da sır/kişisel veri yok | Tablo şişmesi → bölümleme (ileride) | DB sahibi trigger'ı kapatır → **kabul edilen risk**, dış çıpa ile tespit |
 | **Sırlar / config** | — | Config'e sızma → config hash `v1.0-fwd` kaydında | — | Git'e anahtar → gitleaks | — | — |
@@ -116,7 +118,7 @@ Kaynak: OWASP GenAI Security Project, 9 Aralık 2025 ([OWASP GenAI](https://gena
 |---|---|---|
 | ASI01 | Agent Goal Hijack | Ajanın "hedefi" koddadır (sınıflandır/çıkar); karar kural motorunda. Enjeksiyon hedefi değiştirse bile çıktı şeması sabit |
 | ASI02 | Tool Misuse & Exploitation | Ajanlarda araç yok. Önemlilik ajanının ihtiyaç duyduğu finansallar, piyasa değeri ve kur **önceden deterministik olarak** (`fundamentals_pit`, point-in-time) prompt'a konur; ajan yalnızca sayıları seçip döndürür, oran hesaplamaz |
-| ASI03 | Identity & Privilege Abuse | Servis hesapları ayrı DB rolleri; ajan işçisinin DB rolü `trading` şemasına yazamaz; insan yetkileri RBAC |
+| ASI03 | Identity & Privilege Abuse | Servis hesapları ayrı DB rolleri; ajan işçisinin DB rolü `trading` şemasına yazamaz; insan erişimi oturum kontrolüyle |
 | ASI04 | Agentic Supply Chain | Paket kilidi, model kimlikleri **tam sürüm ID'siyle dondurulur** (alias değil, `models.yaml`), prompt hash'leri `v1.0-fwd` / `v1.1-fwd` manifestinde; MCP/harici araç yok |
 | ASI05 | Unexpected Code Execution | Kod yürütme aracı yok; LLM çıktısı asla `eval`/`exec`/shell'e gitmez |
 | ASI06 | Memory & Context Poisoning | Olay hafızasına LLM yazamaz; RAG parçaları da çitlenir; checkpointer yalnızca graf state'i |
@@ -138,7 +140,7 @@ Kaynak: OWASP GenAI Security Project, 9 Aralık 2025 ([OWASP GenAI](https://gena
 | **L5 Şema kısıtı** | çıktı | `extra="forbid"`, `Literal` sınıflar, sayısal sınırlar, maksimum uzunluklar; geçersiz → yeniden dene → HOLD | Şemaya uyan yanlış değer |
 | **L6 Kanıt ve tutar kuralları** | Birleştirme + risk kapısı | Her kanıt ID'si bu çalışmada gerçekten getirilen ID'ler arasında olmalı (R05); Okuyucu tutarı regex tutarları arasında olmalı (R14) | Gerçek ama yanlış yorumlanmış kanıt |
 | **L7 Deterministik karar** | kural motoru + risk kapısı | Karar sınıf + özniteliklerden kuralla verilir; tedbir/evren/engel listesi/sızıntı kontrolleri LLM'e değil veriye bakar (S0'da LLM'den önce de); boyut yalnızca küçülür | — (LLM'i karardan çıkarır) |
-| **L8 İnsan onayı + fren** | `interrupt()` + GuardedBroker | Her öneri için Risk Officer onayı (otomatik yürütme yok, 09:50 süre sınırı); gönderim anı yeniden kontrol (R16); kill switch; sert tavan | Dikkatsiz onay → ASI09 önlemleri |
+| **L8 İnsan onayı + fren** | `interrupt()` + GuardedBroker | Her öneri için kullanıcının onayı (otomatik yürütme yok, 09:50 süre sınırı); gönderim anı yeniden kontrol (R16); kill switch; sert tavan | Dikkatsiz onay → ASI09 önlemleri |
 
 **Tasarım gerekçesi.** Prompt Guard'ın model kartı, uyarlanabilir saldırılara ve uygulamaya özgü saldırılara karşı sınırlı olduğunu açıkça söylüyor ([Hugging Face](https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M)). Bu yüzden KAPtan'ın güvenliği "enjeksiyonu yakala" varsayımına değil, **"yakalanmasa bile zarar veremez"** varsayımına dayanır (L5–L8).
 
@@ -228,7 +230,7 @@ SYSTEM_RULE = (
 | **Kural motoru** | Deterministik | Tipli state | — | `signal` | Öneri üretir |
 | **Risk kapısı** | Deterministik | Öneri + risk bağlamı + limitler | — | `risk` | Yalnızca küçültür/reddeder |
 | `request_approval` | Deterministik | Öneri | DB (approvals), bildirim | — | Hayır |
-| `approval` (`interrupt()`) | İnsan | Risk Officer kararı | — | `approval` | Onay verir |
+| `approval` (`interrupt()`) | İnsan | Kullanıcının kararı | — | `approval` | Onay verir |
 | `execute` | Deterministik | Onaylı öneri; gönderim anında R16 (onay süresi 09:50 + R01–R04, R09, R12, R13 tekrar) | GuardedBroker | `order` | **Evet (tek yer)** |
 
 **Veri tabanı rolleri (en az yetki):**
@@ -240,87 +242,50 @@ SYSTEM_RULE = (
 | `svc_agents` | Graf işçisi | `core.*` okuma, `agent_*` yazma, `rag.*` okuma, `trading.trade_proposals` INSERT, `audit_log` INSERT; **`trading.orders` yazamaz** |
 | `svc_exec` | `execute` düğümü / GuardedBroker | `trading.orders`, `fills`, `positions` yazma |
 | `svc_api` | FastAPI | Onay, not, limit önerisi; kullanıcı yönetimi |
-| `auditor_ro` | Doğrulama betiği, Denetçi görünümü | Salt okuma |
+| `auditor_ro` | Doğrulama betiği | Salt okuma |
 
 `execute` düğümünün ayrı bir DB rolüyle çalışabilmesi için, emir gönderimi aynı süreç içinde ayrı bir bağlantı havuzu (`svc_exec` kimliğiyle) üzerinden yapılır.
 
 ---
 
-## 5. RBAC matrisi
+## 5. Erişim modeli: tek kullanıcı
 
-Kanonik roller: **Analist** (görür, not ekler) · **Risk Officer** (onay/ret, kill switch, limitler) · **Admin** (kullanıcı, evren, config) · **Auditor** (Revizyon 2: **salt okunur**; persona gereği SPK denetçisine gerekçe gösterme). Limit değişikliği ikinci onay ister. Kill switch'i **Admin veya Risk Officer** tetikler; reset = Admin + Risk Officer.
+**Revizyon 4 (02.11.2026).** KAPtan tek bir kişi içindir. Roller (Analist, Risk Officer, Admin, Auditor), iki kişilik kurallar, dört göz ve görev ayrılığı kaldırılmıştır. Önceki matris Revizyon 2'de tanımlanmıştı ve git geçmişinde durur. Erişim tek bir kuralla belirlenir: **oturum açmış kişi uygulamanın her eylemini yapabilir.** Güvenlik sorusu artık "kim yapabilir" değil, şudur: *yapılan her eylem kayda geçiyor mu, ve atlanan bir kontrol görünür mü?*
 
-| Eylem | Analist | Risk Officer | Admin | Auditor | Not |
-|---|---|---|---|---|---|
-| Canlı akış, kanıt kartı, "Neden bu işlem?", P&L, dashboard | ✓ | ✓ | ✓ | ✓ | |
-| Audit log görüntüleme, zincir doğrulama sonucunu görme ve **dışa aktarma** | ✓ (görme) | ✓ | ✓ | ✓ | Dışa aktarım kişi adı içermez |
-| Bir çalışmaya not/etiket ekleme | ✓ | ✓ | ✓ | | Auditor hiçbir şey yazamaz; audit'e yazılır |
-| Öneriyi onaylama / reddetme / küçültme | | ✓ (TOTP) | | | Admin onaylayamaz (görevler ayrılığı); **her öneri** buraya gelir, onay sonraki seansın 09:50'sinde düşer |
-| Kill switch **açma** | | ✓ | ✓ | | Tek rol yeterli; otomatik tetik: zirveden %-5. Açık emirleri iptal eder, pozisyonları satmaz |
-| Kill switch **sıfırlama** | | ✓ onay (TOTP) | ✓ başlatma (TOTP) | | İki farklı kişi şart; kişisel modda (tek kişi) iki onay arası ≥ 24 sa + tetikten itibaren ≥ 5 seans (`06` §11) |
-| Günlük %-1 durdurmasını gün içinde kaldırma | | | | | **Yok**: ertesi seans otomatik sıfırlanır |
-| Limit değişikliği önerme | | ✓ | ✓ | | Yeni `limits` sürümü |
-| Limit değişikliğini onaylama | | ✓ | ✓ | | Öneren ≠ onaylayan (DB CHECK + API) |
-| Kullanıcı / rol yönetimi | | | ✓ | | Kendi rolünü değiştiremez |
-| Evren (izleme listesi) ve config | | | ✓ | | Dondurma sonrası yeni `strategy_version` gerekir |
-| İçeriden-öğrenen engel listesi (`restricted_securities`) yönetimi | | ✓ onay | ✓ ekleme | ✓ (görme) | Ekleme hemen etkili; **çıkarma** Risk Officer onayı ister (`06` R13) |
-| Canlı mod silahlandırma (§8) | | ✓ onay | ✓ başlatma | | Gün sonunda otomatik düşer |
-| Demo bildirimi enjekte etme | | | ✓ | | Yalnızca `DEMO_MODE=true` iken |
-| Değerlendirme koşusu tetikleme (`gold_test`, holdout) | | | ✓ | | Audit'e `eval.*.run`; holdout yalnızca bir kez, Risk Officer onayıyla (`06` §12.6) |
-| LLM maliyet/kota paneli | | ✓ | ✓ | ✓ | |
+| Eylem | Kural | Denetim kaydı |
+|---|---|---|
+| Görüntüleme: ana sayfa, Param, Okunanlar, Öneri, Geçmiş | Oturum açmış kişi | — |
+| Geçmiş dışa aktarma ve zincir doğrulama | Oturum açmış kişi; kişi adı içermez | `audit.verified` |
+| Not ekleme | Oturum açmış kişi | `note.added` |
+| Öneriyi onaylama, reddetme, küçültme | Kişinin kendi kararı; her öneri buraya gelir; yanıtsız öneri sonraki seansın 09:50'sinde düşer (R15) | `approval.decided` |
+| Durdurma (kill switch) | Kişi tetikler; otomatik tetik: zirveden %-5 | `kill_switch.on` |
+| Yeniden başlatma | İki adım, aynı kişi. Gerçek veride ≥ 24 saat ve ≥ 5 seans (`06` §11); demo modunda bekleme muaf | `kill_switch.reset_started`, `kill_switch.reset`; muafiyet `auth.single_user_waiver` |
+| Günlük %-1 durdurmasını gün içinde kaldırma | Yok: ertesi seans otomatik sıfırlanır | — |
+| Limit değişikliği önerme ve onaylama | Kişi önerir ve onaylar; ikinci imza muaf. Yalnızca sıkılaştırma (`limitViolations`) | `limits.proposed`, `limits.approved`, `auth.single_user_waiver` |
+| Engel listesi (`restricted_securities`) ekleme | Hemen etkili | `restricted.added` |
+| Engel listesi çıkarma | İki adım, aynı kişi; ikinci imza muaf | `restricted.removed`, `auth.single_user_waiver` |
+| Evren ve yapılandırma | Kişi; dondurma sonrası yeni `strategy_version` gerekir | `universe.override_set` ve ilgili kayıtlar |
+| Canlı mod silahlandırma (§8) | İki adım, aynı kişi; gün sonunda düşer | `live.arm_started`, `live.armed`, `auth.single_user_waiver` |
+| Demo bildirimi enjekte etme | Yalnızca `DEMO_MODE=true` iken | `demo.injected` |
+| Değerlendirme koşusu (`gold_test`, holdout) | Kişi; holdout yalnızca bir kez (`06` §12.6) | `eval.*.run` |
 
-**Görevler ayrılığı kuralları.** Aynı kişi, (a) hem limit değişikliğini önerip hem onaylayamaz; (b) hem kill switch sıfırlamasını başlatıp hem onaylayamaz; (c) Admin rolüyle öneri onaylayamaz; (d) Auditor rolü başka bir rolle birleştirilemez. 4 kişilik ekipte roller şöyle önerilir: Rol 3 = Risk Officer, Rol 4 = Admin, Rol 1 ve Rol 2 = Analist; demo için "Hoca" adında bir **Auditor** hesabı açılır.
+**Atlanan ikinci imza.** İki kişilik modelde aynı işlemin iki adımını iki farklı kişi yapardı. Tek kişi modunda iki adım aynı kişidedir. Her atlanan ikinci imza bir `auth.single_user_waiver` denetim kaydı üretir: kim, hangi işlem, hangi zaman. Denetçi bu kayıtlara bakarak hangi kararın tek imzayla verildiğini görür. Bu, kuralı değil **kanıtın dürüstlüğünü** korur: sistem ikinci kişiyi taklit etmez, eksikliği kayda geçirir.
 
-```python
-# backend/src/kaptan/api/deps.py
-from enum import StrEnum
-from typing import Annotated
-from fastapi import Depends, HTTPException, status
+**Kurallar.**
+- Kimlik doğrulama tek parolayla yapılır (§6). Oturum açmış kişinin rolü yoktur; yetki kontrolü "oturum açık mı" sorusudur.
+- Yetkisiz rol yanıtı (403) ve "aynı kişi" yanıtı yoktur. Oturumsuz istek 401 alır.
+- Risk kuralları R01–R16 ve olay kuralları E1–E4 hiçbir kararla gevşetilemez; yalnızca sınırlar sıkılaştırılabilir.
+- Denetim defteri hiçbir kullanıcıya güncelleme ya da silme izni vermez (§7).
 
-class Perm(StrEnum):
-    VIEW = "view"; NOTE = "note"; AUDIT_EXPORT = "audit_export"; APPROVE = "approve"; KILL_ON = "kill_on"
-    KILL_RESET_INIT = "kill_reset_init"; KILL_RESET_CONFIRM = "kill_reset_confirm"
-    LIMIT_PROPOSE = "limit_propose"; LIMIT_APPROVE = "limit_approve"
-    BLOCKLIST_ADD = "blocklist_add"; BLOCKLIST_REMOVE_CONFIRM = "blocklist_remove_confirm"
-    USERS = "users"; CONFIG = "config"; LIVE_ARM_INIT = "live_arm_init"; LIVE_ARM_CONFIRM = "live_arm_confirm"
-
-ROLE_PERMS: dict[str, frozenset[Perm]] = {
-    "analyst": frozenset({Perm.VIEW, Perm.NOTE}),
-    "auditor": frozenset({Perm.VIEW, Perm.AUDIT_EXPORT}),          # read-only, no mutations at all
-    "risk_officer": frozenset({Perm.VIEW, Perm.NOTE, Perm.AUDIT_EXPORT, Perm.APPROVE, Perm.KILL_ON,
-                               Perm.KILL_RESET_CONFIRM, Perm.LIMIT_PROPOSE, Perm.LIMIT_APPROVE,
-                               Perm.BLOCKLIST_REMOVE_CONFIRM, Perm.LIVE_ARM_CONFIRM}),
-    "admin": frozenset({Perm.VIEW, Perm.NOTE, Perm.AUDIT_EXPORT, Perm.KILL_ON, Perm.KILL_RESET_INIT,
-                        Perm.LIMIT_PROPOSE, Perm.LIMIT_APPROVE, Perm.BLOCKLIST_ADD, Perm.USERS,
-                        Perm.CONFIG, Perm.LIVE_ARM_INIT}),
-}
-STEP_UP = frozenset({Perm.APPROVE, Perm.KILL_RESET_INIT, Perm.KILL_RESET_CONFIRM,
-                     Perm.LIVE_ARM_INIT, Perm.LIVE_ARM_CONFIRM})
-
-def require(perm: Perm):
-    async def checker(user: Annotated["CurrentUser", Depends(get_current_user)]) -> "CurrentUser":
-        granted = frozenset().union(*(ROLE_PERMS.get(r, frozenset()) for r in user.roles))
-        if perm not in granted:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "forbidden")
-        if perm in STEP_UP and not user.mfa_fresh:          # TOTP verified in the last 5 minutes
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "step-up authentication required")
-        return user
-    return checker
-```
-
-RBAC matrisinin tamamı, `tests/integration/api/test_rbac_matrix.py` içinde parametrize edilmiş bir tabloyla test edilir (rol × uç nokta → beklenen HTTP kodu).
-
----
-
-## 6. Kimlik doğrulama, yetkilendirme ve oturum
+## 6. Kimlik doğrulama ve oturum
 
 | Konu | Karar |
 |---|---|
-| Şifre saklama | **argon2id** (`pwdlib`, `PasswordHash.recommended()`) [V] ([FastAPI OAuth2 + JWT dokümanı](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/)). Kullanıcı yoksa da sahte hash doğrulanır (zamanlama saldırısına karşı), dokümandaki `DUMMY_HASH` deseni |
-| Şifre politikası | ≥ 12 karakter, parola cümlesi önerilir; ilk girişte değiştirme zorunlu |
-| Erişim token'ı | JWT, **15 dk**, `HS256` + 256-bit gizli anahtar (PyJWT). Claim'ler: `sub` (kullanıcı UUID), `roles`, `jti`, `iat`, `exp`, `iss=kaptan`, `aud=kaptan-web`, `amr` (TOTP kullanıldı mı), `auth_time`. Tarayıcıda **yalnızca bellekte**, `Authorization: Bearer` başlığıyla |
+| Parola saklama | **argon2id** (`pwdlib`, `PasswordHash.recommended`) [V]. Kullanıcı yoksa da sahte hash doğrulanır (zamanlama saldırısına karşı), `DUMMY_HASH` deseni. Tek parola; üretimde `PASSPHRASE_HASH` zorunludur |
+| Parola politikası | ≥ 12 karakter, parola cümlesi önerilir |
+| Erişim token'ı | JWT, **15 dk**, `HS256` + 256-bit gizli anahtar (PyJWT). Claim'ler: `sub` (kullanıcı kimliği), `jti`, `iat`, `exp`, `iss=kaptan`, `aud=kaptan-web`, `auth_time`. Rol iddiası yoktur. Tarayıcıda **yalnızca bellekte**, `Authorization: Bearer` başlığıyla |
 | Refresh token | Opak rastgele 256-bit; DB'de **hash'i** saklanır; `__Host-kaptan_rt` çerezi (`HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/`); ömür 8 saat; **her kullanımda döner**; aynı aileden eski token tekrar kullanılırsa tüm aile iptal edilir (çalıntı tespiti) |
-| TOTP | Risk Officer ve Admin için zorunlu (`pyotp`). Adım-yukarı: onay, kill switch sıfırlama ve canlı mod silahlandırma için son 5 dk içinde TOTP şart |
+| TOTP | Revizyon 2'de Risk Officer ve Admin için zorunluydu; rol ayrımı kalktığı için bu zorunluluk geçersizdir. Tek kişi için TOTP'nin kalıp kalmayacağı **açık karardır** |
 | CSRF | Durum değiştiren uç noktalar Bearer başlığı ister (çerezle otomatik gitmez). Çerez kullanan tek uç nokta `/auth/refresh`; `SameSite=Strict` + `Origin` kontrolü + özel başlık (`X-KAPtan-CSRF`) |
 | SSE | `EventSource` başlık gönderemez. `/sse/ticket` Bearer ile tek kullanımlık, 60 sn ömürlü bir bilet verir, SSE bağlantısı bu biletle açılır |
 | Hız sınırı | `slowapi`: `/auth/login` 5/dk/IP + kullanıcı başına artan bekleme; mutasyon uç noktaları 60/dk/kullanıcı |
@@ -483,13 +448,13 @@ Not: `hashes` sözlüğü, büyük tablolarda bellek için yalnızca çıpa pozi
 
 ## 8. Canlı mod: 3 anahtarlı güvenlik
 
-KAPtan'da BIST için **aracı kurum API'si yoktur** (Algolab 31.12.2025'te kapandı; `Matriks DEK` gelecekte). Kişisel modda sistem **emir fişi** (`OrderTicket`) üretir, kullanıcı emri aracı kurum uygulamasına elle girer. Bu yüzden "canlı mod" = **gerçek para için emir fişi üretimi** (ve ileride API'li bir adaptör). Ders boyunca varsayılan ve tek etkin mod `paper`'dır (`SimBIST`).
+KAPtan'da BIST için **aracı kurum API'si yoktur** (Algolab 31.12.2025'te kapandı; `Matriks DEK` gelecekte). Tek kullanıcıda sistem **emir fişi** (`OrderTicket`) üretir, kullanıcı emri aracı kurum uygulamasına elle girer. Bu yüzden "canlı mod" = **gerçek para için emir fişi üretimi** (ve ileride API'li bir adaptör). Ders boyunca varsayılan ve tek etkin mod `paper`'dır (`SimBIST`).
 
 | Anahtar | Nerede | Kim | Özellik |
 |---|---|---|---|
 | **K1 Config** | `config/trading.yaml` → `mode: live` | Git'te; CODEOWNERS ile 2 onaylı PR | Dondurulmuş `config_hash`'e girer; değişince yeni `strategy_version` |
 | **K2 Ortam** | `KAPTAN_LIVE_ENABLED=true` (yalnızca prod host'ta, SOPS'tan) | Sunucuya erişimi olan kişi | CI ve geliştirme ortamında her zaman `false` |
-| **K3 UI silahlandırma** | `core.system_flags.live_armed` | **Admin başlatır + Risk Officer onaylar** (iki farklı kişi, ikisi de TOTP) | Gün sonunda (18:30 TR) otomatik düşer; kill switch açıkken silahlandırılamaz |
+| **K3 UI silahlandırma** | `core.system_flags.live_armed` | **Kişi başlatır ve onaylar** (tek kişi; ikinci adımın muafiyeti `auth.single_user_waiver` ile denetime yazılır) | Gün sonunda (18:30 TR) otomatik düşer; kill switch açıkken silahlandırılamaz |
 | Ek fren | `GuardedBroker` sert tavanı (emir başına TL) + **her modda her emirde** insan onayı (`06` R15, R16; R12 üç anahtarı kontrol eder) | Kod | Grafın dışında, bağımsız |
 
 ```python
@@ -501,7 +466,7 @@ async def assert_live_allowed(settings, flags, trading_cfg) -> None:
     checks = {
         "config": trading_cfg.mode == "live",
         "env": settings.live_enabled is True,
-        "ui_armed": await flags.live_armed_today(),       # admin-initiated AND risk-officer-confirmed
+        "ui_armed": await flags.live_armed_today,       # kişi başlatır ve onaylar (tek kişi)
         "kill_switch_off": not await flags.kill_switch(),
     }
     missing = [name for name, ok in checks.items() if not ok]
@@ -521,8 +486,8 @@ Property testi: `mode ≠ "backtest"` iken (paper, kişisel, canlı) risk kapıs
 |---|---|---|---|
 | Şirket bildirimleri | Sözleşme tutarı, geri alım adedi | KAP (kamuya açık) | Genelde hayır |
 | **Bildirimlerdeki gerçek kişiler** | E2'de yönetici/YK üyesi adı, pay alım tutarı; YK kararlarında isimler | KAP (kamuya açık) | **Evet** |
-| Uygulama kullanıcıları | 4 ekip üyesi + hoca demo hesabı: ad, e-posta, şifre hash'i, TOTP sırrı, giriş IP'si | Kendi girdimiz | Evet (asgari) |
-| Kişisel mod | Takım liderinin sanal/gerçek pozisyon büyüklükleri | Kendi girdisi | Evet (finansal); yalnızca yerel |
+| Uygulama kullanıcısı | Tek hesap: parola hash'i, giriş kayıtları (IP) | Kendi girdimiz | Evet (asgari) |
+| Kullanıcının portföyü | Kullanıcının sanal/gerçek pozisyon büyüklükleri | Kendi girdisi | Evet (finansal); yalnızca yerel |
 | Müşteri / yatırımcı verisi | — | **Yok** | — |
 
 ### 9.2 Hukuki dayanak ve ilkeler
@@ -545,7 +510,7 @@ Property testi: `mode ≠ "backtest"` iken (paper, kişisel, canlı) risk kapıs
 ### 10.1 Paper trading ve "yatırım tavsiyesi değildir"
 
 - Ders kapsamında sistem **yalnızca paper trading** yapar (`SimBIST`). Gerçek emir göndermez.
-- Kişisel mod, takım liderinin **kendi parası, kendi hesabı ve kendi kararıdır.** Sistem emir fişi üretir, son butona insan basar (kanonik demo cümlesi).
+- KAPtan kullanıcının **kendi parası, kendi hesabı ve kendi kararıdır.** Sistem emir fişi üretir, son butona insan basar (kanonik demo cümlesi).
 - Yatırım danışmanlığı, 6362 sayılı SPKn kapsamında bir yatırım hizmetidir ve yalnızca SPK'dan izinli kuruluşlarca yapılabilir. Kişiye özel olmayan "genel yatırım tavsiyesi" ayrı bir kavramdır; ancak onun da ilgili düzenlemedeki esaslara uyması gerekir ([III-37.1 Tebliğ](https://www.resmigazete.gov.tr/eskiler/2013/07/20130711-23.htm); [TAAD makalesi: genel yatırım tavsiyesi ve izinsiz yatırım danışmanlığı](https://dergipark.org.tr/tr/pub/taad/article/1139357)). KAPtan **hiçbirini yapmaz**: çıktılar kimseye tavsiye olarak sunulmaz.
 - Her ekranın altbilgisinde ve rapor kapaklarında şu metin yer alır:
 
@@ -563,7 +528,7 @@ Property testi: `mode ≠ "backtest"` iken (paper, kişisel, canlı) risk kapıs
 - **SPKn md. 107/1 (işlem bazlı piyasa dolandırıcılığı):** fiyatları yanıltıcı biçimde etkilemeye yönelik alım-satım, emir verme, emir iptali veya değiştirme ([SPK: İşlem bazlı piyasa dolandırıcılığı](https://spk.gov.tr/yatirimcilar/sermaye-piyasasinda-piyasa-dolandiriciligi-manipulasyon/islem-bazli-piyasa-dolandiriciligi)). KAPtan'ın risk parametreleri (günlük hacmin ≤ %1'i, fiyat bandı ±%2, düşük halka açıklık alt sınırı) hem kaymayı hem de fiyatı etkileme riskini azaltır. Emir fişi, kısa aralıklarla emir girip iptal etme ("spoofing" görünümü) önermez.
 - **SPKn md. 107/2 (bilgi bazlı piyasa dolandırıcılığı):** fiyatları etkileyebilecek yalan, yanlış veya yanıltıcı bilgi, söylenti veya haber yaymak ([SPK: Piyasa dolandırıcılığı](https://spk.gov.tr/yatirimcilar/sermaye-piyasasinda-piyasa-dolandiriciligi-manipulasyon)). LLM özetleri halüsinasyon içerebilir; **dışarıya yayımlanmaz.**
 - **Piyasa Bozucu Eylemler Tebliği (VI-104.1) md. 6/4:** kitle iletişim araçları (internet ve sosyal medya dahil) üzerinden bir araç hakkında yorum veya tavsiye verip, 5 iş günü içinde (veya tavsiye değişene kadar) tavsiyeye ters işlem yapmak piyasa bozucu eylem sayılır ([VI-104.1](https://www.resmigazete.gov.tr/eskiler/2014/01/20140121-17.htm); [özet](https://www.borsaningundemi.com/haber/spkdan-sosyal-paylasim-sitesinden-tavsiyeye-200139)). Kural: ekip üyeleri KAPtan'ın izlediği hisseler hakkında **kamuya yorum yapmaz.**
-- **İçsel bilgi (SPKn md. 106):** sisteme kamuya açık olmayan bilgi girilmez. Bir ekip üyesinin veya yakınının çalıştığı, yönetiminde bulunduğu ya da içeriden öğrenen konumunda olabileceği şirketler **ekip içeriden-öğrenen engel listesine** (`restricted_securities` tablosu) alınır. Liste S0 ön elemede (LLM'den önce), risk kapısında (`06` R13) ve gönderim anında (R16) kontrol edilir; W1'de her ekip üyesi yazılı beyan verir, değişiklikler audit'e yazılır.
+- **İçsel bilgi (SPKn md. 106):** sisteme kamuya açık olmayan bilgi girilmez. Kullanıcının veya yakınının çalıştığı, yönetiminde bulunduğu ya da içeriden öğrenen konumunda olabileceği şirketler **içeriden-öğrenen engel listesine** (`restricted_securities` tablosu) alınır. Liste S0 ön elemede (LLM'den önce), risk kapısında (`06` R13) ve gönderim anında (R16) kontrol edilir; W1'de kullanıcı yazılı beyan verir, değişiklikler audit'e yazılır.
 - Eylül 2026 fon/manipülasyon krizi, düşük halka açıklıklı hisselerin manipülasyon riskini gösterdi. Evren alt sınırı bu yüzden bir uyum kontrolüdür, yalnızca bir getiri filtresi değildir.
 
 ### 10.4 KAP'a nazik erişim ve kullanım koşulları
@@ -644,7 +609,7 @@ CI'da `gitleaks/gitleaks-action@v2`, `fetch-depth: 0` ile tüm geçmişi tarar. 
 
 ## 12. Olay müdahale runbook'u
 
-**Roller:** Olay sorumlusu = Rol 3 (yoksa Rol 4). Her olay `docs/runbooks/olaylar/YYYY-MM-DD-<ad>.md` dosyasına kaydedilir ve audit log'a `incident.*` olarak yazılır.
+**Sorumlu:** Olay sorumlusu kullanıcıdır. Her olay `docs/runbooks/olaylar/YYYY-MM-DD-<ad>.md` dosyasına kaydedilir ve audit log'a `incident.*` olarak yazılır.
 
 | Seviye | Örnek | Tepki süresi |
 |---|---|---|
@@ -654,10 +619,10 @@ CI'da `gitleaks/gitleaks-action@v2`, `fetch-depth: 0` ile tüm geçmişi tarar. 
 | S4 Düşük | Tek bildirim işlenemedi, UI hatası | Haftalık |
 
 **RB-1 Kill switch**
-1. Tetikleme: UI (**Risk Officer veya Admin**, tek rol yeterli) · CLI `uv run python -m kaptan.ops.kill --reason "..."` · **otomatik: zirveden %-5** (kanonik, `06` R01) · sistem: aynı gün ≥ 3 R11 şema/injection reddi (`06` §11). Analist ve Auditor tetikleyemez.
+1. Tetikleme: UI (kullanıcı) · CLI `uv run python -m kaptan.ops.kill --reason "..."` · **otomatik: zirveden %-5** (kanonik, `06` R01) · sistem: aynı gün ≥ 3 R11 şema/injection reddi (`06` §11).
 2. Etki: `kill_switch=true` → risk kapısı her yeni **alım** önerisini reddeder (R01); `GuardedBroker` her alım emrini reddeder; `cancel_all()` **açık emirleri iptal eder**; bekleyen `OrderTicket` fişleri "geçersiz" olarak işaretlenir; bekleyen onaylar `expired` olur; audit + bildirim (Telegram/e-posta) + dış çıpa gönderilir. **Açık pozisyonlar satılmaz**; kendi çıkış kurallarıyla (`06` X1–X4) kapanır ve bu çıkışlar engellenmez.
-3. Kişisel mod: kullanıcıya "aracı kurumda bekleyen emirlerini elle iptal et" uyarısı ve "İPTAL" fişleri gösterilir (sistemin API erişimi yok); iptal onayı girilene kadar UI kırmızı kalır.
-4. Sıfırlama: **Admin başlatır + Risk Officer onaylar** (iki farklı hesap, TOTP), yazılı gerekçe zorunlu; olay kaydı tamamlanmadan sıfırlama butonu devre dışıdır. Bekleme: paper modda en az ertesi seans. **Kişisel mod (tek kişi):** iki onay arasında **≥ 24 saat** ve tetikten itibaren **≥ 5 seans** bekleme; ikisi sağlanmadan reset etkinleşmez (`06` §11).
+3. Emir fişi olan işlemlerde kullanıcıya "aracı kurumda bekleyen emirlerini elle iptal et" uyarısı ve "İPTAL" fişleri gösterilir (sistemin API erişimi yok); iptal onayı girilene kadar UI kırmızı kalır.
+4. Yeniden başlatma: iki adım, aynı kişi, yazılı gerekçe zorunlu; olay kaydı tamamlanmadan sıfırlama butonu devre dışıdır. Gerçek veride iki adım arasında **≥ 24 saat** ve tetikten itibaren **≥ 5 seans** bekleme; ikisi sağlanmadan yeniden başlatma etkinleşmez (`06` §11). Demo modunda bekleme muaftır ve muafiyet denetime yazılır.
 
 **RB-2 Günlük %-1 durdurma:** otomatik; yeni emir durur, mevcut pozisyonlar ve çıkış kuralları çalışmaya devam eder. Ertesi seans açılışında otomatik kalkar. Gün içinde elle kaldırma yoktur.
 
@@ -666,7 +631,7 @@ CI'da `gitleaks/gitleaks-action@v2`, `fetch-depth: 0` ile tüm geçmişi tarar. 
 2. Yeni anahtar üret → `sops secrets/prod.enc.yaml` → yeniden dağıt (`sops exec-env … docker compose up -d`).
 3. Sağlayıcının kullanım/fatura log'larını sızıntı anından itibaren kontrol et.
 4. Git'e girdiyse `git filter-repo` ile temizle ve force-push yap (ikincil önlem); tüm üyeler yeniden klonlar.
-5. JWT anahtarı sızdıysa: döndür → tüm oturumlar düşer → Risk Officer/Admin TOTP'lerini yeniden doğrular.
+5. JWT anahtarı sızdıysa: döndür → tüm oturumlar düşer → parola yeniden belirlenir.
 6. Audit + olay kaydı.
 
 **RB-4 Şüpheli enjeksiyon / anormal öneri**
@@ -685,7 +650,7 @@ CI'da `gitleaks/gitleaks-action@v2`, `fetch-depth: 0` ile tüm geçmişi tarar. 
 
 **RB-7 KAP erişimi engellendi (403/429 sürekli):** polling'i durdur. IP/proxy değiştirme yok. KAP/MKK ile iletişime geç; ileri dönük raporda boşluk olarak işaretle; gerekirse gecikmeli günlük toplu yüklemeye geç.
 
-**RB-8 Hesap ele geçirme şüphesi:** kullanıcının refresh ailelerini iptal et, şifre + TOTP sıfırla, son 7 günün audit kayıtlarını (onaylar, limit değişiklikleri) incele.
+**RB-8 Hesap ele geçirme şüphesi:** kullanıcının refresh ailelerini iptal et, şifre sıfırla, son 7 günün audit kayıtlarını (onaylar, limit değişiklikleri) incele.
 
 **Olay sonrası inceleme şablonu:** Ne oldu (zaman çizelgesi) · Etki (emir/fiş, veri, süre) · Kök neden · Neden daha erken fark edilmedi · Düzeltmeler (sahip, tarih) · Red-team/test eklendi mi?
 
@@ -700,27 +665,27 @@ CI'da `gitleaks/gitleaks-action@v2`, `fetch-depth: 0` ile tüm geçmişi tarar. 
 - [ ] Yeni LLM çıktısı Pydantic şemasıyla (`extra="forbid"`, sınırlar) doğrulanıyor.
 - [ ] Ajan kodunda broker/bayrak/limit import'u yok (import-linter).
 - [ ] Yeni log satırlarında sır veya kişisel veri yok.
-- [ ] Yeni uç nokta `require(Perm.…)` kullanıyor ve RBAC matris testine eklendi.
+- [ ] Yeni uç nokta oturum kontrolünü kullanıyor ve 401 testine eklendi.
 - [ ] Durum değiştiren her yeni işlem audit log'a yazıyor.
 
 ### 13.2 Pre-release (her `vX.Y-fwd` etiketi, progress ve final öncesi)
-- [ ] CI yeşil: risk motoru %100 dal kapsama, genel ≥ %80, RBAC matrisi, audit trigger testleri.
+- [ ] CI yeşil: risk motoru %100 dal kapsama, genel ≥ %80, oturum (401) testleri, audit trigger testleri.
 - [ ] Red-team seti tam koşuldu (≥ 30 kötü niyetli + zararsız kontroller): **0 emir/fiş/bayrak değişikliği**, engelleme ≥ %95; yanlış alarm ölçüldü (`08` §7.3).
 - [ ] Model kimlikleri tam sürüm ID'siyle (alias değil) `models.yaml`'da; prompt hash'leri sürüm manifestinde (`v1.0-fwd` / `v1.1-fwd`) ve `config_hash`'e dahil.
-- [ ] `restricted_securities` listesi güncel; her ekip üyesinin beyanı alındı.
+- [ ] `restricted_securities` listesi güncel; kullanıcının yazılı beyanı alındı.
 - [ ] KAP poller aralığı seans içi ≥ 30 sn (config testi).
 - [ ] Kanarya (bakış-ileri) testi geçti; RAG zaman ihlali = 0.
 - [ ] `verify_audit_chain.py` OK ve son dış çıpa ile uyumlu.
 - [ ] `pip-audit` / Dependabot: yüksek/kritik açık yok (veya gerekçeli istisna).
 - [ ] `KAPTAN_LIVE_ENABLED=false` ve `trading.yaml: mode: paper` (ders boyunca).
 - [ ] Tüm portlar `127.0.0.1`; tünel girişli; CORS yalnızca web origin'i; güvenlik başlıkları mevcut.
-- [ ] Risk Officer ve Admin hesaplarında TOTP etkin; varsayılan/demo şifreler değiştirildi.
+- [ ] Varsayılan ve demo parolası değiştirildi (üretimde `PASSPHRASE_HASH`).
 - [ ] LangSmith izlerinde kişi adı yok (örneklem kontrolü, 20 iz).
-- [ ] Kill switch tatbikatı: UI → etki (açık emirler iptal, pozisyonlar yerinde) → sıfırlama (iki kişi) → audit doğrulama, son 7 gün içinde yapıldı.
+- [ ] Kill switch tatbikatı: UI → etki (açık emirler iptal, pozisyonlar yerinde) → yeniden başlatma (iki adım, `ready_at`) → audit doğrulama, son 7 gün içinde yapıldı.
 - [ ] Yedek + geri yükleme tatbikatı (Postgres) yapıldı; checkpointer ve audit geri geldi.
 - [ ] Yasal uyarı metni tüm ekranlarda ve raporda; herkese açık sinyal paylaşımı yok.
 - [ ] `config_hash` ve `strategy_version` haftalık rapora ve audit'e doğru yazılıyor.
-- [ ] Demo modu (`DEMO_MODE`) yalnızca demo ortamında açık; bildirim enjeksiyonu yalnızca Admin'de.
+- [ ] Demo modu (`DEMO_MODE`) yalnızca demo ortamında açık; bildirim enjeksiyonu yalnızca demo modunda.
 
 ---
 
@@ -747,7 +712,7 @@ CI'da `gitleaks/gitleaks-action@v2`, `fetch-depth: 0` ile tüm geçmişi tarar. 
 2. **KAP polling seans içi ≥ 30 sn, IP/proxy döndürme yasak.** ✅ Kabul edildi ve uygulandı (§10.4).
 3. **Kişi adlarının LLM'e ve LangSmith'e gitmeden maskelenmesi.** ✅ Kabul edildi ve uygulandı (§9.2; tüm bildirimlere genişletildi).
 4. **Audit hash: kanonik JSON dizisi, `run_id` dahil, canonical satırda saklı.** ✅ Kabul edildi ve uygulandı (§7.1; W7'den itibaren devrede).
-5. **Kill switch'i Admin'in de açabilmesi.** ✅ Kabul edildi ve uygulandı (§5, RB-1; reset Admin + Risk Officer, kişisel modda ≥ 24 sa + 5 seans).
+5. **Kill switch'i Admin'in de açabilmesi.** ✅ Kabul edildi ve uygulandı (§5, RB-1; reset Admin + Risk Officer, tek kullanıcıda ≥ 24 sa + 5 seans).
 6. **Prompt Guard'a ek Türkçe kural tabanlı injection kontrolü.** ✅ Kabul edildi ve uygulandı (§3 L3 → `06` R11). Yanlış alarm oranı artık "ölçülür, raporlanır" (kanon); ≤ %2 yalnızca bilgi amaçlı kalibrasyon hedefi.
 7. **İçeriden-öğrenen engel listesi.** ✅ Kabul edildi ve uygulandı; `universe_blocklist.yaml` yerine kanonik `restricted_securities` tablosu ve `06` R13 (§10.3).
 8. **Salt okunur denetçi görünümü.** ✅ Kabul edildi ve uygulandı — ancak öneriden farklı olarak kanon ayrı bir **Auditor** rolü ekledi (§5); "Analist hesabıyla çözme" alternatifi ❌ reddedildi (kanon 4. rolü seçti).

@@ -322,7 +322,7 @@
   line-height: 1.34;
 }
 
-/* IV: "Ertesi seans, 09:50" and the human's signature beside it. */
+/* IV: "Ertesi borsa günü, 09:50" and your signature beside it. */
 .rota-leg__signed {
   display: flex;
   align-items: flex-end;
@@ -336,6 +336,7 @@
 .rota-leg__signature {
   flex: 1 1 auto;
   width: 100%;
+  min-width: 0;
   max-width: 150px;
   height: 34px;
   margin: -14px 0 -6px;

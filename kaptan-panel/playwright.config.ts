@@ -1,28 +1,27 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = Number(process.env.E2E_PORT ?? 3100);
-const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
-
 /**
  * Two modes, one suite:
- *  - `npm run e2e`     → mock panel (`npm run dev`), no backend.
- *  - `npm run e2e:api` → http panel (`npm run dev:api`) on the FastAPI backend (E2E_API=1, set by
+ *  - `npm run e2e`     → the test double (NEXT_PUBLIC_KAPTAN_TEST_DOUBLE=1 under `next dev`), no
+ *    backend. On its own port and build folder, so it never meets a real panel on 3100.
+ *  - `npm run e2e:api` → the real panel (`npm run dev:api`) on the FastAPI backend (E2E_API=1, set by
  *    scripts/api-mode.mjs). The backend is started too unless one already answers on
- *    KAPTAN_API_ORIGIN; global-setup resets its demo day before the suite.
- * Both reuse a server that is already running on the port: do not leave a mock dev server on
- * 3100 when running the http suite (and vice versa).
+ *    KAPTAN_API_ORIGIN; global-setup resets its day before the suite.
  */
 const IS_API = process.env.E2E_API === "1";
+const PORT = Number(process.env.E2E_PORT ?? (IS_API ? 3100 : 3199));
+const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
 /** Local runs use Edge (msedge); CI sets E2E_BROWSER_CHANNEL=chromium for Playwright's bundled Chromium. */
 const CHANNEL = process.env.E2E_BROWSER_CHANNEL ?? "msedge";
 const channel = CHANNEL === "chromium" ? undefined : CHANNEL;
 const API_ORIGIN = process.env.KAPTAN_API_ORIGIN ?? "http://127.0.0.1:8000";
 
 const panelServer = {
-  command: IS_API ? "npm run dev:api" : "npm run dev",
-  url: BASE_URL,
+  command: IS_API ? "npm run dev:api" : `npx next dev -p ${PORT}`,
+  url: `${BASE_URL}/login`,
   reuseExistingServer: true,
   timeout: 180_000,
+  env: (IS_API ? {} : { NEXT_PUBLIC_KAPTAN_TEST_DOUBLE: "1", NEXT_DIST_DIR: ".next/e2e" }) as Record<string, string>,
 };
 
 const backendServer = {

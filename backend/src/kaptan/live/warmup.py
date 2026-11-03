@@ -1,6 +1,7 @@
-"""Live warm-up: the first start of the live stack (live.env) gets real recent data before the agents run.
+"""Live warm-up: the first start of the system gets real recent data before the agents run.
 
-    docker compose --env-file live.env --profile live up -d      # runs once as the `warmup` service
+    docker compose up -d                                         # the `warmup` service asks every hour:
+    python -m kaptan.live.warmup --if-needed                     #   first install, or missed market days?
     uv run python -m kaptan.live.warmup [--days 5] [--max-tickers 300]
 
 Idempotent and resumable (a second run only fills what is missing). Steps, all polite (one request at a
@@ -18,7 +19,12 @@ time, ≥ PRICES_MIN_INTERVAL_S / KAP_MIN_INTERVAL_S apart):
    the equity line shows cash until the first fill), regime and the morning brief.
 
 A source that fails is logged and skipped (exit 0): the scheduler's daily jobs fill it in later. Without
-KAP_LIVE=true, or with DEMO_MODE=true, it does nothing (exit 0): the demo day keeps its own recorded data.
+KAP_LIVE=true it does nothing (exit 0).
+
+`--if-needed` makes it safe at every restart: a plain restart with fresh prices does nothing and touches no
+source. It runs only on a first install or after market days the PC was off for (the scheduler does not
+replay a missed day), at most once per WARMUP_COOLDOWN, and leaves a `live_warmup` row in ops.job_runs
+that `agent_worker` waits for and the panel's status reads.
 """
 
 from __future__ import annotations
@@ -60,6 +66,11 @@ HISTORY_DAYS: Final = 420
 ONE_REQUEST_DAYS: Final = HISTORY_DAYS + 30
 MIN_SESSIONS: Final = UNIVERSE_PARAMS.history_min_sessions
 MILLION: Final = Decimal(1_000_000)
+#: Failing sources are not asked again for this long, however often the machine restarts.
+WARMUP_COOLDOWN: Final = timedelta(hours=6)
+#: `eod_prices` starts at 18:30 and may run for a while: a day counts as missed only this long after its close.
+EOD_GRACE: Final = timedelta(hours=3)
+MAX_CATCH_UP_DAYS: Final = 30
 
 #: İş Yatırım "Temel Değerler ve Oranlar", first table: Kod | Ad | Sektör | Kapanış | Piyasa Değeri (mn TL) |
 #: Piyasa Değeri (mn $) | Halka Açıklık (%) | Sermaye (mn TL).
@@ -309,6 +320,24 @@ async def run_warmup(
     return rep
 
 
+def warmup_reason(
+    now: datetime, *, last_attempt: datetime | None, has_universe: bool, latest_bar: date | None
+) -> str | None:
+    """Why this start should warm up (None = it should not)."""
+    if last_attempt is not None and now - last_attempt < WARMUP_COOLDOWN:
+        return None
+    if not has_universe or latest_bar is None:
+        return "first"
+    return "missed_sessions" if latest_bar < last_closed_session(now - EOD_GRACE) else None
+
+
+def catch_up_days(days: int, now: datetime, latest_bar: date | None) -> int:
+    """KAP history to load: the configured days, or the whole time the PC was off (within the limit)."""
+    if latest_bar is None:
+        return days
+    return max(days, min((istanbul_date(now) - latest_bar).days, MAX_CATCH_UP_DAYS))
+
+
 # ── wiring (network + scheduler jobs) ─────────────────────────────────────────
 
 
@@ -361,8 +390,42 @@ async def _main(settings: Settings, days: int, max_tickers: int) -> int:  # prag
     return 0
 
 
+STATE_SQL: Final = """
+SELECT (SELECT max(started_at) FROM ops.job_runs WHERE job = 'live_warmup') AS last_attempt,
+       EXISTS (SELECT 1 FROM core.universe_daily) AS has_universe,
+       (SELECT max(d) FROM core.prices_daily) AS latest_bar
+"""
+
+
+async def _if_needed(settings: Settings, days: int, tickers: int) -> int:  # pragma: no cover - network wiring
+    from psycopg.types.json import Jsonb
+
+    from kaptan.db import connect
+    from kaptan.workers.scheduler import FINISH_SQL, START_SQL
+
+    now = datetime.now(UTC)
+    conn = await connect(settings.database_url.get_secret_value(), autocommit=True)
+    try:
+        state = (await _rows(conn, STATE_SQL, None))[0]
+        reason = warmup_reason(
+            now, last_attempt=state["last_attempt"], has_universe=state["has_universe"], latest_bar=state["latest_bar"]
+        )
+        if reason is None:
+            log.info("warm-up not needed")
+            return 0
+        log.info("warm-up starts: %s", reason)
+        slot = istanbul_date(now).isoformat()
+        run_id = (await _rows(conn, START_SQL, ("live_warmup", slot, "manual", now)))[0]["id"]
+        code = await _main(settings, catch_up_days(days, now, state["latest_bar"]), tickers)
+        await conn.execute(FINISH_SQL, (datetime.now(UTC), code == 0, Jsonb({"reason": reason}), None, run_id))
+        return code
+    finally:
+        await conn.close()
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(prog="python -m kaptan.live.warmup", description="Live stack warm-up")
+    p.add_argument("--if-needed", action="store_true", help="only on a first install or after missed market days")
     p.add_argument("--days", type=int, default=None, help="KAP history days before today (LIVE_BACKFILL_DAYS)")
     p.add_argument("--max-tickers", type=int, default=None, help="price history shares (LIVE_WARMUP_MAX_TICKERS)")
     return p.parse_args(argv)
@@ -376,15 +439,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     except ConfigError as exc:
         print(f"warmup: {exc}", file=sys.stderr)
         return 2
-    if settings.demo_mode or not settings.kap_live:
-        # Like the live workers: a replay/DEMO_MODE stack started with `--profile live` just skips it.
-        print("warmup: skipped (needs KAP_LIVE=true and DEMO_MODE=false, see live.env)", file=sys.stderr)
+    if not settings.kap_live:
+        print("warmup: skipped (needs KAP_LIVE=true)", file=sys.stderr)
         return 0
     from kaptan.api.loop import run
 
     days = settings.live_backfill_days if args.days is None else max(0, min(args.days, 30))
     tickers = settings.live_warmup_max_tickers if args.max_tickers is None else max(0, args.max_tickers)
-    return run(_main(settings, days, tickers))
+    return run(_if_needed(settings, days, tickers) if args.if_needed else _main(settings, days, tickers))
 
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 """The disclosures of one Istanbul day, newest first (GET /disclosures).
 
-DEMO_MODE: the visible rows of the demo day (whatever `day` says, there is only one). Otherwise: every KAP
-row published on that Istanbul day — the live poller's rows and, for earlier days, the backfilled history
+Every KAP row published on that Istanbul day — the live poller's rows and, for earlier days, the backfilled history
 (`ingest_source='backfill'`), so the first start of the live stack can show the last few days at once.
 Codes that do not fit the panel's ticker shape (warrants, funds) are left out of the code lists.
 """
@@ -14,9 +13,17 @@ from typing import Any, Final
 
 from psycopg import AsyncConnection
 
+from kaptan.domain.schemas import DisclosureListItem
 from kaptan.text.turkish import IST
 
 MAX_LIMIT: Final = 500
+#: The core.disclosures columns of one DisclosureListItem (the SSE feed and the morning brief read these).
+LIST_ITEM_COLUMNS: Final = """
+  disclosure_index, disclosure_oid, stock_codes, related_stocks, primary_ticker, company_name,
+  disclosure_class, disclosure_type, subject, summary, reason, related_index, is_late, attachment_count,
+  has_multilang, is_noise, subject_route, subject_map_version, published_at, first_seen_at, available_at,
+  ingest_source, classification, run_id, linked_news_count, note_count
+"""
 TICKER_SHAPE: Final = re.compile(r"^[A-Z0-9]{3,6}$")
 CLASSIFICATION_KEYS: Final = frozenset({"event_type", "confidence", "method"})
 EVENT_TYPES: Final = frozenset({"E1", "E2", "E3", "E4", "IGNORE"})
@@ -28,8 +35,7 @@ SELECT d.disclosure_index, d.disclosure_oid, d.stock_codes, d.related_stocks, d.
        d.first_seen_at, d.available_at, d.ingest_source, d.classification, d.run_id, d.linked_news_count,
        d.note_count
   FROM core.disclosures d
- WHERE (CASE WHEN %(demo)s THEN d.visible
-             ELSE d.published_at >= %(start)s AND d.published_at < %(end)s END)
+ WHERE d.published_at >= %(start)s AND d.published_at < %(end)s
    AND (%(ticker)s::text IS NULL OR d.primary_ticker = %(ticker)s OR %(ticker)s = ANY(d.stock_codes))
  ORDER BY d.published_at DESC, d.disclosure_index DESC
  LIMIT %(limit)s
@@ -62,17 +68,21 @@ def to_item(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def list_item(row: dict[str, Any]) -> dict[str, Any]:
+    """A DisclosureListItem JSON document from a core.disclosures row (LIST_ITEM_COLUMNS)."""
+    return DisclosureListItem.model_validate(row).model_dump(mode="json")
+
+
 def day_bounds(day: date) -> tuple[datetime, datetime]:
     start = datetime.combine(day, time(0, 0), IST)
     return start, start + timedelta(days=1)
 
 
 async def list_disclosures(
-    conn: AsyncConnection[Any], day: date, *, demo: bool, limit: int = 200, ticker: str | None = None
+    conn: AsyncConnection[Any], day: date, *, limit: int = 200, ticker: str | None = None
 ) -> list[dict[str, Any]]:
     start, end = day_bounds(day)
     params = {
-        "demo": demo,
         "start": start,
         "end": end,
         "ticker": ticker,

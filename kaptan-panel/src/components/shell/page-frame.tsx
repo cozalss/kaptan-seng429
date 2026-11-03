@@ -1,85 +1,100 @@
 "use client";
 
+import "@/components/ufuk/ufuk.css";
+import "./page-frame.css";
+
 import type { ReactNode } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useNow } from "@/lib/clock";
-import { fmtDate } from "@/lib/format";
-import { HOME, sectionLabel } from "@/lib/nav";
+import { Boat } from "@/components/ufuk/boat";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Wordmark } from "@/components/brand/marks";
-import { IconMenu } from "./icons";
-
-/** Under 1024px: a slim bar with the menu button and the wordmark (the sidebar is a drawer). */
-export function MobileBar({ open, onOpen }: { open: boolean; onOpen: () => void }) {
-  return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-panel/95 px-2 backdrop-blur-sm lg:hidden">
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label="Menüyü aç"
-        aria-expanded={open}
-        aria-controls="kenar-cubugu"
-        className="grid size-11 place-items-center rounded-lg text-ink hover:bg-wash-tint"
-      >
-        <IconMenu />
-      </button>
-      <Link href={HOME} aria-label="KAPtan" tabIndex={-1} className="inline-flex h-11 items-center">
-        <Wordmark className="h-6 w-auto" />
-      </Link>
-    </header>
-  );
-}
 
 /**
- * The eyebrow over every screen: KAPtan · where you are, and the date on the
- * server's clock (never the browser's: in http mode it stays empty until the server answers).
- */
-export function PageEyebrow() {
-  const pathname = usePathname();
-  const now = useNow(60_000);
-  return (
-    <div className="mb-3 flex items-center justify-between gap-3 text-[12px] leading-5 font-semibold tracking-[0.06em] text-muted uppercase">
-      <span className="whitespace-nowrap">
-        KAPtan <span aria-hidden>·</span> {sectionLabel(pathname)}
-      </span>
-      {now === null ? null : (
-        <time dateTime={new Date(now).toISOString()} className="whitespace-nowrap tabular-nums">
-          {fmtDate(new Date(now).toISOString())}
-        </time>
-      )}
-    </div>
-  );
-}
-
-/**
- * A screen's heading block: the big title (where focus lands after a route change), one line
- * under it and actions on the right; space (not a rule) closes the header.
+ * A screen's opening: the screen's name, then its one big sentence (data-driven, where focus lands
+ * after a route change). The name is part of the heading, so a screen reader hears "Param. Paran
+ * 8 yerde duruyor."
  */
 export function PageHeader({
+  name,
   title,
   lead,
   actions,
-  titleId,
   className,
 }: {
+  name: string;
   title: ReactNode;
   lead?: ReactNode;
   actions?: ReactNode;
-  titleId?: string;
   className?: string;
 }) {
   return (
-    <header className={cn("mb-6 sm:mb-8", className)}>
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <div className="min-w-0">
-          <h1 id={titleId} tabIndex={-1} data-route-focus="" className="text-[30px] leading-[36px] font-bold tracking-[-0.025em] text-balance text-ink outline-none sm:text-[38px] sm:leading-[44px]">
-            {title}
-          </h1>
-          {lead ? <div className="mt-2 text-body text-ink-soft">{lead}</div> : null}
+    <header className={cn("pf-header", className)}>
+      <h1 tabIndex={-1} data-route-focus="" className="outline-none">
+        <span className="pf-name">
+          {name}
+          <span className="sr-only">. </span>
+        </span>
+        <span className="u-sentence block text-ink">{title}</span>
+      </h1>
+      {lead || actions ? (
+        <div className="pf-under">
+          {lead ? <div className="pf-lead">{lead}</div> : <span />}
+          {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
         </div>
-        {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
-      </div>
+      ) : null}
     </header>
+  );
+}
+
+/**
+ * A full-bleed band. The paint reaches the window's edges (a border image, so it never adds
+ * sideways scroll) while the content stays on the page's column.
+ */
+export function Band({ className, children, ...props }: { className?: string; children: ReactNode } & React.HTMLAttributes<HTMLElement>) {
+  return (
+    <section className={cn("pf-band", className)} {...props}>
+      {children}
+    </section>
+  );
+}
+
+/**
+ * Loading, empty and error, as a place in the same world: the small boat on its water, one sentence
+ * that says what is going on, one line that says what to do next.
+ */
+export function ScreenState({
+  kind,
+  title,
+  children,
+  action,
+  onRetry,
+  className,
+}: {
+  kind: "loading" | "empty" | "error";
+  title: string;
+  children?: ReactNode;
+  action?: ReactNode;
+  onRetry?: () => void;
+  className?: string;
+}) {
+  return (
+    <div role={kind === "error" ? "alert" : kind === "loading" ? "status" : undefined} data-kind={kind} className={cn("pf-state", className)}>
+      <div aria-hidden className="pf-state-boat">
+        <Boat className="pf-state-mark size-14" />
+      </div>
+      <div className="pf-state-body">
+        <p className="u-chapter text-ink">{title}</p>
+        {children ? <div className="mt-2 max-w-[58ch] text-body text-ink-soft">{children}</div> : null}
+        {onRetry || action ? (
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            {onRetry ? (
+              <Button variant="secondary" onClick={onRetry}>
+                Yeniden dene
+              </Button>
+            ) : null}
+            {action}
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }

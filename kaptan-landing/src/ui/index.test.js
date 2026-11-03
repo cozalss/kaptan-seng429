@@ -6,7 +6,7 @@ function renderPage() {
     <header class="site-header">
       <button type="button" data-action="open-about">Proje</button>
       <button type="button" data-action="open-menu" aria-label="Menüyü aç">Menü</button>
-      <button type="button" data-action="open-demo">[ DEMO ]</button>
+      <button type="button" data-action="open-steps">[ ADIMLAR ]</button>
     </header>
     <main id="main">
       <section id="ajanlar"></section>
@@ -38,12 +38,12 @@ describe('initKaptanUI', () => {
 
   it('creates every overlay, closed', () => {
     boot();
-    ['menu-drawer', 'demo-drawer', 'about-modal', 'legal-modal', 'service-modal'].forEach((id) => expect(state(id)).toBe('closed'));
+    ['menu-drawer', 'steps-drawer', 'about-modal', 'legal-modal', 'service-modal'].forEach((id) => expect(state(id)).toBe('closed'));
   });
 
   it.each([
     ['open-menu', 'menu-drawer'],
-    ['open-demo', 'demo-drawer'],
+    ['open-steps', 'steps-drawer'],
     ['open-about', 'about-modal'],
     ['open-legal', 'legal-modal'],
   ])('[data-action="%s"] opens #%s', (action, id) => {
@@ -52,10 +52,10 @@ describe('initKaptanUI', () => {
     expect(state(id)).toBe('open');
   });
 
-  it('routes the salon-era booking actions to the demo drawer', () => {
+  it('routes the salon-era booking actions to the steps drawer', () => {
     boot();
     document.querySelector('[data-action="book-now"]').click();
-    expect(state('demo-drawer')).toBe('open');
+    expect(state('steps-drawer')).toBe('open');
   });
 
   it('ignores unknown actions', () => {
@@ -64,19 +64,19 @@ describe('initKaptanUI', () => {
     expect(document.querySelectorAll('#overlays [data-state="open"]')).toHaveLength(0);
   });
 
-  it('opening the demo drawer closes an already-open menu drawer', () => {
+  it('opening the steps drawer closes an already-open menu drawer', () => {
     boot();
     document.querySelector('[data-action="open-menu"]').click();
-    document.querySelector('[data-action="open-demo"]').click();
+    document.querySelector('[data-action="open-steps"]').click();
     expect(state('menu-drawer')).toBe('closed');
-    expect(state('demo-drawer')).toBe('open');
+    expect(state('steps-drawer')).toBe('open');
   });
 
-  it('the menu drawer\'s "Altı adımda" pill hands over to the demo drawer', () => {
+  it('the menu drawer\'s "Altı adımda" pill hands over to the steps drawer', () => {
     boot();
     document.querySelector('[data-action="open-menu"]').click();
     document.querySelector('.menu-drawer__cta').click();
-    expect(state('demo-drawer')).toBe('open');
+    expect(state('steps-drawer')).toBe('open');
   });
 
   it('opens the agent modal for cards added to the DOM after init', () => {
@@ -95,20 +95,20 @@ describe('initKaptanUI', () => {
 
   it('an action inside an open overlay stacks instead of closing its parent', () => {
     boot();
-    document.querySelector('[data-action="open-demo"]').click();
+    document.querySelector('[data-action="open-steps"]').click();
     const nested = document.createElement('button');
     nested.dataset.action = 'open-legal';
-    document.querySelector('#demo-drawer .overlay__panel').append(nested);
+    document.querySelector('#steps-drawer .overlay__panel').append(nested);
     nested.click();
     expect(state('legal-modal')).toBe('open');
-    expect(state('demo-drawer')).toBe('open');
+    expect(state('steps-drawer')).toBe('open');
   });
 
   it('destroy() stops delegating clicks', () => {
     const { destroy } = boot();
     destroy();
-    document.querySelector('[data-action="open-demo"]').click();
-    expect(state('demo-drawer')).toBe('closed');
+    document.querySelector('[data-action="open-steps"]').click();
+    expect(state('steps-drawer')).toBe('closed');
   });
 });
 

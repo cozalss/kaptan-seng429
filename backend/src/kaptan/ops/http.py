@@ -46,7 +46,7 @@ REQUEST_ID_RE: Final = re.compile(r"^[A-Za-z0-9._-]{8,64}$")
 MUTATING: Final = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 #: Paths with their own limiter (login) or none at all.
 RATE_EXEMPT: Final = frozenset({"/api/v1/auth/login"})
-RATE_LIMITED_JSON: Final = '{"detail":"Çok fazla istek. Biraz sonra yeniden deneyin.","code":"rate_limited"}'.encode()
+RATE_LIMITED_JSON: Final = '{"detail":"Çok fazla istek. Biraz sonra yeniden dene.","code":"rate_limited"}'.encode()
 SECURITY_HEADERS: Final[tuple[tuple[bytes, bytes], ...]] = (
     (b"x-content-type-options", b"nosniff"),
     (b"x-frame-options", b"DENY"),

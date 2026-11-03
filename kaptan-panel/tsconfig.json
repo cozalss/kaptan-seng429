@@ -30,9 +30,6 @@
       }
     ],
     "paths": {
-      "@/lib/api/client": [
-        "./src/lib/api/client.mock.ts"
-      ],
       "@/*": [
         "./src/*"
       ]
@@ -44,13 +41,9 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    ".next/solo/types/**/*.ts",
-    ".next/solo/dev/types/**/*.ts",
     "**/*.mts",
-    ".next/m3800/types/**/*.ts",
-    ".next/m3800/dev/types/**/*.ts",
-    ".next/s3810/types/**/*.ts",
-    ".next/s3810/dev/types/**/*.ts"
+    ".next/e2e/types/**/*.ts",
+    ".next/e2e/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

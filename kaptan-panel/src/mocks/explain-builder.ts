@@ -27,7 +27,7 @@ import { createRng, round } from "./rng";
 import type { RunSpec } from "./run-spec";
 import { buildTrace } from "./trace-builder";
 
-export const PAPER_EQUITY_TRY = 1_016_480; // örnek değer
+export const PAPER_EQUITY_TRY = 1_016_480;
 export const RULES_HASH = sha256Hex("rules-v1.0-prereg").slice(0, 16);
 export const PROMPT_MANIFEST_HASH = sha256Hex("manifest:v1.1-fwd").slice(0, 16);
 const MODEL_FLASH_LITE = "gemini-flash-lite-001";
@@ -63,7 +63,7 @@ export function disclosureOf(spec: RunSpec): DisclosureListItem {
     published_at: spec.publishedAtIso,
     first_seen_at: plusMs(spec.publishedAtIso, 21_000),
     available_at: plusMs(spec.publishedAtIso, 21_000),
-    ingest_source: spec.is_fixture ? "demo" : "live",
+    ingest_source: "demo",
     classification: spec.classifiedAs
       ? { event_type: spec.classifiedAs, confidence: spec.classifierConfidence, method: spec.method }
       : null,
@@ -301,14 +301,14 @@ function riskChecksOf(spec: RunSpec, proposalNotional: number): RiskCheck[] {
   const adv = proposalNotional / iss.adv20Try;
   const defaults: Partial<Record<RiskCheck["rule_code"], { detail_tr: string; observed?: string; limit?: string }>> = {
     // Desk state on the demo day (mocks/pnl.ts liveEquity): −%1,1 from peak, +%0,2 today.
-    R01: { detail_tr: "Kill switch kapalı; zirveden düşüş −%1,1.", observed: "−%1,1", limit: "−%5" },
+    R01: { detail_tr: "Durdurulmadı; paran zirvesinden %1,1 aşağıda.", observed: "−%1,1", limit: "−%5" },
     R02: { detail_tr: "Günlük K/Z +%0,2.", observed: "+%0,2", limit: "−%1" },
     R07: {
       detail_tr: `İşlem riski %0,5; pozisyon ${fmtPct(pos, 1)}; hacmin ${fmtPct(adv, 1)}'i.`,
       observed: fmtPct(pos, 1),
       limit: "%10",
     },
-    R09: { detail_tr: "Limit fiyat son fiyatın ±%2 bandında; tavana uzak.", observed: "+%2,0", limit: "±%2" },
+    R09: { detail_tr: "Önerilen fiyat, son fiyatın ±%2 bandında; tavana uzak.", observed: "+%2,0", limit: "±%2" },
   };
   const checks: RiskCheck[] = RISK_GATE_ORDER.map((code) => {
     const o = spec.riskOverrides?.[code];
@@ -419,7 +419,6 @@ function approvalOf(spec: RunSpec, proposal: TradeProposal, card: EvidenceCard |
     expires_at: approvalExpiry(created),
     status: d?.status ?? "pending",
     decided_by: d?.by ?? null,
-    decided_role: d?.by ? "risk_officer" : null,
     decided_at: d?.atIso ?? null,
     decision_comment: d?.comment ?? null,
     approved_notional_try: d?.approvedNotional ?? null,

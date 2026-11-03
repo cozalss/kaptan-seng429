@@ -1,11 +1,11 @@
 """Security kill (06 §11 trigger c): ≥ 3 R11 REJECTs (schema / injection) on the same day → kill switch.
 
-Counted per Istanbul day over real runs (`run_set = 'live'`; the demo replay never counts): a run counts
+Counted per Istanbul day over real runs (`run_set = 'live'`; recorded runs never count): a run counts
 once if its gate rejected at R11 (`trading.risk_checks`) or the guard quarantined its text (outcome
 QUARANTINED: the injection brake that stops the run before the gate). Only runs after the last restart
 (`kill_switch.reset` in the audit log) count, so a same-day restart starts a fresh count. The kill itself is
 the ordinary one (`kill_switch.engage`: open orders cancelled, audit `kill_switch.on` with the run ids);
-it is lifted only by the two-key restart of 06 §11 (`kill_switch.start_reset` / `confirm_reset`).
+it is lifted only by the restart of 06 §11 (`kill_switch.start_reset` / `confirm_reset`).
 After the commit the caller publishes the new RiskStatus on SSE desk `kill_switch` (`announce_kill`), the
 same event the manual kill-switch endpoint sends, so the panel sees the stop at once.
 """
@@ -73,7 +73,7 @@ async def check_security_kill(conn: AsyncConnection[Any], now: datetime) -> bool
     return True
 
 
-async def announce_kill(target: Target, conn: AsyncConnection[Any], now: datetime, *, live: bool) -> str | None:
+async def announce_kill(target: Target, conn: AsyncConnection[Any], now: datetime) -> str | None:
     """SSE desk `kill_switch` with the new RiskStatus, as POST /risk/kill-switch sends it. Call after commit."""
-    status = await risk_status(conn, now, live=live)
+    status = await risk_status(conn, now)
     return await publish(target, "desk", "kill_switch", status)

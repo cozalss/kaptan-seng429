@@ -12,7 +12,9 @@ from pathlib import Path
 
 import pytest
 
-from kaptan.eval.redteam import (
+from kaptan.llm.injection_rules_tr import fold_obfuscation, rule_hits
+from kaptan.llm.mask_persons import mask_persons
+from tests.harness.redteam import (
     Case,
     console_lines,
     deep_merge,
@@ -21,8 +23,6 @@ from kaptan.eval.redteam import (
     summarize,
     write_report,
 )
-from kaptan.llm.injection_rules_tr import fold_obfuscation, rule_hits
-from kaptan.llm.mask_persons import mask_persons
 
 pytestmark = pytest.mark.redteam
 

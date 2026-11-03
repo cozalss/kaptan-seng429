@@ -9,13 +9,11 @@ from typing import Any
 
 import pytest
 
-from kaptan.approvals.execute import FillJob, fill_doc, paper_order
+from kaptan.approvals.execute import paper_order
 from kaptan.approvals.fmt_tr import fmt_dec, fmt_int, fmt_pct, fmt_price
-from kaptan.approvals.reads import card_from_row, run_progress
+from kaptan.approvals.reads import card_from_row
 from kaptan.approvals.ticket_doc import (
     EMPTY_ENTRY,
-    PAPER_EQUITY_TRY,
-    PERSONAL_ACCOUNT_TRY,
     build_ticket,
     effective_entry,
     personal_qty,
@@ -23,8 +21,7 @@ from kaptan.approvals.ticket_doc import (
     ticket_order,
     ticket_valid_until,
 )
-from kaptan.demo.fixtures import DemoFixtures
-from kaptan.runs.explain import progress_trace
+from tests.harness.fixtures import DemoFixtures
 
 DEMO = Path(__file__).resolve().parents[1] / "fixtures" / "demo"
 FX = DemoFixtures()
@@ -68,9 +65,8 @@ def test_fmt_dec_digits_and_pct() -> None:
     assert fmt_pct(0.61, 0) == "%61"
 
 
-def test_constants_match_the_fixture_meta() -> None:
-    assert FX.meta["paper_equity_try"] == PAPER_EQUITY_TRY
-    assert FX.meta["personal_account_try"] == PERSONAL_ACCOUNT_TRY
+# The account behind the recorded tickets.
+FIXTURE_ACCOUNT = {"account_equity_try": 350_000, "paper_equity_try": 1_016_480}
 
 
 def test_build_ticket_reproduces_every_fixture_ticket() -> None:
@@ -79,7 +75,11 @@ def test_build_ticket_reproduces_every_fixture_ticket() -> None:
         run = _run(expected["run_id"])
         card = run["explain"]["approval"]
         built = build_ticket(
-            card, run["explain"], seq=10 + ids.index(expected["run_id"]), decided_at=card["decided_at"]
+            card,
+            run["explain"],
+            seq=10 + ids.index(expected["run_id"]),
+            decided_at=card["decided_at"],
+            **FIXTURE_ACCOUNT,
         )
         assert built["entry"] == EMPTY_ENTRY
         assert {**built, "entry": expected["entry"]} == expected
@@ -88,14 +88,16 @@ def test_build_ticket_reproduces_every_fixture_ticket() -> None:
 def test_build_ticket_without_proposal_falls_back() -> None:
     run = _run("run-day-e1-tmsmk")
     card = {**run["explain"]["approval"], "rule_trace_summary": [], "approved_notional_try": 1000.0}
-    built = build_ticket(card, {"proposal": None, "risk_checks": []}, seq=7, decided_at=card["decided_at"])
+    built = build_ticket(
+        card, {"proposal": None, "risk_checks": []}, seq=7, decided_at=card["decided_at"], **FIXTURE_ACCOUNT
+    )
     assert built["ticket_no"].endswith("-007")
     assert built["cost_line_tr"] == "Maliyet: Neden ekranında"
     assert built["edge_cost_line_tr"] == "Avantaj / maliyet: Neden ekranında"
     assert built["stop_line_tr"] == "Stop: Neden ekranında"
     assert built["materiality_line_tr"] == "Kural izi: Neden ekranında"
     assert built["amount_check_line_tr"] == "Tutar kontrolü (R14): uygulanmadı"
-    assert built["qty"] == personal_qty(card) == 3
+    assert built["qty"] == personal_qty(card, **FIXTURE_ACCOUNT) == 3
 
 
 def test_ticket_validity_windows() -> None:
@@ -132,21 +134,6 @@ def test_effective_entry_and_ticket_order() -> None:
     assert full["status"] == "filled"
 
 
-def test_progress_trace_and_run_progress() -> None:
-    nodes = [{"node": str(i), "status": "done", "latency_ms": 5, "started_at": "x"} for i in range(4)]
-    assert progress_trace(nodes, 1.0) is nodes
-    cut = progress_trace(nodes, 0.5)
-    assert [n["status"] for n in cut] == ["done", "done", "running", "waiting"]
-    assert cut[2]["latency_ms"] is None and cut[2]["started_at"] == "x"
-    assert cut[3]["started_at"] is None
-    demo_now = datetime(2027, 1, 11, 10, 41, tzinfo=UTC)
-    wall = datetime(2026, 10, 17, 12, 0, tzinfo=UTC)
-    assert run_progress(None, demo_now, wall) == 1
-    assert run_progress(demo_now - timedelta(seconds=3.75), demo_now, wall) == pytest.approx(0.5)
-    assert run_progress(wall - timedelta(seconds=30), demo_now, wall) == 1  # a wall-clock injected_at works too
-    assert run_progress(demo_now + timedelta(seconds=1), demo_now, wall) == 0
-
-
 def test_card_effective_status() -> None:
     card = _run("run-day-e1-krgcl")["explain"]["approval"]
     row: dict[str, Any] = {
@@ -177,8 +164,3 @@ def test_paper_order_and_fill() -> None:
     )
     smaller = paper_order({**card, "entry": "intraday_limit", "approved_notional_try": 1000.0}, now)
     assert (smaller["tif"], smaller["status"], smaller["qty"]) == ("day", "accepted", 29)
-    fill = fill_doc(FillJob("ord-s-demo-e3-ornek", "run-demo-e3-ornek", "p", "ORNEK", "Ö", 1240, 48.32), now)
-    assert fill["id"] == "fill-s-demo-e3-ornek"
-    assert fill["commission"] == 29.96
-    assert fill["bsmv"] == 1.5
-    assert fill["filled_at"] == "2027-01-11T10:41:00.000Z"

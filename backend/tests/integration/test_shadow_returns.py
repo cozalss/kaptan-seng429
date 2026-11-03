@@ -27,7 +27,7 @@ async def test_expired_and_rejected_signals_get_their_shadow_returns(desk: DictC
     )
     assert other is not None
     await desk.execute(
-        "UPDATE trading.approvals SET status = 'rejected', decided_by = 'uye-3', decided_at = %s "
+        "UPDATE trading.approvals SET status = 'rejected', decided_by = 'sahip', decided_at = %s "
         "WHERE proposal_id = %s",
         (datetime(2027, 1, 11, 11, 0, tzinfo=UTC), other["proposal_id"]),
     )

@@ -9,7 +9,6 @@ sells what your personal book holds (`intent.context["personal_qty"]`, no short 
 from __future__ import annotations
 
 from datetime import datetime
-from functools import cache
 from typing import Any, Final
 
 from psycopg import AsyncConnection
@@ -19,10 +18,8 @@ from kaptan.approvals.reads import ticket_from_row, ticket_rows
 from kaptan.approvals.ticket_doc import TICKET_SEQ_BASE, build_ticket, parse_iso
 from kaptan.brokers.base import BrokerMode, OrderAck, OrderIntent
 from kaptan.brokers.config import ExecConfig
-from kaptan.demo.fixtures import DemoFixtures
 from kaptan.portfolio.pnl import last_live_point
 
-DEMO_E3_RUN: Final = "run-demo-e3-ornek"
 INSERT_SQL: Final = """
 INSERT INTO trading.order_tickets (ticket_no, order_id, proposal_id, run_id, doc, created_at, valid_until)
 VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING
@@ -30,30 +27,16 @@ VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING
 KEYS_SQL: Final = "SELECT config_live, env_enabled, ui_key FROM trading.live_arm WHERE id = 1"
 
 
-@cache
-def _fixture_run_ids() -> tuple[str, ...]:
-    return tuple(r["explain"]["run"]["run_id"] for r in DemoFixtures().runs if r["set"] != "demo")
-
-
-@cache
-def _demo_ticket() -> dict[str, Any]:
-    doc: dict[str, Any] = DemoFixtures().json("demo_order_ticket.json")
-    return doc
-
-
-async def ticket_seq(conn: AsyncConnection[Any], run_id: str) -> int:
-    """10 + the run's index in allSpecs() (day runs, then history; anything else after them)."""
-    ids = _fixture_run_ids()
-    if run_id in ids:
-        return TICKET_SEQ_BASE + ids.index(run_id)
+async def ticket_seq(conn: AsyncConnection[Any]) -> int:
+    """The running number of the next ticket."""
     async with conn.cursor() as cur:
         await cur.execute("SELECT count(*) AS n FROM trading.order_tickets")
         row = await cur.fetchone()
-    return TICKET_SEQ_BASE + len(ids) + int(row["n"] if row else 0)
+    return TICKET_SEQ_BASE + int(row["n"] if row else 0)
 
 
 async def _live_sizing(conn: AsyncConnection[Any], cfg: ExecConfig) -> dict[str, Any]:
-    """Outside DEMO_MODE: the configured account, the desk's last equity and the live_arm keys."""
+    """The configured account, the desk's last equity and the live_arm keys."""
     last = await last_live_point(conn)
     async with conn.cursor() as cur:
         await cur.execute(KEYS_SQL)
@@ -82,14 +65,12 @@ class OrderTicketBroker:
 
     async def _raw_ticket(self, card: dict[str, Any], qty: int | None = None) -> dict[str, Any]:
         decided_at: str = card["decided_at"]
-        if card["run_id"] == DEMO_E3_RUN and self._cfg.demo_mode:
-            return {k: v for k, v in _demo_ticket().items() if k != "entry"}
         async with self._conn.cursor() as cur:
             await cur.execute("SELECT explain FROM trading.agent_runs WHERE run_id = %s", (card["run_id"],))
             run = await cur.fetchone()
         explain = run["explain"] if run else {}
-        seq = await ticket_seq(self._conn, card["run_id"])
-        extra = {} if self._cfg.demo_mode else await _live_sizing(self._conn, self._cfg)
+        seq = await ticket_seq(self._conn)
+        extra = await _live_sizing(self._conn, self._cfg)
         doc = build_ticket(card, explain, seq=seq, decided_at=decided_at, qty=qty, **extra)
         return {k: v for k, v in doc.items() if k != "entry"}
 

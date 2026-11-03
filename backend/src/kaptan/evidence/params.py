@@ -22,8 +22,11 @@ DEFAULT_HORIZONS: Final = (1, 5, 20)
 MIN_EVENTS: Final = 5
 #: Repeated events of one company within this many sessions are one event (06 §12.3).
 CLUSTER_SESSIONS: Final = 10
-#: At most this many past events per scope are studied (newest first), to bound one run's SQL.
-MAX_EVENTS: Final = 200
+#: A bound on one scope's events, far above the archive's busiest type (E4 ≈ 2 700 reports a year since 2018): the
+#: edge is the mean over the whole history (06 §8.2), never over its newest weeks.
+MAX_EVENTS: Final = 100_000
+#: Events not in core.event_returns yet: at most this many (newest first) are computed inside one run, to bound its SQL.
+MAX_COMPUTED_EVENTS: Final = 200
 #: Corporate-action kinds whose ex-date is removed from the estimation window (06 §12.3).
 EXCLUDED_ACTION_KINDS: Final = frozenset({"bedelsiz", "bedelli", "split"})
 

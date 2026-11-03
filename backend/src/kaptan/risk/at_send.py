@@ -2,7 +2,7 @@
 with the desk as it is *now* (marked equity, kill switch, daily halt, restrictions and their age, the
 latest price) and the active limit version, inside the decision's transaction.
 
-Used by approvals/service.py for cards of real runs (`run_set = 'live'`); demo cards keep M1's path.
+Used by approvals/service.py for cards of real runs (`run_set = 'live'`); recorded cards keep M1's path.
 """
 
 from __future__ import annotations

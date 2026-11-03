@@ -1,11 +1,21 @@
-import { createMockApi, type MockApiOptions } from "./mock/mock-api";
-import type { KaptanApi } from "./types";
+import "./mock/register";
+import { createMockApi } from "./mock/mock-api";
+import { ApiError, type KaptanApi } from "./types";
 
 /**
- * The API client for mock mode. `@/lib/api/client` resolves here unless
- * NEXT_PUBLIC_API_MODE=http (next.config.ts turbopack.resolveAlias, tsconfig paths, vitest
- * alias), so an http build never ships the in-memory desk and a mock build never ships fetch.
+ * The test double of client.ts: the in-browser mock API and the mock session route. Reached only
+ * through the test flag's alias (next.config.ts, vitest.config.mts).
  */
-export type ClientOptions = MockApiOptions;
+export const createClient = (): KaptanApi => createMockApi();
 
-export const createClient = (o: ClientOptions): KaptanApi => createMockApi(o);
+export async function signIn(passphrase: string): Promise<void> {
+  const res = await fetch("/api/mock/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ passphrase }) });
+  if (res.status === 401) throw new ApiError(401, "login", "Parola doğrulanamadı.");
+  if (!res.ok) throw new ApiError(res.status, "login", "Giriş şu an yapılamıyor. Biraz sonra yeniden dene.");
+}
+
+export async function signOut(): Promise<void> {
+  await fetch("/api/mock/session", { method: "DELETE" });
+}
+
+export const isReachable = async (): Promise<boolean> => true;

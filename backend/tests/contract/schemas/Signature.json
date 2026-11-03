@@ -8,15 +8,6 @@
   "name": {
    "type": "string"
   },
-  "role": {
-   "type": "string",
-   "enum": [
-    "analyst",
-    "risk_officer",
-    "admin",
-    "auditor"
-   ]
-  },
   "at": {
    "type": "string",
    "format": "date-time",
@@ -32,7 +23,6 @@
  "required": [
   "uid",
   "name",
-  "role",
   "at",
   "reason"
  ],

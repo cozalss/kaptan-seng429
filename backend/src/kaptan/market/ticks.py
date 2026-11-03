@@ -17,7 +17,7 @@ Ana Pazar ±15 %, Alt Pazar / Yakın İzleme Pazarı / PÖİP ±10 % of the base
 `core.market_changes` / issuer row, or GİP / Nitelikli whose band we have not verified) gets the
 narrowest band, ±10 %: a too-narrow band can only make R09 / the tavan check stricter (a missed fill,
 never an order the exchange would reject), while a too-wide one would let an order through at a price
-the exchange cannot trade. Replay keeps the M1 rule `last × 1.1` (merge), so the demo values do not change.
+the exchange cannot trade.
 """
 
 from __future__ import annotations

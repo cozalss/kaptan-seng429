@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import type { z } from "zod";
 import { DeskEvent, FeedEvent, RunEvent } from "@/lib/domain/events";
 import { API_MODE } from "@/lib/api/config";
-import { getMockDb } from "@/lib/api/mock/db";
+import { localRuntime } from "@/lib/api/local-runtime";
 import type { BusMessage, StreamKey } from "./bus";
 import { subscribeShared } from "./shared-stream";
 
 /**
  * Subscribe to an SSE stream (04 §11): "feed", "desk" or a run's node stream.
- * - mock: subscribes to the in-memory bus the mock API publishes to;
+ * - test double: subscribes to the in-memory bus the mock API publishes to (local-runtime.ts);
  * - http: one EventSource per stream shared by the whole tab (shared-stream.ts: ticket,
  *   back-off and reconnect with the last event id live there).
  * Handlers are typed per event and may change between renders without resubscribing.
@@ -59,7 +59,7 @@ export function useEventStream(stream: StreamArg, handlers: Record<string, ((dat
 
     if (API_MODE === "mock") {
       // The in-memory bus is always open; status stays "open" for the life of the tab.
-      return getMockDb().bus.subscribe(key, dispatch);
+      return localRuntime()?.subscribe(key, dispatch);
     }
 
     // http: one shared EventSource per stream for the whole tab (shared-stream.ts).

@@ -2,19 +2,22 @@
 
 The stage follows the calendar of 12 §1 / 08 §4.1 (Kanıt until the forward start on 9 Nov 2026, then Paper);
 moving to Gölge or Küçük gerçek para is a person's written decision, never automatic, so the computed stage
-stops at Paper. The criteria are measured: holdout (core.event_returns, 20-day CAR per type, t and n),
+stops at Paper. The criteria are measured: the holdout's one recorded run (core.holdout_runs; this module never
+computes it, 12 §1 "yalnızca bir kez", `kaptan.evalreports.holdout` is the only reader of that period's returns),
 closed trades and days in paper, max drawdown of the live strategy (trading.pnl_daily).
 """
 
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from datetime import date, datetime
 from typing import Any, Final
 
 from kaptan.db import DictConn
+from kaptan.evalreports.holdout import main_report
 from kaptan.portfolio.pnl import LIVE_STRATEGY
-from kaptan.reference._sql import fetch_all, fetch_one
+from kaptan.reference._sql import fetch_one
 
 PAPER_START: Final = date(2026, 11, 9)
 EVIDENCE_START: Final = date(2026, 10, 1)
@@ -27,24 +30,16 @@ HOLDOUT_N: Final = 30
 STAGES: Final = (
     ("evidence", 0, "Kanıt", "Eki–Kas 2026", "Geçmiş olaylarda kural bir kez, ayrılmış dönemde sınanır."),
     ("paper", 1, "Paper", "9 Kas 2026 → en az 3 ay", "Dondurulmuş kurallarla SimBIST'te işlem; para yok."),
-    ("shadow", 2, "Gölge", "Paper'dan sonra, en az 4 hafta", "Gerçek emir fişi üretilir, gerçek para kullanılmaz."),
-    ("small_real", 3, "Küçük gerçek para", "Nisan–Haziran 2027", "Ayrı hesapta küçük tutar, fişle elle giriş."),
+    ("shadow", 2, "Gölge", "Paper'dan sonra, en az 4 hafta", "Gerçek işlem bilgisi çıkar, gerçek para kullanılmaz."),
+    ("small_real", 3, "Küçük gerçek para", "Nisan–Haziran 2027", "Ayrı hesapta küçük tutar, işlemi sen girersin."),
 )
 TICKET_MODE_TR: Final = {
-    "evidence": "Onaylanan öneri yalnızca kayda geçer; emir fişi üretilmez.",
-    "paper": "Onaylanan öneri SimBIST'te dolar; emir fişi yalnızca bilgi içindir.",
-    "shadow": "Emir fişi üretilir; gerçek para kullanılmaz, fiyatı not edersin.",
-    "small_real": "Emir fişini aracı kurum uygulamasına sen girersin.",
+    "evidence": "Onaylanan öneri yalnızca kayda geçer; işlem bilgisi çıkmaz.",
+    "paper": "Onaylanan öneri deneme hesabında gerçekleşir; işlem bilgisi yalnızca bilgi içindir.",
+    "shadow": "İşlem bilgisi çıkar; gerçek para kullanılmaz, fiyatı not edersin.",
+    "small_real": "İşlem bilgisini banka ya da aracı kurum uygulamana sen girersin.",
 }
 
-HOLDOUT_SQL: Final = """
-SELECT e.event_code, count(*)::int AS n, avg(r.car)::float8 AS mean, stddev_samp(r.car)::float8 AS sd
-  FROM core.event_returns r JOIN core.events e USING (event_id)
- WHERE r.horizon = 20 AND r.model = 'market_adj' AND e.event_code IN ('E1', 'E2', 'E3', 'E4')
-   AND e.event_time >= timestamptz '2025-01-01 00:00:00+03' AND e.event_time < timestamptz '2026-11-01 00:00:00+03'
-   AND r.available_at < %s
- GROUP BY e.event_code ORDER BY e.event_code
-"""
 CLOSED_SQL: Final = "SELECT count(*)::int AS n FROM trading.closed_positions WHERE book = 'paper' AND closed_at < %s"
 DD_SQL: Final = "SELECT min(drawdown)::float8 AS dd FROM trading.pnl_daily WHERE strategy = %s AND d <= %s"
 
@@ -53,12 +48,6 @@ def pct_tr(x: float, digits: int = 1) -> str:
     """'%−3,1' (Turkish percent sign first, decimal comma, real minus sign)."""
     body = f"{abs(x) * 100:.{digits}f}".replace(".", ",")
     return f"%{'−' if x < 0 else ''}{body}"
-
-
-def t_stat(mean: float | None, sd: float | None, n: int) -> float:
-    if mean is None or not sd or n < 2 or math.isnan(sd):
-        return 0.0
-    return mean / (sd / math.sqrt(n))
 
 
 def current_stage(today: date) -> str:
@@ -80,34 +69,22 @@ def _criterion(
     }
 
 
-def evidence_criteria(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    best = max(rows, key=lambda r: t_stat(r["mean"], r["sd"], r["n"]), default=None)
-    if best is None:
-        return [
-            _criterion(
-                "holdout",
-                "Ayrılmış dönemde en az bir olay tipi geçer",
-                "Henüz ölçülmedi",
-                f"t ≥ 2,0 · n ≥ {HOLDOUT_N} · ortalama > 0",
-                0.0,
-                False,
-                "kanonik",
-            )
-        ]
-    t, n, mean = t_stat(best["mean"], best["sd"], best["n"]), int(best["n"]), float(best["mean"] or 0.0)
-    met = t >= HOLDOUT_T and n >= HOLDOUT_N and mean > 0
-    cur = f"{best['event_code']}: t = {t:.2f}".replace(".", ",") + f" · n = {n} · ort. {pct_tr(mean, 2)}"
-    return [
-        _criterion(
-            "holdout",
-            "Ayrılmış dönemde en az bir olay tipi geçer",
-            cur,
-            f"t ≥ 2,0 · n ≥ {HOLDOUT_N} · ortalama > 0",
-            min(t / HOLDOUT_T, n / HOLDOUT_N, 1.0) if mean > 0 else 0.0,
-            met,
-            "kanonik",
-        )
-    ]
+def evidence_criteria(report: Mapping[str, Any] | None) -> list[dict[str, Any]]:
+    """The one criterion from the stored run: unmeasured until it ran; the first passing type, else the closest."""
+    target = f"t ≥ 2,0 · n ≥ {HOLDOUT_N} · ortalama > 0"
+    label = "Ayrılmış dönemde en az bir olay tipi geçer"
+    types = (report or {}).get("types") or {}
+    if not types:
+        return [_criterion("holdout", label, "Henüz ölçülmedi", target, 0.0, False, "kanonik")]
+    best_code = max(
+        types,
+        key=lambda c: (bool(types[c]["base"]["passed"]), types[c]["base"]["t_bmp_kp"] or -math.inf, types[c]["n"]),
+    )
+    best = types[best_code]["base"]
+    t, n, mean = float(best["t_bmp_kp"] or 0.0), int(types[best_code]["n"]), float(best["mean_car_net"] or 0.0)
+    cur = f"{best_code}: t = {t:.2f}".replace(".", ",") + f" · n = {n} · ort. {pct_tr(mean, 2)}"
+    progress = min(t / HOLDOUT_T, n / HOLDOUT_N, 1.0) if mean > 0 else 0.0
+    return [_criterion("holdout", label, cur, target, progress, bool(best["passed"]), "kanonik")]
 
 
 def paper_criteria(trades: int, days: int, dd: float) -> list[dict[str, Any]]:
@@ -142,7 +119,7 @@ def paper_criteria(trades: int, days: int, dd: float) -> list[dict[str, Any]]:
     ]
 
 
-async def personal_stage(conn: DictConn, *, now: datetime, today: date, is_sample: bool) -> dict[str, Any]:
+async def personal_stage(conn: DictConn, *, now: datetime, today: date) -> dict[str, Any]:
     current = current_stage(today)
     order = [s[0] for s in STAGES]
     idx = order.index(current)
@@ -157,14 +134,15 @@ async def personal_stage(conn: DictConn, *, now: datetime, today: date, is_sampl
         }
         for i, (sid, n, label, window, summary) in enumerate(STAGES)
     ]
+    holdout = evidence_criteria(await main_report(conn))
     if current == "evidence":
-        criteria = evidence_criteria(await fetch_all(conn, HOLDOUT_SQL, (now,)))
+        criteria = holdout
         started = EVIDENCE_START
     else:
         closed = await fetch_one(conn, CLOSED_SQL, (now,)) or {}
         dd_row = await fetch_one(conn, DD_SQL, (LIVE_STRATEGY, today)) or {}
         days = max(0, (today - PAPER_START).days)
-        criteria = paper_criteria(int(closed.get("n") or 0), days, float(dd_row.get("dd") or 0.0))
+        criteria = [*holdout, *paper_criteria(int(closed.get("n") or 0), days, float(dd_row.get("dd") or 0.0))]
         started = PAPER_START
     return {
         "current": current,
@@ -173,5 +151,5 @@ async def personal_stage(conn: DictConn, *, now: datetime, today: date, is_sampl
         "criteria": criteria,
         "ticket_mode_tr": TICKET_MODE_TR[current],
         "as_of": now,
-        "is_sample": is_sample,
+        "is_sample": False,
     }

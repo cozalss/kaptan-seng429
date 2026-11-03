@@ -8,18 +8,19 @@ import { cn } from "@/lib/utils";
 import { useDesk } from "./desk-state";
 
 /**
- * One quiet line under the top bar when the desk is not running normally: north red when you
- * (or the −5% rule) stopped everything, ochre for the daily −1% pause. The live region is
+ * One quiet line under the top bar when things are not running normally: north red when you (or
+ * the −5% rule) stopped everything, ochre for the daily −1% pause. Screens that show the stop
+ * themselves pass `showStopped={false}`. The live region is
  * always mounted (a region that appears with its text is often not read out); it is an alert
  * only for Durdur. The band opens its own height once, never slides.
  */
-export function RiskBanner() {
+export function RiskBanner({ showStopped = true }: { showStopped?: boolean }) {
   const { risk } = useDesk();
   const stopped = risk?.kill_switch === "on";
   const paused = !stopped && Boolean(risk?.halted_today);
   return (
     <div role={stopped ? "alert" : "status"} data-testid="risk-banner">
-      {stopped ? (
+      {stopped && showStopped ? (
         <Band className="bg-north text-on-dark">
           <span className="font-medium">Durduruldu.</span>
           <span className="opacity-90">Yeni öneri gelmez; elindekiler kendi kurallarıyla kapanır.</span>
@@ -27,14 +28,14 @@ export function RiskBanner() {
             href={ROUTES.portfoy}
             className="ml-auto inline-flex min-h-6 items-center underline underline-offset-4 focus-visible:outline-[var(--on-dark)]"
           >
-            Portföy
+            Param
           </Link>
         </Band>
       ) : null}
       {paused && risk ? (
         <Band className="bg-ochre text-ink">
           <span>
-            <span className="font-medium">Bugün yeni emir yok.</span> Gün içi zarar {fmtPct(risk.daily_pnl_pct, 1)}; sınır −%1. Yarın kendiliğinden
+            <span className="font-medium">Bugün yeni işlem yok.</span> Paran bugün {fmtPct(risk.daily_pnl_pct, 1)} değişti; sınır −%1. Yarın kendiliğinden
             kalkar.
           </span>
         </Band>

@@ -2,7 +2,7 @@
 
     await publish(request.app, "desk", "approval.decided", card)      # card: dict or ApprovalCard
     await publish(app.state.redis, "feed", "counters", counters)
-    await publish(request, "run:run-demo-e3-ornek", "node", {...})
+    await publish(request, "run:run-live-1683376", "node", {...})
 
 Call it **after** the transaction commits (a rolled-back write must not reach the panel).
 `stream` is "feed", "desk" or "run:<run_id>"; `event` must be one of FEED_EVENTS / DESK_EVENTS /

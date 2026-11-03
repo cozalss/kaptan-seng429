@@ -56,8 +56,10 @@ class CompanyIndex:
 
     def subject_ticker(self, d: NormalizedDisclosure) -> str | None:
         """The first listed code among the row's own codes, then its related stocks. A broker or fund
-        manager filing about a listed company carries its own member code in `stockCode`."""
-        for code in (*d.stock_codes, *d.related_stocks):
+        manager filing about a listed company carries its own member code in `stockCode`; on a trade notice (E2)
+        the related stock is the traded share even when the filer is listed itself."""
+        codes = (*d.related_stocks, *d.stock_codes) if d.subject_route == "E2" else (*d.stock_codes, *d.related_stocks)
+        for code in codes:
             if code in self.by_ticker:
                 return code
         return d.primary_ticker
@@ -288,8 +290,11 @@ UPDATE ops.detail_fetch_queue q SET status = 'running', attempts = q.attempts + 
     WHERE status = 'queued' AND next_attempt_at <= %(now)s
     ORDER BY priority, next_attempt_at, disclosure_index
     LIMIT 1 FOR UPDATE SKIP LOCKED)
-RETURNING q.disclosure_index, q.attempts,
-          (SELECT subject FROM core.disclosures d WHERE d.disclosure_index = q.disclosure_index) AS subject
+RETURNING q.disclosure_index, q.attempts, q.priority,
+          (SELECT subject FROM core.disclosures d WHERE d.disclosure_index = q.disclosure_index) AS subject,
+          (SELECT subject_route FROM core.disclosures d WHERE d.disclosure_index = q.disclosure_index) AS subject_route,
+          (SELECT attachment_count FROM core.disclosures d WHERE d.disclosure_index = q.disclosure_index)
+            AS attachment_count
 """
 
 
@@ -349,6 +354,147 @@ async def release_running(conn: Conn) -> int:
     """At startup: rows a crashed worker left 'running' go back to the queue."""
     async with conn.cursor() as cur:
         await cur.execute("UPDATE ops.detail_fetch_queue SET status = 'queued' WHERE status = 'running'")
+        return cur.rowcount
+
+
+# ── attachments ───────────────────────────────────────────────────────────
+#: Priority 0 = live (the worker's loop, its agent run waits for the row); the re-fetch job works everything above it.
+ATTACHMENT_JOB_PRIORITY: Final = 5
+ATTACHMENT_CLAIM_SQL: Final = """
+UPDATE ops.attachment_fetch_queue q SET status = 'running', attempts = q.attempts + 1
+ WHERE q.disclosure_index = (
+   SELECT disclosure_index FROM ops.attachment_fetch_queue
+    WHERE status = 'queued' AND next_attempt_at <= %(now)s
+      AND ((priority = 0) = %(live)s)
+    ORDER BY priority, next_attempt_at, disclosure_index
+    LIMIT 1 FOR UPDATE SKIP LOCKED)
+RETURNING q.disclosure_index, q.attempts, q.priority,
+          (SELECT parsed FROM core.disclosures d WHERE d.disclosure_index = q.disclosure_index) AS parsed,
+          (SELECT body FROM core.disclosure_texts t WHERE t.disclosure_index = q.disclosure_index AND t.lang = 'tr')
+            AS body
+"""
+STORED_E2_WHERE: Final = """
+  FROM core.disclosures d
+ WHERE d.origin = 'kap' AND d.subject_route = 'E2' AND d.attachment_count > 0
+   AND coalesce(jsonb_array_length(d.parsed -> 'rows'), 0) = 0
+   AND NOT EXISTS (SELECT 1 FROM ops.attachment_fetch_queue q WHERE q.disclosure_index = d.disclosure_index
+                    AND q.status IN ('done', 'failed'))
+"""
+STORE_ATTACHMENT_SQL: Final = """
+INSERT INTO core.disclosure_attachments
+  (disclosure_index, obj_id, file_name, file_ext, position, status, reason, reason_tr, body, lang, pages, n_bytes,
+   payload_sha256, text_sha256, extractor_version, fetched_at)
+VALUES (%(disclosure_index)s, %(obj_id)s, %(file_name)s, %(file_ext)s, %(position)s, %(status)s, %(reason)s,
+        %(reason_tr)s, %(body)s, %(lang)s, %(pages)s, %(n_bytes)s, %(payload_sha256)s, %(text_sha256)s,
+        %(extractor_version)s, now())
+ON CONFLICT (disclosure_index, obj_id) DO UPDATE SET
+  file_name = EXCLUDED.file_name, file_ext = EXCLUDED.file_ext, position = EXCLUDED.position,
+  status = EXCLUDED.status, reason = EXCLUDED.reason, reason_tr = EXCLUDED.reason_tr, body = EXCLUDED.body,
+  lang = EXCLUDED.lang, pages = EXCLUDED.pages, n_bytes = EXCLUDED.n_bytes,
+  payload_sha256 = EXCLUDED.payload_sha256, text_sha256 = EXCLUDED.text_sha256,
+  extractor_version = EXCLUDED.extractor_version, fetched_at = now()
+"""
+
+
+async def enqueue_attachments(conn: Conn, disclosure_index: int, priority: int) -> None:
+    async with conn.cursor() as cur:
+        await cur.execute(
+            "INSERT INTO ops.attachment_fetch_queue (disclosure_index, priority) VALUES (%s, %s) "
+            "ON CONFLICT (disclosure_index) DO NOTHING",
+            (disclosure_index, priority),
+        )
+
+
+async def count_stored_e2(conn: Conn) -> int:
+    """E2 disclosures with attachments and no table, whose attachments are not settled yet."""
+    async with conn.cursor() as cur:
+        await cur.execute(f"SELECT count(*) AS n {STORED_E2_WHERE}")
+        row = await cur.fetchone()
+    return 0 if row is None else int(row["n"])
+
+
+async def enqueue_stored_e2(conn: Conn) -> int:
+    """Queue them for the re-fetch job (rows already queued keep their place). Returns how many are pending."""
+    async with conn.cursor() as cur:
+        await cur.execute(
+            f"INSERT INTO ops.attachment_fetch_queue (disclosure_index, priority) "
+            f"SELECT d.disclosure_index, %s {STORED_E2_WHERE} ON CONFLICT (disclosure_index) DO NOTHING",
+            (ATTACHMENT_JOB_PRIORITY,),
+        )
+    return await count_stored_e2(conn)
+
+
+async def claim_attachments(conn: Conn, now: datetime, *, job_rows: bool = False) -> dict[str, Any] | None:
+    async with conn.cursor() as cur:
+        await cur.execute(ATTACHMENT_CLAIM_SQL, {"now": now, "live": not job_rows})
+        row = await cur.fetchone()
+    return None if row is None else dict(row)
+
+
+async def read_attachment_ids(conn: Conn, disclosure_index: int) -> set[str]:
+    async with conn.cursor() as cur:
+        await cur.execute(
+            "SELECT obj_id FROM core.disclosure_attachments WHERE disclosure_index = %s AND status = 'read'",
+            (disclosure_index,),
+        )
+        return {str(r["obj_id"]) for r in await cur.fetchall()}
+
+
+async def attachments_of(conn: Conn, disclosure_index: int) -> list[dict[str, Any]]:
+    async with conn.cursor() as cur:
+        await cur.execute(
+            "SELECT status, reason_tr, body, lang FROM core.disclosure_attachments "
+            "WHERE disclosure_index = %s ORDER BY position, obj_id",
+            (disclosure_index,),
+        )
+        return [dict(r) for r in await cur.fetchall()]
+
+
+async def store_attachments(conn: Conn, disclosure_index: int, files: list[dict[str, Any]]) -> None:
+    """Upsert the files; a real file replaces an earlier "no file" row."""
+    async with conn.cursor() as cur:
+        if any(f["obj_id"] != "-" for f in files):
+            await cur.execute(
+                "DELETE FROM core.disclosure_attachments WHERE disclosure_index = %s AND obj_id = '-'",
+                (disclosure_index,),
+            )
+        for f in files:
+            await cur.execute(STORE_ATTACHMENT_SQL, {**f, "disclosure_index": disclosure_index})
+
+
+async def store_attachment_document(
+    conn: Conn, disclosure_index: int, parsed: dict[str, Any], reason: str | None
+) -> None:
+    """The parsed document with what the attachments gave; the queue row is done."""
+    async with conn.cursor() as cur:
+        await cur.execute(
+            "UPDATE core.disclosures SET parsed = %s, reason = coalesce(%s, reason), updated_at = now() "
+            "WHERE disclosure_index = %s AND origin = 'kap'",
+            (Jsonb(parsed), reason, disclosure_index),
+        )
+        await cur.execute(
+            "UPDATE ops.attachment_fetch_queue SET status = 'done', last_error = NULL WHERE disclosure_index = %s",
+            (disclosure_index,),
+        )
+
+
+async def fail_attachments(conn: Conn, disclosure_index: int, error: str, *, retry_at: datetime) -> None:
+    async with conn.cursor() as cur:
+        await cur.execute(
+            "UPDATE ops.attachment_fetch_queue SET status = 'queued', last_error = %s, next_attempt_at = %s "
+            "WHERE disclosure_index = %s",
+            (error[:500], retry_at, disclosure_index),
+        )
+
+
+async def release_running_attachments(conn: Conn, *, job_rows: bool = False) -> int:
+    """At startup: rows a crashed worker (or a stopped job) left 'running' go back to the queue."""
+    async with conn.cursor() as cur:
+        await cur.execute(
+            "UPDATE ops.attachment_fetch_queue SET status = 'queued' WHERE status = 'running' "
+            "AND ((priority = 0) = %s)",
+            (not job_rows,),
+        )
         return cur.rowcount
 
 

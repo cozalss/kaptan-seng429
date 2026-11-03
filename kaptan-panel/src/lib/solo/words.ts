@@ -2,7 +2,7 @@ import { fmtShortDate, NBSP } from "@/lib/format";
 import type { SuggestionAction } from "./overview";
 
 /**
- * Plain Turkish for the single-user home: money as "1.250,00 ₺" / "3.000 ₺", a signed change as
+ * Plain Turkish for the home: money as "1.250,00 ₺" / "3.000 ₺", a signed change as
  * "+18.612 ₺", confidence as one word. No jargon on this screen.
  */
 const lira0 = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 });
@@ -44,17 +44,24 @@ export function confidenceWord(c: number): ConfidenceWord {
   return "Zayıf";
 }
 
+/** How sure KAPtan is, as a sentence anyone reads the same way. Even the strongest is not a promise. */
+export function confidenceSentence(c: number): string {
+  const word = confidenceWord(c);
+  if (word === "Güçlü") return "KAPtan buna güveniyor, ama garanti değil.";
+  return word === "Orta" ? "KAPtan orta derecede emin." : "KAPtan pek emin değil.";
+}
+
 /** The verb on a suggestion card. */
 export const ACTION_WORD: Readonly<Record<SuggestionAction, string>> = { al: "AL", tut: "TUT", sat: "SAT" };
 
-/** What approving says, quietly: "KRGCL alımını onayladın." */
+/** What approving says, quietly: "THYAO alımını onayladın." */
 export function approvedSentence(action: SuggestionAction, symbol: string): string {
   if (action === "al") return `${symbol} alımını onayladın.`;
   if (action === "sat") return `${symbol} satışını onayladın.`;
   return `${symbol} elinde kalıyor.`;
 }
 
-/** What "Geç" says: "KRGCL önerisini geçtin." */
+/** What "Geç" says: "THYAO önerisini geçtin." */
 export function skippedSentence(symbol: string): string {
   return `${symbol} önerisini geçtin.`;
 }

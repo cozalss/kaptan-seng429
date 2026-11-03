@@ -14,13 +14,13 @@ export const DISCLOSURES = {
     title: 'bildirim anahtarı',
     question: 'Bildirim geldi mi?',
     subject: 'Pay alım bildirimi',
-    note: 'Sayısal eşik yok: tetikleyici bildirimin kendisi. Büyüklüğünü sonraki adımlar tartar.',
+    note: 'Sayısal eşik yok: bildirimin kendisi yeter. Büyüklüğünü sonraki adımlar tartar.',
   },
   E4: {
     title: 'açıklama anahtarı',
     question: 'Finansal sonuç açıklandı mı?',
     subject: 'Finansal sonuç',
-    note: 'Sayısal eşik yok: tetikleyici açıklamanın kendisi. Büyüklüğünü sonraki adımlar tartar.',
+    note: 'Sayısal eşik yok: açıklamanın kendisi yeter. Büyüklüğünü sonraki adımlar tartar.',
   },
 };
 

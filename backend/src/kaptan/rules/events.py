@@ -39,6 +39,7 @@ class RuleInput:
     buyback_sale_within_20d: bool | None = None
     # E2
     insider_role: str | None = None
+    insider_threshold_notice: bool = False  # code read it from the form and the table (agents.reader_facts)
     insider_open_market: bool | None = None
     insider_net_buy_value_try: float | None = None
     # E3
@@ -100,7 +101,7 @@ def e1_capital_10d(x: RuleInput, p: RuleParams) -> Check:
     clustered = (x.buyback_10d_notice_count or 0) >= p.e1_cluster_notices_min and pct >= p.e1_capital_10d_cluster_min
     ok = pct >= p.e1_capital_10d_min or clustered
     observed = fmt_pct(pct, 2)
-    detail = f"Son 10 seansta sermayenin {observed}'i geri alındı." if ok else "Geri alım oranı eşik altında."
+    detail = f"Son 10 borsa gününde sermayenin {observed}'i geri alındı." if ok else "Geri alım oranı eşik altında."
     return Check("E1.capital_10d", ok, observed, f"≥ {fmt_pct(p.e1_capital_10d_min, 2)}", detail)
 
 
@@ -113,8 +114,10 @@ def e1_execution(x: RuleInput, p: RuleParams) -> Check:
 
 def e1_no_recent_sale(x: RuleInput, p: RuleParams) -> Check:
     ok = not x.buyback_sale_within_20d
-    detail = "Son 20 seansta geri alınan pay satışı yok." if ok else "Son 20 seansta geri alınan pay satıldı."
-    return Check("E1.no_recent_sale", ok, "satış yok" if ok else "satış var", "20 seansta satış yok", detail)
+    detail = (
+        "Son 20 borsa gününde geri alınan pay satışı yok." if ok else "Son 20 borsa gününde geri alınan pay satıldı."
+    )
+    return Check("E1.no_recent_sale", ok, "satış yok" if ok else "satış var", "20 borsa gününde satış yok", detail)
 
 
 # ── E2: insider / controlling shareholder buys ───────────────────────────
@@ -125,6 +128,9 @@ def e2_open_market(x: RuleInput, p: RuleParams) -> Check:
 
 
 def e2_insider_role(x: RuleInput, p: RuleParams) -> Check:
+    if x.insider_threshold_notice:
+        detail = "Kurumsal yatırımcının pay eşiği bildirimi E2 değildir."
+        return Check("E2.insider_role", False, "kurumsal yatırımcı", "yönetici / ana ortak", detail)
     role = x.insider_role or "unknown"
     ok = role in E2_ROLES
     label = ROLE_LABELS.get(role, role)
@@ -213,7 +219,7 @@ def e4_cfo_quality(x: RuleInput, p: RuleParams) -> Check:
 def e4_ret10d(x: RuleInput, p: RuleParams) -> Check:
     ret = x.ret_10d or 0.0
     ok = ret < p.e4_ret10d_max
-    detail = "Son 10 seansta aşırı yükseliş yok." if ok else "Son 10 seansta %12'yi aşan yükseliş: atla."
+    detail = "Son 10 borsa gününde aşırı yükseliş yok." if ok else "Son 10 borsa gününde %12'yi aşan yükseliş: atla."
     return Check("E4.ret10d", ok, fmt_signed_pct(ret, 1), f"< {fmt_pct(p.e4_ret10d_max, 0)}", detail)
 
 

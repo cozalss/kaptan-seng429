@@ -39,11 +39,11 @@ describe('createAgentPager', () => {
     const pager = createAgentPager({ onStep });
     pager.render(AGENTS, 'b');
     const [prev, next] = pager.el.querySelectorAll('button');
-    expect(pager.el.getAttribute('aria-label')).toBe('Tayfa: önceki ve sonraki ajan');
+    expect(pager.el.getAttribute('aria-label')).toBe('Tayfa: önceki ve sonraki');
     expect(prev.textContent).toContain('01');
     expect(prev.textContent).toContain('Sınıflandırıcı');
-    expect(prev.getAttribute('aria-label')).toBe('Önceki ajan: 01 Sınıflandırıcı');
-    expect(next.getAttribute('aria-label')).toBe('Sonraki ajan: 03 Önemlilik');
+    expect(prev.getAttribute('aria-label')).toBe('Önceki: 01 Sınıflandırıcı');
+    expect(next.getAttribute('aria-label')).toBe('Sonraki: 03 Önemlilik');
     next.click();
     prev.click();
     expect(onStep.mock.calls).toEqual([[1], [-1]]);
@@ -54,7 +54,7 @@ describe('createAgentPager', () => {
     pager.render(AGENTS, 'a');
     const [prev, next] = pager.el.querySelectorAll('button');
     expect(prev.disabled).toBe(true);
-    expect(prev.getAttribute('aria-label')).toBe('Önceki ajan yok');
+    expect(prev.getAttribute('aria-label')).toBe('Önceki yok');
     expect(next.disabled).toBe(false);
     pager.render(AGENTS, 'c');
     expect(pager.el.querySelectorAll('button')[1].disabled).toBe(true);

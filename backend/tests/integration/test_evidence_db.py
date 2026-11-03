@@ -25,7 +25,7 @@ from tests.unit.test_evidence_study import at, walk
 pytestmark = pytest.mark.integration
 
 N: Final = 400
-DAYS: Final = walk(date(2024, 1, 2), N)
+DAYS: Final = walk(date(2023, 1, 2), N)  # before the sealed holdout (2025-01-01 →)
 ALPHA, BETA, RB_OC = 0.0005, 1.2, 0.002
 #: publication session index (11:00, so t0 = index + 1) → abnormal return on the entry session
 ARS: Final = {255: 0.011, 268: -0.007, 281: 0.015, 294: 0.004, 307: 0.009}
@@ -106,9 +106,10 @@ async def _insert_events(conn: DictConn, ticker: str, route: str, idxs: list[int
     async with conn.cursor() as cur:
         await cur.executemany(
             "INSERT INTO core.disclosures (disclosure_index, primary_ticker, company_name, disclosure_class,"
-            " disclosure_type, subject, summary, reason, subject_route, subject_map_version, published_at,"
+            " disclosure_type, subject, summary, reason, subject_route, subject_map_version, parsed, published_at,"
             " available_at, ingest_source, origin, visible)"
-            " VALUES (%s, %s, %s, 'ODA', 'ODA', 'Yeni İş İlişkisi', '', 'NEW', %s, 'test', %s, %s,"
+            " VALUES (%s, %s, %s, 'ODA', 'ODA', 'Yeni İş İlişkisi', '', 'NEW', %s, 'test', '{\"status\": \"ok\"}',"
+            " %s, %s,"
             " 'backfill', 'kap', false)",
             rows,
         )

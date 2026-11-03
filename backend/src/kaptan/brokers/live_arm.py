@@ -1,7 +1,7 @@
 """The three live keys (09 §8) and the UI key's two signatures.
 
 K1 config (`config/trading.yaml` mode: live, or KAPTAN_MODE=live) · K2 env (KAPTAN_LIVE_ENABLED=true)
-· K3 UI: the Yönetici starts the arm (1/2), the Risk Sorumlusu confirms it (2/2, someone else); it
+· K3 UI: you start the arm (1/2) and confirm it (2/2, the second signature waived and audited); it
 drops by itself at 18:30 Istanbul and cannot be set while the kill switch is on.
 
 Arming only records the keys. There is no real broker for BIST, so `missing_keys()` always lists
@@ -28,7 +28,6 @@ from kaptan.prices.calendar import IST
 REAL_BROKERS: Final[tuple[str, ...]] = ()
 ARM_UNTIL: Final = time(18, 30)
 ENTITY: Final = ("system_flag", "live_arm")
-SAME_PERSON: Final = "Başlatan kişi onaylayamaz; ikinci imza başka birinden gelir."
 
 STATE_SQL: Final = """
 SELECT config_live, env_enabled, ui_key, armed, expires_at, arm_started, armed_by, updated_at
@@ -165,9 +164,8 @@ async def change(
     role: str,
     reason: str,
     now: datetime,
-    single_user: bool | None = None,
 ) -> None:
-    """start (admin, 1/2) · confirm (risk officer, 2/2, another person) · disarm (either). One transaction + audit."""
+    """start (1/2) · confirm (2/2, the second signature waived and audited) · disarm. One transaction + audit."""
     async with conn.transaction():
         state = await read_state(conn, lock=True)
         kill = await kill_on(conn)
@@ -177,30 +175,28 @@ async def change(
             await _write(conn, cfg, ui=False, expires=None, started=None, armed_by=None, now=now)
             audit_action, payload = "live.disarmed", {"role": role}
         elif kill:
-            raise ApiError(409, "kill_switch", "Her şey durduruldu: canlı mod silahlandırılamaz.")
+            raise ApiError(409, "kill_switch", "Her şey durduruldu: canlı mod açılamaz.")
         elif action == "start":
             if state.ui_armed(now):
                 raise ApiError(409, "already_on", "Canlı anahtar bugün zaten açık.")
             if now >= arm_expiry(now):
-                raise ApiError(409, "conflict", "Gün sonu geçti (18:30): yarın yeniden başlatın.")
+                raise ApiError(409, "conflict", "Gün sonu geçti (18:30): yarın yeniden başlat.")
             await _write(conn, cfg, ui=False, expires=None, started=sig, armed_by=None, now=now)
             audit_action, payload = "live.arm_started", {"role": role}
         else:
             if state.started is None:
-                raise ApiError(409, "not_started", "Önce Yönetici silahlandırmayı başlatmalı (1/2).")
+                raise ApiError(409, "not_started", "Önce canlı modu açma isteği göndermelisin.")
             await second_signature(
                 conn,
                 first_uid=str(state.started.get("uid")),
                 uid=uid,
                 flow="live_arm",
-                refusal=SAME_PERSON,
                 entity_type=ENTITY[0],
                 entity_id=ENTITY[1],
                 now=now,
-                single_user=single_user,
             )
             if now >= arm_expiry(now):
-                raise ApiError(409, "conflict", "Gün sonu geçti (18:30): yarın yeniden başlatın.")
+                raise ApiError(409, "conflict", "Gün sonu geçti (18:30): yarın yeniden başlat.")
             expires = arm_expiry(now)
             await _write(conn, cfg, ui=True, expires=expires, started=None, armed_by=sig, now=now)
             missing = missing_keys(cfg, LiveState(False, False, True, False, expires, None, sig), now, kill=False)

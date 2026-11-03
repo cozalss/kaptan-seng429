@@ -36,8 +36,7 @@ from typing import Any, Final
 from kaptan.agents.subject_map import route_of
 from kaptan.domain.schemas.agents import ClassifierOutput
 from kaptan.eval.clf_metrics import bootstrap_ci, confusion, macro_f1_of, mcnemar, per_class
-from kaptan.llm.provider import LLMProvider, LLMRequest, ProviderError
-from kaptan.llm.replay import agent_inputs, prompt_version
+from kaptan.llm.provider import LLMProvider, LLMRequest, ProviderError, agent_inputs, prompt_version
 
 LABELS: Final = ("E1", "E2", "E3", "E4", "IGNORE")
 SEED_FILE: Final = Path(__file__).resolve().parent / "golden" / "seed_v0.jsonl"

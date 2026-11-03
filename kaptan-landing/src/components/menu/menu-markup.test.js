@@ -62,22 +62,22 @@ describe('#olaylar: filters and honesty', () => {
     const filters = squash(`${section.querySelector('.rules__filters').textContent} ${section.querySelector('#filtre-risk').textContent}`);
     [
       'yalnızca indirir',
-      'işlem görebilirlik, tedbir ve evreni',
-      'son 5 seansta %8’den fazla yükseliş',
+      'pay işlem görüyor mu, SPK tedbiri var mı, şirket izlenen listede mi',
+      'son 5 borsa gününde %8’den fazla yükseliş',
       'atlanır ya da yarıya indirilir',
       'R01–R16',
       'yalnızca küçültür ya da reddeder',
-      '%0,5 risk, pozisyon ≤ %10',
-      '−%1’de yeni emir durur',
-      '−%5’te kill switch açık emirleri iptal eder; pozisyon satılmaz',
+      'paranın en çok %0,5’i riske girer, tek bir payda en çok %10’u durur',
+      '−⁠%1’e düşerse yeni emir durur',
+      '−⁠%5’te acil durdurma bekleyen emirleri iptal eder; elindeki paylar satılmaz',
     ].forEach((fact) => expect(filters).toContain(fact));
   });
 
-  it('keeps the footnote: buy-only, no leverage, 0 to +5 %, a human approves, no disclaimer', () => {
+  it('keeps the footnote: buy-only, no leverage, 0 to +5 %, you approve, no disclaimer', () => {
     const note = squash(section.querySelector('#rules-note').textContent);
-    expect(note).toContain('Yalnızca alım; kaldıraç yok.');
+    expect(note).toContain('Yalnızca alım; borçla işlem (kaldıraç) yok.');
     expect(note).toContain('BIST-100’e göre yılda 0 ile +%5');
-    expect(note).toMatch(/otomatik emir yok/i);
+    expect(note).toMatch(/otomatik işlem yok: her öneriyi sen onaylarsın/i);
     expect(note).not.toMatch(/yatırım tavsiyesi/i);
   });
 

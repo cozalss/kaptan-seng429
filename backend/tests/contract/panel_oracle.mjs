@@ -4,7 +4,6 @@
 //
 // ops:
 //   chain   {fields: ChainFields-without-chain_pos[]} -> AuditEntry[]  (audit-chain.ts appendToChain)
-//   denied  {}                                         -> {action: {role|"none": reason}} (permissions.ts)
 //   limits  {cases: LimitValue[][]}                    -> string[][]    (governance.ts limitViolations)
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -21,12 +20,6 @@ let result;
 if (input.op === "chain") {
   const { appendToChain } = await load("lib/audit-chain.ts");
   result = appendToChain([], input.fields);
-} else if (input.op === "denied") {
-  const { ACTIONS, deniedReason } = await load("lib/auth/permissions.ts");
-  const { ROLES } = await load("lib/domain/role-meta.ts");
-  result = Object.fromEntries(
-    ACTIONS.map((a) => [a, Object.fromEntries([...ROLES.map((r) => [r, deniedReason(a, r)]), ["none", deniedReason(a)]])]),
-  );
 } else if (input.op === "limits") {
   const { limitViolations } = await load("lib/domain/governance.ts");
   result = input.cases.map((values) => limitViolations(values));

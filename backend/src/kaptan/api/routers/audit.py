@@ -3,10 +3,9 @@
     GET  /audit?scope=today|all&q=&limit=  -> AuditPage          (all roles; newest first)
     POST /audit/verify                     -> ChainVerifyResult  (audit.verify: risk_officer, admin, auditor)
 
-List (mock enterprise.ts auditList): scope today = Istanbul day of the demo clock; q = free text
-(kaptan.audit.search, the panel's auditMatches()); limit 1..500 (default 200); total = rows after the
-filters; length = the whole chain; tamper_on from ops.demo_state. Verify walks the stored chain
-(verify_db): no audit entry; only ops.demo_state.verified_at remembers the walk, like the mock.
+List: scope today = Istanbul day of now; q = free text (kaptan.audit.search, the panel's auditMatches());
+limit 1..500 (default 200); total = rows after the filters; length = the whole chain. Verify walks the stored chain
+(verify_db) and writes nothing.
 """
 
 from __future__ import annotations
@@ -14,10 +13,10 @@ from __future__ import annotations
 from datetime import date
 from typing import Annotated, Any, Final, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query
 from pydantic import ValidationError
 
-from kaptan.api.deps import Actor, ClockDep, CurrentUser, require
+from kaptan.api.deps import ClockDep, CurrentUser
 from kaptan.api.errors import ApiError
 from kaptan.audit.search import audit_matches
 from kaptan.audit.verify import entry_from_row, verify_db
@@ -39,8 +38,7 @@ PAGE_SQL: Final = f"SELECT {_COLUMNS} FROM audit.audit_log WHERE {_TODAY} ORDER 
 ALL_SQL: Final = f"SELECT {_COLUMNS} FROM audit.audit_log WHERE {_TODAY} ORDER BY chain_pos DESC"  # noqa: S608
 COUNT_SQL: Final = f"""
 SELECT (SELECT count(*) FROM audit.audit_log WHERE {_TODAY}) AS total,
-       (SELECT count(*) FROM audit.audit_log) AS length,
-       coalesce((SELECT tamper_on FROM ops.demo_state WHERE id = 1), false) AS tamper_on
+       (SELECT count(*) FROM audit.audit_log) AS length
 """  # noqa: S608
 
 
@@ -78,7 +76,7 @@ async def audit_page(conn: DictConn, query: AuditListQuery, today: date) -> dict
         items, total = hits[: query.limit], len(hits)
     else:
         items, total = await _rows(conn, PAGE_SQL, params), int(counts["total"])
-    return {"items": items, "total": total, "length": int(counts["length"]), "tamper_on": bool(counts["tamper_on"])}
+    return {"items": items, "total": total, "length": int(counts["length"])}
 
 
 @router.get("/audit", response_model=AuditPage)
@@ -94,9 +92,5 @@ async def audit_list(
 
 
 @router.post("/audit/verify", response_model=ChainVerifyResult)
-async def verify(actor: Annotated[Actor, Depends(require("audit.verify"))], conn: Conn, clock: ClockDep) -> Any:
-    now = clock.now()
-    result = await verify_db(conn, iso_ms(now))
-    async with conn.transaction():
-        await conn.execute("UPDATE ops.demo_state SET verified_at = %s WHERE id = 1", (now,))
-    return result
+async def verify(actor: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
+    return await verify_db(conn, iso_ms(clock.now()))

@@ -52,7 +52,6 @@ LISTS = [
     ("tickets.json", "OrderTicket", s.OrderTicket),
     ("orders.json", "Order", s.Order),
     ("positions.json", "Position", s.Position),
-    ("users.json", "TeamMember", s.TeamMemberOut),
 ]
 
 
@@ -130,6 +129,5 @@ def test_every_api_response_schema_is_exported() -> None:
         "Position",
         "ProposalNote",
         "RiskStatus",
-        "TeamMember",
     ):
         assert schema(name)["$schema"].endswith("2020-12/schema")

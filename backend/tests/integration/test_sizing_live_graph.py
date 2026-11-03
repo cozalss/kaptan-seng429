@@ -15,13 +15,12 @@ from typing import Any, Final
 
 import pytest
 
-from kaptan.agents.scenario import run_graph
-from kaptan.agents.tools import ReplayToolbox
 from kaptan.db import DictConn
 from kaptan.evidence import LiveToolbox
 from kaptan.llm.provider import LLMRequest, LLMResult
-from kaptan.llm.replay import ReplayProvider
 from kaptan.market.ticks import floor_to_tick, price_limits
+from tests.harness.replay import ReplayProvider, ReplayToolbox
+from tests.harness.scenario import run_graph
 from tests.unit.agent_fixtures import context_for
 from tests.unit.test_evidence_study import at, walk
 
@@ -30,7 +29,7 @@ pytestmark = pytest.mark.integration
 RUN: Final = "run-demo-e3-ornek"
 TICKER: Final = "ORNEK"
 N: Final = 300
-DAYS: Final = walk(date(2025, 1, 2), N)
+DAYS: Final = walk(date(2023, 1, 2), N)  # before the sealed holdout (2025-01-01 →)
 ALPHA, BETA, RB_OC = 0.0002, 1.1, 0.002
 AR: Final = 0.08
 EVENT_IDX: Final = (200, 213, 226, 239, 252, 265)

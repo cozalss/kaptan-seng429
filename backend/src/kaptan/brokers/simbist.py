@@ -1,7 +1,7 @@
 """SimBIST, our paper broker (04 §8.2, FR-26): orders in trading.orders, fills in trading.fills.
 
 `SimBistBroker` books an order (idempotent per `client_order_id`); `book_fill()` / `book_miss()` settle
-it, whoever decides the price: the demo timer (limit × 0.995 after 1.8 s), the opening-auction job
+it, whoever decides the price: the opening-auction job
 (kaptan.brokers.fills.run_open_fill) or the end-of-day job. A buy fill opens the paper position, a
 sell fill (an exit) closes it.
 """
@@ -21,14 +21,13 @@ from kaptan.brokers.costs import MissReason
 from kaptan.brokers.ledger import run_audit
 from kaptan.domain.schemas import iso_ms
 from kaptan.portfolio.closing import close_position
-from kaptan.portfolio.marks import js_round
 from kaptan.portfolio.positions import open_position
 
-#: The demo's fill (scenarios.ts): commission 0,05 %, BSMV 5 % of it, 6 bps slippage.
+#: The default fill cost: commission 0,05 %, BSMV 5 % of it, 6 bps slippage.
 COMMISSION_RATE: Final = 0.0005
 BSMV_RATE: Final = 0.05
 SLIPPAGE_BPS: Final = 6
-FilledBy = Literal["demo_timer", "open_fill", "eod_fill", "intraday"]
+FilledBy = Literal["open_fill", "eod_fill", "intraday"]
 
 ORDER_UPSERT: Final = """
 INSERT INTO trading.orders (id, client_order_id, proposal_id, run_id, ticker, company_name, side, order_type, tif,
@@ -80,35 +79,6 @@ def paper_order(card: dict[str, Any], now: datetime, *, held_qty: int | None = N
         "created_at": iso_ms(now),
         "fills": [],
         "is_fixture": card["is_fixture"],
-    }
-
-
-@dataclass(frozen=True, slots=True)
-class FillJob:
-    """A demo fill waiting for its timer (or the restart recovery)."""
-
-    order_id: str
-    run_id: str
-    proposal_id: str
-    ticker: str
-    company_name: str
-    qty: int
-    price: float
-
-
-def fill_doc(job: FillJob, now: datetime) -> dict[str, Any]:
-    """The demo fill document (commission/BSMV rounded like the mock)."""
-    commission = js_round(job.price * job.qty * COMMISSION_RATE * 100) / 100
-    return {
-        "id": "fill-" + job.order_id.removeprefix("ord-"),
-        "order_id": job.order_id,
-        "qty": job.qty,
-        "price": job.price,
-        "commission": commission,
-        "bsmv": js_round(commission * BSMV_RATE * 100) / 100,
-        "slippage_bps": SLIPPAGE_BPS,
-        "filled_at": iso_ms(now),
-        "source": "simbist",
     }
 
 

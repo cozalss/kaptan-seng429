@@ -125,7 +125,6 @@ export function svgDoc({ box, view = [0, 0, box[0], box[1]], px, defs = '', body
   const cap = caption
     ? group([
         text(90, bh - 70, caption.left, { size: 17, weight: 500, tracking: 0.18, fill: HAIR }),
-        text(bw - 90, bh - 70, caption.right, { size: 17, weight: 500, tracking: 0.18, fill: HAIR, anchor: 'end' }),
       ])
     : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${px[0]}" height="${px[1]}" viewBox="${view.map(f).join(' ')}" preserveAspectRatio="xMidYMid slice">

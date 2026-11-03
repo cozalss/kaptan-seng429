@@ -5,26 +5,6 @@
   "passphrase": {
    "type": "string",
    "maxLength": 200
-  },
-  "next": {
-   "anyOf": [
-    {
-     "type": "string",
-     "maxLength": 500
-    },
-    {
-     "type": "null"
-    }
-   ]
-  },
-  "role": {
-   "type": "string",
-   "enum": [
-    "analyst",
-    "risk_officer",
-    "admin",
-    "auditor"
-   ]
   }
  },
  "required": [

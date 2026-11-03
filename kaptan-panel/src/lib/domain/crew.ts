@@ -46,7 +46,7 @@ export type CrewModelLink = z.infer<typeof CrewModelLink>;
 export const CrewMemberStatus = z.object({
   agent: CrewAgent,
   activity: CrewActivity,
-  /** "ORNEK bildirimini okuyor", "Boşta · son çıktı 13:42". */
+  /** "THYAO bildirimini okuyor", "Boşta · son çıktı 13:42". */
   activity_tr: z.string(),
   current_run_id: z.string().nullable(),
   /** Empty for the deterministic stages (no model). */
@@ -62,7 +62,6 @@ export const CrewMemberStatus = z.object({
       metric_tr: z.string(),
       value: z.number(),
       target: z.number().nullable(),
-      /** Always true in mock mode: "örnek değer · gerçek sonuç değil". */
       is_sample: z.boolean(),
     })
     .nullable(),

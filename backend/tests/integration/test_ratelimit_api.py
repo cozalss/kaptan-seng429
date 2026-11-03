@@ -49,7 +49,7 @@ async def test_login_limit_is_shared_by_every_api_process(migrated: Settings, se
     assert first == [401, 401]
     assert third.status_code == 401
     assert fourth.status_code == 429
-    assert fourth.json() == {"detail": "Çok fazla deneme. Bir dakika sonra yeniden deneyin.", "code": "rate_limited"}
+    assert fourth.json() == {"detail": "Çok fazla deneme. Bir dakika sonra yeniden dene.", "code": "rate_limited"}
     assert other_ip.status_code == 200
 
 
@@ -65,33 +65,35 @@ async def test_an_untrusted_peer_cannot_dodge_the_login_limit_with_x_forwarded_f
     assert codes == [401, 401, 429]
 
 
-async def test_mutations_are_limited_per_user(migrated: Settings, seeded: object) -> None:
+async def test_a_forged_x_forwarded_for_is_stopped_by_the_overall_login_limit(
+    migrated: Settings, seeded: object
+) -> None:
+    """The panel's rewrite passes a browser's X-Forwarded-For on untouched, so the per-client key can be forged."""
+    s = limited(migrated, login_rate_per_minute=1, login_overall_rate_per_minute=3)
+    async with app_client(s) as (http, _):
+        codes = [
+            (await http.post(LOGIN, json={"passphrase": "x"}, headers={"X-Forwarded-For": unique_ip()})).status_code
+            for _ in range(4)
+        ]
+    assert codes == [401, 401, 401, 429]
+
+
+async def test_mutations_are_limited_per_signed_in_session(migrated: Settings, seeded: object) -> None:
     s = limited(migrated, mutation_rate_per_minute=2, login_rate_per_minute=1)
     async with app_client(s) as (http, _):
-        admin = (
-            await http.post(
-                LOGIN, json={"passphrase": DEMO_PASSPHRASE, "role": "admin"}, headers={"X-Forwarded-For": unique_ip()}
-            )
+        session = (
+            await http.post(LOGIN, json={"passphrase": DEMO_PASSPHRASE}, headers={"X-Forwarded-For": unique_ip()})
         ).json()
-        analyst = (
-            await http.post(
-                LOGIN, json={"passphrase": DEMO_PASSPHRASE, "role": "analyst"}, headers={"X-Forwarded-For": unique_ip()}
-            )
-        ).json()
-        h = bearer(admin["access_token"])
-        codes = [
-            (await http.post("/api/v1/auth/role", json={"role": "admin"}, headers=h)).status_code for _ in range(3)
-        ]
-        refused = await http.post("/api/v1/auth/role", json={"role": "admin"}, headers=h)
+        h = bearer(session["access_token"])
+        codes = [(await http.post("/api/v1/audit/verify", headers=h)).status_code for _ in range(3)]
+        refused = await http.post("/api/v1/audit/verify", headers=h)
         reads = [(await http.get("/api/v1/me", headers=h)).status_code for _ in range(3)]
-        other = await http.post("/api/v1/auth/role", json={"role": "analyst"}, headers=bearer(analyst["access_token"]))
     assert codes == [200, 200, 429]
     assert refused.status_code == 429
     assert refused.headers["retry-after"] == "60"
     assert refused.headers["x-content-type-options"] == "nosniff"
-    assert refused.json() == {"detail": "Çok fazla istek. Biraz sonra yeniden deneyin.", "code": "rate_limited"}
+    assert refused.json() == {"detail": "Çok fazla istek. Biraz sonra yeniden dene.", "code": "rate_limited"}
     assert reads == [200, 200, 200]  # GET is never limited
-    assert other.status_code == 200  # another person has their own window
 
 
 async def test_anonymous_mutations_are_limited_per_ip(migrated: Settings, seeded: object) -> None:

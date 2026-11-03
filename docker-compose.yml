@@ -1,57 +1,76 @@
-# KAPtan — the whole system on one machine, one command (from the repo root):
+# KAPtan: the whole system on this PC, live data, one meaning. There is no other stack.
 #
-#   docker compose up -d --build          # first build ~5-10 min; then http://localhost:3100/login
-#   docker compose ps                     # api / panel / scheduler "healthy", migrate / seed "exited (0)"
-#   docker compose down                   # stop (add -v to drop the database too)
+#   .\kur.ps1        once: chooses the password, generates the secrets, writes .env (gitignored)
+#   .\baslat.ps1     starts everything and opens http://localhost:3100
+#   .\durdur.ps1     stops it (data stays)
 #
-# Postgres 16 + pgvector, Redis 7 → migrate (alembic head, owner role) → seed (the recorded demo day, once)
-# → API (replay LLM, demo clock) + scheduler → panel (Next.js, http mode, /api/v1 rewritten to the API).
-# LOCAL ONLY: the passwords below are fixed local defaults and the API runs with KAPTAN_ENV=dev.
-# For a real host use backend/docker-compose.prod.yml + backend/prod.env.example.
+# Without .env every command below refuses to run (${VAR:?...}); nothing here has a default password.
+# docs/ops/RUNBOOK.md is the step-by-step guide.
 #
-# Host ports (127.0.0.1 only), overridable: KAPTAN_API_PORT (8000), KAPTAN_PANEL_PORT (3100).
-# Postgres and Redis are not published (use `docker compose exec postgres psql -U kaptan_owner kaptan`).
-# Today's real data (KAP + Borsa İstanbul prices + live agents, own database volume; replay data untouched):
-#   docker compose --env-file live.env --profile live up -d --build      (docs/ops/RUNBOOK.md §1)
+# Order: postgres + redis healthy -> db-roles (app role, extensions) -> migrate (alembic head, owner role)
+# -> bootstrap (limits v1, risk_state, quotas) -> api, workers, scheduler, backup -> panel.
+# After a reboot Docker starts the long-running services by itself, in no particular order, and the one-shot
+# jobs do not run: backend/ops/start-when-ready.sh makes each service wait for the database and Redis itself.
+#
+# Only the panel is published, on 127.0.0.1. The API is reachable through the panel's /api/v1 rewrite only,
+# which is why its forwarded headers can be believed (TRUSTED_PROXIES below).
+# Tunables that are not secret (spend caps, warm-up size, any setting of backend/src/kaptan/settings.py) go
+# in live.env, which is committed and read at the next start.
 name: kaptan-stack
 
-x-local-env: &local-env
-  KAPTAN_ENV: dev
-  DATABASE_URL: postgresql://kaptan_app:${KAPTAN_APP_PASSWORD:-kaptan-local-app}@postgres:5432/kaptan
-  DATABASE_OWNER_URL: postgresql://kaptan_owner:${POSTGRES_PASSWORD:-kaptan-local-owner}@postgres:5432/kaptan
-  REDIS_URL: redis://:${REDIS_PASSWORD:-kaptan-local-redis}@redis:6379/0
-  # Empty = a random key per API process (dev): restarting the API signs everyone out.
-  JWT_SECRET: ${JWT_SECRET:-}
-  # Empty = the local passphrase kaptan2026 (dev only).
-  PASSPHRASE_HASH: ${PASSPHRASE_HASH:-}
-  # true = tek kullanıcı modu: one account, the simple /benim home (KAPTAN_SINGLE_USER=true docker compose …).
-  KAPTAN_SINGLE_USER: ${KAPTAN_SINGLE_USER:-false}
-  DEMO_MODE: ${DEMO_MODE:-true}
-  LLM_MODE: ${LLM_MODE:-replay}
-  KAP_LIVE: ${KAP_LIVE:-false}
-  PRICES_LIVE: ${PRICES_LIVE:-false}
-  CHECKPOINTER: ${CHECKPOINTER:-memory}
-  # Live spend + warm-up (live.env): agent runs that reach an LLM per hour / per Istanbul day (0 = no daily
-  # cap), KAP history days and price-history shares loaded on the first live start.
-  AGENT_MAX_RUNS_PER_HOUR: ${AGENT_MAX_RUNS_PER_HOUR:-6}
-  AGENT_MAX_RUNS_PER_DAY: ${AGENT_MAX_RUNS_PER_DAY:-0}
-  LIVE_BACKFILL_DAYS: ${LIVE_BACKFILL_DAYS:-5}
-  LIVE_WARMUP_MAX_TICKERS: ${LIVE_WARMUP_MAX_TICKERS:-300}
-  # localhost is a secure context for browsers, so the __Host- refresh cookie works over plain http.
+x-app-env: &app-env
+  KAPTAN_ENV: prod
+  LLM_MODE: live
+  KAP_LIVE: "true"
+  PRICES_LIVE: "true"
+  CHECKPOINTER: postgres
+  LOG_FORMAT: json
+  TZ: UTC
+  DATABASE_URL: postgresql://kaptan_app:${KAPTAN_APP_PASSWORD:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}@postgres:5432/kaptan
+  REDIS_URL: redis://:${REDIS_PASSWORD:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}@redis:6379/0
+  JWT_SECRET: ${JWT_SECRET:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}
+  PASSPHRASE_HASH: ${PASSPHRASE_HASH:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}
+  # An empty key = that provider is skipped; with none at all the API refuses to start.
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+  GROQ_API_KEY: ${GROQ_API_KEY:-}
+  AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
+  AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+  AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-}
+  # The browser reaches the panel at these two names: localhost is a secure context, so the Secure __Host-
+  # refresh cookie works over plain http (Chrome, Edge and Firefox; Safari is not verified).
   COOKIE_SECURE: "true"
   ALLOWED_ORIGINS: http://localhost:${KAPTAN_PANEL_PORT:-3100},http://127.0.0.1:${KAPTAN_PANEL_PORT:-3100}
-  LOGIN_RATE_PER_MINUTE: ${LOGIN_RATE_PER_MINUTE:-5}
-  TZ: UTC
+  # No HTTPS here, so no HSTS: a browser must not be told to demand it for localhost.
+  HSTS_MAX_AGE_S: "0"
+  # Two tabs refreshing at once must not revoke the session.
+  REFRESH_GRACE_S: "10"
+  # The API has no published port: every peer it can see is a container of this project (the panel).
+  TRUSTED_PROXIES: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+  # New disclosure texts go into the "similar past disclosures" memory. Own daily caps (RAG_EMBED_CAP_*), its
+  # own Gemini model, so it does not eat the agents' quota; a failure never touches ingestion.
+  RAG_INDEX_ON_INGEST: "true"
+  # The nightly audit anchor is also written outside Docker (scheduler mounts the backup folder).
+  AUDIT_ANCHOR_FILE: /yedek/audit-anchors.jsonl
 
-x-backend: &backend
-  image: kaptan-backend:local
+x-app: &app
+  image: ${KAPTAN_BACKEND_IMAGE:-kaptan-backend:local}
   build: ./backend
-  # The LLM keys (GEMINI_API_KEY / DEEPSEEK_API_KEY / GROQ_API_KEY) come from backend/.env when it exists;
-  # every variable set under `environment` wins over the file. Replay mode never calls a provider.
+  read_only: true
+  tmpfs: ["/tmp"]
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: ["ALL"]
   env_file:
-    - path: ./backend/.env
+    - path: ./live.env
       required: false
-  environment: *local-env
+  environment: *app-env
+
+x-long-running: &long-running
+  <<: *app
+  entrypoint: ["sh", "/ops/start-when-ready.sh"]
+  volumes:
+    - ./backend/ops:/ops:ro
+  restart: unless-stopped
 
 services:
   postgres:
@@ -59,15 +78,15 @@ services:
     environment:
       POSTGRES_DB: kaptan
       POSTGRES_USER: kaptan_owner
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kaptan-local-owner}
-      KAPTAN_APP_PASSWORD: ${KAPTAN_APP_PASSWORD:-kaptan-local-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8"
       TZ: UTC
     volumes:
-      - ${KAPTAN_PGDATA:-pgdata}:/var/lib/postgresql/data
-      - ./backend/db/init:/docker-entrypoint-initdb.d:ro
+      # kaptan-stack_pgdata_live holds the real history: do not rename.
+      - pgdata_live:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kaptan_owner -d kaptan"]
+      # Over TCP: while initdb runs, the temporary server answers on its socket only.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U kaptan_owner -d kaptan"]
       interval: 5s
       timeout: 3s
       retries: 30
@@ -75,100 +94,138 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-kaptan-local-redis}"]
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?KAPtan kurulu değil. Önce .\\kur.ps1 çalıştır}"]
     environment:
-      REDISCLI_AUTH: ${REDIS_PASSWORD:-kaptan-local-redis}
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}
     volumes:
-      - ${KAPTAN_REDISDATA:-redisdata}:/data
+      - redisdata_live:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      # While the append-only file loads, redis-cli exits 0 with an error text: PONG is the only yes.
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
       interval: 5s
       timeout: 3s
       retries: 30
     restart: unless-stopped
 
-  migrate:
-    <<: *backend
-    command: ["migrate"]
+  db-roles:
+    <<: *app
+    command: ["bootstrap", "roles"]
+    environment:
+      <<: *app-env
+      BOOTSTRAP_ADMIN_URL: postgresql://kaptan_owner:${POSTGRES_PASSWORD:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}@postgres:5432/kaptan
+      KAPTAN_APP_PASSWORD: ${KAPTAN_APP_PASSWORD:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}
     depends_on:
       postgres: { condition: service_healthy }
     restart: "no"
 
-  # The recorded demo day (tests/fixtures/demo), loaded once; `docker compose run --rm seed seed_demo --force`
-  # (or ⚙ Ayarlar → Senaryolar → "Verileri sıfırla" as Yönetici) starts it over.
-  seed:
-    <<: *backend
-    command: ["seed_demo"]
+  migrate:
+    <<: *app
+    command: ["migrate"]
+    environment:
+      <<: *app-env
+      DATABASE_OWNER_URL: postgresql://kaptan_owner:${POSTGRES_PASSWORD:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}@postgres:5432/kaptan
+    depends_on:
+      db-roles: { condition: service_completed_successfully }
+    restart: "no"
+
+  bootstrap:
+    <<: *app
+    command: ["bootstrap"]
+    environment:
+      <<: *app-env
+      DATABASE_OWNER_URL: postgresql://kaptan_owner:${POSTGRES_PASSWORD:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}@postgres:5432/kaptan
     depends_on:
       migrate: { condition: service_completed_successfully }
     restart: "no"
 
   api:
-    <<: *backend
+    <<: *long-running
     command: ["api"]
-    ports: ["127.0.0.1:${KAPTAN_API_PORT:-8000}:8000"]
     depends_on:
-      seed: { condition: service_completed_successfully }
+      bootstrap: { condition: service_completed_successfully }
       redis: { condition: service_healthy }
     stop_grace_period: 20s
-    restart: unless-stopped
 
-  # Under DEMO_MODE only the nightly audit_anchor job runs (verify only).
-  scheduler:
-    <<: *backend
-    command: ["scheduler"]
+  ingest_worker:
+    <<: *long-running
+    command: ["ingest_worker"]
     depends_on:
-      seed: { condition: service_completed_successfully }
+      bootstrap: { condition: service_completed_successfully }
       redis: { condition: service_healthy }
     stop_grace_period: 60s
+
+  # On a first install the universe is empty and every run would stop at the R03 pre-gate, so it holds until
+  # the first warm-up has finished (start-when-ready.sh).
+  agent_worker:
+    <<: *long-running
+    command: ["agent_worker"]
+    environment:
+      <<: *app-env
+      WAIT_FOR_WARMUP: "1"
+    depends_on:
+      bootstrap: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    stop_grace_period: 60s
+
+  scheduler:
+    <<: *long-running
+    command: ["scheduler"]
+    volumes:
+      - ./backend/ops:/ops:ro
+      - ${KAPTAN_BACKUP_DIR:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}:/yedek
+    depends_on:
+      bootstrap: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    stop_grace_period: 60s
+
+  # Asks every hour whether a warm-up is needed: first install, or market days the PC was off for. A plain
+  # restart does nothing and touches no source (kaptan.live.warmup --if-needed).
+  warmup:
+    <<: *long-running
+    entrypoint: ["sh", "/ops/warmup-loop.sh"]
+    healthcheck: { disable: true }
+    depends_on:
+      bootstrap: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    stop_grace_period: 10s
+
+  # Nightly dump into the Windows folder chosen in kur.ps1 (KAPTAN_BACKUP_DIR), 14 days kept.
+  backup:
+    image: pgvector/pgvector:pg16
+    entrypoint: ["sh", "/ops/backup-loop.sh"]
+    environment:
+      BACKUP_DATABASE_URL: postgresql://kaptan_owner:${POSTGRES_PASSWORD:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}@postgres:5432/kaptan
+      BACKUP_DIR: /yedek
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}
+      TZ: Europe/Istanbul
+    volumes:
+      - ./backend/ops:/ops:ro
+      - ${KAPTAN_BACKUP_DIR:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}:/yedek
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      bootstrap: { condition: service_completed_successfully }
+    stop_grace_period: 10s
     restart: unless-stopped
 
-  # Live mode (live.env): the first start loads recent KAP days, the issuer list, price history, the universe
-  # and flat P&L days, once (idempotent; ~15-25 min, polite). Exits 0 at once unless KAP_LIVE=true.
-  warmup:
-    <<: *backend
-    command: ["live_warmup"]
-    profiles: ["live"]
-    depends_on:
-      seed: { condition: service_completed_successfully }
-      redis: { condition: service_healthy }
-    restart: "no"
-
-  # Live KAP polling + the agent consumer. Both exit 0 unless KAP_LIVE=true.
-  ingest_worker:
-    <<: *backend
-    command: ["ingest_worker"]
-    profiles: ["live"]
-    depends_on:
-      seed: { condition: service_completed_successfully }
-      redis: { condition: service_healthy }
-    restart: on-failure
-
-  # Starts after the warm-up: before it the universe is empty and every run would stop at the R03 pre-gate.
-  agent_worker:
-    <<: *backend
-    command: ["agent_worker"]
-    profiles: ["live"]
-    depends_on:
-      warmup: { condition: service_completed_successfully }
-      redis: { condition: service_healthy }
-    restart: on-failure
-
   panel:
-    image: kaptan-panel:local
+    image: ${KAPTAN_PANEL_IMAGE:-kaptan-panel:local}
     build:
       context: .
       dockerfile: Dockerfile.panel
       args:
         KAPTAN_API_ORIGIN: http://api:8000
     ports: ["127.0.0.1:${KAPTAN_PANEL_PORT:-3100}:3100"]
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache:uid=1000,gid=1000
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
     depends_on:
       api: { condition: service_healthy }
     restart: unless-stopped
 
 volumes:
-  pgdata: {}
-  redisdata: {}
-  # live.env: today's real KAP + prices in their own database, the recorded day above stays untouched.
   pgdata_live: {}
   redisdata_live: {}

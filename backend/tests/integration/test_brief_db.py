@@ -10,7 +10,6 @@ from psycopg.types.json import Jsonb
 
 from kaptan.brief import build_brief, get_brief, run_morning_brief
 from kaptan.db import DictConn
-from kaptan.domain.roles import Role
 from kaptan.domain.schemas.reports import MorningBrief
 from kaptan.prices.calendar import IST
 from tests.conftest import bearer, login
@@ -55,14 +54,12 @@ async def test_endpoints_serve_the_stored_brief(client: httpx.AsyncClient, owner
         (date(2026, 1, 5), datetime(2026, 1, 5, 8, 45, tzinfo=IST), Jsonb(doc)),
     )
     await owner_pg.commit()
-    roles: tuple[Role, ...] = ("admin", "risk_officer", "analyst", "auditor")
     try:
         assert (await client.get(f"{API}/brief/2026-01-05")).status_code == 401
-        for role in roles:
-            token = (await login(client, role))["access_token"]
-            res = await client.get(f"{API}/brief/2026-01-05", headers=bearer(token))
-            assert res.status_code == 200, res.text
-            assert res.json() == doc
+        token = (await login(client))["access_token"]
+        res = await client.get(f"{API}/brief/2026-01-05", headers=bearer(token))
+        assert res.status_code == 200, res.text
+        assert res.json() == doc
         missing = await client.get(f"{API}/brief/2026-01-06", headers=bearer(token))
         assert missing.status_code == 404 and missing.json()["detail"] == "Bu gün için sabah özeti yok."
         today = await client.get(f"{API}/brief/today", headers=bearer(token))

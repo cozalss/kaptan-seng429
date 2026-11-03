@@ -18,7 +18,6 @@ from kaptan.portfolio.marks import (
     add_sessions,
     holding_days,
     js_round,
-    mark_price,
     round_to,
 )
 from kaptan.prices.models import Mark
@@ -40,19 +39,15 @@ ONE_SQL: Final = POSITION_SELECT + "WHERE p.book = %s AND p.source_proposal = %s
 
 
 def position_view(row: dict[str, Any], now: datetime, mark: Mark | None = None) -> dict[str, Any]:
-    """One DB row (LIST_SQL) → a Position document. `mark` = a real price (PRICES_LIVE), else replay marks."""
+    """One DB row (LIST_SQL) → a Position document. `mark` = the stored price (PRICES_LIVE); without one the
+    issuer's reference price, and without that the cost: a position with no price at all shows no gain or loss."""
     issuer_price = row["issuer_price"]
     if mark is not None:
         last = float(mark.price)
     elif issuer_price is None:
         last = float(row["avg_cost"])
     else:
-        last = mark_price(
-            book=row["book"],
-            run_id=row["run_id"],
-            issuer_price=float(issuer_price),
-            disclosure_index=int(row["disclosure_index"]),
-        )
+        last = float(issuer_price)
     qty = int(row["qty"])
     avg = float(row["avg_cost"])
     return {
@@ -78,7 +73,7 @@ def position_view(row: dict[str, Any], now: datetime, mark: Mark | None = None) 
 async def list_positions(conn: AsyncConnection[Any], now: datetime, *, live: bool = False) -> list[dict[str, Any]]:
     """Every open position, newest opened first (paper before personal on a tie).
 
-    `live` (PRICES_LIVE): mark with the latest stored raw price; a ticker without one keeps its replay mark.
+    `live` (PRICES_LIVE): mark with the latest stored raw price; a ticker without one reads as `position_view` says.
     """
     async with conn.cursor() as cur:
         await cur.execute(LIST_SQL)
@@ -150,16 +145,7 @@ async def open_position(
         sessions = PERSONAL_HOLD_SESSIONS if book == "personal" else int(run["holding_days_min"] or 0)
         exit_date = add_sessions(opened_at.astimezone(UTC).date(), sessions)
         issuer_price = run["issuer_price"]
-        last = (
-            avg_cost
-            if issuer_price is None
-            else mark_price(
-                book=book,
-                run_id=run_id,
-                issuer_price=float(issuer_price),
-                disclosure_index=int(run["disclosure_index"]),
-            )
-        )
+        last = avg_cost if issuer_price is None else float(issuer_price)
         await cur.execute(
             UPSERT_SQL,
             (

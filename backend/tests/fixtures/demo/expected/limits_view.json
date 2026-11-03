@@ -60,16 +60,14 @@
    }
   ],
   "proposed_by": {
-   "uid": "uye-1",
-   "name": "Üye 1",
-   "role": "admin",
+   "uid": "kurulum",
+   "name": "Kurulum",
    "at": "2026-11-08T09:00:00.000Z",
    "reason": "Kanonik başlangıç limitleri."
   },
   "decided_by": {
-   "uid": "uye-3",
-   "name": "Üye 3",
-   "role": "risk_officer",
+   "uid": "sahip",
+   "name": "Sahip",
    "at": "2026-11-08T11:30:00.000Z",
    "reason": "Kanonik değerlerle aynı; onay."
   }
@@ -137,16 +135,14 @@
     }
    ],
    "proposed_by": {
-    "uid": "uye-1",
-    "name": "Üye 1",
-    "role": "admin",
+    "uid": "kurulum",
+    "name": "Kurulum",
     "at": "2026-11-08T09:00:00.000Z",
     "reason": "Kanonik başlangıç limitleri."
    },
    "decided_by": {
-    "uid": "uye-3",
-    "name": "Üye 3",
-    "role": "risk_officer",
+    "uid": "sahip",
+    "name": "Sahip",
     "at": "2026-11-08T11:30:00.000Z",
     "reason": "Kanonik değerlerle aynı; onay."
    }

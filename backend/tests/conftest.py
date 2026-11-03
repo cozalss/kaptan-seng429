@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import socket
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from typing import Any
@@ -23,16 +24,39 @@ from pydantic import SecretStr
 
 from kaptan.api.deps import settings_dep
 from kaptan.api.loop import selector_loop_factory
-from kaptan.api.main import create_app
+from kaptan.auth.passphrase import hash_passphrase
 from kaptan.db import DictConn, connect
-from kaptan.demo.seed import SeedResult, reseed
-from kaptan.domain.roles import Role
 from kaptan.settings import Settings, get_settings
 from tests.contract.harness import node_available
+from tests.harness.app import create_test_app
+from tests.harness.seed import SeedResult, reseed
 
 BACKEND = Path(__file__).resolve().parents[1]
 TEST_JWT_SECRET = "test-only-jwt-secret-0123456789-abcdefghijklmnop"
 DEMO_PASSPHRASE = "kaptan2026"
+
+
+LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "testserver", ""})
+
+
+class ExternalNetworkError(RuntimeError):
+    """A test tried to resolve a real host: KAP, a price source and the LLM providers are `-m live` only."""
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """No name resolution outside this machine unless the run selects the `live` tests."""
+    markers = str(config.getoption("markexpr") or "")
+    if "live" in markers and "not live" not in markers:
+        return
+    real = socket.getaddrinfo
+
+    def local_only(host: Any, *args: Any, **kwargs: Any) -> Any:
+        name = host.decode() if isinstance(host, bytes) else str(host or "")
+        if name not in LOCAL_HOSTS and not name.startswith("127."):
+            raise ExternalNetworkError(f"a test tried to reach {name}")
+        return real(host, *args, **kwargs)
+
+    socket.getaddrinfo = local_only  # type: ignore[assignment]
 
 
 def skip_or_fail(reason: str) -> None:
@@ -54,13 +78,12 @@ def test_settings() -> Settings:
         skip_or_fail("TEST_DATABASE_URL / TEST_DATABASE_OWNER_URL not configured")
     return base.model_copy(
         update={
-            "kaptan_env": "dev",
+            "kaptan_env": "test",
             "database_url": base.test_database_url,
             "database_owner_url": base.test_database_owner_url,
             "jwt_secret": SecretStr(TEST_JWT_SECRET),
-            "passphrase_hash": None,
-            "demo_mode": True,
-            "demo_live_ticker": False,  # tests drive the ticker explicitly (package C)
+            "passphrase_hash": SecretStr(hash_passphrase(DEMO_PASSPHRASE)),
+            "llm_mode": "replay",
             "cookie_secure": True,
             "allowed_origins": ["http://localhost:3100"],
             "db_pool_min": 1,
@@ -130,7 +153,7 @@ async def owner_pg(seeded: SeedResult, migrated: Settings) -> AsyncIterator[Dict
 
 @pytest.fixture
 async def client(seeded: SeedResult, migrated: Settings) -> AsyncIterator[httpx.AsyncClient]:
-    app = create_app(migrated)
+    app = create_test_app(migrated)
     app.dependency_overrides[settings_dep] = lambda: migrated
     async with LifespanManager(app) as manager:
         transport = httpx.ASGITransport(app=manager.app)
@@ -138,11 +161,8 @@ async def client(seeded: SeedResult, migrated: Settings) -> AsyncIterator[httpx.
             yield http
 
 
-async def login(http: httpx.AsyncClient, role: Role | None = None) -> dict[str, Any]:
-    body: dict[str, Any] = {"passphrase": DEMO_PASSPHRASE}
-    if role is not None:
-        body["role"] = role
-    res = await http.post("/api/v1/auth/login", json=body)
+async def login(http: httpx.AsyncClient) -> dict[str, Any]:
+    res = await http.post("/api/v1/auth/login", json={"passphrase": DEMO_PASSPHRASE})
     assert res.status_code == 200, res.text
     data: dict[str, Any] = res.json()
     return data

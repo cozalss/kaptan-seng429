@@ -1,6 +1,6 @@
-/* ---------- Kolofon (footer) — the book's closing page ----------
-   A centred colophon as printed at the back of a book: what the book is, where it was made, how it
-   was set, the crew list, the links, the disclaimer, then "— Son —" and the compass mark in sumi. */
+/* ---------- Künye (footer) — the book's closing page ----------
+   A centred colophon as printed at the back of a book: the closing call, how it was set, the links,
+   the legal line, then "— Son —" and the compass mark in sumi. */
 
 .site-footer {
   position: relative;
@@ -23,9 +23,7 @@
   -webkit-text-stroke: var(--bodoni-stroke) currentColor;
   font-size: clamp(40px, 4.4vw, 68px);
   font-weight: 400;
-  line-height: 1;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  line-height: 1.08;
 }
 
 /* A short ink rule under the title, as a book's colophon sets it. */
@@ -48,72 +46,15 @@
   color: var(--color-ink);
 }
 
+/* The closing call: the shared .pill (base.css), placed. */
+.colophon__cta {
+  margin-top: 28px;
+}
+
 .colophon__type {
-  margin-top: 14px;
+  margin-top: 28px;
   font-size: var(--text-body-sm);
   color: var(--color-muted);
-}
-
-/* "Tayfa" between two hairlines */
-.colophon__subhead {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  width: 100%;
-  margin-top: 52px;
-  font-family: var(--font-sans);
-  -webkit-text-stroke: 0;
-  font-size: 22px;
-  font-weight: 500;
-  line-height: 1;
-}
-
-.colophon__subhead::before,
-.colophon__subhead::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--color-sumi);
-}
-
-/* Crew list: name, dotted leader, role — like a ship's muster roll. */
-.colophon__crew {
-  width: 100%;
-  margin: 18px 0 0;
-  text-align: left;
-}
-
-.colophon__member {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-xs);
-  padding: 7px 0;
-}
-
-.colophon__member dt {
-  display: flex;
-  flex: 1;
-  align-items: baseline;
-  gap: var(--space-xs);
-  font-family: var(--font-sans);
-  -webkit-text-stroke: 0;
-  font-size: 19px;
-  font-weight: 500;
-  line-height: 1.25;
-}
-
-.colophon__member dt::after {
-  content: '';
-  flex: 1;
-  min-width: 24px;
-  border-bottom: 1.5px dotted var(--color-rule-soft);
-  transform: translateY(-4px);
-}
-
-.colophon__member dd {
-  margin: 0;
-  font-size: var(--text-body-sm);
-  text-align: right;
 }
 
 /* ---------- Links ---------- */
@@ -197,10 +138,6 @@
 @media (max-width: 767px) {
   .colophon__page {
     margin-top: 56px;
-  }
-
-  .colophon__member {
-    flex-wrap: wrap;
   }
 
   .colophon__links {

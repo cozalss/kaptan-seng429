@@ -1,7 +1,6 @@
 """Python ports vs the panel's own TypeScript, run in node (skipped when node/node_modules are missing).
 
 - audit chain: appendToChain() in audit-chain.ts vs kaptan.audit.writer.chain_entries()
-- RBAC texts:  deniedReason() in permissions.ts vs kaptan.domain.permissions.denied_reason()
 - limits:      limitViolations() in governance.ts vs kaptan.domain.schemas.limit_violations()
 """
 
@@ -13,8 +12,6 @@ from typing import Any
 import pytest
 
 from kaptan.audit.canonical import ChainFields, hash_of
-from kaptan.domain.permissions import ACTIONS, denied_reason
-from kaptan.domain.roles import ROLES
 from kaptan.domain.schemas import LimitValue, limit_violations
 from tests.contract.harness import panel_oracle
 
@@ -33,7 +30,7 @@ TRICKY_PAYLOADS: list[dict[str, Any]] = [
 def _fields(i: int, payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "occurred_at": datetime(2027, 1, 11, 10, 40 + i, tzinfo=UTC).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
-        "actor": "user:uye-3" if i % 2 else "agent:risk_gate",
+        "actor": "user:sahip" if i % 2 else "agent:risk_gate",
         "action": "approval.decided",
         "entity_type": "trade_proposal",
         "entity_id": f"prop-{i}",
@@ -52,15 +49,6 @@ def test_audit_chain_hashes_match_node() -> None:
         assert node["prev_hash"] == prev
         assert node["hash"] == mine, f"entry {i}: payload {f['payload']!r}"
         prev = mine
-
-
-def test_denied_reason_texts_match_node() -> None:
-    node = panel_oracle({"op": "denied"})
-    assert set(node) == set(ACTIONS)
-    for action in ACTIONS:
-        for role in ROLES:
-            assert denied_reason(action, role) == node[action][role], (action, role)
-        assert denied_reason(action) == node[action]["none"]
 
 
 def test_limit_violations_match_node() -> None:

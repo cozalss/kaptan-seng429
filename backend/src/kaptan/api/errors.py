@@ -20,13 +20,13 @@ log = logging.getLogger("kaptan.api")
 #: Fallback texts by status (same as the panel's http client fallbacks).
 STATUS_DETAIL: Final[dict[int, tuple[str, str]]] = {
     400: ("bad_request", "İstek geçersiz."),
-    401: ("unauthenticated", "Oturumunuzun süresi doldu. Lütfen yeniden giriş yapın."),
-    403: ("forbidden", "Bu işlem rolüne kapalı."),
+    401: ("unauthenticated", "Oturumunun süresi doldu. Yeniden giriş yap."),
+    403: ("forbidden", "Bu istek kabul edilmedi."),
     404: ("not_found", "Kayıt bulunamadı."),
     405: ("method_not_allowed", "Bu yöntem desteklenmiyor."),
     409: ("conflict", "Kayıt bu arada değişti ya da süresi doldu."),
     422: ("validation", "Girdi geçersiz."),
-    429: ("rate_limited", "Çok fazla istek. Biraz sonra yeniden deneyin."),
+    429: ("rate_limited", "Çok fazla istek. Biraz sonra yeniden dene."),
     501: ("not_implemented", "Bu uç nokta henüz hazır değil."),
 }
 INTERNAL: Final = ("internal", "Sunucu hatası.")
@@ -43,7 +43,7 @@ class ApiError(Exception):
         self.headers = headers
 
 
-def unauthenticated(detail: str = "Oturum bulunamadı. Lütfen yeniden giriş yapın.") -> ApiError:
+def unauthenticated(detail: str = "Oturum bulunamadı. Yeniden giriş yap.") -> ApiError:
     return ApiError(401, "unauthenticated", detail, headers={"WWW-Authenticate": "Bearer"})
 
 

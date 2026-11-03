@@ -14,7 +14,7 @@ const WORKERS = Math.max(2, Math.floor(availableParallelism() / 2));
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    // The specific alias first: tests run against the mock client (next.config.ts picks per build).
+    // The specific alias first: tests run against the test double (only the test flag swaps this module).
     alias: [
       { find: /^@\/lib\/api\/client$/, replacement: fileURLToPath(new URL("./src/lib/api/client.mock.ts", import.meta.url)) },
       { find: "@", replacement: fileURLToPath(new URL("./src", import.meta.url)) },
@@ -22,6 +22,7 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    env: { NEXT_PUBLIC_KAPTAN_TEST_DOUBLE: "1" },
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],

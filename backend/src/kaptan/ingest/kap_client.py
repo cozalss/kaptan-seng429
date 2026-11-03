@@ -6,14 +6,20 @@
         members = await kap.company_items("IGS")          # GET  /tr/api/company/items/IGS/A (ticker ↔ member OID)
         pdf = await kap.bildirim_pdf(idx)                 # GET  /tr/api/BildirimPdf/{idx}  (application/pdf)
         page = await kap.bildirim_html(idx)               # GET  /tr/Bildirim/{idx}         (Next.js RSC page)
+        raw = await kap.attachment(obj_id, idx)           # GET  /tr/api/file/download/{objId} (ingest.attachments)
 
 Politeness (MKK runs a WAF; `robots.txt` itself answers HTTP 666):
 - one request at a time per client, at least `min_interval_s` apart, plus 0–25 % upward jitter;
 - a real browser User-Agent with Origin/Referer;
 - 429 / 5xx / timeouts / transport errors: exponential backoff 2, 4, 8 … s (cap 300 s, +0–20 % jitter,
   `Retry-After` honoured), at most `max_retries` retries;
-- WAF signals (HTTP 666 or 403, an HTML page or an empty body where JSON/PDF was expected) are **not**
-  retried here: `KapBlockedError` is raised at once and the caller (poller/backfill) backs off for minutes.
+- WAF signals (HTTP 666 or 403, an HTML page or an empty body where JSON/PDF/a file was expected) are **not**
+  retried here: `KapBlockedError` is raised at once and the caller (poller/backfill) backs off for minutes;
+- a request with a fallback or a queue behind it retries less than the rest: BildirimPdf has the /tr/Bildirim page
+  (it drops the connection often, and four retries cost about 40 s per document), attachments have their own queue,
+  and their short timeout keeps a slow file from holding the shared pacer lock against the poller;
+- no idle connection is kept: requests are seconds apart, and reusing a connection the server already closed is
+  a usual cause of `RemoteProtocolError` (a hypothesis for the BildirimPdf drops; the short retry stays either way).
 """
 
 from __future__ import annotations
@@ -22,6 +28,7 @@ import asyncio
 import json
 import logging
 import random
+import re
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -38,7 +45,11 @@ WAF_STATUS: Final = frozenset({403, 666})
 RETRY_STATUS: Final = frozenset({408, 425, 429, 500, 502, 503, 504})
 BACKOFF_BASE_S: Final = 2.0
 BACKOFF_CAP_S: Final = 300.0
+#: Retries of a request that has something else to fall back on (see the module docstring).
+FALLBACK_RETRIES: Final = 1
+ATTACHMENT_TIMEOUT_S: Final = 20.0
 MEMBER_TYPES: Final = ("IGS",)
+_OBJ_ID: Final = re.compile(r"^[0-9A-Za-z]{16,64}$")
 
 
 class KapError(Exception):
@@ -128,6 +139,7 @@ class KapClient:
             base_url=self.config.base_url,
             transport=transport,
             timeout=httpx.Timeout(self.config.timeout_s, connect=min(15.0, self.config.timeout_s)),
+            limits=httpx.Limits(max_keepalive_connections=0),
             follow_redirects=True,
             headers={
                 "User-Agent": self.config.user_agent,
@@ -151,22 +163,39 @@ class KapClient:
         await self._http.aclose()
 
     # ── transport with politeness ────────────────────────────────────────
-    async def _send(self, method: str, path: str, *, json_body: Any, accept: str, referer: str) -> httpx.Response:
+    async def _send(
+        self, method: str, path: str, *, json_body: Any, accept: str, referer: str, timeout_s: float | None = None
+    ) -> httpx.Response:
         headers = {"Accept": accept, "Referer": f"{self.config.base_url}{referer}"}
         async with self._pacer.lock:
             await self._pacer.wait()
             self.requests_made += 1
-            return await self._http.request(method, path, json=json_body, headers=headers)
+            if timeout_s is None:
+                return await self._http.request(method, path, json=json_body, headers=headers)
+            return await self._http.request(method, path, json=json_body, headers=headers, timeout=timeout_s)
 
     async def _request(
-        self, method: str, path: str, *, kind: str, json_body: Any = None, referer: str = "/tr/"
+        self,
+        method: str,
+        path: str,
+        *,
+        kind: str,
+        json_body: Any = None,
+        referer: str = "/tr/",
+        retries: int | None = None,
+        timeout_s: float | None = None,
     ) -> httpx.Response:
-        """One logical request with retries. `kind` = "json" | "pdf" | "html" (what a good answer is)."""
-        accept = {"json": "application/json, text/plain, */*", "pdf": "application/pdf,*/*"}.get(kind, "text/html,*/*")
+        """One logical request with retries. `kind` = "json" | "pdf" | "html" | "file" (what a good answer is)."""
+        accept = {"json": "application/json, text/plain, */*", "pdf": "application/pdf,*/*", "file": "*/*"}.get(
+            kind, "text/html,*/*"
+        )
+        limit = self.config.max_retries if retries is None else min(retries, self.config.max_retries)
         last_error = "no attempt"
-        for attempt in range(self.config.max_retries + 1):
+        for attempt in range(limit + 1):
             try:
-                resp = await self._send(method, path, json_body=json_body, accept=accept, referer=referer)
+                resp = await self._send(
+                    method, path, json_body=json_body, accept=accept, referer=referer, timeout_s=timeout_s
+                )
             except (httpx.TimeoutException, httpx.TransportError) as exc:
                 last_error = f"{type(exc).__name__}"
                 retry_after = None
@@ -180,12 +209,12 @@ class KapClient:
                     raise KapError(f"{method} {path}: HTTP {resp.status_code}")
                 last_error = f"HTTP {resp.status_code}"
                 retry_after = resp.headers.get("retry-after")
-            if attempt == self.config.max_retries:
+            if attempt == limit:
                 break
             delay = backoff_delay(attempt, self._rand(), retry_after)
             log.warning("kap %s %s: %s, retry %d in %.1fs", method, path, last_error, attempt + 1, delay)
             await self._sleep(delay)
-        raise KapError(f"{method} {path}: gave up after {self.config.max_retries + 1} attempts ({last_error})")
+        raise KapError(f"{method} {path}: gave up after {limit + 1} attempts ({last_error})")
 
     @staticmethod
     def _check_blocked(resp: httpx.Response, kind: str, path: str) -> None:
@@ -198,6 +227,8 @@ class KapClient:
             raise KapBlockedError(f"{path}: empty body")
         if kind == "json" and _looks_like_html(resp):
             raise KapBlockedError(f"{path}: HTML page instead of JSON")
+        if kind == "file" and _looks_like_html(resp):
+            raise KapBlockedError(f"{path}: HTML page instead of a file")
         if kind == "pdf" and not resp.content.lstrip().startswith(b"%PDF"):
             raise KapBlockedError(f"{path}: not a PDF ({resp.headers.get('content-type', '?')})")
 
@@ -270,9 +301,26 @@ class KapClient:
             f"/tr/api/BildirimPdf/{int(disclosure_index)}",
             kind="pdf",
             referer=f"/tr/Bildirim/{disclosure_index}",
+            retries=FALLBACK_RETRIES,
         )
         return resp.content
 
-    async def bildirim_html(self, disclosure_index: int) -> str:
-        resp = await self._request("GET", f"/tr/Bildirim/{int(disclosure_index)}", kind="html", referer="/tr/")
+    async def bildirim_html(self, disclosure_index: int, *, retries: int | None = None) -> str:
+        resp = await self._request(
+            "GET", f"/tr/Bildirim/{int(disclosure_index)}", kind="html", referer="/tr/", retries=retries
+        )
         return resp.text
+
+    async def attachment(self, obj_id: str, disclosure_index: int) -> bytes:
+        """The raw answer for one attachment file (`ingest.attachments.unwrap_download` opens it)."""
+        if not _OBJ_ID.match(obj_id):
+            raise ValueError(f"not a KAP object id: {obj_id!r}")
+        resp = await self._request(
+            "GET",
+            f"/tr/api/file/download/{obj_id}",
+            kind="file",
+            referer=f"/tr/Bildirim/{int(disclosure_index)}",
+            retries=FALLBACK_RETRIES,
+            timeout_s=ATTACHMENT_TIMEOUT_S,
+        )
+        return resp.content

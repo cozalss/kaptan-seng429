@@ -1,4 +1,4 @@
-// Vite plugin: injects schema.org JSON-LD for the project page into index.html at dev and build
+// Vite plugin: injects schema.org JSON-LD for the page into index.html at dev and build
 // time. KAPtan is published as a CreativeWork: no ratings, offers or prices.
 
 import { SITE } from '../src/config/site.js';
@@ -25,7 +25,7 @@ export function buildStructuredData(site, agents = AGENTS) {
     inLanguage: 'tr-TR',
     image: new URL(OG_IMAGE, url).href,
     isAccessibleForFree: true,
-    keywords: ['KAP', 'BIST', 'çok ajanlı yapay zekâ', 'RAG', ...agents.map((agent) => agent.name)].join(', '),
+    keywords: ['KAP', 'BIST', 'çok ajanlı yapay zekâ', ...agents.map((agent) => agent.name)].join(', '),
     ...(sameAs.length > 0 ? { sameAs } : {}),
   };
 }

@@ -1,7 +1,8 @@
 """Free-text search over the ledger: port of kaptan-panel/src/lib/audit-words.ts (auditMatches()).
 
-A record matches when the needle (Turkish-aware lower case) occurs in its plain Turkish sentence
-(auditSentence()), who did it (name and kind), the action, the entity id or the payload's JSON.
+Every record was done by "Sen" or by "KAPtan". A record matches when the needle (Turkish-aware lower case) occurs in
+its plain Turkish sentence (auditSentence()), who did it (name and kind), the action, the entity id or the payload's
+JSON.
 "#3907" / "#3.907" finds the record at that chain position. Pure: the caller passes the issuer
 names (ticker → registered name) that the panel resolves through its issuer list.
 """
@@ -13,7 +14,6 @@ from collections.abc import Callable, Mapping
 from typing import Any, Final
 
 from kaptan.audit.canonical import js_json, js_number
-from kaptan.domain.roles import ROLE_LABEL, member_by_uid
 from kaptan.domain.schemas.run import NODE_LABELS
 
 SCENARIO_TR: Final[dict[str, str]] = {
@@ -23,18 +23,27 @@ SCENARIO_TR: Final[dict[str, str]] = {
     "loss_simulation": "zarar simülasyonu",
 }
 
-SYSTEM_NAMES: Final[dict[str, str]] = {
-    "kap_poller": "KAP okuyucu",
-    "simbist": "KAPtan hesabı borsası (SimBIST)",
-    "risk_monitor": "Risk izleyici",
-    "order_ticket": "Fiş yazıcı",
-    "scheduler": "Zamanlayıcı",
-    "nightly_verify": "Gece doğrulaması",
-    "restrictions_sync": "Tedbir listesi",
+#: What each part of the system does, in a record's small print (actors.ts SYSTEM_PARTS).
+SYSTEM_PARTS: Final[dict[str, str]] = {
+    "kap_poller": "bildirim okuma",
+    "simbist": "deneme hesabı",
+    "risk_monitor": "para kuralları",
+    "order_ticket": "işlem bilgisi",
+    "scheduler": "zamanlayıcı",
+    "nightly_verify": "gece kontrolü",
+    "restrictions_sync": "tedbir listesi",
 }
 
-#: Crew members whose plain name reads better than the pipeline label (actors.ts NODE_NAMES).
-NODE_NAMES: Final[dict[str, str]] = {"request_approval": "Öneri yazıcı"}
+YOU: Final = "Sen"
+SYSTEM: Final = "KAPtan"
+
+#: What a waiver covered: a step that used to need a second person.
+WAIVER_FLOW: Final[dict[str, str]] = {
+    "kill_reset": "Yeniden başlatmayı",
+    "limits": "Sınır değişikliğini",
+    "live_arm": "Canlı işlemi",
+    "restricted_removal": "Yasak listesinden çıkarmayı",
+}
 
 NO_COMPANY: Final = "bir şirket"
 _LEGAL_SUFFIX: Final = re.compile(r"\s+A\.Ş\.?$")
@@ -86,28 +95,23 @@ def _str(value: Any) -> str | None:
     return None
 
 
+def is_person(actor: str | None) -> bool:
+    """actors.ts isPerson(): anything that is not a part of the system."""
+    return bool(actor) and not str(actor).startswith(("agent:", "system:")) and actor != "auth"
+
+
 def actor_parts(actor: str | None) -> tuple[str, str]:
-    """actors.ts actorParts(): (name, kind), e.g. ("Üye 3", "Risk Sorumlusu"), ("Şüpheci", "Tayfa")."""
+    """actors.ts actorParts(): (who, which part of KAPtan), e.g. ("Sen", ""), ("KAPtan", "Şüpheci")."""
     if not actor:
         return ("—", "")
-    member = member_by_uid(actor)
-    if member is not None:
-        return (member.name, ROLE_LABEL[member.role])
-    if actor.startswith("user:"):
-        return (actor[5:], "Kullanıcı")
+    if is_person(actor):
+        return (YOU, "")
+    if actor == "auth":
+        return (SYSTEM, "giriş")
     if actor.startswith("agent:"):
-        node = actor[6:]
-        label = NODE_LABELS.get(node)
-        return (NODE_NAMES.get(node) or (label[0] if label else node), "Tayfa")
-    if actor.startswith("system:"):
-        job = actor[7:]
-        return (SYSTEM_NAMES.get(job, job), "Sistem")
-    return (actor, "")
-
-
-def _subject(actor: str) -> str:
-    member = member_by_uid(actor)
-    return ROLE_LABEL[member.role] if member is not None else actor_parts(actor)[0]
+        label = NODE_LABELS.get(actor[6:])
+        return (SYSTEM, label[0] if label else "")
+    return (SYSTEM, SYSTEM_PARTS.get(actor[7:], ""))
 
 
 def audit_company(entry: Entry, issuers: Issuers) -> str:
@@ -124,36 +128,49 @@ def audit_company(entry: Entry, issuers: Issuers) -> str:
 
 
 # ── sentences ─────────────────────────────────────────────────────────────
-Phrase = Callable[[Entry, str, str], str]
+Phrase = Callable[[Entry, str], str]
 
 
 def _filled(e: Entry, what: str) -> str:
     qty = _str(e["payload"].get("qty"))
-    buy = f"{qty} lot alış" if qty else "alış"
+    buy = f"{qty} adet alış" if qty else "alış"
     line = buy if what == NO_COMPANY else f"{what} için {buy}"
-    return f"{tr_upper(line[:1])}{line[1:]} gerçekleşti (KAPtan hesabı)."
+    return f"{tr_upper(line[:1])}{line[1:]} gerçekleşti (deneme hesabı)."
 
 
-def _decided(e: Entry, who: str, what: str) -> str:
+def _ticket_issued(e: Entry, what: str) -> str:
+    if what != NO_COMPANY:
+        return f"{what} için bankana gireceğin işlem hazırlandı."
+    qty = _str(e["payload"].get("qty"))
+    if not qty:
+        return "Bankana gireceğin işlem hazırlandı."
+    side = {"sell": "satış ", "buy": "alış "}.get(str(e["payload"].get("side")), "")
+    return f"{qty} adetlik {side}işlem hazırlandı."
+
+
+def _decided(e: Entry, what: str) -> str:
     rejected = e["payload"].get("decision") in ("reject", "rejected")
-    return f"{who} {what} önerisini reddetti." if rejected else f"{who} {what} önerisini imzaladı."
+    return f"{what} önerisini reddettin." if rejected else f"{what} önerisini onayladın."
 
 
-def _kill_on(e: Entry, who: str, _what: str) -> str:
-    if e["actor"] == "system:risk_monitor":
-        return "Risk izleyici zirveden −%5’te her şeyi durdurdu."
-    return f"{who} her şeyi durdurdu."
+def _kill_on(e: Entry, _what: str) -> str:
+    return "Her şeyi durdurdun." if is_person(e["actor"]) else "Paran zirvesinden %5 düştü; KAPtan her şeyi durdurdu."
 
 
-def _verified(e: Entry, who: str, _what: str) -> str:
-    if str(e["actor"]).startswith("system:"):
-        return "Gece doğrulaması defteri baştan sona yürüdü."
-    return f"{who} defteri doğruladı."
+def _verified(e: Entry, _what: str) -> str:
+    if is_person(e["actor"]):
+        return "Kayıtların sağlam olup olmadığına baktın."
+    return "KAPtan gece kayıtları baştan sona kontrol etti."
 
 
-def _injected(e: Entry, _who: str, _what: str) -> str:
+def _injected(e: Entry, _what: str) -> str:
     key = _str(e["payload"].get("scenario")) or str(e["entity_id"])
-    return f"Senaryo eklendi: {SCENARIO_TR.get(key, 'senaryo')}."
+    return f"Deneme olayı eklendi: {SCENARIO_TR.get(key, 'senaryo')}."
+
+
+def _waiver(e: Entry, _what: str) -> str:
+    flow = WAIVER_FLOW.get(_str(e["payload"].get("flow")) or "", "Bu adımı")
+    return f"{flow} tek başına onayladın; bu da kayda geçti."
 
 
 #: Why the pre-gate vetoed, by the first rule code in the payload's reasons (panel audit-words.ts VETO_REASON).
@@ -166,7 +183,7 @@ VETO_REASON: Final[dict[str, str]] = {
     "R10": "kriz rejimi",
     "R11": "kota ya da veri sorunu",
     "R12": "yalnızca alım kuralı",
-    "R13": "ekip engel listesinde",
+    "R13": "yasak listende",
 }
 VETO_CODE: Final = re.compile(r"^(R\d{2})")
 
@@ -182,45 +199,53 @@ def veto_reason(e: Mapping[str, Any]) -> str | None:
 
 def _rejected(e: Mapping[str, Any], what: str) -> str:
     why = veto_reason(e)
-    return f"Kurallar {what} için öneriyi baştan reddetti{f' ({why})' if why else ''}."
+    return f"KAPtan {what} için öneriyi baştan eledi{f' ({why})' if why else ''}."
 
 
 PHRASES: Final[dict[str, Phrase]] = {
-    "disclosure.ingested": lambda _e, _w, what: f"KAP okuyucu {what} bildirimini getirdi.",
-    "classification.done": lambda _e, _w, _x: "Sınıflandırıcı bir bildirimin türünü belirledi.",
-    "pregate.decided": lambda _e, _w, _x: "Ön eleme bir bildirimi süzdü.",
-    "agent.output": lambda _e, who, _x: f"{who} notunu yazdı.",
-    "rule.decided": lambda _e, _w, _x: "Kural motoru eşikleri tarttı.",
-    "risk.checked": lambda _e, _w, _x: "Risk kapısı bir öneriyi denetledi.",
-    "risk.rejected": lambda e, _w, what: _rejected(e, what),
-    "compliance.rejected": lambda _e, _w, what: f"Uyum {what} bildirimindeki gizli talimatı yakaladı; öneri çıkmadı.",
-    "proposal.created": lambda _e, _w, what: f"Tayfa {what} için öneri hazırladı.",
+    "disclosure.ingested": lambda _e, what: f"KAPtan {what} bildirimini okudu.",
+    "classification.done": lambda _e, _x: "KAPtan bir bildirimin türünü belirledi.",
+    "pregate.decided": lambda _e, _x: "KAPtan bir bildirimi eledi.",
+    "agent.output": lambda _e, _x: "KAPtan bir inceleme notu yazdı.",
+    "rule.decided": lambda _e, _x: "KAPtan kurallara baktı.",
+    "risk.checked": lambda _e, _x: "KAPtan bir öneriyi sınırlarla karşılaştırdı.",
+    "risk.rejected": _rejected,
+    "compliance.rejected": lambda _e, what: f"KAPtan {what} bildirimindeki gizli talimatı yakaladı; öneri çıkmadı.",
+    "proposal.created": lambda _e, what: f"KAPtan {what} için öneri hazırladı.",
     "approval.decided": _decided,
-    "order.filled": lambda e, _w, what: _filled(e, what),
-    "ticket.issued": lambda _e, _w, what: f"{what} için emir fişi yazıldı.",
-    "ticket.entered": lambda _e, who, _x: f"{who} emir fişini aracı kuruma girdi.",
-    "ticket.unfilled": lambda _e, who, _x: f"{who} emir fişini “dolmadı” diye işaretledi.",
-    "ticket.canceled": lambda _e, who, _x: f"{who} emir fişini iptal etti.",
+    "order.filled": _filled,
+    "ticket.issued": _ticket_issued,
+    "ticket.entered": lambda _e, _x: "İşlemi bankana girdiğini işaretledin.",
+    "ticket.unfilled": lambda _e, _x: "İşlemin gerçekleşmediğini işaretledin.",
+    "ticket.canceled": lambda _e, _x: "İşlemi girmediğini işaretledin.",
     "kill_switch.on": _kill_on,
-    "kill_switch.reset_started": lambda _e, who, _x: f"{who} yeniden başlatmayı başlattı (1/2).",
-    "kill_switch.reset": lambda _e, who, _x: f"{who} yeniden başlatmayı onayladı (2/2).",
-    "risk.halted": lambda _e, _w, _x: "Günlük −%1 sınırı aşıldı: yeni emir durdu.",
-    "limits.proposed": lambda _e, who, _x: f"{who} bir sınır değişikliği önerdi (1/2).",
-    "limits.approved": lambda _e, who, _x: f"{who} sınır değişikliğini onayladı (2/2).",
-    "limits.rejected": lambda _e, who, _x: f"{who} sınır değişikliğini reddetti.",
-    "note.added": lambda _e, who, _x: f"{who} not ekledi.",
+    "kill_switch.reset_started": lambda _e, _x: "Yeniden başlatmayı istedin.",
+    "kill_switch.reset": lambda _e, _x: "İşlemleri yeniden başlattın.",
+    "auth.login_failed": lambda _e, _x: "Yanlış parolayla giriş denendi.",
+    "auth.login": lambda _e, _x: "Giriş yaptın.",
+    "auth.logout": lambda _e, _x: "Çıkış yaptın.",
+    "auth.single_user_waiver": _waiver,
+    "kill_switch.wait_waived": lambda _e, _x: "Yeniden başlatma için beklemedin (deneme); bu da kayda geçti.",
+    "suggestion.held": lambda _e, what: f"{what} için “Tut” dedin.",
+    "suggestion.skipped": lambda _e, what: f"{what} önerisini geçtin.",
+    "risk.halted": lambda _e, _x: "Paran bir günde %1 düştü; bugünlük yeni işlem durdu.",
+    "limits.proposed": lambda _e, _x: "Bir sınırı değiştirmek istedin.",
+    "limits.approved": lambda _e, _x: "Sınır değişikliğini onayladın.",
+    "limits.rejected": lambda _e, _x: "Sınır değişikliğinden vazgeçtin.",
+    "note.added": lambda _e, _x: "Not ekledin.",
     "audit.verified": _verified,
-    "brief.generated": lambda _e, _w, _x: "Sabah özeti hazırlandı.",
+    "brief.generated": lambda _e, _x: "KAPtan sabah özetini hazırladı.",
     "demo.injected": _injected,
 }
 
 
 def audit_sentence(entry: Entry, issuers: Issuers) -> str:
     """One record as one plain Turkish sentence (auditSentence())."""
-    who = _subject(str(entry["actor"]))
     what = audit_company(entry, issuers)
     phrase = PHRASES.get(str(entry["action"]))
-    return phrase(entry, who, what) if phrase else f"{who}: {entry['action']}"
+    if phrase:
+        return phrase(entry, what)
+    return "Bir işlem yaptın." if is_person(str(entry["actor"])) else f"{SYSTEM} bir işlem yaptı."
 
 
 def audit_matches(entry: Entry, q: str, issuers: Issuers) -> bool:

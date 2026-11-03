@@ -32,10 +32,10 @@ function drawLeak(parent, { set, redraw }) {
     s('path', { d: `M${x(i)} ${BOT}V${BOT + 4}`, class: 'inst__tickmark' }, svg);
     s('text', { x: x(i), y: H - 5, class: 'inst__axis is-mid', text: String(i) }, svg);
   }
-  s('text', { x: X0 - 8, y: H - 5, class: 'inst__axis is-end', text: 'Seans' }, svg);
+  s('text', { x: X0 - 8, y: H - 5, class: 'inst__axis is-end', text: 'Gün' }, svg);
   s('path', { d: inkPath([[X0, y(0)], [x(5), y(0)]], 4), class: 'inst__ink' }, svg);
   s('text', { x: X0 - 8, y: y(0) + 4, class: 'inst__axis is-end', text: '0' }, svg);
-  s('text', { x: x(5), y: 12, class: 'inst__axis is-end is-muted', text: 'çizgiyi sürükleyip çizin' }, svg);
+  s('text', { x: x(5), y: 12, class: 'inst__axis is-end is-muted', text: 'çizgiyi sürükleyip çiz' }, svg);
 
   const area = s('path', { class: 'inst__wash' }, svg);
   const over = s('path', { class: 'inst__over', ...hatched }, svg);
@@ -77,8 +77,8 @@ function drawLeak(parent, { set, redraw }) {
 }
 
 export const LEAK_SPEC = {
-  title: 'Sızıntı filtresi · beş seanslık çizgi',
-  label: 'Son 5 seanstaki yükseliş',
+  title: 'Sızıntı filtresi · beş borsa günü',
+  label: 'Son 5 borsa günündeki yükseliş',
   min: 0,
   max: HI,
   step: 0.5,

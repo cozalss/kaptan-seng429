@@ -62,7 +62,7 @@ def _veto_reasons(restrictions: tuple[Restriction, ...], in_universe: bool) -> l
             reasons.append(f"Dayanak: {prefix}{r.source_ref}")
         return [*reasons, NO_LLM]
     if any(r.kind == "team_insider" for r in restrictions):
-        return ["R13_INSIDER_BLOCKLIST: ekip içeriden-öğrenen engel listesinde (team_insider)", NO_LLM]
+        return ["R13_INSIDER_BLOCKLIST: içeriden-öğrenen engel listende (team_insider)", NO_LLM]
     return None
 
 

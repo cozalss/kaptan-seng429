@@ -76,7 +76,7 @@ last.
 | Bölüm 3 · Seyir Kuralları | `.running-head` | `#olaylar` | "Dört olay. / Yalnızca alım.": the **Sancak Tezgâhı** (signal bench). E1–E4 are the ship's articles (static text, always readable); each has a hands-on instrument in one shared slot (ledger, disclosure, balance, slider; plus the leak filter and the pre-screen gates), and when a rule fires its pennant runs up an inked mast. Filters can only lower a pennant. Wide screens with full motion pin the chapter and let the scroll walk E1 → E4 → filters. |
 | Ara · 350'den 1'e | `.running-head` | `#pusula` | "350 bildirim. / Tek yön." (`.chapter-title`, sentence case in the markup): a scroll-scrubbed, full-bleed Canvas 2D ink scene — slips funnel through three rings, one is stamped, a compass inks itself and locks north. |
 | Bölüm 4 · Rota | `.running-head` | `#yolculuk` | "Bir bildirimin / rotası.": a dotted course through four waypoints (Yakala · Anla · Kanıtla · Onayla); the boat sails it over an inked sea. |
-| Kolofon | `.running-head` | `#kolofon` (footer) | Colophon: what KAPtan is, course facts, crew roles, links, legal line, "— Son —", the mark. |
+| Kolofon | `.running-head` | `#kolofon` (footer) | Colophon: the closing call ("Giriş yap"), links, legal line, "— Son —", the mark. |
 
 The header's "İçindekiler" drawer (`src/ui/menu-drawer.js`, `SECTION_LINKS`) lists exactly these
 chapters. If you add, rename or reorder a chapter, update the running head, the menu and this table.
@@ -112,7 +112,7 @@ Contrast notes kept in `tokens.css`: brand 11.6:1 on paper; muted 8.8:1; wash 7.
 sea sits on a paper scrim gradient sized to keep text ≥ 4.5:1 (`header.css`).
 
 Illustrations follow the same economy: crew plates may carry *at most one tiny* north-red accent
-(`crew/STYLE.md`); agent scenes at most one north-red mark (`SCENES.md`); the demo storyboard's
+(`crew/STYLE.md`); agent scenes at most one north-red mark (`SCENES.md`); the storyboard's
 stamp stays ink (`storyboard-art.js`).
 
 **Legacy tokens.** `--color-surface-*`, `--color-chip`, `--color-canvas-hero`, `--color-subtle`,
@@ -179,7 +179,7 @@ headline blur), 480px (drawers full width).
 **Bodoni minimum: 32px (permanent).** Bodoni Moda Display is a display face: below display size its hairlines vanish on a projector and running text set in it is unreadable from the back of a sunlit classroom. So Bodoni is used **only where the rendered font-size is ≥ 32px** at both 1440×900 and 390×844 (hero headline, chapter titles, crew and agent names, Rota leg names and numerals, drawer/modal titles, the Pusula count, the colophon title, the wordmark). Anything smaller is Inter (400–500, `-webkit-text-stroke: 0`). A display title whose clamp could dip below 32px gets a 32px floor (`.service-card__name`, `.services__beat`, `.spread__plate-title`, `.spread__legend-title`) or, where 32px cannot fit (the phone plate and legend, the phone Rota numerals), switches to Inter in that media query. Check: scroll the page at both sizes, open the menu, demo drawer, about/legal modals and an agent detail, and list every visible element with direct text whose computed font-family contains Bodoni and font-size < 32px — the list must be empty. Canvas and raster lettering are out of scope.
 
 **Minimum size.** No visible UI text below 12px (meta lines, legends, captions, rule codes). The
-illustrations' own lettering (the demo storyboard's codes) is sized to stay ≥ 12px at 390px wide.
+illustrations' own lettering (the storyboard's codes) is sized to stay ≥ 12px at 390px wide.
 
 Fonts are self-hosted (`src/styles/fonts.css`, `public/fonts/`, OFL — see
 `THIRD_PARTY_NOTICES.md`). Only `bodoni-moda-display-latin-tr.woff2` is preloaded; the loader waits
@@ -304,7 +304,7 @@ Agent live plates (`src/ui/agent-scenes/`): all eight dioramas are built (Sını
 Önemlilik, Kanıt, Şüpheci, Uyum, Kural Motoru, Risk Kapısı); contract and style rules are in
 `src/ui/agent-scenes/SCENES.md`; the shared Canvas 2D kit is `src/lib/ink3d/`.
 
-**Demo storyboard** (`src/ui/storyboard-art.js`): the six frames of the "Altı adımda" drawer are
+**Storyboard** (`src/ui/storyboard-art.js`): the six frames of the "Altı adımda" drawer are
 drawn at runtime as SVG data in the crew plates' language: `brush()` strokes that swell and thin
 (deterministic pressure, tapered ends, `straight` for ruled edges), flat indigo washes in two or
 three values (`.storyboard__wash` + `fill-opacity`), sumi masses, paper sheets with a heavier
@@ -355,8 +355,8 @@ These read as template output and were removed on purpose. Don't bring them back
   set through `ScrollTrigger.clearScrollMemory`).
 - Pinned strip: keyboard focus scrolls the pin so the focused panel is centred.
 - Loading state is announced once ("Sayfa hazır") through a live region outside the loader.
-- One name per overlay everywhere: the demo drawer is "Altı adımda" in the header, the menu, the
-  sticky tab and the drawer's title (`DEMO_LABEL`), with the meta "Final sunumunda gösterilecek".
+- One name per overlay everywhere: the steps drawer is "Altı adımda" in the header, the menu, the
+  sticky tab and the drawer's title (`STEPS_LABEL`), with the meta "Final sunumunda gösterilecek".
   Nothing is called "canlı" unless it runs live (the agent dioramas' "Canlı şema" does).
 - Links without a URL render as muted "· yakında" text, never a dead `#`; new-tab links carry a
   visually hidden "(yeni sekmede açılır)" (`visit-render.js`).
@@ -441,16 +441,14 @@ src/components/
   visit/                        visit-render.js: binds SITE facts and links into the markup
   footer/                       colophon styles
   grain/, sticky-cta/, about/   hero grain tile, mobile sticky tab, [data-stomp] helper
-src/ui/                         overlays: menu-drawer, demo-drawer (+ storyboard-art), about/legal
+src/ui/                         overlays: menu-drawer, steps-drawer (+ storyboard-art), about/legal
                                 modals, service-modal* (agent detail), agent-scenes/ (+ SCENES.md)
-src/config/site.js, src/data/   project facts: site, agents, events, milestones, demo flow
+src/config/site.js, src/data/   project facts: site, agents, events, milestones, six steps
 scripts/build-kaptan-visuals.mjs, scripts/kaptan-visuals/   illustration pipeline (+ crew/STYLE.md)
 scripts/build-pusula-still.mjs  Pusula still
 scripts/qa/shot.mjs             headless screenshots
 ```
 
 ## Known gaps
-- Team names and the Proposal / Dokümanlar / GitHub URLs are placeholders (`SITE.team`,
-  `SITE.links`); `SITE.url` is a placeholder used by the JSON-LD and the absolute og:image.
 - The agent detail's running head (`service-modal.js`) still prints "KAPtan" on the left. It sits
   under the overlay, so it never stacks with the header wordmark, but it could carry the folio too.

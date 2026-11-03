@@ -1,0 +1,56 @@
+/* The inline dictionary word. A dotted rule, never a colour alone; the touch target grows past the
+   line of text without moving it. */
+.term-word {
+  position: relative;
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: help;
+  text-decoration: underline dotted 2px;
+  text-decoration-color: currentColor;
+  text-underline-offset: 0.22em;
+  transition: text-decoration-color var(--dur-quick) ease;
+}
+.term-word::after {
+  content: "";
+  position: absolute;
+  inset: -12px -4px;
+}
+.term-word:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.term-word[data-state="open"] {
+  text-decoration-style: solid;
+}
+
+.term-meaning {
+  z-index: 60;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 0.625rem 0.875rem;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  box-shadow: var(--shadow-pop);
+  transform-origin: var(--radix-popover-content-transform-origin);
+  animation: term-in 130ms var(--ease-out-expo) both;
+}
+.term-meaning-word {
+  font-weight: 700;
+}
+@keyframes term-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .term-meaning {
+    animation: none;
+  }
+}

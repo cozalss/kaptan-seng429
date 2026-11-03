@@ -7,9 +7,8 @@ from decimal import Decimal
 from typing import Any
 
 from kaptan.agents.context import DeskState, DisclosureInput, Restriction, RunContext
-from kaptan.agents.tools import ReplayToolbox
-from kaptan.demo.fixtures import DemoFixtures
-from kaptan.llm.replay import ReplayProvider
+from tests.harness.fixtures import DemoFixtures
+from tests.harness.replay import ReplayProvider, ReplayToolbox
 
 FX = DemoFixtures()
 

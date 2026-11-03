@@ -28,10 +28,10 @@ def prod(**over: object) -> Settings:
         "redis_url": SecretStr(f"redis://:{REDIS_PW}@redis:6379/0"),
         "jwt_secret": SecretStr(STRONG),
         "passphrase_hash": SecretStr(HASH),
-        "demo_mode": False,
         "cookie_secure": True,
         "allowed_origins": ["https://panel.example.org"],
-        "llm_mode": "replay",
+        "llm_mode": "live",
+        "ollama_base_url": "http://127.0.0.1:11434/v1",
         "gemini_api_key": None,
         "deepseek_api_key": None,
         "groq_api_key": None,
@@ -49,11 +49,9 @@ def test_a_safe_prod_configuration_starts() -> None:
 @pytest.mark.parametrize(
     ("change", "expected"),
     [
-        ({"demo_mode": True}, "DEMO_MODE=true"),
         ({"cookie_secure": False}, "COOKIE_SECURE=false"),
         ({"allowed_origins": []}, "ALLOWED_ORIGINS is empty"),
         ({"redis_url": SecretStr("redis://redis:6379/0")}, "REDIS_URL has no password"),
-        ({"llm_mode": "live"}, "LLM_MODE=live but no"),
         ({"jwt_secret": SecretStr("x" * 40)}, "too few distinct characters"),
         ({"jwt_secret": SecretStr("short")}, "shorter than 32 bytes"),
         ({"jwt_secret": SecretStr("<random-48-bytes>-abcdefghijklmnopqrstuvwxyz")}, "placeholder"),
@@ -73,8 +71,18 @@ def test_each_unsafe_setting_is_refused(change: dict[str, object], expected: str
         assert secret not in message
 
 
+def test_only_the_agent_worker_needs_a_model() -> None:
+    bare = prod(ollama_base_url=None)
+    for component in ("api", "bootstrap", "ingest_worker", "scheduler"):
+        assert production_problems(bare, component) == [], component
+    assert [p for p in production_problems(bare, "agent_worker") if "LLM_MODE=live but no" in p]
+    with pytest.raises(ConfigError, match="agent_worker refuses to start"):
+        ensure_production_ready(bare, "agent_worker")
+
+
 def test_live_llm_with_a_key_is_fine() -> None:
-    assert production_problems(prod(llm_mode="live", groq_api_key=SecretStr("gsk_" + "a" * 30))) == []
+    keyed = prod(ollama_base_url=None, groq_api_key=SecretStr("gsk_" + "a" * 30))
+    assert production_problems(keyed, "agent_worker") == []
 
 
 def test_the_owner_url_is_required_only_by_the_migrate_job() -> None:
@@ -88,7 +96,7 @@ def test_the_owner_url_is_required_only_by_the_migrate_job() -> None:
 
 
 def test_all_problems_are_listed_at_once() -> None:
-    s = prod(demo_mode=True, cookie_secure=False, allowed_origins=[])
+    s = prod(cookie_secure=False, allowed_origins=[], ollama_base_url=None)
     with pytest.raises(ConfigError) as info:
         ensure_production_ready(s, "agent_worker")
     assert str(info.value).count("\n  - ") == 3

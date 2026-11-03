@@ -17,7 +17,14 @@ from kaptan.llm.provider import (
     ProviderError,
     request_key,
 )
-from kaptan.llm.replay import Cassette, ReplayMissError, ReplayProvider, agent_inputs, default_cassette, prompt_version
+from tests.harness.replay import (
+    Cassette,
+    ReplayMissError,
+    ReplayProvider,
+    agent_inputs,
+    default_cassette,
+    prompt_version,
+)
 from tests.unit.agent_fixtures import fixture_run
 
 
@@ -92,9 +99,10 @@ async def test_chain_falls_back_then_gives_up() -> None:
 def test_get_provider() -> None:
     from kaptan.llm.live import LiveProvider
 
-    assert isinstance(get_provider("replay"), ReplayProvider)
+    with pytest.raises(ValueError, match="a running system only has"):
+        get_provider("replay")
     live = get_provider("live")
     assert isinstance(live, LiveProvider)
     assert get_provider("live") is live  # one per process (shared cache, counters, connections)
-    with pytest.raises(ValueError, match="unknown LLM_MODE"):
+    with pytest.raises(ValueError, match="no provider"):
         get_provider("ghost")

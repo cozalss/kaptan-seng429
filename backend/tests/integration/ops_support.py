@@ -12,8 +12,8 @@ from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 
 from kaptan.api.deps import settings_dep
-from kaptan.api.main import create_app
 from kaptan.settings import Settings
+from tests.harness.app import create_test_app
 
 _ips = itertools.count(1)
 
@@ -28,7 +28,7 @@ def unique_ip() -> str:
 async def app_client(
     settings: Settings, *, client: tuple[str, int] = ("127.0.0.1", 50000)
 ) -> AsyncIterator[tuple[httpx.AsyncClient, FastAPI]]:
-    app = create_app(settings)
+    app = create_test_app(settings)
     app.dependency_overrides[settings_dep] = lambda: settings
     async with LifespanManager(app) as manager:
         transport = httpx.ASGITransport(app=manager.app, client=client)

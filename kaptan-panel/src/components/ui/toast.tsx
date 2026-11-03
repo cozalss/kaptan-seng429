@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 import { Toaster as Sonner, toast as sonnerToast } from "sonner";
 
 /**
- * Toasts are cards laid on top: white panel, a navy-tinted edge and a soft lift — rare on
+ * Toasts are sheets laid on top: a panel, an ink edge and a hard shadow, rare on
  * purpose (a proposal arriving while you are elsewhere, an error). Bottom centre, long enough
  * to read (6 s; errors 10 s; a slip with an action 12 s), keyed by title so a repeat replaces
  * itself, and always closable. Use `notify.*`, never sonner directly. The <Toaster/> lives in
@@ -22,7 +22,7 @@ export function Toaster() {
       gap={6}
       duration={TOAST_MS}
       offset={{ bottom: 20 }}
-      mobileOffset={{ bottom: 12, left: 12, right: 12 }}
+      mobileOffset={{ bottom: "calc(var(--tab-h, 62px) + env(safe-area-inset-bottom) + 10px)", left: 12, right: 12 }}
       containerAriaLabel="Bildirimler"
       className="kaptan-toaster"
       closeButton
@@ -32,7 +32,7 @@ export function Toaster() {
         closeButtonAriaLabel: "Bildirimi kapat",
         classNames: {
           toast:
-            "pointer-events-auto relative flex min-h-14 w-[420px] max-w-[calc(100vw-24px)] items-start gap-3 rounded-xl border border-line-strong bg-panel py-3 pr-11 pl-3.5 font-sans text-ui text-ink shadow-[var(--shadow-pop)]",
+            "pointer-events-auto relative flex min-h-14 w-[420px] max-w-[calc(100vw-24px)] items-start gap-3 border-2 border-ink bg-panel py-3 pr-11 pl-3.5 font-sans text-ui text-ink shadow-[var(--shadow-pop)]",
           content: "min-w-0 flex-1",
           title: "font-medium break-words",
           description: "line-clamp-3 break-words text-dense text-ink-soft",

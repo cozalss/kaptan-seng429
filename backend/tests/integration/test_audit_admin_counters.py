@@ -1,4 +1,4 @@
-"""Package C reads: /audit, /audit/verify, /admin/users, /disclosures/counters (parity with the mock at 13:40)."""
+"""Package C reads: /audit, /audit/verify, /disclosures/counters (parity with the mock at 13:40)."""
 
 from __future__ import annotations
 
@@ -9,9 +9,9 @@ import httpx
 import pytest
 
 from kaptan.api.main import API_PREFIX
-from kaptan.demo.fixtures import FIXTURE_DIR, DemoFixtures
 from tests.conftest import bearer, login
 from tests.contract.harness import assert_matches
+from tests.harness.fixtures import FIXTURE_DIR, DemoFixtures
 
 pytestmark = pytest.mark.integration
 
@@ -20,26 +20,25 @@ def expected(name: str) -> Any:
     return json.loads((FIXTURE_DIR / "expected" / name).read_text(encoding="utf-8"))
 
 
-async def _get(client: httpx.AsyncClient, path: str, role: str = "auditor") -> httpx.Response:
-    session = await login(client, role)  # type: ignore[arg-type]
+async def _get(client: httpx.AsyncClient, path: str) -> httpx.Response:
+    session = await login(client)
     return await client.get(f"{API_PREFIX}{path}", headers=bearer(session["access_token"]))
 
 
-async def test_counters_match_the_mock_at_1340(client: httpx.AsyncClient) -> None:
-    res = await _get(client, "/disclosures/counters", "analyst")
+async def test_counters_count_the_day(client: httpx.AsyncClient) -> None:
+    res = await _get(client, "/disclosures/counters")
     assert res.status_code == 200, res.text
     body = res.json()
     assert_matches("DayCounters", body)
+    fixtures = DemoFixtures()
+    day = [*fixtures.json("disclosures.json"), *fixtures.json("demo_disclosures.json")]
+    assert body["total"] == len(day)
+    assert body["noise"] == sum(1 for d in day if d["is_noise"])
+    assert body["processed"] == sum(1 for d in day if d["run_id"] is not None)
     want = expected("counters.json")
-    assert {k: v for k, v in body.items() if k != "as_of"} == {k: v for k, v in want.items() if k != "as_of"}
+    rest = ("proposals", "approvals", "rejections", "llm_calls")
+    assert {k: body[k] for k in rest} == {k: want[k] for k in rest}
     assert body["as_of"].startswith("2027-01-11T10:")
-
-
-async def test_users_in_team_order(client: httpx.AsyncClient) -> None:
-    res = await _get(client, "/admin/users", "admin")
-    assert res.status_code == 200
-    assert_matches("TeamMember", res.json(), many=True)
-    assert res.json() == expected("users.json")
 
 
 async def test_audit_all_newest_first(client: httpx.AsyncClient) -> None:
@@ -51,7 +50,7 @@ async def test_audit_all_newest_first(client: httpx.AsyncClient) -> None:
     assert page["length"] >= length
     assert page["total"] == page["length"]
     assert [e["chain_pos"] for e in page["items"]] == list(range(page["length"], page["length"] - 10, -1))
-    assert page["tamper_on"] is False
+    assert "tamper_on" not in page
     fixture_head = DemoFixtures().audit[-1]
     if page["length"] == length:
         assert page["items"][0] == {**fixture_head, "payload": fixture_head["payload"]}
@@ -69,7 +68,7 @@ async def test_audit_today_and_search(client: httpx.AsyncClient) -> None:
     assert [e["chain_pos"] for e in hit["items"]] == [3907]
     assert hit["total"] == 1
 
-    words = (await _get(client, "/audit?scope=all&q=imzaladı&limit=2")).json()
+    words = (await _get(client, "/audit?scope=all&q=önerisini%20onayladın&limit=2")).json()
     assert words["total"] >= 1
     assert len(words["items"]) <= 2
     assert all(e["action"] == "approval.decided" for e in words["items"])
@@ -87,7 +86,7 @@ async def test_audit_query_validation(client: httpx.AsyncClient) -> None:
 
 
 async def test_verify_fresh_chain(client: httpx.AsyncClient) -> None:
-    session = await login(client, "auditor")
+    session = await login(client)
     res = await client.post(f"{API_PREFIX}/audit/verify", headers=bearer(session["access_token"]))
     assert res.status_code == 200, res.text
     body = res.json()

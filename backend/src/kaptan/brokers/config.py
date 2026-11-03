@@ -1,7 +1,6 @@
 """Execution configuration: `config/trading.yaml` (K1 + cost model + hard cap) and the process's settings.
 
-`install(settings)` is called once by the API's lifespan; until then `current()` is the DEMO_MODE
-configuration, so code that runs without the app (tests, scripts) keeps the M1 demo behaviour.
+`install(settings)` is called once by the API's lifespan; until then `current()` is the default configuration.
 """
 
 from __future__ import annotations
@@ -55,7 +54,6 @@ class TradingConfig:
 class ExecConfig:
     """What the order path needs to know about this process."""
 
-    demo_mode: bool = True
     trading: TradingConfig = field(default_factory=TradingConfig)
     #: K2: KAPTAN_LIVE_ENABLED=true on the production host only.
     live_env_enabled: bool = False
@@ -116,7 +114,6 @@ def load_trading(path: Path = TRADING_FILE) -> TradingConfig:
 
 def from_settings(settings: Settings) -> ExecConfig:
     return ExecConfig(
-        demo_mode=settings.demo_mode,
         trading=load_trading(),
         live_env_enabled=settings.kaptan_live_enabled,
         mode_live=getattr(settings, "kaptan_mode", "paper") == "live",

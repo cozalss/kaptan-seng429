@@ -2,8 +2,7 @@
 
 The manifest hashes every file of `prompts/v<version>/` plus `config/models.yaml` (pinned model IDs and
 chains): change a prompt or a model and the digest changes. Live runs and their proposals carry
-`<digest16>@<git sha>` in the existing `prompt_manifest_hash` field (env `GIT_SHA`, else "dev"). Replay
-keeps the demo `meta.json` value so every recorded output and audit hash stays byte-identical.
+`<digest16>@<git sha>` in the existing `prompt_manifest_hash` field (env `GIT_SHA`, else "dev").
 """
 
 from __future__ import annotations
@@ -16,8 +15,8 @@ from pathlib import Path
 from typing import Any, Final
 
 from kaptan.llm.prompts import PROMPT_DIR
+from kaptan.llm.provider import PROMPT_VERSION
 from kaptan.llm.registry import MODELS_FILE
-from kaptan.llm.replay import PROMPT_VERSION
 
 DIGEST_CHARS: Final = 16
 
@@ -71,8 +70,3 @@ def _digest() -> str:
 def graph_version() -> str:
     """`<manifest digest>@<git sha>`: what a live run and its proposal are stamped with."""
     return f"{_digest()}@{git_sha()}"
-
-
-def manifest_hash_for(provider: Any, replay_value: str) -> str:
-    """The live LLM chain gets the real graph version; replay (and any fake) keeps the demo value."""
-    return graph_version() if getattr(provider, "name", "") == "live" else replay_value

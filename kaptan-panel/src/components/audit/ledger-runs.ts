@@ -2,8 +2,8 @@ import type { AuditEntry } from "@/lib/domain";
 import { fmtInt, fmtTime } from "@/lib/format";
 
 /**
- * The ledger reads better when routine machine work is folded together: nine "bildirimi
- * getirdi" rows in a row become one line, "KAP okuyucu 9 bildirim getirdi", and nineteen
+ * The diary reads better when routine machine work is folded together: nine "bildirimini
+ * okudu" rows in a row become one line, "KAPtan 9 duyuru okudu", and nineteen
  * rule vetoes become "Kurallar 19 şirket için öneriyi baştan reddetti", each opening to show
  * the originals. Only consecutive records by the same machine doing the same thing fold; a
  * person's act is never folded away. Pure: returns a new array, the entries are not touched.
@@ -12,8 +12,8 @@ export type LedgerRow =
   | { kind: "one"; entry: AuditEntry }
   | { kind: "run"; actor: string; action: string; entries: readonly AuditEntry[] };
 
-/** Machines and crew fold; people (user:… and team members) never do. */
-const foldable = (e: AuditEntry) => !e.actor.startsWith("user:") && !/^uye-/.test(e.actor) && e.actor !== "auth";
+/** KAPtan's routine folds; what you did never does. */
+const foldable = (e: AuditEntry) => !e.actor.startsWith("user:") && e.actor !== "auth";
 
 const sameKind = (a: AuditEntry, b: AuditEntry) => a.actor === b.actor && a.action === b.action;
 
@@ -36,30 +36,30 @@ export function groupRuns(entries: readonly AuditEntry[]): LedgerRow[] {
   return rows;
 }
 
-/** What a folded run says, in one sentence: "KAP okuyucu 9 bildirim getirdi." */
+/** What a folded run says, in one sentence: "KAPtan 9 duyuru okudu." */
 export function runSentence(actorName: string, action: string, count: number): string {
   const n = fmtInt(count);
   switch (action) {
     case "disclosure.ingested":
-      return `${actorName} ${n} bildirim getirdi.`;
+      return `KAPtan ${n} duyuru okudu.`;
     case "risk.rejected":
-      return `Kurallar ${n} şirket için öneriyi baştan reddetti.`;
+      return `KAPtan ${n} şirket için öneriyi baştan eledi.`;
     case "pregate.decided":
-      return `Ön eleme ${n} bildirimi süzdü.`;
+      return `KAPtan ${n} bildirimi eledi.`;
     case "classification.done":
-      return `Sınıflandırıcı ${n} bildirimin türünü belirledi.`;
+      return `KAPtan ${n} bildirimin türünü belirledi.`;
     case "risk.checked":
-      return `Risk kapısı ${n} öneriyi denetledi.`;
+      return `KAPtan ${n} öneriyi sınırlarla karşılaştırdı.`;
     default:
       return `${actorName}: ${n} benzer kayıt.`;
   }
 }
 
-/** "06:22–08:38 · #4.785–#4.802": the span a folded run covers, oldest first. */
+/** "06:22–08:38": the span a folded run covers, oldest first. */
 export function runMeta(entries: readonly AuditEntry[], time: (iso: string) => string = fmtTime): string {
   const byPos = [...entries].sort((a, b) => a.chain_pos - b.chain_pos);
   const first = byPos[0];
   const last = byPos[byPos.length - 1];
   if (!first || !last) return "";
-  return `${time(first.occurred_at)}–${time(last.occurred_at)} · #${fmtInt(first.chain_pos)}–#${fmtInt(last.chain_pos)}`;
+  return `${time(first.occurred_at)}–${time(last.occurred_at)}`;
 }

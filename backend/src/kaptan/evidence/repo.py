@@ -10,6 +10,7 @@ from typing import Any, Final
 from psycopg import AsyncConnection
 from psycopg.rows import dict_row
 
+from kaptan.evidence.holdout import EVENT_ROW_SQL, unsealed_sql
 from kaptan.evidence.params import BENCHMARK, EXCLUDED_ACTION_KINDS, MAX_EVENTS
 from kaptan.evidence.sessions import event_session
 from kaptan.evidence.study import Bar, MarketModel, ModelKind, PastEvent, Precomputed, Series
@@ -19,20 +20,21 @@ from kaptan.prices.reads import adjusted_series
 Conn = AsyncConnection[Any]
 EVENT_TYPES: Final = ("E1", "E2", "E3", "E4")
 
-#: Past real KAP events of one type (subject-mapped or LLM-classified), newest first.
-PAST_EVENTS_SQL: Final = """
+#: Past real KAP events of one type (kaptan.evidence.holdout: the definition and the seal), newest first.
+PAST_EVENTS_SQL: Final = f"""
 SELECT d.disclosure_index, d.primary_ticker AS ticker, d.company_name, d.subject, d.summary,
        d.published_at, d.available_at
   FROM core.disclosures d
   LEFT JOIN core.issuers i ON i.ticker = d.primary_ticker
- WHERE d.origin = 'kap' AND d.primary_ticker IS NOT NULL AND NOT d.is_noise AND d.reason = 'NEW'
+ WHERE {EVENT_ROW_SQL}
    AND (d.subject_route = %(event_type)s OR d.classification ->> 'event_type' = %(event_type)s)
+   AND {unsealed_sql("d.published_at", "as_of")}
    AND d.available_at < %(as_of)s AND d.disclosure_index <> %(self_index)s
    AND (%(ticker)s::text IS NULL OR d.primary_ticker = %(ticker)s::text)
    AND (%(sector)s::text IS NULL OR i.sector = %(sector)s::text)
  ORDER BY d.published_at DESC, d.disclosure_index DESC
  LIMIT %(limit)s
-"""
+"""  # noqa: S608 - module constants only
 #: Event sessions of every E1–E4 disclosure of these companies (removed from estimation windows).
 OTHER_EVENTS_SQL: Final = """
 SELECT primary_ticker AS ticker, published_at FROM core.disclosures

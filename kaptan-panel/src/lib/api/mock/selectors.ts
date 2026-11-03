@@ -10,69 +10,37 @@ import type {
   Position,
   RiskStatus,
   RunSummary,
-  TraceNode,
 } from "@/lib/domain";
 import { appendToChain } from "@/lib/audit-chain";
 import { addDays, nextTradingDay } from "@/lib/time";
 import { baseAuditChain, tamperedChain } from "@/mocks/audit";
 import { CLOCK_ANCHOR_MS, DEMO_DAY, mockNowMs } from "@/mocks/clock";
 import { dayDisclosures } from "@/mocks/day";
-import { buildExplain, disclosureOf } from "@/mocks/explain-builder";
+import { buildExplain } from "@/mocks/explain-builder";
 import { liveEquity } from "@/mocks/pnl";
 import { DEMO_ORDER_TICKET } from "@/mocks/governance";
-import { AUDIT_TAMPER_POS, DAY_BY_ANCHOR, DEMO_E3_RUN, type DemoScenario } from "@/mocks/ids";
+import { AUDIT_TAMPER_POS, DAY_BY_ANCHOR, DEMO_E3_RUN } from "@/mocks/ids";
 import { CURRENT_STAGE } from "@/mocks/personal";
 import { buildTicket, effectiveEntry } from "@/mocks/tickets";
 import { issuer } from "@/mocks/issuers";
 import { DAY_SPECS, EXIT_SPECS, HISTORY_SPECS } from "@/mocks/runs-day";
-import { DEMO_E3_SPEC, DEMO_INJ_SPEC, DEMO_R04_SPEC } from "@/mocks/runs-demo";
 import type { RunSpec } from "@/mocks/run-spec";
 import type { MockState } from "./state";
-
-/** A demo run takes this long (real time) from injection to the approval card. */
-export const DEMO_RUN_MS = 7_500;
-
-const SCENARIO_SPEC: Partial<Record<DemoScenario, RunSpec>> = {
-  e3_contract: DEMO_E3_SPEC,
-  redteam_injection: DEMO_INJ_SPEC,
-  restricted_r04: DEMO_R04_SPEC,
-};
 
 export function nowMs(state: MockState, realNow: number = Date.now()): number {
   return mockNowMs(realNow, state.startedAtReal);
 }
 
-/** Injected specs, re-timed to the moment they were injected. */
-export function injectedSpecs(state: MockState): RunSpec[] {
-  return state.injections.flatMap((inj) => {
-    const spec = SCENARIO_SPEC[inj.scenario];
-    if (!spec) return [];
-    return [{ ...spec, publishedAtIso: new Date(mockNowMs(inj.atMs, state.startedAtReal)).toISOString() }];
-  });
+export function allSpecs(): RunSpec[] {
+  return [...DAY_SPECS, ...HISTORY_SPECS, ...EXIT_SPECS];
 }
 
-export function allSpecs(state: MockState): RunSpec[] {
-  return [...DAY_SPECS, ...HISTORY_SPECS, ...EXIT_SPECS, ...injectedSpecs(state)];
-}
-
-export function specById(state: MockState, runId: string): RunSpec | undefined {
-  return allSpecs(state).find((s) => s.run_id === runId);
-}
-
-function injectionFor(state: MockState, runId: string) {
-  const scenario = (Object.keys(SCENARIO_SPEC) as DemoScenario[]).find((k) => SCENARIO_SPEC[k]?.run_id === runId);
-  return scenario ? state.injections.find((i) => i.scenario === scenario) : undefined;
-}
-
-/** 0…1 progress of an injected run (1 for everything else). */
-export function runProgress(state: MockState, runId: string, realNow: number = Date.now()): number {
-  const inj = injectionFor(state, runId);
-  if (!inj) return 1;
-  return Math.min(1, Math.max(0, (realNow - inj.atMs) / DEMO_RUN_MS));
+export function specById(runId: string): RunSpec | undefined {
+  return allSpecs().find((s) => s.run_id === runId);
 }
 
 /* ── disclosures ─────────────────────────────────────────────────────── */
-export function visibleDisclosures(state: MockState, realNow: number = Date.now()): DisclosureListItem[] {
+export function visibleDisclosures(state: MockState): DisclosureListItem[] {
   const rows = dayDisclosures();
   const pre = rows.slice(0, DAY_BY_ANCHOR.total);
   const late = state.releasedLate.flatMap((atReal, i) => {
@@ -81,24 +49,19 @@ export function visibleDisclosures(state: MockState, realNow: number = Date.now(
     const published = new Date(mockNowMs(atReal, state.startedAtReal)).toISOString();
     return [{ ...row, published_at: published, first_seen_at: published, available_at: published }];
   });
-  const injected = injectedSpecs(state).map((s) => {
-    const d = disclosureOf(s);
-    const done = runProgress(state, s.run_id, realNow) >= 1;
-    return done || s.kind === "pregate_veto" ? d : { ...d, classification: null };
-  });
   const noteCounts = new Map<number, number>();
   for (const n of state.notes) noteCounts.set(n.disclosure_index, (noteCounts.get(n.disclosure_index) ?? 0) + 1);
-  return [...pre, ...late, ...injected]
+  return [...pre, ...late]
     .map((d) => ({ ...d, note_count: d.note_count + (noteCounts.get(d.disclosure_index) ?? 0) }))
     .sort((a, b) => Date.parse(b.published_at) - Date.parse(a.published_at));
 }
 
 export function counters(state: MockState, realNow: number = Date.now()): DayCounters {
-  const rows = visibleDisclosures(state, realNow);
+  const rows = visibleDisclosures(state);
   const noise = rows.filter((r) => r.is_noise).length;
   const processed = rows.filter((r) => r.run_id !== null).length;
   const approvals = approvalCards(state, realNow);
-  const tokens = allSpecs(state)
+  const tokens = allSpecs()
     .filter((s) => !s.run_id.startsWith("run-hist"))
     .reduce((acc, s) => acc + s.tokens[0] + s.tokens[1], 0);
   return {
@@ -111,7 +74,7 @@ export function counters(state: MockState, realNow: number = Date.now()): DayCou
     proposals: approvals.filter((a) => !a.run_id.startsWith("run-hist")).length,
     approvals: approvals.filter((a) => a.status === "approved" && !a.run_id.startsWith("run-hist")).length,
     rejections: approvals.filter((a) => a.status === "rejected").length,
-    llm_calls: 31 + injectedSpecs(state).reduce((a, s) => a + s.llmCalls, 0),
+    llm_calls: 31,
     llm_tokens: Math.max(tokens, 412_000),
   };
 }
@@ -124,7 +87,7 @@ export function countersOn(state: MockState, day: string, realNow: number = Date
   const today = counters(state, realNow);
   const istanbulDay = (ms: number) => new Date(ms + 3 * 3_600_000).toISOString().slice(0, 10);
   if (istanbulDay(nowMs(state, realNow)) === day) return today;
-  const rows = visibleDisclosures(state, realNow).filter((d) => istanbulDay(Date.parse(d.published_at)) === day);
+  const rows = visibleDisclosures(state).filter((d) => istanbulDay(Date.parse(d.published_at)) === day);
   const noise = rows.filter((r) => r.is_noise).length;
   const processed = rows.filter((r) => r.run_id !== null).length;
   const cards = approvalCards(state, realNow).filter((a) => istanbulDay(Date.parse(a.created_at)) === day);
@@ -156,12 +119,6 @@ function baseExplain(spec: RunSpec): Explain {
   return e;
 }
 
-function progressTrace(nodes: TraceNode[], progress: number): TraceNode[] {
-  if (progress >= 1) return nodes;
-  const cut = Math.floor(nodes.length * progress);
-  return nodes.map((n, i) => (i < cut ? n : i === cut ? { ...n, status: "running", latency_ms: null } : { ...n, status: "waiting", latency_ms: null, started_at: null }));
-}
-
 function patchApproval(state: MockState, a: ApprovalCard, realNow: number): ApprovalCard {
   const patch = state.approvals[a.proposal_id];
   const merged = patch ? { ...a, ...patch } : a;
@@ -171,12 +128,10 @@ function patchApproval(state: MockState, a: ApprovalCard, realNow: number): Appr
 }
 
 export function explainFor(state: MockState, runId: string, realNow: number = Date.now()): Explain | undefined {
-  const spec = specById(state, runId);
+  const spec = specById(runId);
   if (!spec) return undefined;
   const base = baseExplain(spec);
-  const progress = runProgress(state, runId, realNow);
-  const approval = base.approval && progress >= 1 ? patchApproval(state, base.approval, realNow) : null;
-  const isRunning = progress < 1;
+  const approval = base.approval ? patchApproval(state, base.approval, realNow) : null;
   const ticket = approval ? ticketFor(state, spec, base, approval, realNow) : null;
   // Session orders (approvals) replace fixture orders with the same id; the ticket's own order follows.
   const sessionOrders = state.orders.filter((o) => o.run_id === runId).map((o) => applyCancel(state, o));
@@ -189,17 +144,13 @@ export function explainFor(state: MockState, runId: string, realNow: number = Da
     ...base,
     run: {
       ...base.run,
-      status: isRunning ? "running" : approval?.status === "approved" ? "completed" : base.run.status,
-      finished_at: isRunning ? null : base.run.finished_at,
+      status: approval?.status === "approved" ? "completed" : base.run.status,
     },
-    disclosure: { ...base.disclosure, classification: isRunning && spec.kind !== "pregate_veto" ? null : base.disclosure.classification },
     approval,
-    proposal: isRunning ? null : base.proposal,
     orders,
     fills: orders.flatMap((o) => o.fills),
     ticket,
     audit_positions: auditPositionsFor(state, runId),
-    trace: { ...base.trace, nodes: progressTrace(base.trace.nodes, progress) },
   };
 }
 
@@ -216,7 +167,7 @@ function ticketFor(state: MockState, spec: RunSpec, base: Explain, approval: App
   const raw =
     spec.run_id === DEMO_E3_RUN
       ? DEMO_ORDER_TICKET
-      : buildTicket(approval, base, { seq: 10 + allSpecs(state).findIndex((s) => s.run_id === spec.run_id), decidedAt: approval.decided_at, stage: CURRENT_STAGE });
+      : buildTicket(approval, base, { seq: 10 + allSpecs().findIndex((s) => s.run_id === spec.run_id), decidedAt: approval.decided_at, stage: CURRENT_STAGE });
   return { ...raw, entry: effectiveEntry(raw, state.ticketMarks[raw.ticket_no], nowMs(state, realNow)) };
 }
 
@@ -254,7 +205,7 @@ function ticketOrder(t: OrderTicket, decidedAt: string | null): Order {
 
 /** Every ticket issued so far (one per approval on or after the demo day), newest first. */
 export function allTickets(state: MockState, realNow: number = Date.now()): OrderTicket[] {
-  return allSpecs(state)
+  return allSpecs()
     .map((s) => explainFor(state, s.run_id, realNow)?.ticket)
     .filter((t): t is OrderTicket => Boolean(t))
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
@@ -262,7 +213,7 @@ export function allTickets(state: MockState, realNow: number = Date.now()): Orde
 
 
 export function runSummaries(state: MockState, realNow: number = Date.now()): RunSummary[] {
-  return allSpecs(state)
+  return allSpecs()
     .map((s) => explainFor(state, s.run_id, realNow)?.run)
     .filter((r): r is RunSummary => Boolean(r))
     .sort((a, b) => Date.parse(b.started_at) - Date.parse(a.started_at));
@@ -270,7 +221,7 @@ export function runSummaries(state: MockState, realNow: number = Date.now()): Ru
 
 /* ── approvals, orders, positions ────────────────────────────────────── */
 export function approvalCards(state: MockState, realNow: number = Date.now()): ApprovalCard[] {
-  return allSpecs(state)
+  return allSpecs()
     .filter((s) => s.kind === "propose")
     .map((s) => explainFor(state, s.run_id, realNow)?.approval)
     .filter((a): a is ApprovalCard => Boolean(a))
@@ -284,14 +235,14 @@ function applyCancel(state: MockState, o: Order): Order {
 }
 
 export function allOrders(state: MockState, realNow: number = Date.now()): Order[] {
-  return allSpecs(state)
+  return allSpecs()
     .flatMap((s) => explainFor(state, s.run_id, realNow)?.orders ?? [])
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
 }
 
 export function positions(state: MockState, realNow: number = Date.now()): Position[] {
   const out: Position[] = [];
-  const specs = allSpecs(state);
+  const specs = allSpecs();
   // A filled sell (exit) closes the paper position in that ticker; it never opens one.
   const exited = new Set(specs.filter((s) => s.side === "sell" && (explainFor(state, s.run_id, realNow)?.fills.length ?? 0) > 0).map((s) => s.ticker));
   for (const s of specs) {
@@ -331,7 +282,7 @@ export function positions(state: MockState, realNow: number = Date.now()): Posit
 function personalPositions(state: MockState, realNow: number): Position[] {
   return allTickets(state, realNow).flatMap((t): Position[] => {
     const e = t.entry;
-    const spec = specById(state, t.run_id);
+    const spec = specById(t.run_id);
     if (e.status !== "entered" || !e.filled_qty || !e.avg_price || !e.filled_at || !spec?.event) return [];
     const last = issuer(t.ticker).price;
     let exit = e.filled_at.slice(0, 10);
@@ -379,11 +330,11 @@ export function riskStatus(state: MockState, realNow: number = Date.now()): Risk
     regime: "normal",
     live_armed: state.liveArm.armed,
     quota: [
-      { provider: "Gemini Flash-Lite", used: 118 + injectedSpecs(state).length * 4, limit: 500 },
-      { provider: "Groq gpt-oss", used: 61 + injectedSpecs(state).length * 2, limit: 1_000 },
-      { provider: "Prompt Guard 2", used: 140 + injectedSpecs(state).length, limit: 14_400 },
+      { provider: "Gemini Flash-Lite", used: 118, limit: 500 },
+      { provider: "Groq gpt-oss", used: 61, limit: 1_000 },
+      { provider: "Prompt Guard 2", used: 140, limit: 14_400 },
     ],
-    reset: r.kill_switch === "on" ? { started: r.reset_started } : null,
+    reset: r.kill_switch === "on" ? { started: r.reset_started, ready_at: null } : null,
     as_of: new Date(nowMs(state, realNow)).toISOString(),
   };
 }
@@ -420,7 +371,7 @@ export function disclosuresOn(
   const istanbulDay = (ms: number) => new Date(ms + 3 * 3_600_000).toISOString().slice(0, 10);
   const day = q.day ?? istanbulDay(nowMs(state, realNow));
   const limit = Math.max(1, Math.min(q.limit ?? 200, MAX_DISCLOSURES));
-  return visibleDisclosures(state, realNow)
+  return visibleDisclosures(state)
     .filter((d) => istanbulDay(Date.parse(d.published_at)) === day)
     .filter((d) => !q.ticker || d.stock_codes.includes(q.ticker))
     .slice(0, limit);

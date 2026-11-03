@@ -2,13 +2,10 @@
 
 import { useId, useRef, useState } from "react";
 import type { ApprovalCard } from "@/lib/domain";
-import { ROLE_LABEL } from "@/lib/domain/user";
 import { useApiMutation, useApiQuery } from "@/lib/api/react";
 import { fmtTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Denied } from "@/components/roles/denied";
-import { useRole } from "@/components/roles/use-role";
 import { Disclosure } from "./disclosure";
 
 /** A note shorter than this is a slip of the keyboard, not a note. */
@@ -16,19 +13,16 @@ const MIN_NOTE = 3;
 const MAX_NOTE = 500;
 
 /**
- * "Notlar": notes on a proposal, the Analist's job. A note never changes the decision; it is kept
- * with the proposal and written to the ledger. Open from the start for a role whose job this is
- * (can note, cannot sign); a quiet collapsed row for everyone else.
+ * "Notlar": your notes on a proposal, in a quiet collapsed row. A note never changes the decision;
+ * it is kept with the proposal and written to the ledger.
  */
 export function Notes({ card }: { card: ApprovalCard }) {
-  const { role, can } = useRole();
   const notes = useApiQuery((api) => api.listNotes(card.proposal_id), [card.proposal_id]);
   const add = useApiMutation((api, body: string) => api.addNote(card.proposal_id, body));
   const [text, setText] = useState("");
   const [tooShort, setTooShort] = useState(false);
   const field = useRef<HTMLTextAreaElement>(null);
   const hintId = useId();
-  const mayNote = can("proposal.note");
   const list = notes.data ?? [];
 
   const submit = async () => {
@@ -45,22 +39,20 @@ export function Notes({ card }: { card: ApprovalCard }) {
 
   return (
     <Disclosure
-      key={role}
       id="notlar"
       title="Notlar"
-      meta={list.length ? `${list.length} not · kararı değiştirmez, deftere yazılır` : "Henüz not yok · not kararı değiştirmez"}
-      defaultOpen={mayNote && !can("proposal.decide")}
+      meta={list.length ? `${list.length} not · kararı değiştirmez, Geçmiş’e yazılır` : "Henüz not yok · not kararı değiştirmez"}
     >
       <div className="space-y-4">
         {list.length ? (
           <ul aria-label="Öneri notları" className="divide-y divide-hairline border-y border-hairline">
             {list.map((n) => (
-              <li key={n.id} className={cn("grid grid-cols-[3px_minmax(0,1fr)] gap-x-4 py-3", `tone-${n.role}`)}>
-                <span aria-hidden className="bg-[var(--tone)]" />
+              <li key={n.id} className={"grid grid-cols-[3px_minmax(0,1fr)] gap-x-4 py-3"}>
+                <span aria-hidden className="bg-brand" />
                 <div className="min-w-0">
                   <p className="text-[16px] leading-6 text-pretty text-ink">{n.body}</p>
                   <p className="mt-0.5 text-dense text-muted tabular-nums">
-                    <span className="font-medium text-[var(--tone)]">{n.name}</span> · {ROLE_LABEL[n.role]} · {fmtTime(n.created_at)}
+                    {fmtTime(n.created_at)}
                   </p>
                 </div>
               </li>
@@ -68,8 +60,7 @@ export function Notes({ card }: { card: ApprovalCard }) {
           </ul>
         ) : null}
 
-        {mayNote ? (
-          <form
+        <form
             noValidate
             className="space-y-2"
             onSubmit={(e) => {
@@ -103,9 +94,6 @@ export function Notes({ card }: { card: ApprovalCard }) {
               </Button>
             </div>
           </form>
-        ) : (
-          <Denied action="proposal.note" />
-        )}
       </div>
     </Disclosure>
   );

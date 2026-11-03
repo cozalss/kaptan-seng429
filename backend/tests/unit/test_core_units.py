@@ -19,10 +19,12 @@ from kaptan.auth.tokens import (
     new_refresh_token,
     refresh_token_hash,
 )
-from kaptan.clock import DEMO_ANCHOR, Clock, istanbul_date
+from kaptan.clock import Clock, istanbul_date
 from kaptan.domain.schemas import iso_ms
 from kaptan.domain.schemas._base import _parse_date, _parse_dt
 from kaptan.settings import Settings
+from tests.harness.clock import FIXTURE_ANCHOR as DEMO_ANCHOR
+from tests.harness.clock import FixedDayClock
 
 SECRET = "unit-test-secret-unit-test-secret-0123456789"
 
@@ -55,13 +57,13 @@ def test_settings_parsing_and_cookie_name() -> None:
     assert len(dev.jwt_key()) >= 32
 
 
-def test_demo_passphrase_in_dev_only_and_hash_in_prod() -> None:
-    dev = _settings()
-    assert verify_passphrase(dev, "kaptan2026")
-    assert not verify_passphrase(dev, "kaptan2027")
-    assert not verify_passphrase(dev, "x" * 201)
+def test_only_the_configured_hash_signs_in() -> None:
     from kaptan.auth.passphrase import hash_passphrase
 
+    dev = _settings()
+    assert dev.passphrase_hash is None
+    assert not verify_passphrase(dev, "kaptan2026")  # no hash: nobody signs in, whatever the environment
+    assert not verify_passphrase(_settings(passphrase_hash=hash_passphrase("x" * 201)), "x" * 201)
     prod = _settings(kaptan_env="prod", passphrase_hash=hash_passphrase("başka-parola"))
     assert verify_passphrase(prod, "başka-parola")
     assert not verify_passphrase(prod, "kaptan2026")
@@ -71,26 +73,22 @@ def test_demo_passphrase_in_dev_only_and_hash_in_prod() -> None:
 
 def test_access_token_roundtrip_and_rejections() -> None:
     s = _settings()
-    token = create_access_token(s, uid="uye-3", name="Üye 3", role="risk_officer", family="fam1")
+    token = create_access_token(s, uid="sahip", name="Sahip", family="fam1")
     claims = decode_access_token(s, token)
-    assert (claims.uid, claims.name, claims.role, claims.family) == ("uye-3", "Üye 3", "risk_officer", "fam1")
+    assert (claims.uid, claims.name, claims.family) == ("sahip", "Sahip", "fam1")
     assert claims.expires_at > datetime.now(UTC)
     with pytest.raises(InvalidTokenError):
         decode_access_token(_settings(jwt_secret="another-secret-another-secret-0123456789"), token)
-    old = create_access_token(
-        s, uid="u", name="n", role="admin", family="f", now=datetime.now(UTC) - timedelta(hours=1)
-    )
+    old = create_access_token(s, uid="u", name="n", family="f", now=datetime.now(UTC) - timedelta(hours=1))
     with pytest.raises(InvalidTokenError):
         decode_access_token(s, old)
     with pytest.raises(InvalidTokenError):
         decode_access_token(s, "not.a.jwt")
     import jwt
 
-    forged = jwt.encode(
+    missing_family = jwt.encode(
         {
             "sub": "u",
-            "role": "root",
-            "fam": "f",
             "jti": "j",
             "iat": 1,
             "exp": 9_999_999_999,
@@ -100,8 +98,8 @@ def test_access_token_roundtrip_and_rejections() -> None:
         SECRET,
         algorithm="HS256",
     )
-    with pytest.raises(InvalidTokenError, match="unknown role"):
-        decode_access_token(s, forged)
+    with pytest.raises(InvalidTokenError, match="fam"):
+        decode_access_token(s, missing_family)
 
 
 def test_refresh_token_material() -> None:
@@ -122,17 +120,16 @@ def test_rate_limiter_window() -> None:
     assert lim.allow("ip")
 
 
-def test_demo_clock() -> None:
+def test_the_clock_is_the_wall_clock_and_the_fixture_clock_is_the_harness() -> None:
     real = [datetime(2026, 10, 17, 12, 0, tzinfo=UTC)]
-    clock = Clock(demo=True, started_at=real[0], real_now=lambda: real[0])
-    assert clock.now() == DEMO_ANCHOR
-    real[0] += timedelta(minutes=5)
-    assert clock.now() == DEMO_ANCHOR + timedelta(minutes=5)
-    clock.restart()
-    assert clock.now() == DEMO_ANCHOR
-    assert Clock(demo=True, real_now=lambda: real[0]).now() == DEMO_ANCHOR
-    wall = Clock(demo=False, real_now=lambda: real[0])
-    assert wall.now() == real[0]
+    assert Clock(real_now=lambda: real[0]).now() == real[0]
+    fixed = FixedDayClock(started_at=real[0], real_now=lambda: real[0])
+    assert fixed.now() == DEMO_ANCHOR
+    fixed.advance(timedelta(minutes=5))
+    assert fixed.now() == DEMO_ANCHOR + timedelta(minutes=5)
+    fixed.restart()
+    assert fixed.now() == DEMO_ANCHOR
+    assert FixedDayClock(real_now=lambda: real[0]).now() == DEMO_ANCHOR
     assert istanbul_date(datetime(2027, 1, 11, 21, 30, tzinfo=UTC)) == date(2027, 1, 12)
 
 

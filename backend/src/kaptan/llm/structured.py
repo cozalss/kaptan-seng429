@@ -56,11 +56,14 @@ class _Tally:
 
 
 class StructuredProvider:
-    def __init__(self, client: ModelClient, budget: Budget, *, pricing: Pricing | None = None) -> None:
+    def __init__(
+        self, client: ModelClient, budget: Budget, *, pricing: Pricing | None = None, max_attempts: int = 1
+    ) -> None:
         self.name = client.name
         self._client = client
         self._budget = budget
         self._pricing = pricing
+        self._max_attempts = max_attempts  # one call's transport tries: a timed-out try may still be billed
 
     def _estimate(self, chars: int, max_tokens: int) -> tuple[int, float]:
         est_in = chars // CHARS_PER_TOKEN
@@ -72,11 +75,15 @@ class StructuredProvider:
     ) -> RawAnswer:
         chars = len(system) + sum(len(m.content) for m in messages)
         est_tokens, est_cost = self._estimate(chars, max_tokens)
-        await self._budget.reserve(self.name, est_tokens=est_tokens, est_cost_usd=est_cost)
+        worst_cost = est_cost * self._max_attempts  # the cost cap holds even if every try is billed in full
+        await self._budget.reserve(self.name, est_tokens=est_tokens, est_cost_usd=worst_cost)
         try:
             raw = await self._client.generate(system, messages, schema, max_tokens)
         except QuotaExhaustedError:
             await self._budget.mark_exhausted(self.name)
+            raise
+        except ProviderError:
+            await self._budget.record(self.name, tokens_in=0, tokens_out=0, cost_usd=worst_cost)
             raise
         cost = 0.0 if self._pricing is None else self._pricing.cost_usd(raw.tokens_in, raw.tokens_out, raw.cache_hit_in)
         await self._budget.record(self.name, tokens_in=raw.tokens_in, tokens_out=raw.tokens_out, cost_usd=cost)

@@ -7,21 +7,11 @@
   },
   "display_name": {
    "type": "string"
-  },
-  "role": {
-   "type": "string",
-   "enum": [
-    "analyst",
-    "risk_officer",
-    "admin",
-    "auditor"
-   ]
   }
  },
  "required": [
   "id",
-  "display_name",
-  "role"
+  "display_name"
  ],
  "additionalProperties": false
 }

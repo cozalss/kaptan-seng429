@@ -57,8 +57,4 @@ describe("Son işlemler", () => {
     expect(items[0]?.text).toBe("SYM8 elinde kalıyor");
   });
 
-  it("speaks for the desk on a team's personal view", () => {
-    const items = recentActivity([card({ proposal_id: "a", status: "approved", decided_at: "2027-01-11T10:45:00Z" }), card({ proposal_id: "c", ticker: "ORNCM", status: "rejected", decided_at: "2027-01-11T10:40:00Z" })], [position({})], [], 6, "desk");
-    expect(items.map((i) => i.title)).toEqual(["KRGCL alımı onaylandı", "ORNCM önerisi geçildi", "FRZEN alındı"]);
-  });
 });

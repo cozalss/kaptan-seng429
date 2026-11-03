@@ -15,8 +15,7 @@ done yet?":
 Each run gets its own pooled connection, a timeout and its own row (summary JSON, error class only); one
 failing or hanging job never stops the others. A failed slot is not retried by the loop: run it by hand.
 
-DEMO_MODE: only jobs marked demo-safe run (the nightly audit verify, which then writes no anchor); the
-demo day keeps its seeded state. SSE: exits publish `approval.requested` per new exit card plus
+SSE: exits publish `approval.requested` per new exit card plus
 `counters`; the risk monitor publishes `halt` / `kill_switch` itself; a regime change publishes `regime`.
 """
 
@@ -83,7 +82,6 @@ class Job:
     in_session: bool = False
     after: str | None = None  # a daily job that waits for this one to finish the same day
     timeout_s: float = DEFAULT_TIMEOUT_S
-    demo_safe: bool = False
     #: The job manages its own transaction (commits before publishing): the runner does not commit.
     own_tx: bool = False
 
@@ -228,10 +226,10 @@ async def job_regime(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
 
     result = await run_regime(conn, day)
     if result is None:
-        return None  # DEMO_MODE, not a session or no XU100 close: nothing written
+        return None  # not a session or no XU100 close: nothing written
     await conn.commit()
     if result.changed:
-        status = await risk_status(conn, now, live=not ctx.settings.demo_mode)
+        status = await risk_status(conn, now)
         await conn.rollback()
         await publish(ctx.redis, "desk", "regime", status)
     return result
@@ -272,9 +270,7 @@ async def job_audit_anchor(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any
     from kaptan.audit.anchor import anchor_chain
 
     path = Path(ctx.settings.audit_anchor_file) if ctx.settings.audit_anchor_file else None
-    write = not ctx.settings.demo_mode
-    report = await anchor_chain(conn, now, write=write, anchor_file=path if write else None, redis=ctx.redis)
-    return report
+    return await anchor_chain(conn, now, write=True, anchor_file=path, redis=ctx.redis)
 
 
 async def job_retention(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
@@ -304,7 +300,7 @@ JOBS: Final[tuple[Job, ...]] = (
     Job("shadow_returns", job_shadow_returns, at=time(20, 15), days="trading", timeout_s=10 * 60),
     Job("fundamentals", job_fundamentals, at=time(20, 30), days="trading", timeout_s=60 * 60),
     Job("dq", job_dq, at=time(21, 0), days="trading", timeout_s=15 * 60),
-    Job("audit_anchor", job_audit_anchor, at=time(23, 30), days="daily", timeout_s=10 * 60, demo_safe=True),
+    Job("audit_anchor", job_audit_anchor, at=time(23, 30), days="daily", timeout_s=10 * 60),
     Job("retention", job_retention, at=time(3, 30), days="daily", timeout_s=30 * 60),
 )
 BY_NAME: Final = {j.name: j for j in JOBS}
@@ -366,12 +362,10 @@ def trigger_for(job: Job, slot: str, now: datetime, grace: timedelta = timedelta
     return "catchup" if now - slot_time(job, slot) > grace and job.after is None else "schedule"
 
 
-def due(now: datetime, done: set[tuple[str, str]], running: set[str], *, demo: bool) -> list[tuple[Job, str]]:
+def due(now: datetime, done: set[tuple[str, str]], running: set[str]) -> list[tuple[Job, str]]:
     """The (job, slot) pairs to start at `now`: slot due, not done, not running, predecessor done."""
     out: list[tuple[Job, str]] = []
     for job in JOBS:
-        if demo and not job.demo_safe:
-            continue
         if job.name in running:
             continue
         slot = slot_of(job, now)
@@ -480,13 +474,11 @@ async def _finish(ctx: Ctx, run_id: int, result: RunResult) -> None:
 # ── the loop ──────────────────────────────────────────────────────────────────
 
 
-async def tick(
-    ctx: Ctx, now: datetime, running: dict[str, asyncio.Task[RunResult]], *, demo: bool
-) -> list[tuple[Job, str]]:
+async def tick(ctx: Ctx, now: datetime, running: dict[str, asyncio.Task[RunResult]]) -> list[tuple[Job, str]]:
     """Start every due job as its own task; returns what was started."""
     for name in [n for n, t in running.items() if t.done()]:
         running.pop(name)
-    started = due(now, await done_slots(ctx.pool, now), set(running), demo=demo)
+    started = due(now, await done_slots(ctx.pool, now), set(running))
     for job, slot in started:
         trig = trigger_for(job, slot, now)
         running[job.name] = asyncio.create_task(run_job(ctx, job, slot, trigger=trig), name=f"job-{job.name}")
@@ -507,8 +499,6 @@ def make_ctx(settings: Settings, pool: Any, redis: Any) -> Ctx:
 async def run_worker(settings: Settings, stop: asyncio.Event | None = None) -> int:
     """The scheduler loop until `stop`; jobs in flight finish (or hit their timeout / the drain timeout)."""
     stop = stop or asyncio.Event()
-    if settings.demo_mode:
-        log.warning("DEMO_MODE=true: only demo-safe jobs run (%s)", ", ".join(j.name for j in JOBS if j.demo_safe))
     pool = create_pool(settings.database_url.get_secret_value(), min_size=1, max_size=6)
     await pool.open(wait=True)
     redis = aioredis.from_url(settings.redis_url.get_secret_value(), decode_responses=True)
@@ -518,7 +508,7 @@ async def run_worker(settings: Settings, stop: asyncio.Event | None = None) -> i
         log.info("scheduler started: %d jobs, Europe/Istanbul", len(JOBS))
         while not stop.is_set():
             try:
-                await tick(ctx, datetime.now(UTC), running, demo=settings.demo_mode)
+                await tick(ctx, datetime.now(UTC), running)
             except Exception as exc:  # the database may be away for a moment: try again next tick
                 log.warning("scheduler tick failed: %s", type(exc).__name__)
             await _wait(stop, TICK_S)
@@ -541,8 +531,7 @@ def describe(job: Job) -> str:
     when = f"{job.at:%H:%M}" if job.at else f"every {job.every_min} min"
     scope = "in session" if job.in_session else job.days
     extra = f", after {job.after}" if job.after else ""
-    demo = ", demo-safe" if job.demo_safe else ""
-    return f"{job.name:18s} {when:14s} {scope}{extra}{demo}"
+    return f"{job.name:18s} {when:14s} {scope}{extra}"
 
 
 async def run_one(settings: Settings, name: str, day: date | None) -> RunResult:
@@ -586,9 +575,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(exc, file=sys.stderr)
         return 2
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
-    if settings.demo_mode and not BY_NAME[args.job].demo_safe:
-        print(f"{args.job}: DEMO_MODE=true, this job does not run on a demo database", file=sys.stderr)
-        return 2
     result = run(run_one(settings, args.job, args.day))
     print(json.dumps(jsonable(result), ensure_ascii=False, indent=1))
     return 0 if result.ok else 1

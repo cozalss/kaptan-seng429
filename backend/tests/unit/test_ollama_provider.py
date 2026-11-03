@@ -9,8 +9,8 @@ from kaptan.domain.schemas.agents import MaterialityOutput
 from kaptan.llm.factory import build_live_provider, ollama_spec
 from kaptan.llm.live import LiveProvider
 from kaptan.llm.provider import LLMRequest
-from kaptan.llm.replay import default_cassette
 from kaptan.llm.store import MemoryStore
+from tests.harness.replay import default_cassette
 from tests.unit.llm_support import DEEPSEEK_URL, GEMINI_URL, GROQ_URL, MODELS, chat_body, fake_settings
 
 OLLAMA = "http://127.0.0.1:11434/v1"

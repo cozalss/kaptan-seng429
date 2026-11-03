@@ -1,4 +1,4 @@
-"""SimBIST outside DEMO_MODE (M3 A3, FR-26): an approval books a next-open order; `run_open_fill` fills it at
+"""SimBIST (M3 A3, FR-26): an approval books a next-open order; `run_open_fill` fills it at
 the raw open + slippage + commission, or misses it (above the limit, tavan, no price); intraday orders fill
 at the next available price (`run_eod_fills`). Everything runs on one rolled-back connection.
 
@@ -31,15 +31,15 @@ KRGCL_ORDER = "ord-s-day-e1-krgcl"
 MON, TUE, WED = date(2027, 1, 11), date(2027, 1, 12), date(2027, 1, 13)
 #: Monday 14:00 Istanbul: the KRGCL card (next-open, limit 34.15) is still pending.
 DECIDE_AT = datetime(2027, 1, 11, 11, 0, tzinfo=UTC)
-RISK_OFFICER = Actor(uid="uye-3", name="Risk Sorumlusu", role="risk_officer", family="t")
+RISK_OFFICER = Actor(uid="sahip", name="Sahip", family="t")
 APPROVE = ApprovalDecision(decision="approve", approved_notional_try=None, comment="")
 
 
 @pytest.fixture
 async def desk(pg: DictConn) -> AsyncIterator[DictConn]:
-    """The seeded day, DEMO_MODE off for the order path, one transaction that is rolled back afterwards."""
+    """The seeded day, one transaction that is rolled back afterwards."""
     await pg.execute("SELECT 1")  # open the transaction: every `conn.transaction()` below is a savepoint
-    bc.install(ExecConfig(demo_mode=False))
+    bc.install(ExecConfig())
     try:
         yield pg
     finally:
@@ -71,7 +71,7 @@ async def history(conn: DictConn, ticker: str, last: date, *, close: float = 33.
 
 
 async def approve(conn: DictConn, proposal_id: str, now: datetime) -> service.Outcome:
-    return await service.decide(conn, proposal_id, APPROVE, RISK_OFFICER, now=now, wall=now)
+    return await service.decide(conn, proposal_id, APPROVE, RISK_OFFICER, now=now)
 
 
 async def one(conn: DictConn, sql: str, params: tuple[Any, ...] = ()) -> dict[str, Any] | None:
@@ -96,7 +96,6 @@ async def order(conn: DictConn, order_id: str = KRGCL_ORDER) -> dict[str, Any]:
 async def approved_krgcl(conn: DictConn) -> service.Outcome:
     await history(conn, "KRGCL", MON)
     outcome = await approve(conn, KRGCL, DECIDE_AT)
-    assert outcome.fill is None  # no demo timer outside DEMO_MODE
     return outcome
 
 
@@ -158,8 +157,8 @@ async def test_intraday_order_fills_at_the_next_price(desk: DictConn) -> None:
     assert row is not None
     card = {**row["card"], "entry": "intraday_limit", "status": "approved", "decided_at": "2027-01-11T11:00:00.000Z",
             "approved_notional_try": None}  # fmt: skip
-    events, job = await execute_approved(desk, card, DECIDE_AT)
-    assert job is None and events[-1][1]["status"] == "accepted"
+    events = await execute_approved(desk, card, DECIDE_AT)
+    assert events[-1][1]["status"] == "accepted"
     assert (await run_open_fill(desk, MON)).fills == []  # placed at 14:00: its price is Monday's close
     await bar(desk, "KRGCL", MON, open_=33.40, close=33.50)
     report = await run_eod_fills(desk, MON)

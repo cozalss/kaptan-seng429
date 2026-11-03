@@ -1,7 +1,7 @@
 """The forward paper P&L series (trading.pnl_daily) and its last point.
 
 Order: strategies in fixture order (first `ord` of each), days ascending within a strategy — exactly the
-fixture order on the demo day, and still date order when a session is written later than today's row
+stored order, and still date order when a session is written later than today's row
 (the live warm-up's earlier days, a catch-up run), which gets a higher `ord`.
 """
 

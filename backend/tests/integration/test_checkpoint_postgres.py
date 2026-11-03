@@ -26,10 +26,10 @@ from kaptan.agents.checkpoint import (
 )
 from kaptan.agents.feed_run import run_or_resume
 from kaptan.agents.graph import compile_graph
-from kaptan.agents.tools import ReplayToolbox
 from kaptan.evidence.toolbox import LiveToolbox
 from kaptan.llm.provider import LLMRequest, LLMResult
 from kaptan.settings import Settings
+from tests.harness.replay import ReplayToolbox
 from tests.unit.agent_fixtures import context_for
 
 pytestmark = pytest.mark.integration

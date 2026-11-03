@@ -1,4 +1,4 @@
-// Ink drawings for the six storyboard panels of the "Altı adımda" drawer (src/data/demo-flow.js
+// Ink drawings for the six storyboard panels of the "Altı adımda" drawer (src/data/six-steps.js
 // `art`), in the crew plates' language (scripts/kaptan-visuals/crew/STYLE.md): brush contours that
 // swell and thin, flat indigo washes in two or three values, sumi masses, paper left bare, the
 // storm's rain and horizon behind. No red: the page's three red marks are the needle, the boat
@@ -11,7 +11,7 @@ import { h } from './dom.js';
 export const ART_VIEWBOX = '0 0 160 100';
 
 // Presentation attributes cannot read CSS variables: ink is currentColor (the panel's ink); paper
-// and wash fills carry a class the stylesheet colours (demo-drawer.css).
+// and wash fills carry a class the stylesheet colours (steps-drawer.css).
 const INK = 'currentColor';
 const PAPER = { class: 'storyboard__paper' };
 const WASH = (opacity) => ({ class: 'storyboard__wash', 'fill-opacity': opacity });

@@ -2,9 +2,7 @@
 
 - An approval card = `trading.approvals.card` with the decision columns on top; its *effective*
   status follows selectors.ts patchApproval(): pending + kill switch on → `cancelled`, pending past
-  `expires_at` (demo clock) → `expired`.
-- A run that was injected less than DEMO_RUN_MS ago is still "in flight": its card does not exist
-  yet (selectors.ts runProgress()).
+  `expires_at` → `expired`.
 - A ticket = `order_tickets.doc` + its entry (your mark, or awaiting/expired by valid_until).
 """
 
@@ -19,8 +17,6 @@ from psycopg import AsyncConnection
 from kaptan.approvals.ticket_doc import effective_entry
 from kaptan.domain.schemas import iso_ms
 
-#: A demo run takes this long (real time) from injection to the approval card (selectors.ts DEMO_RUN_MS).
-DEMO_RUN_MS: Final = 7_500
 DECISION_FIELDS: Final = (
     "status",
     "decided_by",
@@ -79,18 +75,6 @@ async def risk_flags(conn: AsyncConnection[Any], *, lock: bool = False) -> RiskF
     return RiskFlags(kill_on=row["kill_switch"] == "on", halted=bool(row["halted_today"]))
 
 
-def run_progress(injected_at: datetime | None, now: datetime, wall: datetime) -> float:
-    """0…1 progress of an injected run (1 for every other run).
-
-    `injected_at` is compared with both the demo clock and the wall clock and the nearer one wins:
-    both advance at the same rate, so this is right whichever clock the injector recorded.
-    """
-    if injected_at is None:
-        return 1.0
-    elapsed = min(now - injected_at, wall - injected_at, key=abs)
-    return min(1.0, max(0.0, elapsed.total_seconds() * 1000 / DEMO_RUN_MS))
-
-
 def _iso(value: datetime | None) -> str | None:
     return None if value is None else iso_ms(value)
 
@@ -101,7 +85,6 @@ def card_from_row(row: dict[str, Any], *, kill_on: bool, now: datetime) -> dict[
         **row["card"],
         "status": row["status"],
         "decided_by": row["decided_by"],
-        "decided_role": row["decided_role"],
         "decided_at": _iso(row["decided_at"]),
         "decision_comment": row["decision_comment"],
         "approved_notional_try": row["approved_notional_try"],
@@ -114,21 +97,20 @@ def card_from_row(row: dict[str, Any], *, kill_on: bool, now: datetime) -> dict[
 
 
 async def card_rows(
-    conn: AsyncConnection[Any], *, now: datetime, wall: datetime, proposal_id: str | None = None, lock: bool = False
+    conn: AsyncConnection[Any], *, proposal_id: str | None = None, lock: bool = False
 ) -> list[dict[str, Any]]:
-    """Approval rows of visible runs that are no longer in flight, newest first."""
+    """Approval rows of visible runs, newest first."""
     sql = CARD_SQL + (" FOR UPDATE OF a" if lock else "")
     async with conn.cursor() as cur:
         await cur.execute(sql, {"pid": proposal_id})
-        rows = await cur.fetchall()
-    return [r for r in rows if run_progress(r["injected_at"], now, wall) >= 1]
+        return list(await cur.fetchall())
 
 
 async def list_cards(
-    conn: AsyncConnection[Any], *, now: datetime, wall: datetime, proposal_id: str | None = None
+    conn: AsyncConnection[Any], *, now: datetime, proposal_id: str | None = None
 ) -> list[dict[str, Any]]:
     flags = await risk_flags(conn)
-    rows = await card_rows(conn, now=now, wall=wall, proposal_id=proposal_id)
+    rows = await card_rows(conn, proposal_id=proposal_id)
     return [card_from_row(r, kill_on=flags.kill_on, now=now) for r in rows]
 
 

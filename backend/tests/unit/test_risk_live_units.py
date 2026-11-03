@@ -9,10 +9,10 @@ from typing import Any
 
 from kaptan.agents.context import DeskState
 from kaptan.agents.nodes.decide import live_gate_fields
-from kaptan.demo.fixtures import DemoFixtures
 from kaptan.risk.book import BookSnapshot, Exposure, Holding, effective_drawdown
 from kaptan.risk.desk import exposure_pct, is_session_open, istanbul_day_bounds
-from kaptan.risk.kill_switch import personal_reset_allowed
+from kaptan.risk.kill_switch import reset_ready_at, reset_view, too_early_text
+from tests.harness.fixtures import DemoFixtures
 
 NOW = datetime(2026, 10, 20, 9, 0, tzinfo=UTC)  # Tuesday 12:00 Istanbul
 
@@ -75,15 +75,45 @@ def test_session_clock() -> None:
     assert start.isoformat() == "2026-10-21T00:00:00+03:00" and end - start == timedelta(days=1)
 
 
-def test_personal_restart_needs_24h_and_5_sessions() -> None:
-    kill = datetime(2026, 10, 12, 9, 0, tzinfo=UTC)  # Monday
+def test_restart_opens_24h_after_the_request_when_the_sessions_have_passed() -> None:
+    kill = datetime(2026, 10, 12, 9, 0, tzinfo=UTC)  # Monday; Tue 13 … Mon 19 are the 5 sessions
     started = datetime(2026, 10, 18, 9, 0, tzinfo=UTC)
-    assert not personal_reset_allowed(kill, started, started + timedelta(hours=23))
-    assert personal_reset_allowed(kill, started, started + timedelta(hours=24))  # Tue 13 … Mon 19: 5 sessions
-    late_kill = datetime(2026, 10, 15, 9, 0, tzinfo=UTC)  # Thursday: Fri, Mon … only 2 by the 19th
-    assert not personal_reset_allowed(late_kill, started, started + timedelta(hours=25))
-    assert personal_reset_allowed(None, started, started + timedelta(days=1))
-    assert not personal_reset_allowed(kill, kill, kill + timedelta(hours=30))  # next day, 1 session
+    assert reset_ready_at(kill, started) == started + timedelta(hours=24)
+
+
+def test_restart_opens_at_the_fifth_session_after_the_stop_when_the_request_was_early() -> None:
+    kill = started = datetime(2026, 10, 15, 9, 0, tzinfo=UTC)  # Thursday: Fri, Mon, Tue, Wed, Thu 22
+    assert reset_ready_at(kill, started) == datetime(2026, 10, 22, 7, 0, tzinfo=UTC)  # 10:00 Istanbul
+
+
+def test_restart_counts_trading_days_not_calendar_days() -> None:
+    kill = started = datetime(2026, 10, 26, 9, 0, tzinfo=UTC)  # Mon; Tue, Wed (half day), Fri 30, Mon, Tue 3 Nov
+    assert reset_ready_at(kill, started) == datetime(2026, 11, 3, 7, 0, tzinfo=UTC)  # Thu 29 Oct is a holiday
+
+
+def test_a_stop_after_the_close_still_does_not_count_its_own_day() -> None:
+    kill = started = datetime(2026, 10, 12, 20, 0, tzinfo=UTC)  # 23:00 Istanbul, Monday
+    assert reset_ready_at(kill, started) == datetime(2026, 10, 19, 7, 0, tzinfo=UTC)
+
+
+def test_restart_without_a_known_stop_time_only_waits_the_24h() -> None:
+    started = datetime(2026, 10, 18, 9, 0, tzinfo=UTC)
+    assert reset_ready_at(None, started) == started + timedelta(hours=24)
+
+
+def test_ready_at_is_null_once_the_confirm_is_open() -> None:
+    kill = datetime(2026, 10, 15, 9, 0, tzinfo=UTC)
+    ready = datetime(2026, 10, 22, 7, 0, tzinfo=UTC)
+    sig = {"uid": "sahip", "at": "2026-10-15T09:00:00.000Z"}
+    assert reset_view(None, kill, kill) == {"started": None, "ready_at": None}
+    assert reset_view(sig, kill, ready - timedelta(seconds=1)) == {"started": sig, "ready_at": ready}
+    assert reset_view(sig, kill, ready) == {"started": sig, "ready_at": None}
+
+
+def test_the_too_early_text_says_when_in_plain_words() -> None:
+    text = too_early_text(datetime(2026, 10, 22, 7, 0, tzinfo=UTC))
+    assert "22.10.2026 10:00" in text and "24 saat" in text and "5 borsa günü" in text
+    assert "seans" not in text and "imza" not in text
 
 
 def _desk(**kw: Any) -> DeskState:

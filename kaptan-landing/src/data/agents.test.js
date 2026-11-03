@@ -15,12 +15,12 @@ describe('AGENTS', () => {
     ]);
   });
 
-  it('has six LLM agents followed by two deterministic stages', () => {
+  it('has six AI agents followed by two deterministic stages', () => {
     expect(AGENTS.map((agent) => agent.kind)).toEqual(['llm', 'llm', 'llm', 'llm', 'llm', 'llm', 'rule', 'rule']);
-    expect(AGENTS[2].category).toBe('LLM ajanı · 03');
-    expect(AGENTS[6].category).toBe('Deterministik · 07');
-    expect(AGENTS[0].kindLabel).toBe('LLM ajanı');
-    expect(AGENTS[7].kindLabel).toBe('Deterministik');
+    expect(AGENTS[2].category).toBe('Yapay zekâ · 03');
+    expect(AGENTS[6].category).toBe('Yazılı kural · 07');
+    expect(AGENTS[0].kindLabel).toBe('Yapay zekâ');
+    expect(AGENTS[7].kindLabel).toBe('Yazılı kural');
   });
 
   it('gives every agent a unique id, a numbered image set and the full copy', () => {

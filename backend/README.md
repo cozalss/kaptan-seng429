@@ -11,7 +11,7 @@ cp .env.example .env                                   # fill in passwords / JWT
 docker compose -f docker-compose.yml up -d             # Postgres :5432, Redis :6379 (127.0.0.1 only)
 uv sync
 uv run alembic upgrade head                            # owner role (DATABASE_OWNER_URL)
-uv run python scripts/seed_demo.py                     # demo day; prints "audit verify: ok=True checked=4812"
+uv run python -m kaptan.bootstrap                      # limit v1, risk state, quotas: an empty, honest database
 uv run uvicorn kaptan.api.main:app --port 8000 --loop kaptan.api.loop:selector_loop
 #   or: uv run python -m kaptan.api --port 8000
 ```
@@ -21,18 +21,15 @@ Windows: psycopg's async mode refuses the ProactorEventLoop (uvicorn's default o
 
 ```bash
 curl -s -X POST http://127.0.0.1:8000/api/v1/auth/login -H "Content-Type: application/json" \
-     -d '{"passphrase":"kaptan2026","role":"admin"}'
+     -d '{"passphrase":"<parolan>"}'
 curl -s http://127.0.0.1:8000/api/v1/health
 ```
 
 ## Run the whole system locally (Bütün sistemi yerelde çalıştır)
 
-**One command, Docker only** (from the repo root): `docker compose up -d --build` builds this image and the panel
-(`../Dockerfile.panel`), migrates, loads the demo day once (`seed_demo`), starts the API, the scheduler and the
-panel on http://localhost:3100 (API :8000). See the root README and `../docs/ops/RUNBOOK.md`.
+**One command, Docker only** (from the repo root): see the root README and `../docs/ops/RUNBOOK.md`.
 
-**Today's real data:** `docker compose --env-file live.env --profile live up -d --build` (repo root) runs the same
-stack with `DEMO_MODE=false`, `LLM_MODE=live`, `KAP_LIVE=true`, `PRICES_LIVE=true` on its own volumes. The
+**Real data is the only data:** the stack runs with `LLM_MODE=live`, `KAP_LIVE=true`, `PRICES_LIVE=true`. The
 one-off `warmup` service (`python -m kaptan.live.warmup`, entrypoint `live_warmup`) loads the last
 `LIVE_BACKFILL_DAYS` KAP days, İş Yatırım's stock list and ~14 months of daily bars for the shares that can pass
 U4, then runs the universe / pnl_eod / regime / brief jobs; `agent_worker` waits for it. Spend caps:
@@ -44,29 +41,25 @@ Docker Desktop, uv, Python 3.11, Node 24. Two terminals; the commands are the sa
 PowerShell except the env line of the API.
 
 ```bash
-# 1) backend/ — once: .env, containers, schema, demo day
+# 1) backend/ — once: .env, containers, schema, reference rows
 cp .env.example .env                                   # fill in passwords / JWT_SECRET (dev: KAPTAN_ENV=dev)
 docker compose -f docker-compose.yml up -d
 uv sync
-uv run alembic upgrade head                            # 0001 … 0009
-uv run python scripts/seed_demo.py                     # "audit verify: ok=True checked=4812"
+uv run alembic upgrade head                            # bütün migrasyonlar
+uv run python -m kaptan.bootstrap                      # limit v1, risk state, quotas
 
-# 2) backend/ — the API on :8000 (demo day, recorded LLM answers, no KAP/price network)
-DEMO_MODE=true LLM_MODE=replay KAP_LIVE=false PRICES_LIVE=false uv run python -m kaptan.api --port 8000
-#   PowerShell: $env:DEMO_MODE="true"; $env:LLM_MODE="replay"; $env:KAP_LIVE="false"; $env:PRICES_LIVE="false"
-#               uv run python -m kaptan.api --port 8000
+# 2) backend/ — the API on :8000 (the workers add KAP, prices and the agents)
+uv run python -m kaptan.api --port 8000
 
 # 3) kaptan-panel/ — the panel on :3100 in http mode (/api/v1 is rewritten to 127.0.0.1:8000)
 npm ci
-npm run dev:api                                        # http://localhost:3100/login · passphrase kaptan2026 (dev)
+npm run dev:api                                        # http://localhost:3100/login · the passphrase of PASSPHRASE_HASH
 ```
 
-The panel's e2e suite against this backend: `npm run e2e:api` in `kaptan-panel/`. It starts the API
-(with `LOGIN_RATE_PER_MINUTE=600`: the suite signs in ~60 times in a few minutes; the default is 5/min)
-and `dev:api` unless they already answer on :8000 / :3100, and resets the demo day (`POST /demo/reset`
-as admin) before the suite and before every test that changes state. If you run your own API for it,
-start it with `LOGIN_RATE_PER_MINUTE=600` too. A fresh demo day by hand: `uv run python scripts/seed_demo.py`
-or ⚙ Ayarlar → Senaryolar → "Verileri sıfırla" (Yönetici). The mock suite (`npm run e2e`) needs no backend.
+The panel's e2e suite against a backend: `npm run e2e:api` in `kaptan-panel/`, against the test harness
+(`uv run python -m tests.harness.serve --port 8000` on a throwaway database, with `LOGIN_RATE_PER_MINUTE=600`). The
+harness seeds the recorded fixture day, runs the fixed clock and adds `POST /api/v1/demo/reset` and `/demo/tamper`;
+none of that exists in the app or the image. The mock suite (`npm run e2e`) needs no backend.
 
 SSE through the Next rewrite: streams are not buffered or compressed (`Cache-Control: no-cache,
 no-transform`, `X-Accel-Buffering: no`, a keep-alive comment every 15 s). `events/bus.py` reads Redis
@@ -77,7 +70,6 @@ with `XREAD BLOCK` in 1 s slices because redis-py 8 has a 5 s socket timeout.
 ```bash
 uv run pytest            # unit + contract + integration (integration uses the kaptan_test database)
 uv run ruff check . && uv run ruff format --check . && uv run mypy
-node scripts/export_demo_fixtures.mjs        # re-export the demo day from the panel mock (deterministic)
 node tests/contract/export_schemas.mjs       # re-export zod -> JSON Schema after panel schema changes
 ```
 
@@ -86,21 +78,31 @@ Integration tests skip when Postgres is down; the cross-language tests skip when
 
 ## Decisions worth knowing
 
-- **Auth.** One passphrase (argon2id `PASSPHRASE_HASH`; dev default `kaptan2026`), role = request
-  (unknown → 400, none → `risk_officer`), each role maps to its team member. Access JWT HS256 15 min
-  (`sub, name, role, fam, jti, iat, exp, iss, aud`), refresh = opaque token in `__Host-kaptan_rt`
+- **Single user (Revizyon 4, 02.11.2026).** KAPtan is for one person and runs in one mode. There are no roles, no
+  team accounts and no `KAPTAN_SINGLE_USER` switch. Every signed-in request may use every endpoint. Where the old
+  design needed a second person (two-signature restart, limit changes, restricted-list removal, live arming), the
+  second step is still a separate request, is done by the same person, and writes `auth.single_user_waiver` to the
+  audit ledger. The contract is in [`../kaptan-panel/API.md`](../kaptan-panel/API.md).
+- **Auth.** One passphrase (argon2id `PASSPHRASE_HASH`, nothing else signs in), no role in the request. Access JWT
+  HS256 15 min (`sub, name, fam, jti, iat, exp, iss, aud`), refresh = opaque token in `__Host-kaptan_rt`
   (HttpOnly, Secure, SameSite=Strict, Path=/), sha256 stored, rotated on every use, reuse revokes the
   family, 8 h absolute. `/auth/refresh` needs `X-KAPtan-CSRF: 1` and an allowed `Origin` (if sent).
   Dev over http: browsers treat `localhost`/`127.0.0.1` as secure contexts, so `Secure` + `__Host-` work
   through the panel's Next rewrite. Other plain-http hosts: `COOKIE_SECURE=false` → cookie `kaptan_rt`.
-- **Errors.** Always `{"detail": "<Turkish>", "code": "<machine>"}`; 403 texts come from
-  `domain/permissions.py` (`denied_reason()` = the panel's `deniedReason()`, tested against node).
+- **Errors.** Always `{"detail": "<Turkish>", "code": "<machine>"}`. There is no 403: no role checks and no
+  "same person" rule (the two-signature checks became the single-user waiver above).
 - **Audit ledger.** `audit/canonical.py` reproduces `audit-chain.ts` byte for byte (JSON.stringify
   numbers/escapes/key order); the hash is computed by `audit/writer.py` under an advisory lock, not
   by a trigger. The app role (`kaptan_app`) has INSERT/SELECT only; triggers block UPDATE/DELETE/TRUNCATE
-  for everyone; the demo reset/tamper use the owner connection and disable the trigger inside one transaction.
-- **Demo clock.** In `DEMO_MODE` "now" = 2027-01-11 10:40Z + (wall time since seed/reset)
-  (`clock.py`, `ops.demo_state.started_at`), like the panel mock.
+  for everyone.
+- **No demo in a running system.** `/demo/*`, the fixture day, the replay LLM and the fixed clock live only in
+  `tests/harness/` (seed, tamper, replay provider + toolbox, `FixedDayClock`, `create_test_app()`, `serve.py`, the red
+  team). Nothing under `src/kaptan` imports them and the image does not copy `tests/`, so no setting can turn them
+  on. `LLM_MODE` defaults to `live`; `replay` is refused unless `KAPTAN_ENV=test`, and even there `get_provider()`
+  has no such provider: a test hands its provider to the code it tests. Without a provider key `/health` says
+  `llm_ready: false` and the agent worker logs why and exits 2. Old ledgers keep their `demo.injected` and
+  `kill_switch.wait_waived` rows: they read and verify, nothing rewrites them and nothing writes them any more. The
+  old `ops.demo_state` and `ops.demo_injections` tables stay unread by the app (the harness seed uses the first).
 - **M1 schema** follows `docs/proje/07` names with text ids and the Explain document as JSONB; see the
   docstring of `migrations/versions/0001_m1_core.py`.
 
@@ -143,15 +145,13 @@ Tests run offline on a recorded cassette (`tests/fixtures/prices/`, re-record wi
 `uv run python -m tests.fixtures.prices.record`, ≈ 11 requests). Live smoke test (2 requests):
 `uv run pytest -m live tests/integration/test_prices_live.py`.
 
-**Live marks (`PRICES_LIVE`, default false):** the setting exists; the switch itself belongs in
-`portfolio/positions.py` (package B): with the flag on it marks each position with
-`latest_marks(conn, tickers, now)` and falls back to the replay mark when a ticker has no stored
-price. Until it is wired, positions use the demo's replay marks (`portfolio/marks.py`).
+**Live marks (`PRICES_LIVE`, default true):** `portfolio/positions.py` marks each position with
+`latest_marks(conn, tickers, now)`. A ticker without a stored price reads at the issuer's reference price, and at its
+cost when there is none: it shows no invented move.
 
 ## Live LLM mode (M2, `kaptan.llm`)
 
-`LLM_MODE=replay` (default) answers every agent from the recorded demo runs: no network, no keys.
-`LLM_MODE=live` sends the same requests to real models. To switch:
+`LLM_MODE=live` (default) sends every agent's request to real models:
 
 ```bash
 # backend/.env (never commit it): any provider without a key is simply skipped
@@ -197,9 +197,9 @@ Tests are offline (respx; recorded reply shapes in `tests/unit/llm_support.py`).
 
 ## KAP ingestion (M2, `kaptan.ingest`, `kaptan.text`)
 
-Real disclosures from kap.org.tr through our own async httpx client (`ingest/kap_client.py`; the
-`kap-client` package cannot resolve BIST tickers and is not a dependency). **Off by default:** demo mode
-stays the default and nothing talks to KAP unless `KAP_LIVE=true`.
+Real disclosures from KAP through our own async httpx client (`ingest/kap_client.py`; the
+`kap-client` package cannot resolve BIST tickers and is not a dependency). Nothing talks to KAP unless
+`KAP_LIVE=true`; every compose file sets it.
 
 | Endpoint | Used for |
 |---|---|
@@ -247,11 +247,9 @@ invisible/bidi characters removed, `body_norm` = Turkish-lowercased key for sear
 and binding cues, financial-report line items, ÖDA explanation). The form's "Güncelleme mi? / Düzeltme
 mi?" answers set `reason` (NEW/UPD/CORR). Person names are not extracted (KVKK).
 
-**SSE / counters:** outside `DEMO_MODE`, every new visible row is published as `disclosure` and then one
+**SSE / counters:** every new visible row is published as `disclosure` and then one
 `counters` on the feed stream (after commit, via `kaptan.events.publish`); `visible` = today's feed
-(earlier KAP rows are hidden at each poll so the counters stay "today"). With `DEMO_MODE=true` the worker
-still stores KAP rows but invisible and publishes nothing. Note: `/demo/reset` truncates
-`core.disclosures` (and the KAP texts/queue with it), so run live ingestion against a non-demo database.
+(earlier KAP rows are hidden at each poll so the counters stay "today").
 
 Tests are offline on recorded fixtures (`tests/fixtures/kap_json/` two days of `list/main`, one
 `byCriteria` day, the member list; `detail_text/`, `detail_pdf/`, `detail_html/`; see its `manifest.json`).
@@ -264,14 +262,14 @@ Both are opt-in: with the defaults (`KAP_LIVE=false`, `CHECKPOINTER=memory`) M1 
 
 ```bash
 uv run alembic upgrade head                                            # 0010: ops.agent_feed + schema agent_ckpt
-KAP_LIVE=true DEMO_MODE=false uv run python -m kaptan.workers.ingest_worker      # producer
-KAP_LIVE=true DEMO_MODE=false LLM_MODE=live CHECKPOINTER=postgres \
+KAP_LIVE=true uv run python -m kaptan.workers.ingest_worker      # producer
+KAP_LIVE=true CHECKPOINTER=postgres \
   uv run python -m kaptan.workers.agent_worker                                     # consumer (1 replica)
 ```
 
-**Why a separate worker, not the API lifespan:** the API stays the M1 process (demo/replay, no LLM spend),
-live spend sits in one process with its own cap, and a crash/restart of the agent loop never touches a
-request. The API only opens the configured checkpointer in its lifespan (so demo runs use it too).
+**Why a separate worker, not the API lifespan:** live spend sits in one process with its own cap, and a
+crash/restart of the agent loop never touches a request. The API only opens the configured checkpointer in its
+lifespan.
 
 **Feed** (`kaptan:kap.disclosures`, consumer group `agent-worker`): the poller appends `listed` for each
 new visible KAP row, the detail fetcher appends `text` once the full text is stored
@@ -282,13 +280,15 @@ duplicate). The consumer keeps one `ops.agent_feed` row per disclosure index (id
 |---|---|
 | `skipped` | out of scope: not a live KAP row (`not_kap`, `backfill`), subject route not E1–E4/`llm` (`route:noise`, `route:archive_only`, `route:avoid:*`), or no ticker; no run |
 | `awaiting_text` | in scope, TR text not stored yet; the `text` entry starts the run |
-| `capped` | `hourly_cap` (more than `AGENT_MAX_RUNS_PER_HOUR`, default 6, runs that reached an LLM in the last hour; pre-gate vetoes with 0 calls do not count) or `llm_daily_cap` (every live provider over its `LLM_CAP_*` for the day); not retried |
+| `deferred` | Over a cap, inside its entry window: `hourly_cap` / `daily_cap` (`AGENT_MAX_RUNS_PER_HOUR` 25, `AGENT_MAX_RUNS_PER_DAY` 70, runs that reached an LLM; pre-gate vetoes with 0 calls do not count), `hourly_reserved` / `daily_reserved` (llm-route rows stop at 60 % of a cap, the rest is kept for E rows) or `llm_daily_cap` (every live provider over a `LLM_CAP_*` for the day). The worker's sweep re-drives it, best first: in universe, E1/E2, E3/E4, llm, freshest |
+| `window_closed` | `arrived_after_window`: its entry window (06 §5) had closed when it arrived, e.g. a backlog after downtime; no budget, no run |
+| `expired_unrun` | Its window closed while it waited; the reason says why: a cap reason above, `no_text`, `interrupted`, or `legacy_capped:<reason>` (rows from before migration 0023) |
 | `running` | started; a restart resumes it (not counted against the hour again) |
 | `waiting_approval` / `done` | the run is persisted; parked runs are settled (see below) |
 | `failed` | the run raised 3 times |
 
 A run is `run-live-<index>` (`run_set='live'`, `mode='paper'`, real published/available times) and is
-written like an injected demo run, in one transaction with its feed row: `trading.agent_runs`,
+written in one transaction with its feed row: `trading.agent_runs`,
 `core.disclosures.run_id` + classification, proposal + pending card (`prop-live-<index>`), today's LLM
 counters, the audit outcome. After commit its SSE events go out at once (node/crew/classification/
 `approval.requested`/done/counters), so the panel shows it through the existing `/runs`, `/approvals`
@@ -297,7 +297,7 @@ worker reads its own pending entries first and `XAUTOCLAIM`s entries idle > 5 mi
 of a persisted run is just acknowledged.
 
 **Checkpointer** (`CHECKPOINTER=memory|postgres`, default `memory`): `memory` stays the default because
-the unit tests compile the graph without a database and replay must stay byte-identical; nothing else
+the unit tests compile the graph without a database; nothing else
 changes with `postgres`. Postgres uses `langgraph-checkpoint-postgres`'s `AsyncPostgresSaver` on its own
 small pool with `search_path=agent_ckpt`. Migration 0010 (owner role) creates the tables with the
 library's own `setup()` statements and versions, so the app role needs no DDL; at start-up the saver only
@@ -307,9 +307,7 @@ super-step (the analysts' LLM calls are not paid again), and a run parked at `ap
 restart. **Settling** (worker start + every minute): a parked run whose card was approved/rejected is
 resumed with that decision, one past `expires_at` (or cancelled) is resumed with `expire` and its card
 marked `expired`; then the run is `completed`. With `memory` a restart loses the thread and the run is
-closed without a resume (`reason = "<decision>:no_checkpoint"`). Still in-memory: the demo timers in the
-API (SimBIST fill 1.8 s after an approval, run animation, loss simulation, live ticker); a restart drops
-a pending fill (the order stays `accepted`).
+closed without a resume (`reason = "<decision>:no_checkpoint"`).
 
 Tests: `tests/integration/test_feed.py` (fake disclosures, replay LLM: idempotency, skipping, caps,
 ack/replay after a crash, settling, the worker loop) and `tests/integration/test_checkpoint_postgres.py`
@@ -366,7 +364,7 @@ embedder; no-look-ahead to the second). Live smoke test (2 embedding calls):
 
 ## The risk gate on the real desk (M3, `kaptan.risk`)
 
-Outside the demo the gate reads the desk as it is; the demo keeps its seeded desk, so replay is unchanged.
+The gate reads the desk as it is.
 
 - **Limits (FR-33).** Every run (`agents.context.with_active_limits`) and every at-send check reads the
   `active` limit version (`risk/active_limits.py`); a two-signature change applies to the next run. Keys are
@@ -379,22 +377,23 @@ Outside the demo the gate reads the desk as it is; the demo keeps its seeded des
   stale = HOLD), R11 KAP delay = available − published, R09 price age (intraday orders, session open only;
   `core.prices_intraday` when filled), P7 entries today, P3/P4 sector/group exposure (`core.issuer_groups`,
   else `core.issuers.group_name`; unknown group = the sector's exposure), `schema_ok` = the proposal
-  validates as `TradeProposal`. `GET /risk/status` shows the marked book when `DEMO_MODE=false`.
+  validates as `TradeProposal`. `GET /risk/status` shows the marked book.
 - **R16 before the order (FR-28).** Approving a real run's card (`run_set='live'`) re-runs R01–R04, R09, R12,
   R13 inside the decision transaction; a failure is audited (`risk.rejected`, `system:risk_gate`), the card
   stays pending and the API answers 409 `kill_switch` / `halted` / `conflict` with the R16 text.
-- **Jobs (the scheduler comes later; all skip under `DEMO_MODE`):** `risk.monitor.run_risk_monitor(conn, now)`
+- **Jobs:** `risk.monitor.run_risk_monitor(conn, now)`
   every 5 min in session (−1 % daily → `halted_today` + SSE `halt`, lifted at the next session; −5 % from the
   peak → kill switch by `system:risk_monitor` + SSE `kill_switch`; after a restart the peak stays, −4.9 % floor
   until a further −3 %); `risk.pnl_eod.run_pnl_eod(conn, day)` after 18:30 (strategy + `baseline:xu100_bh` +
   `baseline:ew_universe`); `risk.regime.run_regime(conn, day)` (06 §9, `trading.regime_daily`, 5-session exit).
-- **Personal mode (`KAPTAN_MODE=personal`):** the kill-switch restart needs ≥ 24 h between the two signatures
-  and ≥ 5 sessions since the kill (409 `conflict` until then).
+- **Restart after a stop (06 §11):** with real data a restart needs ≥ 24 h between request and confirm and
+  ≥ 5 sessions since the stop (409 `conflict` until then). `RiskStatus.reset.ready_at` gives the earliest confirm
+  time, `null` = confirm now. The wait always applies.
 
 ## Deploy-ready backend (M3 A5, `kaptan.ops`) — runs anywhere with Docker, no provider config
 
 **From scratch** (the image serves `api | ingest_worker | agent_worker | scheduler | migrate | bootstrap | dlq |
-seed_demo`; `seed_demo` is for the local stack only):
+):
 
 ```bash
 cd backend
@@ -405,14 +404,13 @@ curl -s http://127.0.0.1:8000/readyz  # {"status":"ready","checks":{"db":"ok","r
 
 Order: postgres/redis healthy → `db-roles` (`python -m kaptan.bootstrap roles`: app role, extensions — the SQL
 of `db/init/00_roles.sh`, for a managed Postgres too) → `migrate` (`python -m kaptan.ops.migrate`, owner role,
-the only process that needs `DATABASE_OWNER_URL`) → `bootstrap` (`python -m kaptan.bootstrap`: team users,
-limits v1 `rules-v1.0`, `risk_state`, quota rows, `live_arm` all off; idempotent; `--users team.yaml` with
-`password_env` per person, argon2id, never printed) → api + workers. Workers exit 0 unless `KAP_LIVE=true`.
+the only process that needs `DATABASE_OWNER_URL`) → `bootstrap` (`python -m kaptan.bootstrap`: the one account,
+limits v1 `rules-v1.0`, `risk_state`, quota rows, `live_arm` all off; idempotent) → api + workers. Workers exit 0 unless `KAP_LIVE=true`.
 
 | Concern | What |
 |---|---|
 | Image | `Dockerfile`: multi-stage uv (`uv sync --locked --no-dev`), non-root uid 10001, read-only rootfs in compose, `HEALTHCHECK` = `python -m kaptan.ops.healthcheck` (API `/healthz`, workers their Redis heartbeat), no secrets (`.dockerignore`) |
-| Prod checks (NFR-08) | `KAPTAN_ENV=prod` refuses to start with `DEMO_MODE=true`, `COOKIE_SECURE=false`, empty `ALLOWED_ORIGINS`, a Redis URL without password, `LLM_MODE=live` without a key, a weak `JWT_SECRET`, a non-argon2 `PASSPHRASE_HASH` (all listed at once; never a value) |
+| Prod checks (NFR-08) | `KAPTAN_ENV=prod` refuses to start with `COOKIE_SECURE=false`, empty `ALLOWED_ORIGINS`, a Redis URL without password, a weak `JWT_SECRET`, a non-argon2 `PASSPHRASE_HASH` (the agent worker also without a model; all listed at once; never a value) |
 | Health | `/healthz` liveness, `/readyz` 503 on DB/Redis down or schema ≠ alembic head (migration 0017 lets the app role read `alembic_version`); the API logs an error at startup when the schema is behind; `/api/v1/health` unchanged |
 | Logs | `ops/logs.py`: text in dev, JSON lines in prod (`LOG_FORMAT`), `request_id` (`X-Request-ID`), `run_id`, `disclosure_index`; redaction of URL passwords, Bearer/JWT, provider keys, argon2 hashes, the configured secrets, and disclosure texts in `extra=`; own access log without query strings |
 | Workers | `ops/runtime.py`: SIGTERM → stop event, the unit in flight finishes and is acked (45 s drain, then cancel), heartbeat `kaptan:hb:<component>`, Postgres advisory-lock leader guard (a 2nd instance waits) |
@@ -436,8 +434,7 @@ runtime: leader lock (one instance), heartbeat `kaptan:hb:scheduler`, SIGTERM dr
 row in `ops.job_runs` (migration 0018: job, slot, trigger `schedule|catchup|manual`, start/finish, ok, a small summary
 JSON, the error class only). A finished row for (job, slot) = done: a restart later the same day runs a missed daily
 job once (`catchup`), a missed day is not replayed, a failed slot is not retried by the loop. Each job has its own
-connection and timeout; one failure never stops the others. Under `DEMO_MODE` only `audit_anchor` runs (verify only,
-no anchor written).
+connection and timeout; one failure never stops the others.
 
 | When (Istanbul) | Job | Calls |
 |---|---|---|
@@ -468,5 +465,4 @@ uv run python -m kaptan.workers.scheduler run eod_prices --day 2026-10-20   # on
 ```
 
 **One market calendar (#32).** `rules/calendar.py` (R15 approval expiry) and `portfolio/marks.py` (ticket TTL, planned
-exit dates) use the BIST calendar outside `DEMO_MODE`; in `DEMO_MODE` they keep the panel's two-holiday list
-(lib/time.ts), so the demo day stays byte-identical to the panel mock.
+exit dates) use the BIST calendar.

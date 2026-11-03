@@ -1,9 +1,8 @@
 import { z } from "zod";
-import { ApprovalCard, AuditPage, ChainVerifyResult, DayCounters, DisclosureListItem, Explain, LimitsView, Me, OrderTicket, PnlPoint, Position, ProposalNote, RiskStatus, TeamMember } from "@/lib/domain";
-import type { Role } from "@/lib/domain/user";
+import { ApprovalCard, AuditPage, ChainVerifyResult, DayCounters, DisclosureListItem, Explain, LimitsView, Me, OrderTicket, PnlPoint, Position, ProposalNote, RiskStatus } from "@/lib/domain";
 import { noteServerTime } from "@/lib/clock";
 import { HoldResult, Overview } from "@/lib/solo/overview";
-import { ApiError, type KaptanApi } from "../types";
+import { ApiError, unreachableError, type KaptanApi } from "../types";
 import { repairDeep } from "./mojibake";
 
 /**
@@ -42,6 +41,14 @@ function refresh(): Promise<boolean> {
   return refreshing;
 }
 
+/**
+ * With the API down, the fetch itself succeeds: Next's rewrite answers with its own error page. The
+ * API's own failures always carry a JSON body, so a 5xx without one means nothing answered.
+ */
+function isProxyFailure(res: Response, body: unknown): boolean {
+  return res.status >= 500 && (body === null || typeof body !== "object");
+}
+
 async function request<T extends z.ZodType>(schema: T, path: string, init: RequestInit = {}, retried = false): Promise<z.infer<T>> {
   // After a reload the access token is gone (memory only): get one from the refresh cookie first
   // instead of collecting a 401 per request. If that fails, the request goes out and gets its 401.
@@ -54,7 +61,7 @@ async function request<T extends z.ZodType>(schema: T, path: string, init: Reque
   try {
     res = await fetch(`${BASE}${path}`, { ...init, headers, credentials: "include" });
   } catch {
-    throw new ApiError(0, "network", "Sunucuya ulaşılamadı. Bağlantınızı kontrol edin.");
+    throw unreachableError();
   }
   if (res.status === 401 && !retried) {
     // Another request already refreshed while this one was in flight: just retry with the new token.
@@ -63,14 +70,14 @@ async function request<T extends z.ZodType>(schema: T, path: string, init: Reque
   }
   if (!res.ok) {
     const detail = await res.json().catch(() => null);
+    if (isProxyFailure(res, detail)) throw unreachableError();
     const msg = typeof detail?.detail === "string" ? detail.detail : null;
     const fallback: Record<number, string> = {
-      401: "Oturumunuzun süresi doldu. Lütfen yeniden giriş yapın.",
-      403: "Bu işlem rolüne kapalı.",
+      401: "Oturumunun süresi doldu. Yeniden giriş yap.",
       404: "Kayıt bulunamadı.",
       409: "Kayıt bu arada değişti ya da süresi doldu.",
       422: "Girdi geçersiz.",
-      429: "Çok fazla istek. Biraz sonra yeniden deneyin.",
+      429: "Çok fazla istek. Biraz sonra yeniden dene.",
     };
     const code = typeof detail?.code === "string" ? detail.code : "http";
     throw new ApiError(res.status, code, msg ?? fallback[res.status] ?? "Sunucu hatası.");
@@ -90,25 +97,17 @@ const qs = (o: Record<string, string | number | undefined>) => {
   const s = p.toString();
   return s ? `?${s}` : "";
 };
-/** Counters and risk status carry the server's "now" (the demo clock in DEMO_MODE): keep the UI clock on it. */
+/** Counters and risk status carry the server's "now": keep the UI clock on it. */
 function withServerTime<T extends { as_of: string }>(body: T): T {
   noteServerTime(body.as_of);
   return body;
 }
-
-const Void = z.undefined().or(z.null()).transform(() => undefined);
 
 export function createHttpApi(): KaptanApi {
   const id = encodeURIComponent;
   return {
     mode: "http",
     me: () => request(Me, "/me"),
-    setRole: async (role) => {
-      const body = await request(z.object({ access_token: z.string(), user: Me }), "/auth/role", post({ role }));
-      accessToken = body.access_token;
-      return body.user;
-    },
-    users: () => request(z.array(TeamMember), "/admin/users"),
     counters: (day?: string) => request(DayCounters, `/disclosures/counters${qs({ day })}`).then(withServerTime),
     // One odd row (an unusual ticker, a new enum value) must not blank the whole list: keep the rows that parse.
     disclosures: (q = {}) =>
@@ -138,26 +137,44 @@ export function createHttpApi(): KaptanApi {
     decideLimit: (version, input) => request(LimitsView, `/limits/proposals/${version}/decision`, post(input)),
     auditList: (q = {}) => request(AuditPage, `/audit${qs({ scope: q.scope, q: q.q, limit: q.limit })}`),
     verifyAudit: () => request(ChainVerifyResult, "/audit/verify", post()),
-    injectDemo: (scenario) =>
-      request(z.object({ disclosure_index: z.number().nullable(), run_id: z.string().nullable() }), "/demo/inject", post({ scenario })),
-    setTamper: (on) => request(z.object({ tamper_on: z.boolean() }), "/demo/tamper", post({ on })),
-    resetDemo: () => request(Void, "/demo/reset", post()),
   };
 }
 
-/**
- * POST /auth/login with the single passphrase (http mode). The access token stays in memory.
- * `role` is the door's request; the backend decides the role it actually grants (API.md §2).
- */
-export async function httpLogin(passphrase: string, role?: Role): Promise<Me> {
-  const res = await fetch(`${BASE}/auth/login`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(role ? { passphrase, role } : { passphrase }),
-  });
+const MSG_LOGIN_LATER = "Giriş şu an yapılamıyor. Biraz sonra yeniden dene.";
+
+/** POST /auth/login with the one password. The access token stays in memory. */
+export async function httpLogin(passphrase: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/auth/login`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passphrase }),
+    });
+  } catch {
+    throw unreachableError();
+  }
+  if (res.status === 429) throw new ApiError(429, "login", "Çok fazla deneme oldu. Biraz sonra yeniden dene.");
+  if (res.status >= 500) throw isProxyFailure(res, await res.json().catch(() => null)) ? unreachableError() : new ApiError(res.status, "login", MSG_LOGIN_LATER);
   if (!res.ok) throw new ApiError(res.status, "login", "Parola doğrulanamadı.");
-  const body = z.object({ access_token: z.string(), user: Me }).parse(await res.json());
-  accessToken = body.access_token;
-  return body.user;
+  const body = z.object({ access_token: z.string() }).safeParse(await res.json().catch(() => null));
+  if (!body.success) throw new ApiError(502, "schema", MSG_LOGIN_LATER);
+  accessToken = body.data.access_token;
+}
+
+/** Revoke the refresh family. A failed call still ends at /login: the cookie expires on its own. */
+export async function httpLogout(): Promise<void> {
+  accessToken = null;
+  await fetch(`${BASE}/auth/logout`, { method: "POST", credentials: "include" });
+}
+
+/** Does the API answer at all? Anything but the rewrite's own failure counts as an answer. */
+export async function httpReachable(): Promise<boolean> {
+  try {
+    const res = await fetch(`${BASE}/health`, { cache: "no-store" });
+    return !isProxyFailure(res, await res.json().catch(() => null));
+  } catch {
+    return false;
+  }
 }

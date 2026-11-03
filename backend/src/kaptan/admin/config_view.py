@@ -14,7 +14,7 @@ from typing import Any, Final
 from pydantic import SecretStr
 
 from kaptan.db import DictConn
-from kaptan.demo.fixtures import DemoFixtures
+from kaptan.eval.manifest import graph_version
 from kaptan.llm.registry import ModelsConfig, default_models
 from kaptan.risk.limits import limits_view
 from kaptan.rules.params import RULES_SEED, rules_hash_of
@@ -42,7 +42,7 @@ PROVIDER_NOTE_TR: Final = {
     "groq": "Ücretsiz katman, günlük token sınırı",
     "ollama": "Yerel model; OLLAMA_BASE_URL verilince açılır",
 }
-APPROVAL_DEADLINE_TR: Final = "Bir sonraki seansın 09:50'si"
+APPROVAL_DEADLINE_TR: Final = "Bir sonraki borsa gününün 09:50'si"
 
 
 def config_hash(directory: Any = CONFIG_DIR) -> str:
@@ -86,13 +86,12 @@ def config_view(settings: Settings, models: ModelsConfig | None = None) -> dict[
         "strategy_versions": [{"id": i, "frozen_at": at, "scope_tr": s} for i, at, s in STRATEGY_VERSIONS],
         "rules_version": RULES_SEED,
         "rules_hash": rules_hash_of(),
-        "prompt_manifest_hash": str(DemoFixtures().meta["prompt_manifest_hash"]),
+        "prompt_manifest_hash": graph_version(),
         "config_hash": config_hash(),
         "models": agent_models,
         "fallback_chain": _chain(models, settings),
         "kap_poll_seconds": int(settings.kap_poll_session_s),
         "approval_deadline_tr": APPROVAL_DEADLINE_TR,
-        "demo_mode": settings.demo_mode,
     }
 
 

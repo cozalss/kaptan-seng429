@@ -153,13 +153,12 @@ function headline() {
 
 /** Caption panel: panel sheet, ink border, hard offset shadow, Inter sentence case. */
 function captionPanel() {
-  const [x, y, w, h] = [64, 598, 560, 138];
+  const [x, y, w, h] = [64, 598, 560, 112];
   return group([
     rect(x + SHADOW, y + SHADOW, w, h, { fill: SUMI }),
     rect(x, y, w, h, { fill: PANEL, stroke: SUMI, 'stroke-width': 2.4 }),
     text(x + 26, y + 50, 'Yapay zekâ okur, kurallar karar verir,', { family: SANS, size: 29, weight: 500, fill: SUMI }),
-    text(x + 26, y + 88, 'insan onaylar.', { family: SANS, size: 29, weight: 500, fill: SUMI }),
-    text(x + 26, y + 120, 'Otomatik emir yok.', { family: SANS, size: 17, fill: MUTED }),
+    text(x + 26, y + 88, 'sen onaylarsın.', { family: SANS, size: 29, weight: 500, fill: SUMI }),
   ]);
 }
 

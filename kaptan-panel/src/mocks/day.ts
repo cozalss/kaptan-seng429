@@ -67,7 +67,7 @@ function rowFrom(slot: number, t: Template, ticker: string, name: string, multil
     published_at: published,
     first_seen_at: seen,
     available_at: seen,
-    ingest_source: "live",
+    ingest_source: "demo",
     classification: t.route === "noise" ? null : { event_type: t.route.startsWith("avoid:") ? "FILTER" : "IGNORE", confidence: 1, method: "subject_map" },
     run_id: null,
     linked_news_count: 0,

@@ -9,8 +9,7 @@ import type { MockState } from "./state";
 import * as sel from "./selectors";
 
 /**
- * The single-user home's one call (GET /me/overview) over the same mock desk the full panel
- * reads: equity from the risk status, holdings from the positions, suggestions from the
+ * The home's one call (GET /me/overview) over the mock state the other screens read too: equity from the risk status, holdings from the positions, suggestions from the
  * pending approvals plus "keep holding" for the biggest positions that are not due to exit.
  * Deterministic for a given state and clock.
  */
@@ -112,7 +111,7 @@ export function createSolo(ctx: MockCtx): Pick<KaptanApi, "overview" | "holdSugg
     },
 
     async holdSuggestion(id, input) {
-      const a = ctx.require("proposal.decide");
+      const a = ctx.me();
       const d = parse(HoldInput, input);
       const s = ctx.db.snapshot;
       const known =
@@ -120,7 +119,7 @@ export function createSolo(ctx: MockCtx): Pick<KaptanApi, "overview" | "holdSugg
       if (!known) throw new ApiError(404, "not_found", "Öneri bulunamadı.");
       const at = ctx.now();
       // As the backend: audited, and the card itself is not decided (it stays until it expires).
-      ctx.db.audit(userActor(a), `suggestion.${d.kind}`, "proposal", id, { ticker: known, role: a.role, note: Boolean(d.note?.trim()) });
+      ctx.db.audit(userActor(a), `suggestion.${d.kind}`, "proposal", id, { ticker: known, note: Boolean(d.note?.trim()) });
       return ctx.ok({ id, kind: d.kind, at });
     },
   };

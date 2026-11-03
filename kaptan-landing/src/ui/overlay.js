@@ -103,7 +103,7 @@ function trapFocus(panel, event) {
  * }} `open(trigger, { stack: true })` keeps whichever overlay is currently
  * open underneath (it stays visible and reachable in the DOM, but is made
  * `inert` for the duration) instead of closing it — used for an overlay
- * opened from inside another (e.g. a modal opened from a link inside the demo drawer),
+ * opened from inside another (e.g. a modal opened from a link inside the steps drawer),
  * where the parent should still be there when the child closes.
  */
 export function createOverlay({

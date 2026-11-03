@@ -8,7 +8,6 @@ from typing import Annotated, Any, Final, Literal
 
 from pydantic import Field, field_validator
 
-from kaptan.domain.roles import Role
 from kaptan.domain.schemas._base import IsoDateTime, KModel, NonNegInt, PosInt
 from kaptan.domain.schemas.user import Signature
 
@@ -70,7 +69,6 @@ class AuditPage(KModel):
     items: list[AuditEntry]
     total: NonNegInt
     length: NonNegInt
-    tamper_on: bool
 
 
 class AuditListQuery(KModel):
@@ -196,16 +194,16 @@ class LimitMeta:
 
 LIMIT_META: Final[dict[LimitKey, LimitMeta]] = {
     "risk_per_trade_pct": LimitMeta("İşlem başına risk", "pct", "R07", "lower"),
-    "max_position_pct": LimitMeta("Pozisyon tavanı", "pct", "R07", "lower"),
-    "max_concurrent_positions": LimitMeta("En çok eşzamanlı pozisyon", "count", "R08", "lower"),
-    "target_concurrent_positions": LimitMeta("Hedef eşzamanlı pozisyon", "count", "R08", "lower"),
+    "max_position_pct": LimitMeta("Tek hisse tavanı", "pct", "R07", "lower"),
+    "max_concurrent_positions": LimitMeta("Aynı anda en çok hisse", "count", "R08", "lower"),
+    "target_concurrent_positions": LimitMeta("Aynı anda hedef hisse", "count", "R08", "lower"),
     "max_adv_share": LimitMeta("Günlük hacim payı tavanı", "pct", "R07", "lower"),
     "price_band_pct": LimitMeta("Fiyat bandı", "pct", "R09", "lower"),
     "daily_loss_halt_pct": LimitMeta("Günlük zarar durdurması", "pct", "R02", "higher"),
-    "kill_drawdown_pct": LimitMeta("Kill switch (zirveden düşüş)", "pct", "R01", "higher"),
+    "kill_drawdown_pct": LimitMeta("Her şeyi durdurma (zirveden düşüş)", "pct", "R01", "higher"),
     "min_edge_cost_ratio": LimitMeta("Avantaj / maliyet alt sınırı", "ratio", "R06", "higher"),
     "crisis_exposure_mult": LimitMeta("Kriz maruziyet çarpanı", "mult", "R10", "lower"),
-    "leak_ret5d_threshold": LimitMeta("Sızıntı eşiği (5 seans)", "pct", "E*", "lower"),
+    "leak_ret5d_threshold": LimitMeta("Sızıntı eşiği (5 borsa günü)", "pct", "E*", "lower"),
     "max_sector_pct": LimitMeta("Sektör tavanı", "pct", "R08", "lower"),
     "max_group_pct": LimitMeta("Grup tavanı", "pct", "R08", "lower"),
 }
@@ -235,10 +233,10 @@ def limit_violations(values: list[LimitValue] | list[tuple[LimitKey, float]]) ->
         if meta.unit == "count" and (not float(v).is_integer() or v < 1):
             out.append(f"{meta.label_tr}: en az 1 olan bir tam sayı olmalı.")
         if _sign(v) != _sign(canon):
-            out.append(f"{meta.label_tr}: işareti kanonik değerle aynı kalmalı.")
+            out.append(f"{meta.label_tr}: işareti değişemez.")
         looser = v > canon if meta.stricter == "lower" else v < canon
         if looser:
-            out.append(f"{meta.label_tr}: kanonik sınırdan gevşek olamaz ({meta.rule}).")
+            out.append(f"{meta.label_tr}: başlangıç sınırından gevşek olamaz.")
     target = by_key.get("target_concurrent_positions")
     maximum = by_key.get("max_concurrent_positions")
     if target is not None and maximum is not None and target > maximum:
@@ -315,7 +313,6 @@ class ConfigView(KModel):
     fallback_chain: list[FallbackLink]
     kap_poll_seconds: PosInt
     approval_deadline_tr: str
-    demo_mode: bool
 
 
 # ── notes on a proposal ─────────────────────────────────────────────────
@@ -324,7 +321,6 @@ class ProposalNote(KModel):
     proposal_id: str
     uid: str
     name: str
-    role: Role
     body: str = Field(min_length=1, max_length=500)
     created_at: IsoDateTime
 

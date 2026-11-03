@@ -125,10 +125,12 @@ def _common_checks(x: RuleInput, p: RuleParams) -> tuple[list[Check], list[str],
     leak_ok = leak <= p.leak_ret5d_max
     halves = x.event_type in ("E1", "E2")
     leak_detail = (
-        "Son 5 seansta önceden fiyatlanma eşiği aşılmadı."
+        "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
         if leak_ok
         else (
-            "Son 5 seansta %8'i aşan yükseliş: boyut yarıya." if halves else "Son 5 seansta %8'i aşan yükseliş: atla."
+            "Son 5 borsa gününde %8'i aşan yükseliş: boyut yarıya."
+            if halves
+            else "Son 5 borsa gününde %8'i aşan yükseliş: atla."
         )
     )
     checks.append(

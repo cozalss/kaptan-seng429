@@ -116,7 +116,7 @@
 /* ---------- Mobile: drawers go full width, modals take the gutter ---------- */
 
 @media (max-width: 480px) {
-  #demo-drawer .overlay__panel,
+  #steps-drawer .overlay__panel,
   #menu-drawer .overlay__panel {
     max-width: none;
   }

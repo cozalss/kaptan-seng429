@@ -78,7 +78,7 @@ describe('possessiveSuffix', () => {
 describe('COPY', () => {
   it('E1 says whether the rule holds and gives the threshold', () => {
     expect(COPY.E1.state(0.31, true)).toBe(
-      "E1 tutar: 10 seansta geri alım sermayenin %0,31'i, eşik %0,25. Öneri adayı doğar.",
+      "E1 tutar: 10 borsa gününde geri alım sermayenin %0,31'i, eşik %0,25. Öneri adayı doğar.",
     );
     expect(COPY.E1.state(0.19, false)).toMatch(/^E1 tutmaz: .*%0,19'u.*Öneri yok\.$/);
     expect(COPY.E1.valuetext(0.25, true)).toBe("sermayenin %0,25'i, eşiğe ulaşıyor");
@@ -103,7 +103,7 @@ describe('COPY', () => {
     expect(LEAK_EFFECT).toBe('atlanır ya da yarıya indirilir');
     expect(COPY.leak.state(10, true)).toContain('Öneri atlanır ya da yarıya indirilir.');
     expect(COPY.leak.state(6.5, false)).toContain('Öneri küçülmez.');
-    expect(COPY.leak.valuetext(8, false)).toBe('son 5 seansta yükseliş %8, eşiği aşmıyor');
+    expect(COPY.leak.valuetext(8, false)).toBe('son 5 borsa gününde yükseliş %8, eşiği aşmıyor');
   });
 
   it('never uses the forbidden words', () => {
@@ -139,14 +139,14 @@ describe('screen sentences', () => {
     expect(screenSentence(['noMeasure'])).toBe(
       'Ön eleme: tedbir kapısı kapalı. Bildirim yapay zekâya ulaşmadan elenir.',
     );
-    expect(screenSentence(['tradable', 'inUniverse'])).toContain('işlem görebilirlik ve evren kapıları kapalı');
+    expect(screenSentence(['tradable', 'inUniverse'])).toContain('işlem görebilirlik ve liste kapıları kapalı');
     expect(screenSentence(['other'])).toContain('other kapısı');
   });
 
   it('short verdicts', () => {
-    expect(screenShort([])).toBe('Üç kapı açık: bildirim ajanlara ulaşır.');
+    expect(screenShort([])).toBe('Üç kapı açık: bildirim yapay zekâya ulaşır.');
     expect(screenShort(['tradable'])).toBe('İşlem görebilirlik kapısı kapalı: bildirim elenir.');
-    expect(screenShort(['noMeasure', 'inUniverse'])).toBe('Tedbir ve evren kapıları kapalı: bildirim elenir.');
+    expect(screenShort(['noMeasure', 'inUniverse'])).toBe('Tedbir ve liste kapıları kapalı: bildirim elenir.');
     expect(screenShort(['x'])).toBe('X kapısı kapalı: bildirim elenir.');
     Object.values(SHORT).flat().forEach((line) => expect(line).not.toMatch(BANNED));
     expect(SHORT.leak[1]).toContain('atlanır ya da yarıya indirilir');

@@ -10,8 +10,7 @@ Every 10 minutes the whole day is reconciled (late lower indexes go through the 
 `ingest_source='reconcile'`).
 
 New rows: upsert (dedup by index) → detail queue for target subjects → after commit, SSE `disclosure`
-+ `counters` on the feed stream — only outside DEMO_MODE (the demo day owns the feed there; KAP rows
-are then stored with visible=false and nothing is published).
++ `counters` on the feed stream.
 """
 
 from __future__ import annotations
@@ -42,7 +41,6 @@ class PollConfig:
     session_s: float = 30.0
     offhours_s: float = 60.0
     night_s: float = 300.0
-    demo_mode: bool = False
     fetch_details: bool = True
 
     @classmethod
@@ -51,7 +49,6 @@ class PollConfig:
             session_s=s.kap_poll_session_s,
             offhours_s=s.kap_poll_offhours_s,
             night_s=s.kap_poll_night_s,
-            demo_mode=s.demo_mode,
             fetch_details=s.kap_fetch_details,
         )
 
@@ -157,7 +154,7 @@ class KapPoller:
             await conn.commit()  # close the read transaction: the store below is a real transaction
             async with conn.transaction():
                 await self._store(conn, rows, companies, today, reconcile, result)
-            if result.new_indices and not self.cfg.demo_mode and self.redis is not None:
+            if result.new_indices and self.redis is not None:
                 result.published = await publish_new(conn, self.redis, result.new_indices, now)
             await conn.commit()
         self.state.last_day = today
@@ -175,15 +172,14 @@ class KapPoller:
         result: PollResult,
     ) -> None:
         start = day_start_utc(today)
-        if not self.cfg.demo_mode:
-            await repo.hide_before(conn, start)
+        await repo.hide_before(conn, start)
         cursor = await repo.max_kap_index(conn)
         for d in rows:
             behind = d.disclosure_index <= cursor
             if behind and not reconcile:
                 continue
             row = replace(d, ingest_source="reconcile") if behind else d
-            visible = not self.cfg.demo_mode and row.published_at >= start
+            visible = row.published_at >= start
             status = await repo.upsert_disclosure(conn, row, companies, visible=visible)
             setattr(result, status, getattr(result, status) + 1)
             digest = repo.payload_sha256(row.raw)

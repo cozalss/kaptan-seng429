@@ -1,43 +1,33 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────────────────────────────────────
-   KAPtan Paneli — design tokens.
-   A B2B product (B2B brief, 2026-10-17): a clean neutral page, white sections with ink
-   borders, square corners, Inter for everything, Bodoni only for page titles ≥ 32px and the
-   wordmark, tabular Inter for every figure. Every device means one thing:
-   - a hard offset shadow = "set on top or stamped" (overlays, stamps, the emir fişi, the
-     one primary button); plain content sits flat, divided by rules and ruled lists;
-   - north red = Durdur, veto and a broken chain, nothing else;
-   - a role's tone ink marks only that role's acts; indigo is the second brand ink: the
-     wordmark, focus, selection, the active nav and the one focal figure of a screen;
+   KAPtan: design tokens. One person's money, drawn as the landing's world grown calm: a small
+   boat on an ink sea, cool paper above, indigo-black water below. Both readings are intended:
+   by day, ink on paper; by night (prefers-color-scheme), paper ink on an indigo-black sky over
+   lighter, moonlit water. Inter for everything, Bodoni only at 32px and up, tabular figures.
+   Every device means one thing:
+   - the sea (--sea) is the horizon scene: the home's chart, sign-in, 404, the closing band;
+   - engraved hatching = money: what rose above the waterline, what sank below it, cash;
+   - a hard offset shadow = "set on top or stamped"; everything else sits flat, divided by rules;
+   - north red = the boat's flag, the current page's pennant, Durdur. Nothing else;
+   - indigo is the second ink: the wordmark, focus, selection, primary action, focal figures;
    - deep green / claret = gain / loss on a figure, never decoration.
 
-   THE PROJECTOR RULE (permanent, no toggle). The panel is shown on a projector in a sunlit
+   THE PROJECTOR RULE (permanent, no toggle). The app is shown on a projector in a sunlit
    room, which crushes contrast: light greys vanish, hairlines and dashes drop out, near-white
    tones merge. So:
-   - text that carries meaning is ≥ 7:1 on paper (meta lines included), nothing below 4.5:1;
-   - 13px is the floor; labels are medium/semibold; every Bodoni title carries a whisper of
+   - text that carries meaning is >= 7:1 on its ground (meta lines included), nothing below 4.5:1;
+   - 13px is the floor; labels are medium/semibold; every Bodoni line carries a whisper of
      stroke so its hairlines survive (Inter never does);
-   - structural ink lines are 2px, dividers ≥ 30% ink, control borders ≥ 75% ink; a line
+   - structural ink lines are 2px, dividers >= 30% ink, control borders >= 75% ink; a line
      that means something is solid, never dashed or dotted;
-   - paper / panel / sunk keep a visible tonal step, and a panel laid on the page also gets
+   - paper / panel / sunk keep a visible tonal step, and a sheet laid on the page also gets
      an ink border;
    - test it washed out: html{filter:contrast(.55) brightness(1.25) saturate(.8)}.
    ────────────────────────────────────────────────────────────────────────── */
 
-/* The role tone is a registered colour so a role switch can cross-fade it. A registered
-   property always has a value, so var(--tone, …) fallbacks never apply: the initial value is
-   the indigo wash (#2a4c8c, = --wash), which is what untoned places such as the /login sea
-   used as their fallback. */
-@property --tone {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: #2a4c8c;
-}
-
-/* Panel yalnız açık temadır (kâğıt ve mürekkep); karanlık tema yok. */
 :root {
-  color-scheme: light only;
+  color-scheme: light dark;
 
   /* Colour — every colour has one job. Ratios are on --paper (projector rule: ≥ 7:1). */
   --paper: #eef0f4; /* the dashboard canvas: a cool paper grey the cards sit on */
@@ -62,21 +52,19 @@
   --shadow-raise: 0 1px 2px rgb(10 33 72 / 0.08), 0 8px 24px -8px rgb(10 33 72 / 0.18);
   --shadow-pop: 0 0 0 1px rgb(10 33 72 / 0.04), 0 12px 32px -8px rgb(10 33 72 / 0.28), 0 2px 6px rgb(10 33 72 / 0.08);
 
-  /* The sidebar: KAPtan navy, deeper than the wordmark so the canvas reads as the page. */
+  /* KAPtan navy, deeper than the wordmark so the canvas reads as the page. */
   --navy: #0a2148;
   --navy-raised: #133166; /* a nav item under the pointer */
   --navy-line: rgb(255 255 255 / 0.12);
   --on-navy: #ffffff;
   --on-navy-soft: #c3cee2; /* nav labels (10.6:1 on navy) */
   --on-navy-muted: #9fb0cc; /* the section label (7.4:1 on navy) */
-  --navy-action: #c9d6f2; /* the sidebar's one action button (navy on it 11:1) */
   --signal-ok: #5fd39a; /* "Piyasa: Normal" dot on navy */
 
   /* The disclosure flow (one hue, light → dark as a notice nears a decision). */
   --flow-1: #c3cde0;
   --flow-2: #7489b3;
   --flow-3: #0c2f63;
-  --sidebar-w: 248px;
   --north: #b3261e; /* Durdur, veto, broken chain (5.9:1, on panel 6.9:1) */
   --north-deep: #9b1f18; /* north red under the pointer */
   --north-tint: rgb(179 38 30 / 0.1);
@@ -87,13 +75,18 @@
   --brand: #0c2f63; /* indigo ink: wordmark, focus ring, ::selection, focal figures (10.3:1) */
   --on-dark: #fffefa;
 
-  /* Role tones — one ink per door (/login/<rol>) and the top-bar role chip. Saturated enough
-     to read as colour when washed out, dark enough to be type on paper and to carry on-dark
-     type (all ≥ 7:1 both ways). */
-  --role-analyst: #05534d; /* verdigris: the reader (7.6:1) */
-  --role-risk: #7a3c02; /* umber: the signature's ink (7.1:1) */
-  --role-admin: #622779; /* plum: the one who sets the desk (8.4:1) */
-  --role-auditor: #21435e; /* slate blue: sees all, touches nothing (8.6:1) */
+  /* The scene: the water under the horizon, its words and its engraved wave strokes. */
+  --sea: #12224f; /* on-sea text 13.6:1 */
+  --sea-deep: #0a1433;
+  --on-sea: #f4f6fb;
+  --on-sea-soft: #d3dbed; /* 10.6:1 on sea */
+  --sea-stroke: rgb(211 219 237 / 0.34);
+  --sea-rule: rgb(244 246 251 / 0.42);
+  --flag: #c62a20; /* the boat's flag and the current page's pennant: a mark, never text */
+  --hatch-up: #2a4c8c; /* what rose above the waterline */
+  --hatch-down: #8c1038; /* what sank below it */
+  /* A paper tooth over large surfaces: printed, not flat. Barely there, gone under a washout. */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .07 0 0 0 0 .08 0 0 0 0 .14 0 0 0 .55 -.2'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
 
   /* Ink marks */
   --ink-line: 2px;
@@ -114,6 +107,51 @@
   --dur-quick: 150ms;
   --dur-base: 240ms;
   --dur-slow: 420ms;
+}
+
+/* The night reading: its own steps of the same inks, not an inversion. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0b0f1d;
+    --panel: #151b2f;
+    --sunk: #20283f;
+    --ink: #eef1f7;
+    --ink-lift: #d6dbe6;
+    --ink-soft: #dbe0ea;
+    --muted: #b7bfd1; /* 10.6:1 on paper */
+    --wash: #a9bff0;
+    --wash-tint: rgb(169 191 240 / 0.12);
+    --wash-tint-strong: rgb(169 191 240 / 0.22);
+    --rule-ui: rgb(238 241 247 / 0.62);
+    --rule-soft: rgb(238 241 247 / 0.4);
+    --hairline: rgb(238 241 247 / 0.24);
+    --scrim: rgb(6 8 16 / 0.78);
+    --north: #ff8f80;
+    --north-deep: #ffaea3;
+    --north-tint: rgb(255 143 128 / 0.12);
+    --gain: #72d69e;
+    --loss: #ff9dbb;
+    --brand: #a9c1f5;
+    --on-dark: #0b0f1d;
+    --line: rgb(238 241 247 / 0.14);
+    --line-strong: rgb(238 241 247 / 0.28);
+    --shadow-ink: 3px 3px 0 rgb(0 0 0 / 0.6);
+    --shadow-ink-lg: 6px 6px 0 rgb(0 0 0 / 0.6);
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+    --shadow-raise: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -8px rgb(0 0 0 / 0.6);
+    --shadow-pop: 0 0 0 1px rgb(238 241 247 / 0.08), 0 12px 32px -8px rgb(0 0 0 / 0.7);
+
+    --sea: #1a2a5e; /* lighter than the sky: moonlit water */
+    --sea-deep: #131f49;
+    --on-sea: #f4f6fb;
+    --on-sea-soft: #d3dbed;
+    --sea-stroke: rgb(211 219 237 / 0.3);
+    --sea-rule: rgb(244 246 251 / 0.4);
+    --flag: #ee4b3e;
+    --hatch-up: #a9c1f5;
+    --hatch-down: #ff9dbb;
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .8 0 0 0 0 .85 0 0 0 0 1 0 0 0 .5 -.2'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.1'/%3E%3C/svg%3E");
+  }
 }
 
 @theme inline {
@@ -148,8 +186,13 @@
   --color-on-navy: var(--on-navy);
   --color-on-navy-soft: var(--on-navy-soft);
   --color-on-navy-muted: var(--on-navy-muted);
-  --color-navy-action: var(--navy-action);
   --color-signal-ok: var(--signal-ok);
+  --color-sea: var(--sea);
+  --color-sea-deep: var(--sea-deep);
+  --color-on-sea: var(--on-sea);
+  --color-on-sea-soft: var(--on-sea-soft);
+  --color-sea-rule: var(--sea-rule);
+  --color-flag: var(--flag);
 
   /* Bodoni (display cut) only for page titles of 32px and up and the wordmark (B2B brief).
      `font-display-text` was the Bodoni text cut for 24–32px lines; it now resolves to Inter
@@ -187,13 +230,13 @@
   --shadow-card: var(--shadow-card);
   --shadow-raise: var(--shadow-raise);
   --shadow-pop: var(--shadow-pop);
-  /* Cards and controls are softly rounded (the dashboard); stamps and slips stay square. */
+  /* Printed edges: nearly square, the same cut as the landing's sheets. Only discs stay round. */
   --radius-*: initial;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
-  --radius-2xl: 18px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
   --ease-out-expo: var(--ease-out-expo);
   --ease-ink: var(--ease-ink);
 }
@@ -202,13 +245,14 @@
   html {
     background: var(--paper);
     color: var(--ink);
+    overflow-x: clip;
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
     /* Bodoni and Inter ship one cut each per weight: never fake bold or italic. */
     font-synthesis: none;
   }
   body {
-    background: var(--paper);
+    background: var(--paper) var(--grain);
     color: var(--ink);
     font-family: var(--font-sans);
     font-size: var(--text-ui);
@@ -286,32 +330,6 @@
   .ink-rule {
     border-bottom: var(--ink-line) solid var(--ink);
   }
-  /* A faint paper grain so large surfaces read as printed, not flat. */
-  .paper-grain {
-    background-image: radial-gradient(rgb(18 19 24 / 0.035) 0.6px, transparent 0.7px);
-    background-size: 3px 3px;
-  }
-  /* Role tone: sets --tone (ink) and --tone-wash (a page-sized tint light enough that muted
-     meta text keeps AA on it) for everything inside. */
-  .tone-analyst {
-    --tone: var(--role-analyst);
-  }
-  .tone-risk_officer {
-    --tone: var(--role-risk);
-  }
-  .tone-admin {
-    --tone: var(--role-admin);
-  }
-  .tone-auditor {
-    --tone: var(--role-auditor);
-  }
-  .tone-analyst,
-  .tone-risk_officer,
-  .tone-admin,
-  .tone-auditor {
-    --tone-wash: color-mix(in srgb, var(--tone) 9%, var(--paper));
-    --tone-tint: color-mix(in srgb, var(--tone) 18%, transparent);
-  }
   .sr-only-focusable:not(:focus) {
     position: absolute;
     width: 1px;
@@ -320,6 +338,25 @@
     clip: rect(0 0 0 0);
     white-space: nowrap;
   }
+}
+
+/* ── Page transitions (where View Transitions exist; solo-shell's useRouteTransition starts them).
+   The old page lifts away quickly, the new one is set down; the bar holds still and the pennant
+   slides, so the frame reads as one object. Short: input is held only for this long. ── */
+::view-transition-old(root) {
+  animation: fade-out 110ms var(--ease-ink) both;
+}
+::view-transition-new(root) {
+  animation: page-in 190ms var(--ease-out-expo) both;
+}
+::view-transition-group(nav-flag) {
+  animation-duration: 220ms;
+  animation-timing-function: var(--ease-out-expo);
+}
+::view-transition-group(app-bar),
+::view-transition-old(app-bar),
+::view-transition-new(app-bar) {
+  animation: none;
 }
 
 /* ── Motion ─────────────────────────────────────────────────────────────── */
@@ -502,5 +539,10 @@
   }
   [data-sonner-toast] {
     transition: none !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

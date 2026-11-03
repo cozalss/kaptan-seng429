@@ -1,8 +1,7 @@
 """`PriceSource`: what portfolio marks (and later SimBIST) depend on instead of a concrete feed.
 
 `DbPriceSource` reads the backfilled/EOD rows in core.prices_daily (raw İş Yatırım levels, point in
-time). The demo keeps its deterministic replay marks (`kaptan.portfolio.marks`) unless
-`PRICES_LIVE=true`; see backend/README.md §Prices for the switch.
+time). `PRICES_LIVE=false` turns it off; see backend/README.md, Prices.
 """
 
 from __future__ import annotations

@@ -19,8 +19,6 @@ from kaptan.portfolio.marks import js_round, next_trading_day
 
 TICKET_TTL: Final = timedelta(minutes=30)
 TICKET_CREATED_AFTER: Final = timedelta(seconds=20)  # the ticket is printed 20 s after the approval
-PERSONAL_ACCOUNT_TRY: Final = 350_000
-PAPER_EQUITY_TRY: Final = 1_016_480
 CURRENT_STAGE: Final = "paper"
 TICKET_SEQ_BASE: Final = 10
 PASSING: Final = frozenset({"pass", "resize", "approval_required"})
@@ -62,8 +60,8 @@ def ticket_number(created: datetime, seq: int) -> str:
 def personal_qty(
     card: dict[str, Any],
     *,
-    account_equity_try: float = PERSONAL_ACCOUNT_TRY,
-    paper_equity_try: float = PAPER_EQUITY_TRY,
+    account_equity_try: float,
+    paper_equity_try: float,
 ) -> int:
     """The approved notional scaled from the paper desk to the personal account, in whole lots."""
     approved = card["approved_notional_try"]
@@ -108,15 +106,14 @@ def build_ticket(
     *,
     seq: int,
     decided_at: str,
-    account_equity_try: float = PERSONAL_ACCOUNT_TRY,
-    paper_equity_try: float = PAPER_EQUITY_TRY,
+    account_equity_try: float,
+    paper_equity_try: float,
     mode_keys: dict[str, bool] | None = None,
     qty: int | None = None,
 ) -> dict[str, Any]:
     """buildTicket(card, explain, {seq, decidedAt, stage: CURRENT_STAGE}) — `entry` is EMPTY_ENTRY.
 
-    The defaults are the demo's (350.000 TL account, 1.016.480 TL paper desk, no live key); outside
-    DEMO_MODE the caller passes the configured account, the desk's equity and the live_arm keys.
+    The caller passes the configured account, the desk's equity and the live_arm keys.
     A SELL (an exit) sells what your personal book holds: the caller passes that as `qty` (no short
     selling); a buy is sized from the approved notional."""
     created = parse_iso(decided_at) + TICKET_CREATED_AFTER
@@ -149,7 +146,7 @@ def build_ticket(
         "company_name": card["company_name"],
         "market": "Ana Pazar",
         "order_type": "limit",
-        "session_tr": "AÇILIŞ SEANSI (09:40–09:55) · GÜNLÜK"
+        "session_tr": "AÇILIŞ (09:40–09:55) · GÜNLÜK"
         if card["entry"] == "next_open_auction"
         else "SÜREKLİ İŞLEM (10:00–18:00) · GÜNLÜK",
         "qty": qty,
@@ -174,7 +171,9 @@ def build_ticket(
         else "Tutar kontrolü (R14): uygulanmadı",
         # The mock prints "TL" twice ("80,89 TL TL"); kept for parity with the panel.
         "stop_line_tr": f"Kapanış bazlı stop {fmt_price(p['stop_price'])} TL" if p else "Stop: Neden ekranında",
-        "planned_exit_tr": f"{card['holding_days'][0]}. seans kapanışı (en çok {card['holding_days'][1]} seans)",
+        "planned_exit_tr": (
+            f"{card['holding_days'][0]}. borsa günü kapanışı (en çok {card['holding_days'][1]} borsa günü)"
+        ),
         "gate_results": [{"code": c["rule_code"], "passed": c["outcome"] in PASSING} for c in checks],
         "approval_level": card["level"],
         "stage": CURRENT_STAGE,

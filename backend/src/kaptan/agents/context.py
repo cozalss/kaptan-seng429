@@ -10,9 +10,9 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
+from kaptan.agents.reader_facts import AttachmentFacts
 from kaptan.agents.tools import Toolbox
-from kaptan.llm.provider import LLMProvider
-from kaptan.llm.replay import fingerprint
+from kaptan.llm.provider import LLMProvider, fingerprint
 from kaptan.rag.types import SimilarDisclosure
 from kaptan.risk.gate import GateLimits
 from kaptan.rules.params import DEFAULT_PARAMS, RuleParams
@@ -34,6 +34,8 @@ class DisclosureInput:
     strategy_version: str
     is_fixture: bool
     stored_classification: dict[str, Any] | None = None
+    #: E2 only, after the attachment path (kaptan.agents.reader_facts); None everywhere else.
+    attachment: AttachmentFacts | None = None
 
     @property
     def fingerprint(self) -> str:
@@ -70,9 +72,9 @@ class DeskState:
     in_cooldown: bool = False
     #: 06 §11 step 4: a kill-switch restart is in force → new entries at m_reset (live runs only).
     reset_active: bool = False
-    #: Live desk inputs (kaptan.risk.desk; set only for real runs, the demo keeps these defaults).
+    #: Live desk inputs (kaptan.risk.desk; set for real runs).
     live: bool = False
-    cash_free_try: Decimal | None = None  # None: the equity (the demo's M1 behaviour)
+    cash_free_try: Decimal | None = None  # None: the equity
     restrictions_age_h: float = 0.0
     kap_delay_s: float = 0.0
     price_age_s: float = 0.0
@@ -99,6 +101,8 @@ class RunContext:
     #: Regulation paragraphs in force at the decision time for the compliance agent (kaptan.rag.bases,
     #: LLM_MODE=live only; empty in replay). Trusted text from backend/data/regulation (M3 B3).
     regulation: tuple[dict[str, Any], ...] = ()
+    #: When a feed run really started: a run deferred by the cap decides then, not at `available_at`.
+    decided_after: datetime | None = None
 
     def similar_context(self) -> list[dict[str, Any]]:
         """The TASK_CONTEXT rows of `similar` (ids, dates, codes; never the untrusted snippet text)."""

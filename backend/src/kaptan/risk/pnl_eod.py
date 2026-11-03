@@ -10,7 +10,7 @@ two baselines, the series the P&L chart and the risk status read.
 - `baseline:ew_universe`: equal weight over the in-universe issuers with an adjusted close on both
   days (İş Yatırım series, core.prices_daily_adj); skipped when none has.
 Idempotent per (strategy, d): a re-run updates the row and keeps its `ord`; new rows get the next
-`ord`, so the demo-seeded rows and their order stay as they are.
+`ord`, so existing rows and their order stay as they are.
 """
 
 from __future__ import annotations
@@ -105,12 +105,10 @@ async def _ew_return(conn: AsyncConnection[Any], day: date) -> Decimal | None:
     return sum(rets, Decimal(0)) / len(rets) if rets else None
 
 
-async def run_pnl_eod(
-    conn: AsyncConnection[Any], day: date, *, capital: float | None = None, demo: bool | None = None
-) -> list[PnlRow]:
+async def run_pnl_eod(conn: AsyncConnection[Any], day: date, *, capital: float | None = None) -> list[PnlRow]:
     """Write `day`'s rows (inside the caller's transaction if there is one); returns what was written.
-    A non-session day or DEMO_MODE (`demo`, default the setting: the demo day has its seeded series) writes nothing."""
-    if (get_settings().demo_mode if demo is None else demo) or not is_trading_day(day):
+    A non-session day writes nothing."""
+    if not is_trading_day(day):
         return []
     cap = Decimal(str(capital or get_settings().paper_capital_try))
     at = close_known_at(day)

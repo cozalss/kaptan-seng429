@@ -19,12 +19,13 @@ providers:
     timeout_s: 60
     max_retries: 2
     response_format: json_object
-    # Paid (the owner's balance). USD per 1M tokens, estimate used for the daily cost cap
-    # (LLM_CAP_DEEPSEEK_USD); verify on https://api-docs.deepseek.com/quick_start/pricing.
+    # Paid (the owner's balance). USD per 1M tokens for the daily cost cap (LLM_CAP_DEEPSEEK_USD). These are the
+    # PEAK prices (01-04 and 06-10 UTC, Mon-Fri; off-peak is half), so the cap holds at any hour, including BIST's
+    # morning. Read 2026-11-03 on https://api-docs.deepseek.com/quick_start/pricing.
     price_usd_per_mtok:
-      input_cache_hit: 0.028
-      input_cache_miss: 0.28
-      output: 0.42
+      input_cache_hit: 0.006
+      input_cache_miss: 0.30
+      output: 1.20
   groq:
     kind: openai
     base_url: https://api.groq.com/openai/v1

@@ -222,6 +222,9 @@ def study(
                 results.append(EventResult(ev, t0, {h: pre.cars[h] for h in hs}, pre.model))
                 continue
             stock = series.get(ev.ticker, {})
+            if not stock:  # no prices, or too old to compute inside a run and not materialised
+                dropped["no_prices"] += 1
+                continue
             days = estimation_days(session, (excluded or {}).get(ev.ticker, ()))
             model = fit_market_model(stock, bench, days)
             cars = event_cars(stock, bench, t0, hs, model)

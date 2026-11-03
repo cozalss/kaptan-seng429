@@ -1,6 +1,6 @@
 /**
  * Fictional issuers only (KAPTAN-BRIEF §0): every name carries an obviously fictional prefix
- * (ÖRNEK, DOĞU, TOROS, KORU, MİSAL, FARAZİ) and every ticker starts with ORN/DMO/TMS/KRG/MSL/FRZ.
+ * (MİSAL, DOĞU, TOROS, KORU, FARAZİ) and every ticker starts with ORN/DMO/TMS/KRG/MSL/FRZ.
  * No real company, no real price.
  */
 export interface Issuer {
@@ -15,11 +15,11 @@ export interface Issuer {
 }
 
 const RAW: ReadonlyArray<[string, string, string, string | null, number, number, number, boolean?]> = [
-  ["ORNEK", "ÖRNEK ENERJİ A.Ş.", "Enerji", "Örnek Holding", 0.34, 20_000_000, 47.4],
-  ["ORNCM", "ÖRNEK ÇİMENTO A.Ş.", "Çimento", "Örnek Holding", 0.29, 96_000_000, 112.3],
-  ["ORNTX", "ÖRNEK TEKSTİL A.Ş.", "Tekstil", null, 0.41, 38_000_000, 18.72],
-  ["ORNYZ", "ÖRNEK YAZILIM A.Ş.", "Teknoloji", null, 0.52, 71_000_000, 63.85],
-  ["ORNGD", "ÖRNEK GIDA A.Ş.", "Gıda", "Örnek Holding", 0.37, 55_000_000, 29.06],
+  ["ORNEK", "MİSAL ENERJİ A.Ş.", "Enerji", "Misal Holding", 0.34, 20_000_000, 47.4],
+  ["ORNCM", "MİSAL ÇİMENTO A.Ş.", "Çimento", "Misal Holding", 0.29, 96_000_000, 112.3],
+  ["ORNTX", "MİSAL TEKSTİL A.Ş.", "Tekstil", null, 0.41, 38_000_000, 18.72],
+  ["ORNYZ", "MİSAL YAZILIM A.Ş.", "Teknoloji", null, 0.52, 71_000_000, 63.85],
+  ["ORNGD", "MİSAL GIDA A.Ş.", "Gıda", "Misal Holding", 0.37, 55_000_000, 29.06],
   ["DMOGD", "DOĞU GIDA SANAYİ A.Ş.", "Gıda", null, 0.46, 44_000_000, 22.18],
   ["DMOEN", "DOĞU ENERJİ ÜRETİM A.Ş.", "Enerji", "Doğu Grup", 0.31, 128_000_000, 35.9],
   ["DMOIN", "DOĞU İNŞAAT A.Ş.", "İnşaat", "Doğu Grup", 0.27, 61_000_000, 14.44],

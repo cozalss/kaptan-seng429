@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 
-// http mode: the UI clock must follow the server's "now" (the backend's demo clock), never the browser's.
+// http mode: the UI clock must follow the server's "now", never the browser's.
 vi.mock("@/lib/api/config", () => ({ API_MODE: "http" }));
 
 async function freshClock() {
@@ -24,7 +24,7 @@ describe("useNow in http mode", () => {
     expect(new Date(result.current as number).toISOString().startsWith("2027-01-11")).toBe(true);
   });
 
-  it("follows a later jump of the server clock (a demo reset) without waiting for the interval", async () => {
+  it("follows a later jump of the server clock without waiting for the interval", async () => {
     const { useNow, noteServerTime } = await freshClock();
     noteServerTime("2027-01-11T10:40:00.000Z");
     const { result } = renderHook(() => useNow(60_000));

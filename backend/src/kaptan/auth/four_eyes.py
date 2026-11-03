@@ -1,11 +1,9 @@
-"""The two-person rule (API.md §3.2, 09 §5) and its single-user waiver (KAPTAN_SINGLE_USER).
+"""The second signature, waived (API.md §3.2, 09 §5).
 
-Every second signature calls `second_signature()` inside the decision's transaction:
-- a different person signs → nothing to do;
-- the same person and the mode is off → 403 `same_person` with the flow's own text;
-- the same person in single-user mode → allowed, and the waiver is written to the audit chain as
-  `auth.single_user_waiver` {waiver: "single_user_waiver", flow, entity_type, entity_id, first_uid}, so the
-  trail says plainly that one person signed both steps.
+One person runs KAPtan, so nobody else can sign a two-step flow. Every second signature calls
+`second_signature()` inside the decision's transaction, which writes the waiver to the audit chain as
+`auth.single_user_waiver` {waiver: "single_user_waiver", flow, entity_type, entity_id, first_uid}: the trail says
+plainly that no second person looked at it.
 """
 
 from __future__ import annotations
@@ -15,15 +13,9 @@ from typing import Any, Final
 
 from psycopg import AsyncConnection
 
-from kaptan.api.errors import ApiError
 from kaptan.audit.writer import AuditDraft, append, user_actor
-from kaptan.settings import get_settings
 
 WAIVER_ACTION: Final = "auth.single_user_waiver"
-
-
-def single_user_enabled(single_user: bool | None = None) -> bool:
-    return get_settings().kaptan_single_user if single_user is None else single_user
 
 
 async def second_signature(
@@ -32,17 +24,11 @@ async def second_signature(
     first_uid: str,
     uid: str,
     flow: str,
-    refusal: str,
     entity_type: str,
     entity_id: str,
     now: datetime,
-    single_user: bool | None = None,
-) -> bool:
-    """Enforce or waive the two-person rule; True when a waiver was audited."""
-    if first_uid != uid:
-        return False
-    if not single_user_enabled(single_user):
-        raise ApiError(403, "same_person", refusal)
+) -> None:
+    """Record that the second signature of `flow` was waived."""
     await append(
         conn,
         [
@@ -63,4 +49,3 @@ async def second_signature(
         ],
         now=now,
     )
-    return True

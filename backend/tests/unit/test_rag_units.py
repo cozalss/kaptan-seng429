@@ -59,7 +59,7 @@ def test_citation_and_context_row_carry_index_and_date_only() -> None:
 
 def _ctx(similar: tuple[SimilarDisclosure, ...] = (), provider: str = "replay") -> Any:
     from kaptan.agents.context import DeskState, DisclosureInput, RunContext
-    from kaptan.agents.tools import ReplayToolbox
+    from tests.harness.replay import ReplayToolbox
 
     d = DisclosureInput(
         run_id="run-x",

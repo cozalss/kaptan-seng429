@@ -286,22 +286,6 @@
     "null"
    ]
   },
-  "decided_role": {
-   "anyOf": [
-    {
-     "type": "string",
-     "enum": [
-      "analyst",
-      "risk_officer",
-      "admin",
-      "auditor"
-     ]
-    },
-    {
-     "type": "null"
-    }
-   ]
-  },
   "decided_at": {
    "anyOf": [
     {
@@ -362,7 +346,6 @@
   "expires_at",
   "status",
   "decided_by",
-  "decided_role",
   "decided_at",
   "decision_comment",
   "approved_notional_try",

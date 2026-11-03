@@ -83,6 +83,13 @@ export function locative(printed: string): string {
   return `${printed}’${d}${wide(lastVowel(w))}`;
 }
 
+/** Ablative: "14:16" → "14:16’dan", "13:40" → "13:40’tan", "09:50" → "09:50’den". */
+export function ablative(printed: string): string {
+  const w = wordOf(printed);
+  const d = HARD.includes(w[w.length - 1] ?? "") ? "t" : "d";
+  return `${printed}’${d}${wide(lastVowel(w))}n`;
+}
+
 /** "A.Ş.", "T.A.Ş.": short dotted abbreviations are written as they are. */
 const isDottedAbbreviation = (token: string) => token.includes(".") && (token.match(/\p{L}/gu) ?? []).length <= 3;
 

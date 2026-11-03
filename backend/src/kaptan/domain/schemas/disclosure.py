@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import Field
+from pydantic import Field, SerializerFunctionWrapHandler, model_serializer
 
 from kaptan.domain.schemas._base import Confidence, IsoDateTime, KModel, NonNegInt, PosInt, Ticker
 from kaptan.domain.schemas.common import EventType
@@ -72,6 +72,18 @@ class DisclosureDetail(DisclosureListItem):
     notes: list[Note]
 
 
+class AgentFeedCounts(KModel):
+    """What the agent worker did with the day's disclosures; none of them is lost silently."""
+
+    read: NonNegInt
+    ran: NonNegInt
+    vetoed: NonNegInt
+    deferred: NonNegInt
+    window_closed: NonNegInt
+    expired_unrun: NonNegInt
+    failed: NonNegInt
+
+
 class DayCounters(KModel):
     """Live counters for "today" (US-43)."""
 
@@ -86,3 +98,10 @@ class DayCounters(KModel):
     rejections: NonNegInt
     llm_calls: NonNegInt
     llm_tokens: NonNegInt
+    #: Absent on a day the worker saw nothing.
+    agent_feed: AgentFeedCounts | None = None
+
+    @model_serializer(mode="wrap")
+    def _omit_empty_feed(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        data: dict[str, Any] = handler(self)
+        return {k: v for k, v in data.items() if k != "agent_feed" or v is not None}

@@ -98,7 +98,6 @@ function capture(r) {
   const caught = [
     sheet(r, 640, 760, 380, 470, { shadow: 16, border: 5 }),
     text(672, 822, 'ÖRNEK ENERJİ A.Ş.', { size: 26, weight: 600, fill: INK }),
-    text(990, 822, 'Temsili', { size: 20, fill: INK, anchor: 'end', opacity: 0.6 }),
     textLines(r, 672, 870, 316, 5, { gap: 36 }),
     brush([[668, 1072], [700, 1180], [992, 1180], [992, 1072], [668, 1072]], { w: 5, taper: [0, 0], r, straight: true }),
     text(830, 1150, '14:05', { size: 70, weight: 600, fill: INK, anchor: 'middle', tracking: -0.01 }),
@@ -141,7 +140,7 @@ function understand(r) {
   const page = [
     sheet(r, 150, 330, 760, 900, { shadow: 20, border: 5 }),
     text(196, 410, 'ÖRNEK ALTYAPI A.Ş.', { size: 34, weight: 600, fill: INK }),
-    text(196, 450, 'Özel durum açıklaması · Temsili', { size: 22, fill: INK, opacity: 0.65 }),
+    text(196, 450, 'Özel durum açıklaması', { size: 22, fill: INK, opacity: 0.65 }),
     brush([[196, 478], [860, 476]], { w: 3, taper: [0, 0.1], r, opacity: 0.7 }),
     textLines(r, 196, 530, 660, 4),
     textLines(r, 196, 820, 660, 6),
@@ -195,7 +194,6 @@ function prove(r) {
     sheet(r, 120, 370, 960, 820, { shadow: 20, border: 5 }),
     text(160, 440, 'Benzer geçmiş olaylar', { size: 32, weight: 600, fill: INK }),
     text(160, 480, 'getirileri görülmeden seçilir · istatistiği kod hesaplar', { size: 22, fill: INK, opacity: 0.65 }),
-    text(1040, 440, 'Temsili', { size: 22, fill: INK, anchor: 'end', opacity: 0.6 }),
   ];
   // faint ruled grid
   const grid = [];
@@ -263,11 +261,10 @@ function approve(r) {
   const slip = [
     sheet(r, 190, 320, 820, 760, { shadow: 22, border: 5 }),
     text(236, 392, 'Onay fişi', { size: 34, weight: 600, fill: INK }),
-    text(964, 392, 'Temsili', { size: 22, fill: INK, anchor: 'end', opacity: 0.6 }),
     text(236, 488, 'ORNEK · E2 önerisi', { size: 66, family: BODONI, fill: INK }),
     brush([[236, 520], [964, 518]], { w: 3, taper: [0, 0.1], r, opacity: 0.8 }),
   ];
-  const rows = [['Risk kapısı', 'R01–R16'], ['Boyut', 'küçültüldü'], ['Süre sonu', 'ertesi seans']];
+  const rows = [['Risk kapısı', 'R01–R16'], ['Boyut', 'küçültüldü'], ['Süre sonu', 'ertesi gün']];
   rows.forEach(([k, v], i) => {
     const y = 580 + i * 62;
     slip.push(text(236, y, k, { size: 28, fill: INK, opacity: 0.65 }));
@@ -278,7 +275,7 @@ function approve(r) {
   slip.push(brush([[690, 610], [960, 610], [960, 740], [690, 740], [690, 610]], { w: 6, taper: [0, 0], r, straight: true }));
   slip.push(text(825, 702, '09:50', { size: 78, weight: 600, fill: INK, anchor: 'middle', tracking: -0.01 }));
   slip.push(brush([[236, 1000], [964, 998]], { w: 3, taper: [0, 0.05], r }));
-  slip.push(text(236, 1040, 'İnsan onayı · imza', { size: 24, fill: INK, opacity: 0.65 }));
+  slip.push(text(236, 1040, 'Senin onayın · imza', { size: 24, fill: INK, opacity: 0.65 }));
   slip.push(signature(r, 290, 930));
   out.push(g(slip.join(''), { transform: rot(-2.5, 600, 700) }));
   // the pen, laid across after signing
@@ -298,7 +295,7 @@ function approve(r) {
       : brush(circlePts(cx, cy, 80, 22, 22), { w: [7, 10, 6, 9], taper: [0, 0], r }));
   }
   out.push(links.join(''));
-  out.push(text(600, 1352, 'Hash zincirli denetim kaydı', { size: 28, fill: INK, anchor: 'middle', opacity: 0.75 }));
+  out.push(text(600, 1352, 'Her adım Geçmiş’e mühürlenir', { size: 28, fill: INK, anchor: 'middle', opacity: 0.75 }));
   return out.join('\n');
 }
 

@@ -24,6 +24,8 @@ HEARTBEAT_EVERY_S: Final = 15.0
 HEARTBEAT_TTL_S: Final = 60
 #: Components that beat (the API answers /healthz instead).
 WORKERS: Final = ("ingest_worker", "agent_worker", "scheduler")
+#: When KAP last answered the ingest worker (kaptan.ops.system_status): a live process may still have stopped reading.
+LAST_POLL_KEY: Final = "kaptan:ingest:last_poll_ok"
 
 
 def hb_key(component: str) -> str:
@@ -55,6 +57,16 @@ async def clear(redis: Any, component: str) -> None:
         await redis.delete(hb_key(component))
     except (RedisError, OSError) as exc:
         log.warning("heartbeat not cleared: %s", type(exc).__name__)
+
+
+async def note_poll(redis: Any, now: datetime | None = None) -> None:
+    """The ingest worker: one poll just succeeded. Never fails the poll."""
+    if redis is None:
+        return
+    try:
+        await redis.set(LAST_POLL_KEY, (now or datetime.now(UTC)).isoformat(timespec="seconds"))
+    except (RedisError, OSError) as exc:
+        log.warning("last poll time not written: %s", type(exc).__name__)
 
 
 async def read_heartbeats(redis: Any, now: datetime | None = None) -> dict[str, dict[str, Any]]:

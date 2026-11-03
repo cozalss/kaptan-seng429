@@ -8,13 +8,13 @@ from decimal import Decimal
 
 import pytest
 
-from kaptan.demo.fixtures import DemoFixtures
 from kaptan.rules import DEFAULT_PARAMS, RuleInput, SizingInput, decide, size
 from kaptan.rules.calendar import approval_expiry, is_trading_day, next_trading_day
 from kaptan.rules.engine import trace_row
 from kaptan.rules.format import fmt_dec, fmt_int, fmt_pct, fmt_ratio_x, fmt_signed_pct, fmt_try
 from kaptan.rules.params import rules_hash_of
 from kaptan.rules.sizing import limit_price_of
+from tests.harness.fixtures import DemoFixtures
 
 FX = DemoFixtures()
 

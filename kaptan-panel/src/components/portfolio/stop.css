@@ -1,0 +1,92 @@
+/* The stop and its restart, shared by Param and the home. Calm, not an alarm: red only marks the
+   state, and the wait is drawn as a passage of time. Bodoni sentences come from ufuk.css. */
+
+.st-card {
+  min-width: 0;
+}
+
+.st-stopped {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.25rem 2.5rem;
+  padding-block: clamp(1.25rem, 1rem + 1.5vw, 2.25rem);
+  border-top: 3px solid var(--north);
+  border-bottom: 1px solid var(--hairline);
+  animation: st-in var(--dur-slow) var(--ease-out-expo) both;
+}
+.st-stopped-text {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+.st-title {
+  color: var(--north);
+}
+.st-line {
+  margin-top: 0.5rem;
+  max-width: 64ch;
+  font-size: 1rem;
+  line-height: 1.55;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+.st-error {
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--north);
+}
+.st-wait {
+  margin-top: 1.25rem;
+}
+.st-wait-title {
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.st-wait-track {
+  position: relative;
+  max-width: 560px;
+  height: 10px;
+  margin-top: 0.875rem;
+  border-bottom: 2px solid var(--ink);
+}
+.st-wait-fill {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(-45deg, var(--ink) 0 1px, transparent 1px 5px);
+  transform: scaleX(var(--st-at));
+  transform-origin: left;
+}
+.st-wait-now {
+  position: absolute;
+  bottom: -2px;
+  left: calc(var(--st-at) * 100%);
+  width: 3px;
+  height: 18px;
+  background: var(--north);
+}
+.st-anchor {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  transform: rotate(-3deg);
+}
+@keyframes st-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .st-stopped {
+    animation: none;
+  }
+}

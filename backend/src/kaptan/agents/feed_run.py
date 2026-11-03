@@ -1,4 +1,4 @@
-"""One real KAP disclosure through the agent graph: the live twin of `scenario.run_scenario()`.
+"""One real KAP disclosure through the agent graph.
 
     result = await run_disclosure(conn, 1683376, now, deps)      # called by kaptan.agents.feed
 
@@ -7,8 +7,7 @@ The disclosure is read as stored (real published/available times, no re-timing),
 crashed mid-graph continues where it stopped. One transaction writes trading.agent_runs (run_set
 'live', mode 'paper'), the disclosure's run link and classification, proposal + pending card, today's
 LLM counters, the audit outcome and the ops.agent_feed row; after commit the run's SSE events go out at
-once (a real run already took its time, so there is no demo animation). The panel shows it through the
-same /runs, /approvals and /stream endpoints as an injected demo run.
+once (a real run already took its time). The panel shows it through the /runs, /approvals and /stream endpoints.
 
 `settle_waiting()` closes runs parked at `approval`: decided cards resume the graph with the decision,
 cards past `expires_at` resume it with `expire` (and the card is marked expired). With the in-memory
@@ -32,19 +31,20 @@ from kaptan.agents import db as q
 from kaptan.agents.context import DeskState, DisclosureInput, Restriction, RunContext, with_active_limits
 from kaptan.agents.explain import assemble
 from kaptan.agents.graph import compile_graph
+from kaptan.agents.reader_facts import attachment_facts
 from kaptan.agents.run_rows import write_run_rows
-from kaptan.agents.scenario import AUDIT_STRATEGY_VERSION, _audit_outcome
+from kaptan.agents.runner import AUDIT_STRATEGY_VERSION, audit_outcome
 from kaptan.agents.state import KaptanState
 from kaptan.agents.timeline import plan
 from kaptan.agents.tools import Toolbox
 from kaptan.audit.writer import AuditDraft, append
 from kaptan.clock import istanbul_date
-from kaptan.demo.fixtures import DemoFixtures
 from kaptan.disclosures.counters import day_counters
 from kaptan.domain.schemas._base import iso_ms
-from kaptan.eval.manifest import manifest_hash_for
+from kaptan.eval.manifest import graph_version
 from kaptan.events.publish import publish
 from kaptan.evidence.toolbox import live_tools
+from kaptan.ingest.attachments import StoredAttachment, with_attachment_text
 from kaptan.llm.provider import LLMProvider
 from kaptan.llm.usage import sync_usage
 from kaptan.risk.cooldown import cooldown_active
@@ -98,7 +98,7 @@ class LiveDeps:
     tools: Toolbox
     redis: Any = None  # SSE after commit; None = no events (tests, scripts)
     #: The gate reads the real desk (kaptan.risk.desk: marked equity, cash, R04/R09/R11/P7/P3/P4 inputs).
-    #: None = only on the live LLM chain; replay runs keep the demo desk.
+    #: None = whenever the provider is the live LLM chain.
     live_desk: bool | None = None
 
 
@@ -127,7 +127,7 @@ async def desk_for(
     disclosure: DisclosureInput | None = None,
     now: datetime | None = None,
 ) -> DeskState:
-    """Desk state as the demo builds it; a ticker outside core.issuers is outside the universe (pre-gate veto).
+    """Desk state; a ticker outside core.issuers is outside the universe (pre-gate veto).
     `live`: equity, cash, P&L and the gate's freshness/exposure inputs from the real book (kaptan.risk.desk)."""
     try:
         issuer = await q.issuer(conn, ticker)
@@ -141,7 +141,7 @@ async def desk_for(
         last_price=Decimal(str(issuer["price"])),
         adv20_try=Decimal(str(issuer["adv20_try"])),
         free_float=float(issuer["free_float"]),
-        equity_try=Decimal(str(DemoFixtures().meta["paper_equity_try"])),
+        equity_try=Decimal(str(get_settings().paper_capital_try)),
         restrictions=tuple(Restriction(r["kind"], r["source_ref"]) for r in await q.restrictions(conn, ticker)),
         kill_switch_on=risk["kill_switch"] == "on",
         halted_today=bool(risk["halted_today"]),
@@ -192,7 +192,10 @@ async def build_live_context(
     conn: AsyncConnection[Any], index: int, deps: LiveDeps, now: datetime | None = None
 ) -> tuple[RunContext, dict[str, Any], list[dict[str, str]]]:
     disc = await q.disclosure(conn, index)
-    texts = await q.texts(conn, index)
+    rows = await q.attachments(conn, index)
+    files = [StoredAttachment(f["status"], f["reason_tr"], f["body"], f["lang"]) for f in rows]
+    # The attachment text joins the Turkish body here, so the guard, the masking and the fence cover it like the body.
+    texts = with_attachment_text(await q.texts(conn, index), files)
     text_tr = next((t["body"] for t in texts if t["lang"] == "tr"), None)
     ticker = disc["primary_ticker"]
     if text_tr is None or not ticker:
@@ -211,10 +214,11 @@ async def build_live_context(
         strategy_version=AUDIT_STRATEGY_VERSION,
         is_fixture=False,
         stored_classification=disc["classification"],
+        attachment=attachment_facts(await q.parsed_document(conn, index)),
     )
     live = getattr(deps.provider, "name", "") == "live"
     tools = deps.tools
-    if live:  # real prices + event study (kaptan.evidence); replay keeps the recorded tool answers
+    if live:  # real prices + event study (kaptan.evidence)
         from kaptan.evidence import toolbox_for
 
         tools = toolbox_for(conn, d, "live", base=deps.tools)
@@ -225,11 +229,11 @@ async def build_live_context(
         desk=await desk_for(
             conn, ticker, live=live if deps.live_desk is None else deps.live_desk, disclosure=d, now=now
         ),
-        # NFR-07: the live chain is stamped with <prompt manifest>@<git sha>; replay keeps meta.json's value
-        prompt_manifest_hash=manifest_hash_for(deps.provider, str(DemoFixtures().meta["prompt_manifest_hash"])),
+        prompt_manifest_hash=graph_version(),  # NFR-07: <prompt manifest>@<git sha>
+        decided_after=now,
     )
     ctx = await with_active_limits(conn, ctx)  # FR-33: the limit version active now
-    if live:  # "benzer geçmiş bildirimler" (kaptan.rag), as scenario.build_context does
+    if live:  # "benzer geçmiş bildirimler" (kaptan.rag)
         from kaptan.rag.agent_context import attach_similar
 
         ctx = await attach_similar(conn, ctx)
@@ -314,7 +318,7 @@ async def persist_live(
         if run["llm_calls"]:
             tokens = run["tokens_in"] + run["tokens_out"]
             await conn.execute(q.ADD_CALLS_SQL, (istanbul_date(now), run["llm_calls"], tokens))
-        draft = _audit_outcome(explain, now)
+        draft = audit_outcome(explain, now)
         if draft is not None:
             if limits_version is not None:  # which four-eyes limit version the gate used (FR-33)
                 draft = replace(draft, payload={**draft.payload, "limits_version": limits_version})
@@ -356,7 +360,7 @@ async def run_disclosure(conn: AsyncConnection[Any], index: int, now: datetime, 
         await announce(deps.redis, conn, explain, now)
         await conn.commit()
         if killed:  # after the commit, like POST /risk/kill-switch
-            await announce_kill(deps.redis, conn, now, live=not get_settings().demo_mode)
+            await announce_kill(deps.redis, conn, now)
             await conn.commit()
     run = explain["run"]
     return LiveResult(run["run_id"], feed_status, run["outcome"], int(run["llm_calls"]), explain)

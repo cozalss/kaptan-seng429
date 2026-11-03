@@ -2,7 +2,7 @@
 (one per gate check), written from the assembled Explain inside the run's persistence transaction.
 
 The rows are derived from `explain` only, so writing them cannot change any API output or audit hash
-(nothing reads them back into a response). A re-run of the same run_id (demo re-inject, a resumed live
+(nothing reads them back into a response). A re-run of the same run_id (a resumed live
 run) first deletes that run's rows: the tables always mirror the latest explain.
 """
 

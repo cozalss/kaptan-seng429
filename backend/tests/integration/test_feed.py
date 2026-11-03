@@ -18,18 +18,17 @@ from psycopg_pool import AsyncConnectionPool
 
 from kaptan.agents.feed import GROUP, AgentFeed, FeedConfig, llm_budget_left
 from kaptan.agents.feed_run import LiveDeps, LiveResult, decision_for, run_disclosure, run_id_for, settle_waiting
-from kaptan.agents.tools import ReplayToolbox
 from kaptan.db import DictConn, create_pool
-from kaptan.demo.seed import SeedResult
 from kaptan.events import bus
 from kaptan.ingest.publish import AGENT_STREAM, publish_to_agents, sent_key
 from kaptan.llm.budget import Budget, Caps
-from kaptan.llm.replay import ReplayProvider
 from kaptan.llm.store import MemoryStore
 from kaptan.runs.explain import explain_for
 from kaptan.settings import Settings
 from kaptan.workers import agent_worker
 from tests.conftest import reseed_test_db, skip_or_fail
+from tests.harness.replay import ReplayProvider, ReplayToolbox
+from tests.harness.seed import SeedResult
 from tests.unit.agent_fixtures import fixture_run
 
 pytestmark = pytest.mark.integration
@@ -80,9 +79,10 @@ async def add_disclosure(
     ticker: str | None = E3_TICKER,
     text: str | None = E3_TEXT,
     source: str = "live",
+    pub: datetime | None = None,
 ) -> int:
     idx = next(_ids)
-    pub = NOW - timedelta(minutes=5)
+    pub = pub or NOW - timedelta(minutes=5)
     params = (
         idx,
         f"{idx:032x}",
@@ -229,7 +229,7 @@ async def test_a_live_disclosure_becomes_a_panel_run_once(
     card = await one(feed_db, "SELECT proposal_id, status FROM trading.approvals WHERE run_id = %s", run_id)
     assert card == {"proposal_id": f"prop-live-{idx}", "status": "pending"}
     async with feed_db.connection() as conn:
-        doc = await explain_for(conn, run_id, now=NOW, wall=NOW)
+        doc = await explain_for(conn, run_id, now=NOW)
     assert doc is not None and doc["approval"]["status"] == "pending" and doc["run"]["mode"] == "paper"
     audits = await one(feed_db, "SELECT count(*) AS n FROM audit.audit_log WHERE entity_id = %s", f"prop-live-{idx}")
     assert audits == {"n": 1}
@@ -266,21 +266,23 @@ async def test_hourly_cap_and_llm_daily_cap(feed_db: AsyncConnectionPool[DictCon
     feed = AgentFeed(feed_db, redis, runner, FeedConfig(max_runs_per_hour=1), now=lambda: NOW)
     a, b = await add_disclosure(feed_db), await add_disclosure(feed_db)
     assert (await feed.handle(a)).status == "done"
-    capped = await feed.handle(b)
-    assert (capped.status, capped.reason, capped.ack) == ("capped", "hourly_cap", True)
+    deferred = await feed.handle(b)
+    assert (deferred.status, deferred.reason, deferred.ack) == ("deferred", "hourly_cap", True)
     assert runner.calls == [a]
 
     # A run that made no LLM call (e.g. a pre-gate veto) does not use up the hour.
     cheap = FakeRunner(llm_calls=0)
-    feed0 = AgentFeed(feed_db, redis, cheap, FeedConfig(max_runs_per_hour=2), now=lambda: NOW + timedelta(hours=2))
-    c, d = await add_disclosure(feed_db), await add_disclosure(feed_db)
+    at2h = NOW + timedelta(hours=2)
+    feed0 = AgentFeed(feed_db, redis, cheap, FeedConfig(max_runs_per_hour=2), now=lambda: at2h)
+    c, d = await add_disclosure(feed_db, pub=at2h), await add_disclosure(feed_db, pub=at2h)
     assert [(await feed0.handle(i)).status for i in (c, d)] == ["done", "done"]
 
     async def broke() -> bool:
         return False
 
-    later = AgentFeed(feed_db, redis, FakeRunner(), budget_ok=broke, now=lambda: NOW + timedelta(hours=5))
-    e = await add_disclosure(feed_db)
+    at5h = NOW + timedelta(hours=5)
+    later = AgentFeed(feed_db, redis, FakeRunner(), budget_ok=broke, now=lambda: at5h)
+    e = await add_disclosure(feed_db, pub=at5h)
     assert (await later.handle(e)).reason == "llm_daily_cap"
     off = AgentFeed(feed_db, redis, FakeRunner(), FeedConfig(max_runs_per_hour=0), now=lambda: NOW)
     assert (await off.handle(await add_disclosure(feed_db))).reason == "hourly_cap"
@@ -296,22 +298,22 @@ async def test_daily_cap_counts_the_istanbul_day(feed_db: AsyncConnectionPool[Di
     runner = FakeRunner()
     cfg = FeedConfig(max_runs_per_hour=10, max_runs_per_day=1)
     feed = AgentFeed(feed_db, redis, runner, cfg, now=lambda: day_now)
-    a, b = await add_disclosure(feed_db), await add_disclosure(feed_db)
+    a, b = await add_disclosure(feed_db, pub=day_now), await add_disclosure(feed_db, pub=day_now)
     assert (await feed.handle(a)).status == "done"
-    capped = await feed.handle(b)
-    assert (capped.status, capped.reason) == ("capped", "daily_cap")
-    nextday = AgentFeed(
-        feed_db, redis, runner, cfg, now=lambda: istanbul_midnight(day_now) + timedelta(days=1, hours=1)
-    )
-    assert (await nextday.handle(await add_disclosure(feed_db))).status == "done"
+    deferred = await feed.handle(b)
+    assert (deferred.status, deferred.reason) == ("deferred", "daily_cap")
+    next_at = istanbul_midnight(day_now) + timedelta(days=1, hours=1)
+    nextday = AgentFeed(feed_db, redis, runner, cfg, now=lambda: next_at)
+    assert (await nextday.handle(await add_disclosure(feed_db, pub=next_at))).status == "done"
 
 
 async def test_unacked_entry_is_replayed_after_a_crash(
     feed_db: AsyncConnectionPool[DictConn], redis: aioredis.Redis
 ) -> None:
-    idx = await add_disclosure(feed_db)
+    at9h = NOW + timedelta(hours=9)
+    idx = await add_disclosure(feed_db, pub=at9h)
     crashing = FakeRunner(crash=1)
-    first = AgentFeed(feed_db, redis, crashing, FeedConfig(block_ms=200), now=lambda: NOW + timedelta(hours=9))
+    first = AgentFeed(feed_db, redis, crashing, FeedConfig(block_ms=200), now=lambda: at9h)
     await first.ensure_group()
     await redis.delete(sent_key(idx, "listed"))
     await publish_to_agents(redis, [idx])
@@ -323,7 +325,7 @@ async def test_unacked_entry_is_replayed_after_a_crash(
     # "Restart": a new process (same consumer name) replays its pending entry first. The resumed run is
     # not counted against the hour again (max 0 would cap any new run).
     healthy = FakeRunner()
-    second = AgentFeed(feed_db, redis, healthy, FeedConfig(max_runs_per_hour=0), now=lambda: NOW + timedelta(hours=9))
+    second = AgentFeed(feed_db, redis, healthy, FeedConfig(max_runs_per_hour=0), now=lambda: at9h)
     replayed = await second.replay_pending()
     assert [(h.index, h.status, h.ack) for h in replayed] == [(idx, "done", True)]
     assert healthy.calls == [idx] and await pending(redis) == 0
@@ -334,9 +336,10 @@ async def test_unacked_entry_is_replayed_after_a_crash(
 async def test_crash_after_commit_before_ack_does_not_rerun(
     feed_db: AsyncConnectionPool[DictConn], redis: aioredis.Redis
 ) -> None:
-    idx = await add_disclosure(feed_db)
+    at12h = NOW + timedelta(hours=12)
+    idx = await add_disclosure(feed_db, pub=at12h)
     runner = FakeRunner()
-    feed = AgentFeed(feed_db, redis, runner, FeedConfig(block_ms=200), now=lambda: NOW + timedelta(hours=12))
+    feed = AgentFeed(feed_db, redis, runner, FeedConfig(block_ms=200), now=lambda: at12h)
     await feed.ensure_group()
     await redis.delete(sent_key(idx, "listed"))
     await publish_to_agents(redis, [idx])
@@ -351,8 +354,9 @@ async def test_crash_after_commit_before_ack_does_not_rerun(
 async def test_a_run_that_keeps_failing_is_marked_failed(
     feed_db: AsyncConnectionPool[DictConn], redis: aioredis.Redis
 ) -> None:
-    idx = await add_disclosure(feed_db)
-    feed = AgentFeed(feed_db, redis, FakeRunner(crash=5), now=lambda: NOW + timedelta(hours=15))
+    at15h = NOW + timedelta(hours=15)
+    idx = await add_disclosure(feed_db, pub=at15h)
+    feed = AgentFeed(feed_db, redis, FakeRunner(crash=5), now=lambda: at15h)
     statuses = [(await feed.handle(idx)).status for _ in range(3)]
     assert statuses == ["running", "running", "failed"]
     row = await feed_row(feed_db, idx)
@@ -438,6 +442,10 @@ async def test_worker_loop_processes_entries_and_settles(
 ) -> None:
     runner = FakeRunner()
     settled: list[datetime] = []
+    at30h = NOW + timedelta(hours=30)
+    async with feed_db.connection() as conn:  # the loop's sweep would re-drive what earlier tests left deferred
+        await conn.execute("DELETE FROM ops.agent_feed WHERE status = 'deferred'")
+        await conn.commit()
 
     async def settle(now: datetime) -> int:
         settled.append(now)
@@ -445,9 +453,9 @@ async def test_worker_loop_processes_entries_and_settles(
 
     feed = AgentFeed(
         feed_db, redis, runner, FeedConfig(block_ms=50, settle_every_s=0.0), settle=settle,
-        now=lambda: NOW + timedelta(hours=30),
+        now=lambda: at30h,
     )  # fmt: skip
-    idx = await add_disclosure(feed_db)
+    idx = await add_disclosure(feed_db, pub=at30h)
     await redis.delete(sent_key(idx, "listed"))
     await publish_to_agents(redis, [idx])
     stop = asyncio.Event()
@@ -461,10 +469,9 @@ async def test_worker_loop_processes_entries_and_settles(
     assert runner.calls == [idx] and len(settled) >= 2 and await pending(redis) == 0
 
 
-async def test_worker_entrypoint_gates_and_starts(migrated: Settings) -> None:
+async def test_worker_entrypoint_gates_and_starts(migrated: Settings, monkeypatch: pytest.MonkeyPatch) -> None:
     assert await agent_worker.run_worker(migrated.model_copy(update={"kap_live": False})) == 0
-    assert await agent_worker.run_worker(migrated.model_copy(update={"kap_live": True, "demo_mode": True})) == 0
+    monkeypatch.setattr(agent_worker, "get_provider", lambda *_a, **_k: ReplayProvider())  # no recordings in src/
     stop = asyncio.Event()
     stop.set()  # start, replay/settle once, stop
-    live = migrated.model_copy(update={"kap_live": True, "demo_mode": False, "llm_mode": "replay"})
-    assert await agent_worker.run_worker(live, stop) == 0
+    assert await agent_worker.run_worker(migrated.model_copy(update={"kap_live": True}), stop) == 0

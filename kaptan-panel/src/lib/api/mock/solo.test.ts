@@ -1,16 +1,15 @@
 import { Overview } from "@/lib/solo/overview";
 import { PENDING_PROPOSALS } from "@/mocks/ids";
-import { actorFor, createMockApi } from "./mock-api";
+import { createMockApi } from "./mock-api";
 import { MockDb } from "./db";
 import { stopAllTimers, stopLiveTicker } from "./scenarios";
 import { CAPITAL_START, overviewFor } from "./solo";
 import * as sel from "./selectors";
 import { isApiError } from "../types";
 
-function setup(signedIn = true, opts: { role?: Parameters<typeof actorFor>[0]; singleUser?: boolean } = {}) {
+function setup(signedIn = true) {
   const db = new MockDb(null);
-  const actor = actorFor(opts.role ?? "risk_officer");
-  const api = createMockApi({ getActor: () => (signedIn ? actor : null), db, latencyMs: 0, live: false, singleUser: opts.singleUser ?? false });
+  const api = createMockApi({ user: signedIn ? undefined : null, db, latencyMs: 0, live: false });
   return { db, api };
 }
 
@@ -91,24 +90,22 @@ describe("mock /me/suggestions/{id}/hold", () => {
     const { db, api } = setup();
     const held = await api.holdSuggestion("tut-FRZEN", { kind: "held" });
     expect(held).toMatchObject({ id: "tut-FRZEN", kind: "held" });
-    expect(db.snapshot.auditAppends.at(-1)).toMatchObject({ actor: "user:uye-3", action: "suggestion.held", entity_type: "proposal", entity_id: "tut-FRZEN", payload: { ticker: "FRZEN", note: false } });
+    expect(db.snapshot.auditAppends.at(-1)).toMatchObject({ actor: "user:sen", action: "suggestion.held", entity_type: "proposal", entity_id: "tut-FRZEN", payload: { ticker: "FRZEN", note: false } });
     await api.holdSuggestion(PENDING_PROPOSALS[1], { kind: "skipped", note: "Sonra bakarım" });
     expect(db.snapshot.auditAppends.at(-1)).toMatchObject({ action: "suggestion.skipped", payload: { ticker: "ORNCM", note: true } });
     const pending = sel.approvalCards(db.snapshot).find((c) => c.proposal_id === PENDING_PROPOSALS[1]);
     expect(pending?.status).toBe("pending");
   });
 
-  it("404s an unknown id, 422s a bad body and needs proposal.decide", async () => {
+  it("404s an unknown id and 422s a bad body", async () => {
     expect(await statusOf(setup().api.holdSuggestion("yok", { kind: "held" }))).toBe(404);
     expect(await statusOf(setup().api.holdSuggestion("tut-FRZEN", { kind: "nope" as "held" }))).toBe(422);
-    expect(await statusOf(setup(true, { role: "analyst" }).api.holdSuggestion("tut-FRZEN", { kind: "held" }))).toBe(403);
-    expect(await statusOf(setup(true, { role: "analyst", singleUser: true }).api.holdSuggestion("tut-FRZEN", { kind: "held" }))).toBe(200);
   });
 });
 
-describe("single-user mode in the mock", () => {
+describe("one person takes both steps", () => {
   it("lets one person request and confirm the restart, with the waiver on the ledger", async () => {
-    const { db, api } = setup(true, { singleUser: true });
+    const { db, api } = setup();
     await api.killSwitch("Elle durduruldu.");
     await api.startKillReset({ reason: "Yeniden başlatıyorum." });
     const after = await api.confirmKillReset({ reason: "Yeniden başlatıyorum." });
@@ -116,21 +113,14 @@ describe("single-user mode in the mock", () => {
     expect(db.snapshot.auditAppends.find((e) => e.action === "auth.single_user_waiver")).toMatchObject({
       entity_type: "system_flag",
       entity_id: "kill_switch",
-      payload: { waiver: "single_user_waiver", flow: "kill_reset", first_uid: "uye-3" },
+      payload: { waiver: "single_user_waiver", flow: "kill_reset", first_uid: "sen" },
     });
   });
 
-  it("still refuses the same person when single-user mode is off", async () => {
-    const { api } = setup(true, { role: "admin" });
-    await api.killSwitch("Elle durduruldu.");
-    await api.startKillReset({ reason: "Yeniden başlatıyorum." });
-    const err = await api.confirmKillReset({ reason: "Yeniden başlatıyorum." }).catch((e: unknown) => e);
-    expect(isApiError(err) && err.status).toBe(403);
-  });
 
   it("waives the second signature on a limit change too", async () => {
-    const { db, api } = setup(true, { singleUser: true });
-    await api.proposeLimit({ key: "max_position_pct", value: 0.08, reason: "Daha küçük pozisyon" });
+    const { db, api } = setup();
+    await api.proposeLimit({ key: "max_position_pct", value: 0.08, reason: "Daha küçük bir tutar" });
     const view = await api.decideLimit(2, { decision: "approve", comment: "" });
     expect(view.active.version).toBe(2);
     expect(db.snapshot.auditAppends.some((e) => e.action === "auth.single_user_waiver" && e.payload.flow === "limits")).toBe(true);

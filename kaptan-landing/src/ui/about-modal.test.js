@@ -25,7 +25,7 @@ describe('createAboutModal', () => {
 
   it('renders the title and the product paragraph, with no course facts', () => {
     mountModal();
-    expect(mount.querySelector('.about-modal__title').textContent).toBe('Proje hakkında');
+    expect(mount.querySelector('.about-modal__title').textContent).toBe('KAPtan nedir?');
     expect(mount.querySelectorAll('.about-modal__paragraph')).toHaveLength(1);
     expect(mount.querySelector('.about-modal__facts')).toBeNull();
     expect(mount.querySelector('dl')).toBeNull();
@@ -34,12 +34,12 @@ describe('createAboutModal', () => {
   it('states the principle, carries no course text or disclaimer, and makes no performance claims', () => {
     mountModal();
     const text = mount.textContent;
-    expect(text).toMatch(/kurallar karar verir, insan onaylar/);
+    expect(text).toMatch(/kurallar karar verir, sen onaylarsın/);
     expect(text).not.toMatch(/ders projes|öğrenci projes|SENG 429|Enterprise Application|Çankaya|Avenoğlu|Güz 2026|Pzt 13:20|MB06|yatırım tavsiyesi/i);
     expect(text.toLowerCase()).not.toMatch(/ödül|garanti|en iyi|kazandır/);
   });
 
-  it('"Ajanları gör" closes the modal then scrolls to #ajanlar', () => {
+  it('"Tayfayı gör" closes the modal then scrolls to #ajanlar', () => {
     const overlay = mountModal();
     overlay.open();
     mount.querySelector('.about-modal__explore').click();

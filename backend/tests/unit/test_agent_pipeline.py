@@ -13,10 +13,10 @@ import pytest
 from kaptan.agents.context import RunContext
 from kaptan.agents.explain import assemble
 from kaptan.agents.graph import compile_graph
-from kaptan.agents.scenario import resume_graph, run_graph
 from kaptan.agents.timeline import DONE_AFTER_MS, plan
 from kaptan.agents.trace import elapsed_until_now
 from kaptan.llm.provider import LLMRequest, LLMResult, ProviderError
+from tests.harness.scenario import resume_graph, run_graph
 from tests.unit.agent_fixtures import context_for, diff, disclosure_doc, fixture_run, texts
 
 DEMO_RUNS = ("run-demo-e3-ornek", "run-demo-redteam-dmogd", "run-demo-r04-tmslj")

@@ -8,15 +8,15 @@ from typing import Any
 
 import pytest
 
-from kaptan.agents import run_scenario
 from kaptan.agents.run_rows import check_rows, output_rows
 from kaptan.audit.verify import verify_db
-from kaptan.clock import Clock
 from kaptan.db import DictConn
-from kaptan.demo.fixtures import DemoFixtures
 from kaptan.domain.schemas import iso_ms
 from kaptan.settings import Settings
 from tests.conftest import reseed_test_db
+from tests.harness.clock import FixedDayClock
+from tests.harness.fixtures import DemoFixtures
+from tests.harness.scenario import run_scenario
 
 pytestmark = pytest.mark.integration
 
@@ -27,9 +27,9 @@ async def _rows(conn: DictConn, sql: str, params: tuple[Any, ...]) -> list[dict[
         return [dict(r) for r in await cur.fetchall()]
 
 
-async def test_demo_inject_writes_outputs_and_checks_and_replaces_them(pg: DictConn, migrated: Settings) -> None:
+async def test_a_run_writes_outputs_and_checks_and_replaces_them(pg: DictConn, migrated: Settings) -> None:
     try:
-        clock = Clock(demo=True, started_at=datetime.now(UTC))
+        clock = FixedDayClock(started_at=datetime.now(UTC))
         result = await run_scenario(pg, "e3_contract", clock)
         explain = result.explain
         outputs = await _rows(

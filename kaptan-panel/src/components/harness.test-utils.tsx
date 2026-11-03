@@ -1,33 +1,20 @@
 import { useState, type ReactNode } from "react";
 import { render } from "@testing-library/react";
 import { ApiProvider } from "@/lib/api/react";
-import { actorFor, createMockApi } from "@/lib/api/mock/mock-api";
+import { createMockApi } from "@/lib/api/mock/mock-api";
 import { __setMockDb, MockDb } from "@/lib/api/mock/db";
+import { MOCK_USER } from "@/lib/auth/mock-user";
 import { SessionProvider } from "@/lib/auth/session-context";
-import type { Role } from "@/lib/domain/user";
 import { DeskStateProvider } from "@/components/shell/desk-state";
 
 /**
- * Test-only frame for the screens: the session (in a role), a mock API on a fresh in-memory
- * desk (also the SSE bus and the clock source) and the desk state. A role switch inside the
- * screen (the picker, "… gözüyle bak →") changes the API's actor too.
+ * Test-only frame for the screens: the session, a mock API on a fresh in-memory state (also the
+ * SSE bus and the clock source) and the shared live state.
  */
-export function Harness({ db, role = "risk_officer", children }: { db: MockDb; role?: Role; children: ReactNode }) {
-  const [api] = useState(() => {
-    const actor = { current: actorFor(role) };
-    return createMockApi({
-      getActor: () => actor.current,
-      onRoleChange: async (r) => {
-        actor.current = actorFor(r);
-      },
-      db,
-      latencyMs: 0,
-      live: false,
-    });
-  });
-  const first = actorFor(role);
+export function Harness({ db, children }: { db: MockDb; children: ReactNode }) {
+  const [api] = useState(() => createMockApi({ db, latencyMs: 0, live: false }));
   return (
-    <SessionProvider user={first}>
+    <SessionProvider user={MOCK_USER}>
       <ApiProvider api={api}>
         <DeskStateProvider>{children}</DeskStateProvider>
       </ApiProvider>
@@ -35,7 +22,7 @@ export function Harness({ db, role = "risk_officer", children }: { db: MockDb; r
   );
 }
 
-export function renderWithDesk(ui: ReactNode, db: MockDb = new MockDb(null), role: Role = "risk_officer") {
+export function renderWithDesk(ui: ReactNode, db: MockDb = new MockDb(null)) {
   __setMockDb(db);
-  return { db, ...render(<Harness db={db} role={role}>{ui}</Harness>) };
+  return { db, ...render(<Harness db={db}>{ui}</Harness>) };
 }

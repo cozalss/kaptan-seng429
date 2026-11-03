@@ -27,7 +27,7 @@ function buildPlate(host) {
     'p',
     { class: 'agent-scene__caption' },
     description,
-    h('span', { class: 'agent-scene__title' }, 'Canlı şema'),
+    h('span', { class: 'agent-scene__title' }, 'Hareketli şema'),
     legend,
   );
   host.replaceChildren(stage, caption);

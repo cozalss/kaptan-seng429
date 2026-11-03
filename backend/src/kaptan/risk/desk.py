@@ -1,7 +1,6 @@
 """The live desk the risk gate reads (06 §10 GateContext), computed from the DB and the clock.
 
-Only for real runs (LLM_MODE=live / DEMO_MODE=false, see agents/feed_run.py): the demo keeps the
-seeded desk so replay stays byte-identical. What it fills in:
+For real runs (LLM_MODE=live, see agents/feed_run.py). What it fills in:
 
 - equity, free cash, daily P&L and drawdown: the paper book marked to market (risk/book.py);
 - R04 `restrictions_age_h`: now − the last restriction refresh (core.restriction_refresh); no refresh

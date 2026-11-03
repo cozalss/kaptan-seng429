@@ -1,6 +1,6 @@
 """Live events (SSE) — package D.
 
-    POST /sse/ticket                                     -> {"ticket"}  (all roles; 60 s, single use)
+    POST /sse/ticket                                     -> {"ticket"}  (60 s, single use)
     GET  /stream/{feed|desk}?ticket=…&last_event_id=…    -> text/event-stream
     GET  /stream/runs/{run_id}?ticket=…&last_event_id=…  -> text/event-stream (RUN_EVENTS)
 
@@ -25,7 +25,6 @@ from fastapi.responses import StreamingResponse
 from kaptan.api.deps import SettingsDep, bearer_token, current_user
 from kaptan.api.errors import ApiError, unauthenticated
 from kaptan.auth.tokens import refresh_token_hash
-from kaptan.domain.roles import Role, is_role
 from kaptan.domain.schemas import SseTicketOut
 from kaptan.events import bus
 
@@ -37,12 +36,12 @@ LastEventIdHeader = Annotated[str | None, Header(alias="Last-Event-ID", max_leng
 Ticket = Annotated[str, Query(min_length=1, max_length=200)]
 
 _LIVE_REFRESH = (
-    "SELECT uid, role FROM auth.refresh_tokens "
+    "SELECT uid FROM auth.refresh_tokens "
     "WHERE token_hash = %s AND used_at IS NULL AND revoked_at IS NULL AND expires_at > %s"
 )
 
 
-async def _holder_from_cookie(request: Request, settings: SettingsDep) -> tuple[str, Role]:
+async def _holder_from_cookie(request: Request, settings: SettingsDep) -> str:
     origin = request.headers.get("origin")
     if origin and settings.allowed_origins and origin not in settings.allowed_origins:
         raise ApiError(403, "forbidden", "İstek kaynağı tanınmadı.")
@@ -52,19 +51,18 @@ async def _holder_from_cookie(request: Request, settings: SettingsDep) -> tuple[
     async with request.app.state.pool.connection() as conn, conn.cursor() as cur:
         await cur.execute(_LIVE_REFRESH, (refresh_token_hash(token), datetime.now(UTC)))
         row = await cur.fetchone()
-    if row is None or not is_role(row["role"]):
+    if row is None:
         raise unauthenticated()
-    return str(row["uid"]), row["role"]
+    return str(row["uid"])
 
 
 @router.post("/sse/ticket", response_model=SseTicketOut)
 async def ticket(request: Request, settings: SettingsDep) -> Any:
     if bearer_token(request) is not None:
-        actor = await current_user(request, settings)
-        uid, role = actor.uid, actor.role
+        uid = (await current_user(request, settings)).uid
     else:
-        uid, role = await _holder_from_cookie(request, settings)
-    return {"ticket": await bus.issue_ticket(request.app.state.redis, uid, role)}
+        uid = await _holder_from_cookie(request, settings)
+    return {"ticket": await bus.issue_ticket(request.app.state.redis, uid)}
 
 
 async def _open(request: Request, stream: str, ticket: str, last_event_id: str | None) -> StreamingResponse:

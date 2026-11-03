@@ -3,146 +3,166 @@
 import { useEffect, useRef } from "react";
 import type { AuditEntry } from "@/lib/domain";
 import { auditSentence } from "@/lib/audit-words";
-import { fmtInt, fmtTime, shortHash } from "@/lib/format";
-import { cn, prefersReducedMotion } from "@/lib/utils";
+import { fmtDateTime, fmtInt, fmtTime } from "@/lib/format";
+import { prefersReducedMotion } from "@/lib/utils";
+import { Band } from "@/components/shell/page-frame";
 import { Button } from "@/components/ui/button";
-import { Denied } from "@/components/roles/denied";
-import { useRole } from "@/components/roles/use-role";
-import { CARD, CARD_PAD, Pill } from "@/components/portfolio/kit";
 import type { Walk } from "./chain-walk";
 
 /**
- * "Defteri doğrula" in the page header: one button, and after a check a small chip with the
- * verdict ("Zincir sağlam · 4.812 kayıt · 10:42"). Screen readers hear the check through one
- * always-present status line.
+ * "Kayıtlar sağlam mı?": one band, one button. Idle it says what the button does; while it runs,
+ * a count walks the chain from the first record; at the end either the seal lands on an unbroken
+ * chain or the chain snaps at the very record that was changed, and the words say what that means.
  */
-export function VerifyButton({ walk, onVerify }: { walk: Walk; onVerify: () => void }) {
-  const { can } = useRole();
-  const allowed = can("audit.verify");
+export function VerifyBand({ walk, onVerify, onShow }: { walk: Walk; onVerify: () => void; onShow: (pos: number) => void }) {
   const walking = walk.phase === "walking";
+  const box = useRef<HTMLDivElement | null>(null);
+  const done = walk.phase === "done";
+  // On a phone the verdict may land below the fold: bring it into view once the check ends.
+  useEffect(() => {
+    if (done && typeof box.current?.scrollIntoView === "function") box.current.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+  }, [done]);
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {walk.phase === "done" ? <VerdictChip walk={walk} /> : null}
-      <Button variant="secondary" size="md" locked={!allowed} pending={walking} disabled={!allowed || walking} onClick={onVerify}>
-        {walking ? "Doğrulanıyor…" : "Defteri doğrula"}
-      </Button>
+    <Band aria-label="Kayıt kontrolü" className="gc-verify" data-testid={walk.phase === "walking" || walk.phase === "done" ? "walk-result" : undefined} data-state={walk.phase === "done" ? (walk.result.ok ? "ok" : "bad") : walk.phase}>
+      <div className="gc-verify-top">
+        <div className="min-w-0">
+          {walk.phase === "idle" ? (
+            <p className="gc-verify-idle">Her kayıt bir öncekine mühürlü yazılır. Biri sonradan değişirse mühür tutmaz. Baştan sona bakmamı ister misin?</p>
+          ) : null}
+          {walk.phase === "error" ? (
+            <p role="alert" className="gc-verify-idle text-north">
+              {walk.message} Yeniden deneyebilirsin.
+            </p>
+          ) : null}
+          {walk.phase === "walking" || walk.phase === "done" ? <Count walk={walk} /> : null}
+        </div>
+        <Button variant={done ? "secondary" : "primary"} size="lg" pending={walking} disabled={walking} onClick={onVerify} className="gc-verify-btn">
+          {walking ? "Bakıyorum…" : "Kayıtlar sağlam mı?"}
+        </Button>
+      </div>
       <p role="status" aria-live="polite" className="sr-only">
         {spoken(walk)}
       </p>
-    </div>
-  );
-}
-
-function VerdictChip({ walk }: { walk: Extract<Walk, { phase: "done" }> }) {
-  const ok = walk.result.ok;
-  return (
-    <span aria-hidden className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-dense font-semibold tabular-nums", ok ? "bg-gain/10 text-gain" : "bg-north-tint text-north")}>
-      <span className={cn("size-2 rounded-full", ok ? "bg-gain" : "bg-north")} />
-      {ok ? `Zincir sağlam · ${fmtInt(walk.result.checked)} kayıt` : `Kırık · #${fmtInt(walk.result.first_bad_pos ?? 0)}`}
-      <span className="font-medium">· {fmtTime(walk.result.verified_at)}</span>
-    </span>
-  );
-}
-
-/**
- * Under the header, only when there is something to say: the role's reason when it may not
- * verify, the tamper test note, and while/after a check the progress bar and the verdict (kırık
- * at #N with the record and a way to it).
- */
-export function VerifyPanel({ walk, onShow, tamperOn }: { walk: Walk; onShow: (pos: number) => void; tamperOn: boolean }) {
-  const { can } = useRole();
-  const allowed = can("audit.verify");
-  if (walk.phase === "idle" && allowed && !tamperOn) return null;
-  return (
-    <section aria-label="Defter doğrulaması" className={cn(CARD, CARD_PAD, "space-y-3")}>
-      {tamperOn ? <p className="text-dense text-muted">Kurcalama testi açık (Ayarlar).</p> : null}
-      <Denied action="audit.verify" />
-      <WalkResult walk={walk} onShow={onShow} />
-    </section>
+      {walk.phase === "walking" || walk.phase === "done" ? (
+        <div ref={box} className="gc-walk scroll-mb-6">
+          <Chain walk={walk} />
+          {walk.phase === "done" ? <Verdict walk={walk} onShow={onShow} /> : null}
+        </div>
+      ) : null}
+    </Band>
   );
 }
 
 /** What the status line says: the check starting, then the verdict in one sentence. */
 function spoken(walk: Walk): string {
-  if (walk.phase === "walking") return "Defter doğrulanıyor…";
+  if (walk.phase === "walking") return "Kayıtlara bakılıyor…";
   if (walk.phase !== "done") return "";
-  return walk.result.ok
-    ? `${fmtInt(walk.result.checked)} kaydın hiçbiri değişmemiş. Zincir sağlam.`
-    : `Kayıt #${fmtInt(walk.result.first_bad_pos ?? 0)}’de zincir kırık.`;
+  return walk.result.ok ? `${fmtInt(walk.result.checked)} kaydın hiçbiri değişmemiş. Kayıtlar sağlam.` : `Kayıt ${fmtInt(walk.result.first_bad_pos ?? 0)}’de bozulma var.`;
 }
 
-function WalkResult({ walk, onShow }: { walk: Walk; onShow: (pos: number) => void }) {
-  const box = useRef<HTMLDivElement | null>(null);
-  const done = walk.phase === "done";
-  // On a phone the verdict lands below the fold: bring it into view once the check ends.
-  useEffect(() => {
-    if (done && typeof box.current?.scrollIntoView === "function") box.current.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion() ? "auto" : "smooth" });
-  }, [done]);
-  if (walk.phase === "idle") return null;
-  if (walk.phase === "error") {
-    return (
-      <p role="alert" className="text-ui text-north">
-        {walk.message}
-      </p>
-    );
-  }
-  const checked = walk.phase === "walking" ? walk.checked : walk.result.ok ? walk.result.checked : (walk.result.first_bad_pos ?? 0);
-  const badPos = walk.phase === "done" && !walk.result.ok ? (walk.result.first_bad_pos ?? null) : null;
-  const share = walk.total > 0 ? Math.min(1, checked / walk.total) : 0;
+const checkedOf = (walk: Extract<Walk, { phase: "walking" | "done" }>) => (walk.phase === "walking" ? walk.checked : walk.result.ok ? walk.result.checked : (walk.result.first_bad_pos ?? 0));
+
+function Count({ walk }: { walk: Extract<Walk, { phase: "walking" | "done" }> }) {
   return (
-    <div ref={box} className="scroll-mb-6 space-y-3" data-testid="walk-result">
-      <div aria-hidden className="h-2 overflow-hidden rounded-full bg-sunk">
-        <div className={cn("h-full origin-left rounded-full", badPos !== null ? "bg-north" : done ? "bg-gain" : "bg-brand")} style={{ transform: `scaleX(${share})` }} />
-      </div>
-      <p className="text-dense text-muted tabular-nums">
-        {fmtInt(checked)} / {fmtInt(walk.total)} kayıt kontrol edildi
-      </p>
-      {/* The verdict's place is kept while the check runs, so nothing jumps when it lands. */}
-      <div aria-hidden className="min-h-[56px]">
-        {walk.phase === "done" ? <Verdict walk={walk} badPos={badPos} /> : null}
-      </div>
-      {badPos !== null ? (
-        <Button variant="link" onClick={() => onShow(badPos)}>
-          Defterde göster →
-        </Button>
-      ) : null}
+    <p className="gc-count">
+      <span className="gc-count-n">{fmtInt(checkedOf(walk))}</span>
+      <span className="gc-count-of">/ {fmtInt(walk.total)} kayıt kontrol edildi</span>
+    </p>
+  );
+}
+
+/** The chain as one line: inked as far as it was checked, snapped in red where it broke. */
+function Chain({ walk }: { walk: Extract<Walk, { phase: "walking" | "done" }> }) {
+  const badPos = walk.phase === "done" && !walk.result.ok ? (walk.result.first_bad_pos ?? null) : null;
+  const share = walk.total > 0 ? Math.min(1, checkedOf(walk) / walk.total) : 0;
+  return (
+    <div aria-hidden className="gc-chain-line" data-bad={badPos !== null || undefined} style={{ "--gc-at": share } as React.CSSProperties}>
+      <span className="gc-chain-fill" />
+      {badPos !== null ? <span className="gc-chain-snap" /> : null}
     </div>
   );
 }
 
-function Verdict({ walk, badPos }: { walk: Extract<Walk, { phase: "done" }>; badPos: number | null }) {
-  if (walk.result.ok) {
+function Verdict({ walk, onShow }: { walk: Extract<Walk, { phase: "done" }>; onShow: (pos: number) => void }) {
+  const { result } = walk;
+  if (result.ok) {
     return (
-      <div className="animate-fade-in space-y-1.5">
-        <p className="flex flex-wrap items-center gap-3">
-          <Pill tone="gain">Sağlam</Pill>
-          <span className="text-[18px] leading-7 font-semibold text-ink">Zincir sağlam.</span>
-        </p>
-        <p className="text-ui text-ink-soft">
-          {fmtInt(walk.result.checked)} kaydın hiçbiri sonradan değişmemiş. Son parmak izi <span className="code">{shortHash(walk.result.head_hash, 6, 4)}</span>.
-        </p>
+      <div className="gc-verdict">
+        <Seal ok />
+        <div className="min-w-0">
+          <p className="u-chapter gc-verdict-title">Kayıtlar sağlam.</p>
+          <p className="gc-verdict-text">{fmtInt(result.checked)} kaydın hiçbiri sonradan değişmemiş. Hepsine ilk yazıldığı gibi güvenebilirsin.</p>
+          <ProofDetails head={result.head_hash} at={result.verified_at} anchor={result.anchor} />
+        </div>
       </div>
     );
   }
+  const pos = result.first_bad_pos ?? 0;
   return (
-    <div className="animate-fade-in space-y-2">
-      <p className="flex flex-wrap items-center gap-3">
-        <Pill tone="north">Kırık</Pill>
-        <span className="text-[18px] leading-7 font-semibold text-north tabular-nums">Kayıt #{fmtInt(badPos ?? 0)}’de zincir kırık.</span>
-      </p>
-      {walk.bad ? <BrokenRecord entry={walk.bad} /> : null}
-      <p className="text-ui text-ink-soft">Bu kaydın şimdiki parmak izi zincirdekiyle tutmuyor.</p>
+    <div className="gc-verdict">
+      <Seal ok={false} />
+      <div className="min-w-0">
+        <p className="u-chapter gc-verdict-title gc-verdict-bad">Kayıt {fmtInt(pos)}’de bozulma var.</p>
+        <p className="gc-verdict-text">
+          Bu ne demek? Bu kayıt yazıldıktan sonra biri onu değiştirmiş; zincir burada kopuyor. Ondan önceki {fmtInt(Math.max(0, pos - 1))} kayıt sağlam. Ondan sonrakilere güvenmeden önce ne olduğuna bakman gerekir.
+        </p>
+        {walk.bad ? <BrokenRecord entry={walk.bad} /> : null}
+        <div className="mt-2">
+          <Button variant="link" onClick={() => onShow(pos)}>
+            Kaydı göster →
+          </Button>
+        </div>
+        <ProofDetails head={result.head_hash} at={result.verified_at} anchor={result.anchor} />
+      </div>
     </div>
   );
 }
 
 function BrokenRecord({ entry }: { entry: AuditEntry }) {
   return (
-    <p className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 border-l-[3px] border-north bg-north-tint py-2 pr-3 pl-3 text-ui">
-      <time dateTime={entry.occurred_at} className="text-ink tabular-nums">
+    <p className="gc-broken-record">
+      <time dateTime={entry.occurred_at} className="tabular-nums">
         {fmtTime(entry.occurred_at)}
       </time>
-      <span className="min-w-0 text-ink">{auditSentence(entry)}</span>
+      <span className="min-w-0">{auditSentence(entry)}</span>
     </p>
+  );
+}
+
+/** The check's proof, for whoever wants it: the last fingerprint, when, and the outside anchor if any. */
+function ProofDetails({ head, at, anchor }: { head: string; at: string; anchor: { at: string; chain_pos: number; hash: string } | null }) {
+  return (
+    <details className="gc-details">
+      <summary className="gc-details-sum">Ayrıntılar</summary>
+      <dl className="gc-details-list">
+        <div>
+          <dt>Kontrol zamanı</dt>
+          <dd className="tabular-nums">{fmtDateTime(at)}</dd>
+        </div>
+        <div>
+          <dt>Son parmak izi</dt>
+          <dd className="gc-hash code">{head}</dd>
+        </div>
+        {anchor ? (
+          <div>
+            <dt>Dışarıya bırakılan iz</dt>
+            <dd className="gc-hash code">
+              #{fmtInt(anchor.chain_pos)}: {anchor.hash}
+            </dd>
+          </div>
+        ) : null}
+      </dl>
+    </details>
+  );
+}
+
+/** The landing's seal: stamped whole on a sound chain, cracked across a broken one. */
+function Seal({ ok }: { ok: boolean }) {
+  return (
+    <svg aria-hidden viewBox="0 0 96 96" className="gc-seal" data-ok={ok || undefined}>
+      <circle cx="48" cy="48" r="44" fill="none" stroke="currentColor" strokeWidth="3" />
+      <circle cx="48" cy="48" r="37" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      {ok ? <path d="M30 50l12 12 24-27" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="square" /> : <path d="M34 14 54 38 40 52 62 84" fill="none" stroke="currentColor" strokeWidth="5" strokeLinejoin="bevel" />}
+    </svg>
   );
 }

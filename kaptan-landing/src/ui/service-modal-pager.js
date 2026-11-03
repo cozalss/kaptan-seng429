@@ -40,13 +40,13 @@ function stepButton(direction, onStep) {
 export function createAgentPager({ onStep }) {
   const prev = stepButton(-1, onStep);
   const next = stepButton(1, onStep);
-  const el = h('nav', { class: 'service-modal__pager', 'aria-label': 'Tayfa: önceki ve sonraki ajan' }, prev.button, next.button);
+  const el = h('nav', { class: 'service-modal__pager', 'aria-label': 'Tayfa: önceki ve sonraki' }, prev.button, next.button);
 
   function fill(step, agent, word) {
     step.button.disabled = !agent;
     step.number.textContent = agent ? agent.number : '';
     step.name.textContent = agent ? agent.name : '';
-    step.button.setAttribute('aria-label', agent ? `${word} ajan: ${agent.number} ${agent.name}` : `${word} ajan yok`);
+    step.button.setAttribute('aria-label', agent ? `${word}: ${agent.number} ${agent.name}` : `${word} yok`);
   }
 
   return {

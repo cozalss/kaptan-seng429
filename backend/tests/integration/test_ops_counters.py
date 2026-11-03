@@ -8,21 +8,20 @@ from typing import Any
 import pytest
 
 from kaptan.db import DictConn
-from kaptan.disclosures.counters import day_counters, tokens_floor
+from kaptan.disclosures.counters import day_counters
 
 pytestmark = pytest.mark.integration
 
 
-async def test_token_floor_only_in_demo_mode(pg: DictConn) -> None:
+async def test_a_day_without_usage_shows_no_tokens(pg: DictConn) -> None:
     real_day = datetime(2030, 1, 7, 9, 0, tzinfo=UTC)  # no LLM usage recorded on this day
     assert (await day_counters(pg, real_day))["llm_tokens"] == 0
-    assert (await day_counters(pg, real_day, demo=True))["llm_tokens"] == tokens_floor()
 
 
-async def test_outside_demo_mode_only_the_istanbul_day_counts(pg: DictConn) -> None:
-    """Live counters are per day: the demo day's 200+ visible rows are not "today" on another day."""
+async def test_only_the_istanbul_day_counts(pg: DictConn) -> None:
+    """Counters are per day: the fixture day's rows are not "today" on another day."""
     demo_day = datetime(2027, 1, 11, 10, 40, tzinfo=UTC)
-    assert (await day_counters(pg, demo_day, demo=True))["total"] > 0
+    assert (await day_counters(pg, demo_day))["total"] > 0
     other_day = await day_counters(pg, datetime(2030, 1, 7, 9, 0, tzinfo=UTC))
     assert (other_day["total"], other_day["proposals"]) == (0, 0)
     await pg.execute(
@@ -55,7 +54,9 @@ async def test_counters_endpoint_takes_a_day(client: Any) -> None:
     from tests.conftest import bearer, login
 
     session = await login(client)
-    ok = await client.get("/api/v1/disclosures/counters?day=2027-01-08", headers=bearer(session["access_token"]))
-    assert ok.status_code == 200 and ok.json()["total"] > 0  # DEMO_MODE: the demo day whatever the day
+    ok = await client.get("/api/v1/disclosures/counters?day=2027-01-11", headers=bearer(session["access_token"]))
+    assert ok.status_code == 200 and ok.json()["total"] > 0
+    other = await client.get("/api/v1/disclosures/counters?day=2030-01-08", headers=bearer(session["access_token"]))
+    assert other.status_code == 200 and other.json()["total"] == 0
     bad = await client.get("/api/v1/disclosures/counters?day=2027-02-30", headers=bearer(session["access_token"]))
     assert bad.status_code == 422

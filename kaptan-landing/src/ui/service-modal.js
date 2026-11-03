@@ -55,7 +55,7 @@ function renderMedia(media, image, agent) {
 function buildContent(pager) {
   const closeButton = h(
     'button',
-    { type: 'button', class: 'overlay__close', 'aria-label': 'Ajan detayını kapat' },
+    { type: 'button', class: 'overlay__close', 'aria-label': 'Bu sayfayı kapat' },
     '✕'
   );
   // The page's running head: "[ticks] Tayfa 4 / 8  ← 03 Önemlilik · 05 Şüpheci →  Bölüm 2 · Tayfa — 04 Kanıt".
@@ -80,7 +80,7 @@ function buildContent(pager) {
   const ctaButton = h(
     'button',
     { type: 'button', class: 'pill service-modal__cta' },
-    h('span', { class: 'pill__label' }, 'Rotada görün'),
+    h('span', { class: 'pill__label' }, 'Rotada gör'),
     h('span', { class: 'pill__chip', 'aria-hidden': 'true' }),
   );
   return { closeButton, label, folio, headTitle, media, image, nameLine, name, meta, description, notDoes, notDoesText, ctaButton };
@@ -151,7 +151,7 @@ export function createServiceModal({ mount, agents, lockScroll, unlockScroll, sc
   const overlay = createOverlay({
     mount,
     id: 'service-modal',
-    label: 'Ajan detayı',
+    label: 'Tayfa detayı',
     labelledBy: TITLE_ID,
     variant: 'detail',
     lockScroll,
@@ -240,7 +240,7 @@ export function createServiceModal({ mount, agents, lockScroll, unlockScroll, sc
   function renderAgent(agent) {
     currentAgent = agent;
     renderMedia(media, image, agent);
-    image.alt = `${agent.name} ajanının çizimi`;
+    image.alt = `${agent.name} çizimi`;
     headTitle.replaceChildren(h('strong', null, 'Bölüm 2'), ` · Tayfa — ${agent.number} ${agent.name}`);
     nameLine.textContent = agent.name;
     // The caps are sized so the longest word always fits the text column (service-modal.css).

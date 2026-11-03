@@ -1,9 +1,10 @@
-import { LIMIT_META, type LimitKey, type LimitValue, type LimitVersion } from "@/lib/domain";
+import { LIMIT_META, type LimitKey, type LimitValue, type LimitVersion, type RiskStatus } from "@/lib/domain";
 import { fmtPct } from "@/lib/format";
+import { fmtLira } from "@/lib/solo/words";
 import { locative, possessive } from "@/components/story/turkish";
 
 /**
- * The limits as plain sentences ("Bir işlemde en fazla sermayenin %0,5’i riske girer.") and
+ * The limits as plain sentences ("Bir işlemde en fazla paranın %0,5’i riske girer.") and
  * the small conversions the change form needs. Pure.
  */
 export const PLAIN_LIMITS: readonly LimitKey[] = [
@@ -17,26 +18,69 @@ export const PLAIN_LIMITS: readonly LimitKey[] = [
   "kill_drawdown_pct",
 ];
 
+/** The ones a person meets; the rest are technical and fold away. */
+export const FIRST_LIMITS: readonly LimitKey[] = ["risk_per_trade_pct", "max_position_pct", "max_concurrent_positions", "daily_loss_halt_pct", "kill_drawdown_pct"];
+
+/** A limit's short name. */
+const LIMIT_TITLE: Readonly<Partial<Record<LimitKey, string>>> = {
+  risk_per_trade_pct: "Bir işlemin riski",
+  max_position_pct: "Tek hisseye giden",
+  max_concurrent_positions: "Aynı anda hisse",
+  max_adv_share: "İşlemin büyüklüğü",
+  price_band_pct: "Fiyat aralığı",
+  min_edge_cost_ratio: "Kazanç ve maliyet",
+  daily_loss_halt_pct: "Günlük fren",
+  kill_drawdown_pct: "Büyük fren",
+};
+
+export function limitTitle(key: LimitKey): string {
+  return LIMIT_TITLE[key] ?? LIMIT_META[key].label_tr;
+}
+
+/** The screen's sentence, once the limits are known. */
+export function settingsSentence(count: number | null): string {
+  if (count === null) return "Sınırlarına bakıyorum…";
+  if (count === 0) return "Henüz bir sınırın yok.";
+  return `Paranı ${count} sınır koruyor.`;
+}
+
 const pct = (v: number) => fmtPct(v, 2);
+
+/** What a limit comes to today, in lira, from the real money. Null where it has no lira meaning. */
+export function limitForYou(key: LimitKey, v: number, risk: Pick<RiskStatus, "equity" | "peak_equity" | "daily_pnl_pct"> | null): string | null {
+  if (!risk) return null;
+  switch (key) {
+    case "risk_per_trade_pct":
+      return `Bugünkü paranla: bir işlemde ${fmtLira(risk.equity * v)} kadar.`;
+    case "max_position_pct":
+      return `Bugünkü paranla: tek hisseye en fazla ${fmtLira(risk.equity * v)}.`;
+    case "daily_loss_halt_pct":
+      return `Bugünkü paranla: yaklaşık ${fmtLira((risk.equity / (1 + risk.daily_pnl_pct)) * Math.abs(v))} düşüş.`;
+    case "kill_drawdown_pct":
+      return `Bugünkü paranla: paran ${fmtLira(risk.peak_equity * (1 - Math.abs(v)))} altına inerse.`;
+    default:
+      return null;
+  }
+}
 
 export function limitSentence(key: LimitKey, v: number): string {
   switch (key) {
     case "risk_per_trade_pct":
-      return `Bir işlemde en fazla sermayenin ${possessive(pct(v))} riske girer.`;
+      return `Bir işlemde en fazla paranın ${possessive(pct(v))} riske girer.`;
     case "max_position_pct":
-      return `Tek bir hisse sermayenin en fazla ${possessive(pct(v))} olabilir.`;
+      return `Tek bir hisse paranın en fazla ${possessive(pct(v))} olabilir.`;
     case "max_concurrent_positions":
-      return `Aynı anda en fazla ${v} pozisyon açık kalır.`;
+      return `Aynı anda en fazla ${v} farklı hisse elinde olur.`;
     case "max_adv_share":
-      return `Bir emir, hissenin günlük işlem hacminin en fazla ${possessive(pct(v))} olabilir.`;
+      return `Bir işlem, hissenin günlük alım satımının en fazla ${possessive(pct(v))} olabilir.`;
     case "price_band_pct":
-      return `Limit fiyat son fiyattan en fazla ±${pct(v)} uzaklaşır.`;
+      return `Önerilen fiyat, son fiyattan en fazla ±${pct(v)} uzaklaşır.`;
     case "min_edge_cost_ratio":
       return `Beklenen kazanç maliyetin en az ${String(v).replace(".", ",")} katı değilse öneri çıkmaz.`;
     case "daily_loss_halt_pct":
-      return `Gün içinde ${pct(v)} zararda yeni emir durur.`;
+      return `Paran bir günde ${pct(Math.abs(v))} düşerse o gün yeni işlem olmaz.`;
     case "kill_drawdown_pct":
-      return `Zirveden ${pct(v)} düşüşte her şey durur.`;
+      return `Paran en yüksek hâlinden ${pct(Math.abs(v))} düşerse her şey durur.`;
     default:
       return `${LIMIT_META[key].label_tr}: ${String(v).replace(".", ",")}`;
   }
@@ -106,14 +150,10 @@ function dm(iso: string): string {
   return `${pad2(d.getUTCDate())}.${pad2(d.getUTCMonth() + 1)}`;
 }
 
-/**
- * One version's story in a line: "Üye 1 önerdi 08.11 · Üye 3 onayladı, 09.11’de yürürlüğe
- * girdi" (or "… · Üye 3 reddetti 09.11"; a version still waiting has only its first half).
- */
+/** One version's story in a line: "09.11’de yürürlüğe girdi", "09.11’de vazgeçtin" or "08.11’de önerildi". */
 export function historyLine(v: LimitVersion): string {
-  const proposed = `${v.proposed_by.name} önerdi ${dm(v.proposed_by.at)}`;
   const d = v.decided_by;
-  if (!d) return proposed;
-  if (v.status === "rejected") return `${proposed} · ${d.name} reddetti ${dm(d.at)}`;
-  return `${proposed} · ${d.name} onayladı, ${locative(dm(v.effective_from ?? d.at))} yürürlüğe girdi`;
+  if (!d) return `${locative(dm(v.proposed_by.at))} önerildi`;
+  if (v.status === "rejected") return `${locative(dm(d.at))} vazgeçtin`;
+  return `${locative(dm(v.effective_from ?? d.at))} yürürlüğe girdi`;
 }

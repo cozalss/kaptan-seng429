@@ -1,5 +1,5 @@
 import { NBSP } from "@/lib/format";
-import { approvedSentence, confidenceWord, dayLabel, fmtLira, fmtLiraShort, fmtSignedLira, liraParts, skippedSentence, titleTr } from "./words";
+import { approvedSentence, confidenceSentence, confidenceWord, dayLabel, fmtLira, fmtLiraShort, fmtSignedLira, liraParts, skippedSentence, titleTr } from "./words";
 
 const s = (text: string) => text.replaceAll(NBSP, " ");
 
@@ -35,6 +35,12 @@ describe("single-user words", () => {
     expect(confidenceWord(0.6)).toBe("Orta");
     expect(confidenceWord(0.45)).toBe("Orta");
     expect(confidenceWord(0.2)).toBe("Zayıf");
+  });
+
+  it("says how sure KAPtan is as a sentence, and never oversells it", () => {
+    expect(confidenceSentence(0.8)).toBe("KAPtan buna güveniyor, ama garanti değil.");
+    expect(confidenceSentence(0.6)).toBe("KAPtan orta derecede emin.");
+    expect(confidenceSentence(0.25)).toBe("KAPtan pek emin değil.");
   });
 
   it("says what an answer did", () => {

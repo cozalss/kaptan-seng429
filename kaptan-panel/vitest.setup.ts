@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+import "@/lib/api/mock/register";
 
 // jsdom lacks these browser APIs; Radix and cmdk use them for layout only.
 class ResizeObserverStub {

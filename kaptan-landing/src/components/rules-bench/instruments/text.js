@@ -3,7 +3,7 @@
 // ("%0,19'u", "%12'si") and never the words "al", "kazandırır" or "garanti".
 
 export const ISSUER = 'ÖRNEK ENERJİ A.Ş.';
-export const RESULT_LINE = 'Öneri adayı → filtreler → insan onayı. Otomatik emir yok.';
+export const RESULT_LINE = 'Öneri adayı → filtreler → senin onayın. Otomatik işlem yok.';
 export const LEAK_EFFECT = 'atlanır ya da yarıya indirilir';
 
 const MINUS = '−';
@@ -50,16 +50,16 @@ export const COPY = {
     valuetext: (v, fired) => `sermayenin ${E1_PCT(v)}, ${fired ? 'eşiğe ulaşıyor' : 'eşiğin altında'}`,
     state: (v, fired) =>
       fired
-        ? `E1 tutar: 10 seansta geri alım sermayenin ${E1_PCT(v)}, eşik %0,25. Öneri adayı doğar.`
-        : `E1 tutmaz: 10 seansta geri alım sermayenin ${E1_PCT(v)}, eşik %0,25. Öneri yok.`,
+        ? `E1 tutar: 10 borsa gününde geri alım sermayenin ${E1_PCT(v)}, eşik %0,25. Öneri adayı doğar.`
+        : `E1 tutmaz: 10 borsa gününde geri alım sermayenin ${E1_PCT(v)}, eşik %0,25. Öneri yok.`,
   },
   E3: {
     valuetext: (v, fired) =>
       `yıllık gelirin ${pctWithSuffix(v, 1, true)}, ${fired ? 'eşiğe ulaşıyor' : 'eşiğin altında'}`,
     state: (v, fired) =>
       fired
-        ? `E3 tutar: yıllıklandırılmış tutar yıllık gelirin ${pctWithSuffix(v, 1, true)}, eşik %10. Öneri adayı doğar.`
-        : `E3 tutmaz: yıllıklandırılmış tutar yıllık gelirin ${pctWithSuffix(v, 1, true)}, eşik %10. Öneri yok.`,
+        ? `E3 tutar: işin bir yıla düşen tutarı yıllık gelirin ${pctWithSuffix(v, 1, true)}, eşik %10. Öneri adayı doğar.`
+        : `E3 tutmaz: işin bir yıla düşen tutarı yıllık gelirin ${pctWithSuffix(v, 1, true)}, eşik %10. Öneri yok.`,
   },
   E2: {
     state: (on) =>
@@ -74,11 +74,11 @@ export const COPY = {
         : 'E4 tutmaz: finansal sonuç açıklanmadı. Öneri yok.',
   },
   leak: {
-    valuetext: (v, fired) => `son 5 seansta yükseliş ${WHOLE_PCT(v)}, ${fired ? 'eşiği aşıyor' : 'eşiği aşmıyor'}`,
+    valuetext: (v, fired) => `son 5 borsa gününde yükseliş ${WHOLE_PCT(v)}, ${fired ? 'eşiği aşıyor' : 'eşiği aşmıyor'}`,
     state: (v, fired) =>
       fired
-        ? `Sızıntı filtresi devrede: son 5 seansta yükseliş ${WHOLE_PCT(v)}, eşik %8. Öneri ${LEAK_EFFECT}.`
-        : `Sızıntı filtresi geçer: son 5 seansta yükseliş ${WHOLE_PCT(v)}, eşik %8. Öneri küçülmez.`,
+        ? `Sızıntı filtresi devrede: son 5 borsa gününde yükseliş ${WHOLE_PCT(v)}, eşik %8. Öneri ${LEAK_EFFECT}.`
+        : `Sızıntı filtresi geçer: son 5 borsa gününde yükseliş ${WHOLE_PCT(v)}, eşik %8. Öneri küçülmez.`,
   },
 };
 
@@ -94,7 +94,7 @@ export const SHORT = {
 export const GATES = [
   { key: 'tradable', name: 'İşlem görebilirlik', on: 'İşlem görebilir', off: 'İşlem göremez' },
   { key: 'noMeasure', name: 'Tedbir', on: 'Tedbir yok', off: 'Tedbir var' },
-  { key: 'inUniverse', name: 'Evren', on: 'Evrende', off: 'Evren dışında' },
+  { key: 'inUniverse', name: 'Liste', on: 'Listede', off: 'Liste dışında' },
 ];
 
 /** Joins Turkish list items: "a", "a ve b", "a, b ve c". */
@@ -105,7 +105,7 @@ export function joinTr(items) {
 
 /** Short visible screen verdict. */
 export function screenShort(failed) {
-  if (!failed.length) return 'Üç kapı açık: bildirim ajanlara ulaşır.';
+  if (!failed.length) return 'Üç kapı açık: bildirim yapay zekâya ulaşır.';
   const names = failed.map((key) => (GATES.find((g) => g.key === key) || { name: key }).name.toLocaleLowerCase('tr-TR'));
   const text = `${joinTr(names)} ${names.length > 1 ? 'kapıları' : 'kapısı'} kapalı: bildirim elenir.`;
   return text.charAt(0).toLocaleUpperCase('tr-TR') + text.slice(1);
@@ -113,7 +113,7 @@ export function screenShort(failed) {
 
 /** Screen sentence from the list of failed gate keys. */
 export function screenSentence(failed) {
-  if (!failed.length) return 'Ön eleme geçer: üç kapı da açık, bildirim ajanlara ulaşır.';
+  if (!failed.length) return 'Ön eleme geçer: üç kapı da açık, bildirim yapay zekâya ulaşır.';
   const names = failed.map((key) =>
     (GATES.find((g) => g.key === key) || { name: key }).name.toLocaleLowerCase('tr-TR'),
   );

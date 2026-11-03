@@ -9,11 +9,11 @@ const TITLE_ID = 'legal-modal-title';
 export const LEGAL_SECTIONS = Object.freeze([
   {
     heading: 'Bağlantı yok',
-    body: 'Proje; Kamuyu Aydınlatma Platformu (KAP), Borsa İstanbul ve Sermaye Piyasası Kurulu (SPK) ile bağlantılı değildir, onlar tarafından onaylanmamıştır.',
+    body: 'KAPtan; Kamuyu Aydınlatma Platformu (KAP), Borsa İstanbul ve Sermaye Piyasası Kurulu (SPK) ile bağlantılı değildir, onlar tarafından onaylanmamıştır.',
   },
   {
-    heading: 'Sinyal paylaşılmaz',
-    body: 'Sistemin ürettiği öneriler, sinyaller ya da pozisyonlar bu sitede veya başka bir kanalda paylaşılmaz.',
+    heading: 'Önerilerin sende kalır',
+    body: 'KAPtan’ın sana getirdiği öneriler bu sitede ya da başka bir yerde paylaşılmaz.',
   },
   {
     heading: 'Kişisel veri',

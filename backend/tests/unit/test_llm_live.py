@@ -9,14 +9,14 @@ import httpx
 import pytest
 import respx
 
-from kaptan.agents.scenario import run_graph
 from kaptan.domain.schemas.agents import ClassifierOutput
 from kaptan.llm.budget import Caps
 from kaptan.llm.factory import build_live_provider, caps_from, usable_key
 from kaptan.llm.live import LiveProvider
 from kaptan.llm.provider import LLMRequest, ProviderError
-from kaptan.llm.replay import default_cassette
 from kaptan.llm.store import MemoryStore
+from tests.harness.replay import default_cassette
+from tests.harness.scenario import run_graph
 from tests.unit.agent_fixtures import context_for
 from tests.unit.llm_support import (
     DEEPSEEK_URL,

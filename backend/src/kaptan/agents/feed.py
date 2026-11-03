@@ -3,18 +3,24 @@
 Producer: `kaptan.ingest.publish.publish_to_agents()` (stage `listed` after the poller stored a new
 visible row, stage `text` after the detail fetcher stored its text). For each entry:
 
-1. **Idempotency** on the disclosure index: `ops.agent_feed` holds one row per index; an index that is
-   already running-to-completion (done, waiting_approval, skipped, capped, failed) is acknowledged and
-   ignored, so duplicate entries and redeliveries never start a second run.
+1. **Idempotency** on the disclosure index: `ops.agent_feed` holds one row per index; an index that has
+   ended (done, waiting_approval, skipped, window_closed, expired_unrun, failed) is acknowledged and ignored,
+   so duplicate entries and redeliveries never start a second run.
 2. **Scope:** only live KAP rows (`origin='kap'`, not backfill) with a ticker and an agent subject route
    (E1–E4 or `llm`, `ingest.subject_routes.DETAIL_ROUTES`) start a run; everything else is recorded as
    `skipped` with the reason. In-scope rows without their TR text yet wait as `awaiting_text` until the
    `text` entry arrives.
-3. **Spend limit:** at most `AGENT_MAX_RUNS_PER_HOUR` runs that reached an LLM (or are still running) per
+3. **Cheap checks first, no budget used:** a row whose entry window has closed (`feed_queue.entry_window_open`)
+   can only end in HOLD: `window_closed` when it arrives that late, `expired_unrun` (with why it waited) when
+   it had been waiting. A row the LLM-free pre-gate vetoes (R03, R04, R13) runs at once with 0 LLM calls.
+4. **Spend limit:** at most `AGENT_MAX_RUNS_PER_HOUR` runs that reached an LLM (or are still running) per
    rolling hour, at most `AGENT_MAX_RUNS_PER_DAY` per Istanbul day (0 = no daily cap), and no run when
-   every live provider is over its daily cap (kaptan.llm.budget); such rows are
-   `capped` (not retried: a stale disclosure is not worth a late run).
-4. **Ack after persist:** the entry is XACKed only after the run's transaction (which also writes the
+   every live provider is over its daily cap (kaptan.llm.budget). Such a row is `deferred`, with the reason.
+   llm-route rows may use only part of a cap, so a flood of them leaves room for an E row.
+5. **Re-drive:** housekeeping (`sweep`) ends what can no longer run and puts deferred rows back on the stream in
+   priority order, as many as the caps have room for. They then take the normal path below, so the ack, the
+   crash replay and the idempotency are the same as for a new entry.
+6. **Ack after persist:** the entry is XACKed only after the run's transaction (which also writes the
    feed row) committed. A crash before that leaves the entry pending; on restart the consumer reads its
    own pending entries first (`XREADGROUP … 0`) and claims stale ones of dead consumers (`XAUTOCLAIM`).
    A row found `running` is resumed (from its checkpoint with CHECKPOINTER=postgres) without counting
@@ -35,9 +41,14 @@ from typing import Any, Final
 
 from redis.exceptions import RedisError, ResponseError
 
+from kaptan.agents import db as q
+from kaptan.agents.context import Restriction
+from kaptan.agents.feed_queue import Waiting, cap_reason, entry_window_open, pick_redrive, split_waiting, unrun_reason
 from kaptan.agents.feed_run import LiveResult
-from kaptan.ingest.publish import AGENT_STREAM
+from kaptan.agents.nodes.screen import _veto_reasons
+from kaptan.ingest.publish import AGENT_STREAM, AGENT_STREAM_MAXLEN
 from kaptan.ingest.subject_routes import DETAIL_ROUTES
+from kaptan.llm.budget import DayUsage
 from kaptan.text.turkish import IST
 
 log = logging.getLogger("kaptan.agents.feed")
@@ -45,16 +56,31 @@ log = logging.getLogger("kaptan.agents.feed")
 GROUP: Final = "agent-worker"
 AGENT_ROUTES: Final = DETAIL_ROUTES
 MAX_ATTEMPTS: Final = 3
-TERMINAL: Final = frozenset({"done", "waiting_approval", "skipped", "capped", "failed"})
+TERMINAL: Final = frozenset({"done", "waiting_approval", "skipped", "window_closed", "expired_unrun", "failed"})
+NEVER_RAN: Final = -1  # no feed row has this index: count every run against the caps
 HOUR: Final = timedelta(hours=1)
 
 DISCLOSURE_SQL: Final = """
-SELECT d.origin, d.ingest_source, d.subject_route, d.primary_ticker, d.reason,
+SELECT d.origin, d.ingest_source, d.subject_route, d.primary_ticker, d.reason, d.published_at,
        EXISTS (SELECT 1 FROM core.disclosure_texts t WHERE t.disclosure_index = d.disclosure_index
-                AND t.lang = 'tr' AND length(t.body) > 0) AS has_text
+                AND t.lang = 'tr' AND length(t.body) > 0)
+       AND NOT EXISTS (SELECT 1 FROM ops.attachment_fetch_queue a WHERE a.disclosure_index = d.disclosure_index
+                        AND a.status IN ('queued', 'running')) AS has_text
   FROM core.disclosures d WHERE d.disclosure_index = %s
 """
-FEED_ROW_SQL: Final = "SELECT status, attempts FROM ops.agent_feed WHERE disclosure_index = %s"
+FEED_ROW_SQL: Final = "SELECT status, attempts, reason FROM ops.agent_feed WHERE disclosure_index = %s"
+WAITING_SQL: Final = """
+SELECT f.disclosure_index, f.status, f.reason, d.subject_route, d.published_at,
+       coalesce(i.in_universe, false) AS in_universe,
+       EXISTS (SELECT 1 FROM core.disclosure_texts t WHERE t.disclosure_index = d.disclosure_index
+                AND t.lang = 'tr' AND length(t.body) > 0)
+       AND NOT EXISTS (SELECT 1 FROM ops.attachment_fetch_queue a WHERE a.disclosure_index = d.disclosure_index
+                        AND a.status IN ('queued', 'running')) AS has_text
+  FROM ops.agent_feed f
+  JOIN core.disclosures d ON d.disclosure_index = f.disclosure_index
+  LEFT JOIN core.issuers i ON i.ticker = d.primary_ticker
+ WHERE f.status IN ('deferred', 'awaiting_text', 'running')
+"""
 MARK_SQL: Final = """
 INSERT INTO ops.agent_feed (disclosure_index, status, reason, stream_id, seen_at, updated_at)
 VALUES (%s, %s, %s, %s, %s, %s)
@@ -73,6 +99,9 @@ SPENT_SQL: Final = """
 SELECT count(*) AS n FROM ops.agent_feed
  WHERE started_at > %s AND (status = 'running' OR llm_calls > 0) AND disclosure_index <> %s
 """
+HOLD_REASON_SQL: Final = "UPDATE ops.agent_feed SET reason = %s WHERE disclosure_index = %s"
+#: The chain ran dry during the run: it HOLDs (05 §2.4), and the row says that was the quota, not the disclosure.
+QUOTA_HOLD: Final = "HOLD:llm_quota"
 FAIL_SQL: Final = (
     "UPDATE ops.agent_feed SET status = 'failed', reason = %s, updated_at = %s WHERE disclosure_index = %s"
 )
@@ -103,9 +132,9 @@ Settle = Callable[[datetime], Awaitable[int]]
 
 @dataclass(frozen=True, slots=True)
 class FeedConfig:
-    max_runs_per_hour: int = 6
+    max_runs_per_hour: int = 25
     #: Runs that reached an LLM per Istanbul calendar day; 0 = no daily cap (only the hourly one).
-    max_runs_per_day: int = 0
+    max_runs_per_day: int = 70
     consumer: str = "worker-1"
     count: int = 10
     block_ms: int = 1_000
@@ -120,6 +149,12 @@ class Handled:
     ack: bool
     reason: str | None = None
     run_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class Swept:
+    expired: int
+    redriven: tuple[int, ...]
 
 
 def scope_reason(row: dict[str, Any]) -> str | None:
@@ -137,6 +172,18 @@ def scope_reason(row: dict[str, Any]) -> str | None:
     return None
 
 
+def _waiting(row: dict[str, Any]) -> Waiting:
+    return Waiting(
+        index=int(row["disclosure_index"]),
+        status=str(row["status"]),
+        reason=row["reason"],
+        route=str(row["subject_route"]),
+        published_at=row["published_at"],
+        in_universe=bool(row["in_universe"]),
+        has_text=bool(row["has_text"]),
+    )
+
+
 def istanbul_midnight(now: datetime) -> datetime:
     """00:00 Europe/Istanbul of `now`'s Istanbul day, as an aware datetime (the daily cap's window start)."""
     local = now.astimezone(IST)
@@ -151,16 +198,32 @@ async def _one(conn: Any, sql: str, params: Any) -> dict[str, Any] | None:
 
 
 async def llm_budget_left(provider: Any) -> bool:
-    """False when every live provider of the chain is over today's cap (replay: always True)."""
+    """False when every live provider of the chain is over one of today's caps (replay: always True)."""
     budget = getattr(provider, "budget", None)
     names: tuple[str, ...] = tuple(getattr(provider, "available", ()))
     if budget is None or not names:
         return True
-    for usage in await budget.snapshot(names):
-        cap = usage.caps.requests_per_day
-        if not usage.exhausted and (cap is None or usage.requests < cap):
-            return True
-    return False
+    return any(_usable(usage) for usage in await budget.snapshot(names))
+
+
+def _usable(usage: DayUsage) -> bool:
+    caps = usage.caps
+    return not (
+        usage.exhausted
+        or (caps.requests_per_day is not None and usage.requests >= caps.requests_per_day)
+        or (caps.tokens_per_day is not None and usage.tokens >= caps.tokens_per_day)
+        or (caps.usd_per_day is not None and usage.cost_usd >= caps.usd_per_day)
+    )
+
+
+async def _pre_gate_vetoes(conn: Any, ticker: str) -> bool:
+    """The graph's pre-gate decision, read before any budget is asked for (its run costs no LLM call)."""
+    try:
+        in_universe = bool((await q.issuer(conn, ticker))["in_universe"])
+    except LookupError:
+        in_universe = False
+    restrictions = tuple(Restriction(r["kind"], r["source_ref"]) for r in await q.restrictions(conn, ticker))
+    return _veto_reasons(restrictions, in_universe) is not None
 
 
 class AgentFeed:
@@ -182,6 +245,8 @@ class AgentFeed:
         self.budget_ok = budget_ok
         self.settle = settle
         self.now = now
+        #: Re-driven rows still on the stream: a slow consumer must not get them queued again every minute.
+        self._queued: frozenset[int] = frozenset()
 
     async def ensure_group(self) -> None:
         try:
@@ -196,19 +261,28 @@ class AgentFeed:
             await conn.execute(MARK_SQL, (index, status, reason, sid, now, now))
         return Handled(index, status, ack=True, reason=reason)
 
-    async def _over_cap(self, conn: Any, index: int) -> str | None:
-        if self.cfg.max_runs_per_hour <= 0:
-            return "hourly_cap"
-        row = await _one(conn, SPENT_SQL, (self.now() - HOUR, index))
-        if row is not None and int(row["n"]) >= self.cfg.max_runs_per_hour:
-            return "hourly_cap"
-        if self.cfg.max_runs_per_day > 0:
-            row = await _one(conn, SPENT_SQL, (istanbul_midnight(self.now()), index))
-            if row is not None and int(row["n"]) >= self.cfg.max_runs_per_day:
-                return "daily_cap"
+    async def _spent(self, conn: Any, index: int) -> tuple[int, int]:
+        """Runs against the caps in the rolling hour and in the Istanbul day, this row's own run not counted."""
+        now = self.now()
+        hour = await _one(conn, SPENT_SQL, (now - HOUR, index))
+        day = await _one(conn, SPENT_SQL, (istanbul_midnight(now), index))
+        return int((hour or {}).get("n", 0)), int((day or {}).get("n", 0))
+
+    async def _over_cap(self, conn: Any, index: int, route: str) -> str | None:
+        spent_hour, spent_day = await self._spent(conn, index)
+        capped = cap_reason(route, spent_hour, spent_day, self.cfg.max_runs_per_hour, self.cfg.max_runs_per_day)
+        if capped is not None:
+            return capped
         if self.budget_ok is not None and not await self.budget_ok():
             return "llm_daily_cap"
         return None
+
+    async def _window_closed(self, conn: Any, index: int, feed: dict[str, Any] | None, disc: dict[str, Any],
+                             stream_id: str | None) -> Handled:  # fmt: skip
+        if feed is None:
+            return await self._mark(conn, index, "window_closed", "arrived_after_window", stream_id)
+        reason = unrun_reason(feed["status"], feed["reason"], bool(disc["has_text"]))
+        return await self._mark(conn, index, "expired_unrun", reason, stream_id)
 
     async def handle(self, index: int, stream_id: str | None = None) -> Handled:
         """Decide and (maybe) run one disclosure. `ack` says whether the stream entry is done with."""
@@ -223,15 +297,18 @@ class AgentFeed:
             reason = scope_reason(disc)
             if reason is not None:
                 return await self._mark(conn, index, "skipped", reason, stream_id)
+            if not entry_window_open(disc["published_at"], self.now()):
+                return await self._window_closed(conn, index, feed, disc, stream_id)
             if not disc["has_text"]:
                 return await self._mark(conn, index, "awaiting_text", None, stream_id)
             resuming = feed is not None and feed["status"] == "running"
-            if not resuming:
-                capped = await self._over_cap(conn, index)
+            if not resuming and not await _pre_gate_vetoes(conn, str(disc["primary_ticker"])):
+                capped = await self._over_cap(conn, index, str(disc["subject_route"]))
                 await conn.commit()
                 if capped is not None:
-                    log.info("disclosure %s not run: %s", index, capped)
-                    return await self._mark(conn, index, "capped", capped, stream_id)
+                    log.info("disclosure %s deferred: %s", index, capped)
+                    return await self._mark(conn, index, "deferred", capped, stream_id)
+            await conn.commit()
             return await self._run(conn, index, stream_id)
 
     async def _run(self, conn: Any, index: int, stream_id: str | None) -> Handled:
@@ -251,7 +328,12 @@ class AgentFeed:
                 return Handled(index, "failed", ack=True, reason=type(exc).__name__)
             log.exception("run of disclosure %s failed (attempt %d); left pending", index, attempts)
             return Handled(index, "running", ack=False, reason=type(exc).__name__)
-        return Handled(index, result.feed_status, ack=True, reason=result.outcome, run_id=result.run_id)
+        reason = result.outcome
+        if reason == "HOLD" and self.budget_ok is not None and not await self.budget_ok():
+            reason = QUOTA_HOLD
+            async with conn.transaction():
+                await conn.execute(HOLD_REASON_SQL, (reason, index))
+        return Handled(index, result.feed_status, ack=True, reason=reason, run_id=result.run_id)
 
     async def process(self, entries: list[tuple[str, dict[str, str]]]) -> list[Handled]:
         out: list[Handled] = []
@@ -262,6 +344,7 @@ class AgentFeed:
                 log.warning("feed entry %s without a disclosure index; dropped", entry_id)
                 await self.redis.xack(AGENT_STREAM, GROUP, entry_id)
                 continue
+            self._queued = self._queued - {index}
             handled = await self.handle(index, entry_id)
             if handled.ack:
                 await self.redis.xack(AGENT_STREAM, GROUP, entry_id)
@@ -296,12 +379,42 @@ class AgentFeed:
         entries = await self._read(">", self.cfg.block_ms if block_ms is None else block_ms)
         return await self.process(entries) if entries else []
 
+    async def sweep(self) -> Swept:
+        """End every row whose window has closed; put the best deferred rows the caps have room for on the stream."""
+        now = self.now()
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(WAITING_SQL)
+                rows = [_waiting(dict(r)) for r in await cur.fetchall()]
+            await conn.commit()
+            closed, runnable = split_waiting(rows, now)
+            for row, reason in closed:
+                await self._mark(conn, row.index, "expired_unrun", reason, None)
+            waiting = [r for r in runnable if r.index not in self._queued]
+            picked = await self._picks(conn, waiting)
+            await conn.commit()
+        for row in picked:
+            fields = {"disclosure_index": str(row.index), "stage": "deferred"}
+            await self.redis.xadd(AGENT_STREAM, fields, maxlen=AGENT_STREAM_MAXLEN, approximate=True)
+        redriven = tuple(r.index for r in picked)
+        self._queued = self._queued | set(redriven)
+        return Swept(len(closed), redriven)
+
+    async def _picks(self, conn: Any, waiting: list[Waiting]) -> tuple[Waiting, ...]:
+        if not waiting or (self.budget_ok is not None and not await self.budget_ok()):
+            return ()
+        hour, day = await self._spent(conn, NEVER_RAN)
+        return pick_redrive(waiting, hour, day, self.cfg.max_runs_per_hour, self.cfg.max_runs_per_day, self.cfg.count)
+
     async def _housekeeping(self) -> None:
         if self.settle is not None:
             closed = await self.settle(self.now())
             if closed:
                 log.info("settled %d runs waiting on approval", closed)
         await self.replay_pending()
+        swept = await self.sweep()
+        if swept.expired or swept.redriven:
+            log.info("feed sweep: %d expired unrun, %d re-driven", swept.expired, len(swept.redriven))
 
     async def run(self, stop: asyncio.Event) -> None:
         """The worker loop: replay what a previous process left, then new entries; housekeeping every minute."""

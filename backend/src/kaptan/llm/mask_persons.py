@@ -7,7 +7,8 @@ name (Turkish case-insensitive) always gets the same token, and tokens already i
 Name sources, strongest first:
 1. `known` names the caller passes (E2 form fields, the KAP member/manager list when ingested).
 2. Names anchored by a title or role ("Sayın …", "Yönetim Kurulu Üyesi …", "Genel Müdür …",
-   "Adı Soyadı: …", "…, Yönetim Kurulu Başkanı").
+   "Adı Soyadı: …", "…, Yönetim Kurulu Başkanı"), by the MKK notice's own sentence ("… tarafından
+   Kuruluşumuza gönderilen") and by the name lines of the E2 attachment forms ("Ad Soyad / Ticaret Ünvanı : …").
 3. A common Turkish first name followed by a capitalised surname ("Mehmet ÖZTÜRK").
 This is a recall-oriented heuristic, not NER: company names are protected by a stop list
 (A.Ş., Holding, Bankası, …); misses are measured on the gold set (09 §9.2 item 1).
@@ -44,6 +45,14 @@ _ROLE_AFTER: Final = r"Yönetim\s+Kurulu|Genel\s+Müdür|Murahhas|Bağımsız\s+
 _AFTER_TITLE: Final = re.compile(rf"(?:{_TITLES})\s*:?\s+(?P<name>{_NAME}|{_WORD})")
 _AFTER_LABEL: Final = re.compile(rf"(?:{_LABELS})\s*:\s*(?P<name>{_NAME})")
 _BEFORE_ROLE: Final = re.compile(rf"(?P<name>{_NAME})\s*(?:,|\()\s*(?:{_ROLE_AFTER})")
+#: "… kapsamında Nevhan Gündüz tarafından Kuruluşumuza gönderilen …": who filed a forwarded E2 notice.
+_NOTICE_FILER: Final = re.compile(rf"(?P<name>{_WORD}(?:\s+{_WORD}){{1,3}})\s+tarafından\s+Kuruluşumuza")
+#: Lines of the E2 attachment forms whose whole value is a name or a company, however it is spelled.
+_VALUE_LABELS: Final = (
+    r"Ad\s+Soyad\s*/\s*Ticaret\s+[ÜU]nvan[ıi]|Adı\s+Soyadı|İsim\s+Soyisim|Full\s+Name|Name\s+Surname|"
+    r"Varsa\s+Birlikte\s+Hareket\s+Eden\s+Diğer\s+Gerçek\s*-\s*Tüzel\s+Kişiler"
+)
+_VALUE_LINE: Final = re.compile(rf"(?:{_VALUE_LABELS})[ \t]*:[ \t]*(?P<value>[^\n]*)")
 
 
 def _words(text: str) -> list[str]:
@@ -74,7 +83,12 @@ _ORG_WORDS: Final = frozenset(
         "A.Ş. AŞ Anonim Şirketi Şirket Şirketimiz Holding Bankası Bank Sigorta Yatırım Portföy Menkul Değerler "
         "Enerji Elektrik İnşaat Sanayi Ticaret Limited Ltd Grup Group Kurulu Kurul Kurumu Bakanlığı Başkanlığı "
         "Müdürlüğü Belediyesi Üniversitesi Borsa İstanbul Kamuyu Aydınlatma Platformu Sermaye Piyasası Türkiye "
-        "Cumhuriyeti Genel Müdür Yönetim Komitesi Fonu Fon Teknoloji Gıda Otomotiv Madencilik Lojistik"
+        "Cumhuriyeti Genel Müdür Yönetim Komitesi Fonu Fon Teknoloji Gıda Otomotiv Madencilik Lojistik "
+        "Vakfı Vakıf Derneği Sandığı LLC Inc Inc. Corp Corp. Corporation Limited Ltd. Plc GmbH AG Securities "
+        "International Investments Capital Partners Management Fund Trust Company "
+        # the attachment forms' own labels, which a wrapped name or a title anchor can run into
+        "Varsa Birlikte Hareket Eden Diğer Gerçek Tüzel Gerçek-Tüzel Kişi Kişiler Kişinin Görevi Adı Soyadı Ad "
+        "Soyad Ünvanı Unvanı Unvan Adına Bildirimi Yapanın Title Company Address Adres Telefon Temsil"
     )
 )
 
@@ -101,8 +115,16 @@ def _trim(name: str) -> str | None:
     return " ".join(words)
 
 
+def _form_names(text: str) -> list[str]:
+    """Names from the attachment forms' name lines and the notice sentence; a company there is left alone."""
+    values = [v.strip() for m in _VALUE_LINE.finditer(text) for v in m.group("value").split(",")]
+    values.extend(m.group("name") for m in _NOTICE_FILER.finditer(text))
+    return [v for v in values if len(v.split()) >= 2 and not any(c.isdigit() for c in v) and not _is_org(v)]
+
+
 def _candidates(text: str, known: Iterable[str]) -> list[str]:
     found: list[str] = [k.strip() for k in known if k and k.strip()]
+    found.extend(_form_names(text))
     for pattern in (_AFTER_LABEL, _AFTER_TITLE, _BEFORE_ROLE):
         found.extend(m.group("name") for m in pattern.finditer(text))
     for w in _WORD_RE.finditer(text):
@@ -132,13 +154,15 @@ def mask_persons(text: str, known: Iterable[str] = ()) -> MaskResult:
 
 
 def _replace_ci(text: str, lowered_name: str, token: str) -> str:
-    """Turkish case-insensitive whole-word replacement (tr_lower keeps string length for these letters)."""
+    """Turkish case-insensitive whole-word replacement (tr_lower keeps string length for these letters).
+    Any whitespace matches between the name's words: PDF text wraps names across lines."""
     lowered = tr_lower(text)
+    body = r"\s+".join(re.escape(word) for word in lowered_name.split())
     if len(lowered) != len(text):  # pragma: no cover - only exotic code points change length on lower()
-        return re.sub(re.escape(lowered_name), token, text, flags=re.I)
+        return re.sub(body, token, text, flags=re.I)
     out: list[str] = []
     pos = 0
-    pattern = re.compile(rf"(?<![\w]){re.escape(lowered_name)}(?![\w])")
+    pattern = re.compile(rf"(?<![\w]){body}(?![\w])")
     for m in pattern.finditer(lowered):
         out.append(text[pos : m.start()])
         out.append(token)

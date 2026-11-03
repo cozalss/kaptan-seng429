@@ -1,5 +1,7 @@
 # 06 — Strateji ve Kurallar Spesifikasyonu (KAPtan)
 
+> **Tek kullanıcı (02.11.2026):** Onay, durdurma ve yeniden başlatma kuralları tek kişi için yazılmıştır (§11); karar `_KANONIK-KARARLAR.md` Revizyon 4'tür. Risk kuralları R01–R16 ve olay kuralları E1–E4 değişmez.
+
 - Sürüm: `rules-v1.0-draft` · Hazırlanma: 29.09.2026 · **Revizyon 2 uyumu: 30.09.2026** · **Revizyon 3 uyumu: 30.09.2026** · Sahibi: Rol 3 (Strateji, Risk & Yürütme)
 - Bağlayıcı kaynak: `_KANONIK-KARARLAR.md` (**REVİZYON 3 bölümü Revizyon 2'ye, Revizyon 2 orijinal kararlara üstündür**). Bu belge kanonik kararları **sayılara ve test edilebilir kurallara** çevirir. Kanonikten sapma gerektiren her öneri en sondaki "Önerilen değişiklikler" bölümündedir; gövde metni kanonik değerleri kullanır.
 - **Risk kapısı kurallarının tek kaynağı bu belgedir (R01–R16, §10).** Diğer dokümanlar (05 ajan spesifikasyonu, 09 güvenlik, 12 kişisel plan) kural ID'leriyle buraya referans verir; farklı numaralandırma kullanan eski metinler için eşleme tablosu §10.0'dadır.
@@ -13,7 +15,7 @@
 ```
 KAP bildirimi (publishDate, disclosureIndex, subject, stockCodes, gövde, ekler)
   → S0 LLM'siz ön eleme: gürültü, "Düzeltme", işlem görebilirlik,
-       evren (R03), SPK/VBTS tedbiri (R04), ekip engel listesi (R13)   [kod, LLM çağrısı yok]
+       evren (R03), SPK/VBTS tedbiri (R04), içeriden-öğrenen engel listesi (R13)   [kod, LLM çağrısı yok]
   → Sınıflandırma: subject → olay tipi (≈%90) | LLM (Genel ÖDA)       [kod + LLM alanı]
   → Okuyucu (tutar, taraf, bağlayıcılık) ‖ Önemlilik (yalnızca sayılar:
        finansallar, piyasa değeri, kur) ‖ Kanıt (getiri görmeden seçim)  [LLM alanı + deterministik parser]
@@ -107,7 +109,7 @@ Sonuç: `universe_snapshot(date) → set[symbol]`, veritabanında `universe_hist
 KAP satır alanları [V] (bkz. `07-veri-hatti-ve-sema.md`): `publishDate` (İstanbul saati), `disclosureIndex`, `stockCodes`, `disclosureClass` (ODA/FR/DG/DKB/DUY), `disclosureType`, `subject`, `summary`, `attachmentCount`, `modifyStatus`, `isLate`. Tam metin `/tr/Bildirim/{idx}`, yedek kaynak `/tr/api/BildirimPdf/{idx}`.
 
 Ortak ön koşullar (her E için):
-- `stockCodes` tek sembol ve sembol ∈ `universe_snapshot(publish_date)`; sembol işlem görebilir, aktif tedbirsiz ve ekip engel listesinde değil (S0, LLM çağrısından **önce**).
+- `stockCodes` tek sembol ve sembol ∈ `universe_snapshot(publish_date)`; sembol işlem görebilir, aktif tedbirsiz ve içeriden-öğrenen engel listesinde değil (S0, LLM çağrısından **önce**).
 - **Yinelenen olay:** yalnızca **"Düzeltme"** bildirimi yeni olay sayılmaz; önceki olayın alanları güncellenir, yeni giriş üretilmez **[K]**. "Güncelleme: Evet" işaretli bildirim **otomatik olarak yinelenen sayılmaz** — gerçekleşen işlem bildirimi (ör. ihalenin sözleşmeye dönüşmesi, yeni geri alım işlemi) olabilir; tetik kuralları yeniden değerlendirilir.
 - **Tutar çapraz kontrolü (R14):** Okuyucu'nun çıkardığı tutar, bildirim metninden regex ile çıkarılan tutarlar kümesinde yoksa öneri reddedilir. Tüm oranları Birleştirme düğümü bu tutarla hesaplar.
 - Aynı sembolde açık pozisyon varsa yeni giriş yok, ama tutma süresi uzatılabilir (E1/E2 devam kuralları).
@@ -268,7 +270,7 @@ Karar anı `t_dec = publishDate + ajan işleme süresi`; tüm kurallar `t_pub = 
 | Tatil / hafta sonu | Sonraki işlem günü açılış seansı | aynı |
 
 - `P_pre` = `t_pub`'dan önceki son işlem fiyatı. Ücretsiz veri 15 dk gecikmeli olduğundan seans içi E3 girişleri **ikincil varyanttır**: birincil (pre-registered) sonuç her tip için "ilk uygulanabilir açılış seansı" girişidir.
-- **Emir tipi:** Her zaman **limit**. `limit = min(ref_price × 1,02, üst_marj_fiyatı − 1 tick)`. `ref_price` = fiş anındaki son fiyat (açılış öncesi için önceki kapanış). Emir **o seans sonunda (GÜN) geçersiz**; fiş TTL = 30 dk (kişisel mod).
+- **Emir tipi:** Her zaman **limit**. `limit = min(ref_price × 1,02, üst_marj_fiyatı − 1 tick)`. `ref_price` = fiş anındaki son fiyat (açılış öncesi için önceki kapanış). Emir **o seans sonunda (GÜN) geçersiz**; fiş TTL = 30 dk (tek kullanıcı).
 - Açılış seansında dolmayan emir **tekrarlanmaz** (fiyat kovalamak yok). Olay "missed" olarak kaydedilir; backtest'te de aynı kural (Open > limit → dolum yok).
 
 ---
@@ -353,14 +355,14 @@ fees_side       = 0,000025 + 0,0000004                  # borsa payı 0,25 bp + 
 half_spread     = CS_hl_spread / 2                      # Corwin–Schultz (2012) yüksek-düşük tahmincisi, 20 seans medyanı
                                                         # canlı derinlik verisi varsa gerçek (ask−bid)/(2×mid)
 impact          = Y × σ_daily × sqrt(Q / ADV20_shares)  # karekök kanunu, Y = 0,7 [K]
-manual_slip     = 0,0005 (yalnızca kişisel mod; gerçekleşen veriyle kalibre edilir)
+manual_slip     = 0,0005 (yalnızca tek kullanıcı; gerçekleşen veriyle kalibre edilir)
 cost_side       = commission_side + fees_side + half_spread + impact (+ manual_slip)
 round_trip      = 2 × cost_side
 round_trip_used = max(round_trip, floor_rt)             # floor_rt = %0,30 (stres tabanı; Lopez-Lira & Tang 20 bp'de öldü)
 ```
 **SimBIST maliyet senaryoları (Revizyon 3):** **baz senaryo `c_broker` = %0,05 / taraf + hacme bağlı kayma** (`half_spread` + `impact`); **duyarlılık senaryosu `c_broker` = %0,20 / taraf** (banka tipi kurum; BSMV komisyon üzerinden %5). Borsa payı %0,0025 [V]. Asıl maliyet, düşük likit hisselerdeki alış-satış farkı ve piyasa etkisidir. Her olay çalışması ve backtest sonucu iki senaryoda da raporlanır.
 
-`c_broker` config'ten okunur: SimBIST baz varsayılanı **%0,05** (Revizyon 3; eski %0,03 [K] değeri kaldırıldı), duyarlılık **%0,20**; kişisel mod gerçek sözleşme oranı, **üst sınır %0,05 / taraf** (Kanonik R2; bu oranın üstündeki aracı kurumla kişisel mod açılmaz, `c_broker_personal_max`). **Uyarı:** Banka tipi ~%0,20 taraf başı komisyonla `round_trip` tek başına ≥ %0,42 olur; bu E1/E2'nin beklenen avantajının büyük kısmını yer (bkz. kişisel plan §3).
+`c_broker` config'ten okunur: SimBIST baz varsayılanı **%0,05** (Revizyon 3; eski %0,03 [K] değeri kaldırıldı), duyarlılık **%0,20**; tek kullanıcı gerçek sözleşme oranı, **üst sınır %0,05 / taraf** (Kanonik R2; bu oranın üstündeki aracı kurumla tek kullanıcı açılmaz, `c_broker_personal_max`). **Uyarı:** Banka tipi ~%0,20 taraf başı komisyonla `round_trip` tek başına ≥ %0,42 olur; bu E1/E2'nin beklenen avantajının büyük kısmını yer (bkz. kişisel plan §3).
 
 ### 8.2 Beklenen avantaj
 ```
@@ -410,10 +412,10 @@ Kriz etkisi: `m_regime = 0,5`, brüt maruziyet ≤ %50, **yeni E3 yok**, günlü
 | R10 | Kriz rejimi | RESIZE ×0,5 / REJECT (E3) | R16_REGIME |
 | R11 | Veri ve LLM sağlığı (kota, KAP gecikmesi, şema, injection) | HOLD / REJECT | R06_LLM_BUDGET |
 | R12 | Mod, canlı silahlanma (3 anahtar), yalnızca long, kaldıraçsız | REJECT | R13_NO_SHORT, R17_LIVE_KEYS |
-| R13 | Ekip içeriden-öğrenen engel listesi | REJECT (BUY) | — (yeni) |
+| R13 | İçeriden-öğrenen engel listesi | REJECT (BUY) | — (yeni) |
 | R14 | Tutar çapraz kontrolü (Okuyucu ↔ regex) | REJECT | — (yeni) |
 | R15 | Zorunlu insan onayı, onay seviyesi ve onay süresi (09:50) | APPROVAL_REQUIRED (normal / escalate) | R18_APPROVAL_LEVEL |
-| R16 | Gönderim anı yeniden kontrol + onay süresi dolumu + kişisel fiş süresi (30 dk) | REJECT | `phase="at_send"` |
+| R16 | Gönderim anı yeniden kontrol + onay süresi dolumu + emir fişi süresi (30 dk) | REJECT | `phase="at_send"` |
 
 > 05 dokümanındaki R-kodları bu tabloya göre yeniden adlandırılmalıdır; çelişkide bu belge geçerlidir. 05'teki "R12 ≥ 8 pozisyon → escalate" uyarısı R15 escalate nedenlerine taşınmıştır.
 
@@ -424,7 +426,7 @@ class GateContext:
     kill_switch: bool; positions: tuple[Position, ...]; universe: frozenset[str]
     restrictions: Mapping[str, tuple[str, ...]]   # sembol -> aktif N1 kodları
     restrictions_as_of: datetime                  # tedbir verisinin son başarılı güncellenmesi
-    restricted_securities: frozenset[str]         # ekip içeriden-öğrenen engel listesi (R13)
+    restricted_securities: frozenset[str]         # içeriden-öğrenen engel listesi (R13)
     crisis: bool; last_price: Decimal; price_ts: datetime; upper_limit: Decimal; lower_limit: Decimal
     adv20_tl: Decimal; kap_lag_s: int; llm_budget_ok: bool; mode: Literal["backtest","paper","personal"]
     live_keys: tuple[bool, bool, bool]; now: datetime; entries_today: int; sector_exposure: Mapping[str, Decimal]
@@ -628,8 +630,8 @@ def r12(p, c, l):
 
 (Emir fişi süresi — eski `R12_TICKET_EXPIRED` — onaydan sonra anlamlı olduğu için R16'ya taşındı.)
 
-### R13 — Ekip içeriden-öğrenen engel listesi
-Ekip üyelerinin (veya birinci derece yakınlarının) çalıştığı, yönetiminde bulunduğu ya da içeriden bilgiye erişebileceği şirketlerin payları `restricted_securities` tablosunda tutulur; liste Admin tarafından yönetilir, her değişiklik audit'e yazılır.
+### R13 — İçeriden-öğrenen engel listesi
+Kullanıcının (veya birinci derece yakınlarının) çalıştığı, yönetiminde bulunduğu ya da içeriden bilgiye erişebileceği şirketlerin payları `restricted_securities` tablosunda tutulur; liste kullanıcı tarafından yönetilir, her değişiklik denetim defterine yazılır.
 ```python
 def r13(p, c, l):
     return REJECT("R13_INSIDER_BLOCKLIST") if (p.side == "BUY" and p.symbol in c.restricted_securities) else PASS
@@ -656,7 +658,7 @@ def r14(p, c, l):
 | 4 | — (E4) | — | PASS (E4 yapılandırılmış finansal veriden) |
 
 ### R15 — Zorunlu insan onayı, onay seviyesi ve onay süresi
-Otomatik yürütme yoktur. Önceki kurallardan geçen **her** öneri `interrupt()` ile Risk Officer'a (kişisel modda kullanıcıya) gider. R15 yalnızca onay kartının seviyesini ve son geçerlilik zamanını belirler.
+Otomatik yürütme yoktur. Önceki kurallardan geçen **her** öneri `interrupt()` ile kullanıcıya gider. R15 yalnızca onay kartının seviyesini ve son geçerlilik zamanını belirler.
 ```python
 def r15(p, c, l):
     if c.mode == "backtest":                                       # simüle onay; "onaysız" ablation 08'de
@@ -688,7 +690,7 @@ def r16(p, c, l, approval):
         r = rule(p, c, l)
         if r.outcome in ("REJECT", "HOLD"): return REJECT("R16_" + r.code)
     return PASS
-# kişisel mod: üretilen emir fişi 30 dk (ticket_ttl) içinde girilmezse geçersizdir → R16_TICKET_EXPIRED
+# emir fişi: üretilen emir fişi 30 dk (ticket_ttl) içinde girilmezse geçersizdir → R16_TICKET_EXPIRED
 # açılış öncesi üretilen fişte süre 09:40'tan (açılış emir toplama) başlar → en geç 09:55; seans sonunda da düşer
 ```
 | # | Durum | Beklenen |
@@ -713,20 +715,20 @@ def r16(p, c, l, approval):
 
 ## 11. Kill switch mantığı ve reset prosedürü
 
-**Tetikler:** (a) otomatik: `equity / peak_equity − 1 ≤ −%5` (mark-to-market, her fiyat güncellemesinde ve seans sonu); (b) manuel: **Admin veya Risk Officer** (tek rol yeterli; UI, API, `scripts/kill.py`) — Analist ve Auditor tetikleyemez; (c) sistem: aynı gün içinde ≥ 3 R11 REJECT (şema/injection) → güvenlik kill'i.
+**Tetikler:** (a) otomatik: `equity / peak_equity − 1 ≤ −%5` (mark-to-market, her fiyat güncellemesinde ve seans sonu); (b) manuel: **kullanıcı** (UI, API, `scripts/kill.py`); (c) sistem: aynı gün içinde ≥ 3 R11 REJECT (şema/injection) → güvenlik kill'i.
 
 **Tetiklenince (atomik, tek transaction):**
 1. `system_flags.kill_switch = true`, sebep + tetikleyici + equity/peak anlık görüntüsü audit'e yazılır.
-2. Tüm broker adapter'larında `cancel_all()` (**açık emirler iptal**); bekleyen onay kartları geçersiz sayılır. Kişisel modda sistem **"İPTAL" fişleri** üretir; kullanıcı aracı kurum uygulamasında iptal edip "iptal edildi" onayını girer; onay gelmeyene kadar UI kırmızı kalır.
+2. Tüm broker adapter'larında `cancel_all` (**açık emirler iptal**); bekleyen onay kartları geçersiz sayılır. Sistem **"İPTAL" fişleri** üretir; kullanıcı aracı kurum uygulamasında iptal edip "iptal edildi" onayını girer; onay gelmeyene kadar UI kırmızı kalır.
 3. **Açık pozisyonlar satılmaz**; X1–X4 çıkış kurallarıyla yönetilmeye devam eder (zorla tasfiye yok).
 4. Telegram/e-posta uyarısı.
 
 **Günlük durdurma (R02) farkı:** −%1 günlük zarar yalnızca **o gün** yeni alımı durdurur ve ertesi seans açılışında kendiliğinden kalkar. Kill switch kendiliğinden kalkmaz.
 
-**Reset prosedürü:**
-1. Olay sonrası inceleme formu (sebep: piyasa / kural / hata / veri) doldurulur ve audit'e eklenir.
-2. Bekleme süresi: paper modda en az ertesi seans; **kişisel modda en az 5 seans** (tetiklenmeden itibaren).
-3. İki anahtar: **Admin ve Risk Officer** ayrı hesaplarla onaylar (aynı hesap iki onayı veremez). Kişisel modda (tek kişi) iki rol aynı kişi olduğundan: iki onay arasında **≥ 24 saat** ve her onayda ayrı yazılı gerekçe (tek kişilik dört göz); reset ancak hem 5 seans bekleme hem 24 saat ara şartı sağlanınca etkinleşir.
+**Yeniden başlatma prosedürü (tek kullanıcı, Revizyon 4 — 02.11.2026):**
+1. Olay sonrası inceleme notu (sebep: piyasa / kural / hata / veri) yazılır ve denetim defterine eklenir.
+2. Bekleme süresi: gerçek veride **en az 5 seans** (tetiklenmeden itibaren) ve istek ile onay arasında **en az 24 saat**. `RiskStatus.reset.ready_at` en erken onay anını gösterir; `null` ise onay hemen yapılabilir.
+3. İki adım (istek ve onay) aynı kişidedir. Atlanan ikinci imza `auth.single_user_waiver` olarak denetim defterine yazılır; her adımda ayrı yazılı gerekçe zorunludur. Demo modunda (`DEMO_MODE=true`) bekleme muaftır ve muafiyet denetime yazılır. Bu, 24 saat + 5 seans kuralını gerçek veride kaldırmaz.
 4. Zirve sıfırlanmaz. Reset sonrası `m_reset = 0,5` boyut çarpanı, equity eski zirvenin −%2,5'i içine dönene kadar uygulanır. Reset seviyesinden ek −%3 düşüş → yeniden kill.
 5. 6 ay içinde 2. kill → kişisel planda bir alt aşamaya dönüş (bkz. `12-kisisel-kullanim-plani.md`).
 
@@ -789,7 +791,7 @@ CAR_i[a,b] = Σ AR_i,t (giriş seansının ilk gününde açılıştan kapanış
 ### 12.6 Ön kayıt (pre-registration)
 1. `prereg/rules-v1.0.yaml` (§13) + `prereg/analysis-plan.md` (bu bölüm) yazılır.
 2. SHA-256 hash audit log'a eklenir, git tag `rules-v1.0-prereg` atılır. **Tarih: W5 (2 Kas 2026) sonu, holdout sorgusundan önce.**
-3. Holdout fiyat verisi ayrı şemada (`holdout.*`) tutulur; okuma rolü yalnızca `holdout_runner` servis hesabına verilir, çalıştırma Risk Officer onayı ister ve audit'e yazılır.
+3. Holdout fiyat verisi ayrı şemada (`holdout.*`) tutulur; okuma rolü yalnızca `holdout_runner` servis hesabına verilir, çalıştırma kullanıcının onayını ister ve denetim defterine yazılır.
 4. Holdout **bir kez** çalıştırılır. Sonrasında yapılan her kural değişikliği yeni `rules_version`'dır ve yalnızca ileri dönük paper ile değerlendirilir.
 5. Gerçek paraya geçiş ölçütü (tip bazında): holdout'ta birincil pencerede `mean(CAR_net) > 0`, **t ≥ 2,0** (BMP-KP düzeltmeli) ve **n ≥ 30**. `mean(CAR_net) > 0` ama t < 2 → yalnızca paper'da kalır. Ek şartlar (Kanonik R2): ≥ 3 ay ve ≥ 50 paper işlem + gölge aşaması (bkz. `12-kisisel-kullanim-plani.md`).
 
@@ -822,7 +824,7 @@ CAR_i[a,b] = Σ AR_i,t (giriş seansının ilk gününde açılıştan kapanış
 | Maliyet | `c_broker_personal_max` | 0,0005 | Kanonik R2 |
 
 ```yaml
-# config/rules-v1.0.yaml  — tek kaynak; değişiklik = yeni sürüm + 4 göz onayı
+# config/rules-v1.0.yaml  — tek kaynak; değişiklik = yeni sürüm + denetim kaydı
 rules_version: "1.0"
 timezone: "Europe/Istanbul"
 session:
@@ -922,9 +924,9 @@ portfolio:
   cooldown_sessions_after_stop: 10
   max_adv: 0.01
 costs:
-  c_broker: 0.0005               # baz senaryo (Rev. 3); kişisel modda gerçek sözleşme oranı ile ezilir
+  c_broker: 0.0005               # baz senaryo (Rev. 3); tek kullanıcıda gerçek sözleşme oranı ile ezilir
   c_broker_sensitivity: 0.0020   # duyarlılık senaryosu (banka tipi kurum), ayrı raporlanır
-  c_broker_personal_max: 0.0005  # üstündeyse kişisel mod açılmaz
+  c_broker_personal_max: 0.0005  # üstündeyse tek kullanıcı modu açılmaz
   bsmv: 0.05                     # komisyon üzerinden (banka kurumları); komisyon 0 ise etkisiz
   price_series: {fills_and_r09: "raw_HG_KAPANIS", returns: "adjusted_HGDG_KAPANIS"}
   exchange_fee: 0.000025
@@ -966,9 +968,9 @@ approval:
   backtest_mode: "simulated_approve_all"
   escalate_if_positions_gte: 8
 kill_switch:
-  trigger_roles: ["admin", "risk_officer"]
+  trigger_roles: ["single_user"]   # Revizyon 4: tek kullanıcı
   on_trigger: {cancel_open_orders: true, liquidate_positions: false}
-  reset_roles: ["admin", "risk_officer"]
+  reset_roles: ["single_user"]     # Revizyon 4: tek kullanıcı
   personal_min_cooldown_sessions: 5
   personal_confirm_gap_hours: 24
   post_reset_size_mult: 0.5

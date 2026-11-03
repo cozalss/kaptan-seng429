@@ -67,13 +67,10 @@ def test_recent_sessions() -> None:
     assert w.recent_sessions(date(2026, 10, 30), 0) == []
 
 
-@pytest.mark.parametrize(("demo", "kap_live"), [(True, True), (False, False)])
-def test_main_skips_outside_live_mode(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], demo: bool, kap_live: bool
-) -> None:
+def test_main_skips_without_kap_live(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     from kaptan.settings import get_settings
 
-    patched = get_settings().model_copy(update={"demo_mode": demo, "kap_live": kap_live})
+    patched = get_settings().model_copy(update={"kap_live": False})
     monkeypatch.setattr(w, "get_settings", lambda: patched)
     assert w.main([]) == 0
     assert "skipped" in capsys.readouterr().err

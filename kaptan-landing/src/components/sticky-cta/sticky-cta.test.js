@@ -27,11 +27,11 @@ function setup() {
   const hero = Object.assign(document.createElement('section'), { id: 'hero' });
   const root = document.createElement('aside');
   root.dataset.stickyCta = '';
-  const demo = document.createElement('button');
-  demo.dataset.action = 'open-demo';
+  const steps = document.createElement('button');
+  steps.dataset.action = 'open-steps';
   const agents = Object.assign(document.createElement('a'), { href: '#ajanlar' });
   agents.dataset.scrollTo = '#ajanlar';
-  root.append(demo, agents);
+  root.append(steps, agents);
   const overlays = Object.assign(document.createElement('div'), { id: 'overlays' });
   document.body.append(hero, root, overlays);
   return { hero, root, overlays };
@@ -113,10 +113,10 @@ describe('initStickyCta', () => {
     cta.destroy();
   });
 
-  it('never builds a messaging link: the bar only holds the demo action and the agents link', () => {
+  it('never builds a messaging link: the bar only holds the steps action and the agents link', () => {
     init();
     expect(dom.root.querySelector('[href*="wa.me"]')).toBeNull();
-    expect(dom.root.querySelector('[data-action="open-demo"]')).not.toBeNull();
+    expect(dom.root.querySelector('[data-action="open-steps"]')).not.toBeNull();
   });
 
   it('is a no-op without its root element', () => {

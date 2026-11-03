@@ -37,7 +37,7 @@ def test_summary_text_is_plain_and_stable() -> None:
     assert text == (
         "20 Ekim 2026 Salı sabah özeti. Açık pozisyon: 3, bugün çıkış tarihi gelen: 1. "
         "Açılışta gerçekleşecek emir: 0. Onay bekleyen öneri: 2. Risk: acil durdurma kapalı, rejim normal. "
-        "Önceki seans (19 Ekim 2026 Pazartesi): getiri +%0,42, özsermaye 1.004.200 TL, zirveden düşüş −%1,1. "
+        "Önceki borsa günü (19 Ekim 2026 Pazartesi): getiri +%0,42, özsermaye 1.004.200 TL, zirveden düşüş −%1,1. "
         "Yeni kısıtlama değişikliği yok. Son kapanıştan bu yana KAP bildirimi: 0."
     )
     bare = summary_text(date(2026, 10, 20), _doc(restriction_changes=2), None, None)

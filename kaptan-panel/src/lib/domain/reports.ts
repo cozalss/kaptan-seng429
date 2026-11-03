@@ -3,9 +3,6 @@ import { IsoDate, IsoDateTime } from "./common";
 import { DisclosureListItem } from "./disclosure";
 import { ApprovalCard, Order, PnlPoint, Position } from "./trading";
 
-/** Every number in a sample fixture carries this label (never presented as real). */
-export const SAMPLE_LABEL = "örnek değer · gerçek sonuç değil";
-
 /* ── Morning brief, 08:45 (_KANONIK, 04 §12, US-42) ───────────────────── */
 export const MorningBrief = z.object({
   date: IsoDate,

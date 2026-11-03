@@ -429,7 +429,7 @@ export function rail(r, { y = 1280, tilt = 14, posts = [70, 380, 690, 1000], hei
 
 /**
  * Bare paper strip under the figure (cuts it at the waist) with a hand-ruled line. The pipeline
- * prints "No. 0N · Title" and "Temsili" on it (kit.svgDoc caption at y = 1530).
+ * prints "No. 0N · Title" on it (kit.svgDoc caption at y = 1530).
  */
 export function captionStrip(r) {
   const [w, h] = CARD;
@@ -465,7 +465,7 @@ export function crewPlate({ n, title, seed, detail, draw, boat = null, railY = 1
     parts.front ?? '',
     captionStrip(rng(seed + 4)),
   ].join('\n');
-  const caption = { left: `No. ${String(n).padStart(2, '0')}  ·  ${title}`, right: 'Temsili' };
+  const caption = { left: `No. ${String(n).padStart(2, '0')}  ·  ${title}` };
   const svg = svgDoc({ box: CARD, px: [1200, 1600], body, caption });
   return Object.freeze({ title, detail: Object.freeze({ ...detail }), body, svg });
 }

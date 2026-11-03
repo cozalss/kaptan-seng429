@@ -1,7 +1,7 @@
 /** Imported by vi.mock factories: no app imports here, or the mock deadlocks on itself. */
 /** next/navigation stand-in: a fixed pathname and a router spy. */
 export const nav = {
-  pathname: "/bugun",
+  pathname: "/benim",
   push: vi.fn(),
   replace: vi.fn(),
   refresh: vi.fn(),

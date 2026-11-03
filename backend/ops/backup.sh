@@ -2,7 +2,7 @@
 # Nightly logical backup of the KAPtan database: pg_dump custom format (-Fc), optionally age-encrypted.
 #
 #   BACKUP_DATABASE_URL=postgresql://kaptan_owner:...@host:5432/kaptan BACKUP_DIR=/backups sh ops/backup.sh
-#   (docker-compose.prod.yml: docker compose ... --profile backup run --rm backup; cron it nightly)
+#   (docker-compose.yml: the `backup` service runs it nightly through backup-loop.sh and backup-once.sh)
 #
 # Env:
 #   BACKUP_DATABASE_URL  source database (owner role: it reads every schema, the audit ledger included)

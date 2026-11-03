@@ -4,7 +4,8 @@
   as ordered text lines → the primary source for the type-specific parsers (`source='bildirim_pdf'`).
 - `GET /tr/Bildirim/{idx}` is a Next.js page; the form HTML sits in `self.__next_f.push([1,"…"])` RSC
   chunks. TR and EN cells carry `content-tr` / `content-en` classes; the ÖDA free-text block follows the
-  `oda_ExplanationTextBlock|` marker (not present in every type) (`source='rsc_payload'`).
+  `oda_ExplanationTextBlock|` marker (not present in every type). A form without the marker (a forwarded E2
+  notice) sits in an RSC text row, `3f:T506,<table …` (hex length in UTF-8 bytes) (`source='rsc_payload'`).
 
 Both are cleaned (NFC, invisible characters, whitespace; line breaks kept) before storage. The legally
 binding text is Turkish; English is kept as a separate row when the page has it.
@@ -35,6 +36,7 @@ ODA_MARK: Final = "oda_ExplanationTextBlock|"
 _EN_CELL: Final = re.compile(r'<(td|div)[^>]*class="[^"]*\bcontent-en\b[^"]*"[^>]*>.*?</\1>', re.S)
 _TR_BLOCK: Final = re.compile(r'<td[^>]*class="[^"]*\bcontent-tr\b[^"]*"[^>]*>(.*?)</td>', re.S)
 _EN_BLOCK: Final = re.compile(r'<td[^>]*class="[^"]*\bcontent-en\b[^"]*"[^>]*>(.*?)</td>', re.S)
+_RSC_TEXT_ROW: Final = re.compile(r"^[0-9a-f]+:T([0-9a-f]+),", re.M)
 
 Source = Literal["bildirim_pdf", "rsc_payload"]
 
@@ -79,8 +81,19 @@ def rsc_payload(page: str) -> str:
     return "".join(out)
 
 
+def rsc_html_rows(payload: str) -> list[str]:
+    """The HTML of the payload's RSC text rows: the form itself, without the React tree around it."""
+    out: list[str] = []
+    for m in _RSC_TEXT_ROW.finditer(payload):
+        block = payload[m.end() :].encode("utf-8")[: int(m.group(1), 16)].decode("utf-8", "ignore")
+        if block.lstrip().startswith("<"):
+            out.append(block)
+    return out
+
+
 def rsc_texts(payload: str) -> dict[str, str]:
-    """{"tr": …, "en": …?}. ÖDA free text when the marker exists, else the whole form (TR cells only)."""
+    """{"tr": …, "en": …?}. ÖDA free text when the marker exists, else the form's HTML rows (TR cells only).
+    No form found gives {"tr": ""}: the React payload around it is never text."""
     i = payload.find(ODA_MARK)
     if i >= 0:
         block = payload[i + len(ODA_MARK) :]
@@ -91,7 +104,10 @@ def rsc_texts(payload: str) -> dict[str, str]:
             texts["en"] = strip_html(en.group(1))
         if texts["tr"]:
             return texts
-    return {"tr": strip_html(_EN_CELL.sub(" ", payload))}
+    rows = rsc_html_rows(payload)
+    if rows:
+        return {"tr": strip_html(_EN_CELL.sub(" ", "\n".join(rows)))}
+    return {"tr": strip_html("\n".join(f"<p>{cell}</p>" for cell in _TR_BLOCK.findall(payload)))}
 
 
 def _sha(data: bytes) -> bytes:

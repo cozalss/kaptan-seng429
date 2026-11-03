@@ -1,39 +1,40 @@
 "use client";
 
+import "./disclosures.css";
+
 import { useMemo, useState } from "react";
+import type { ApprovalCard } from "@/lib/domain";
 import { MAX_DISCLOSURES } from "@/lib/api/limits";
 import { useApiQuery } from "@/lib/api/react";
 import { useNow } from "@/lib/clock";
 import { fmtInt } from "@/lib/format";
-import { dayLabel, istanbulDay, sessionView } from "@/lib/session-day";
+import { istanbulDay, sessionView } from "@/lib/session-day";
 import { useEventStream } from "@/lib/sse/use-event-stream";
 import { nextTradingDay, prevTradingDay } from "@/lib/time";
-import { cn } from "@/lib/utils";
-import { CARD } from "@/components/portfolio/kit";
-import { PageHeader } from "@/components/shell/page-frame";
+import { PageHeader, ScreenState } from "@/components/shell/page-frame";
+import { Term } from "@/components/story/term";
 import { useDesk } from "@/components/shell/desk-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
-import { ErrorState, SkeletonLines } from "@/components/ui/primitives";
-import { FATE_LABEL, fateOf, tickerOf, type DisclosureFate } from "./disclosure-logic";
-import { DisclosureHours } from "./disclosure-rows";
+import { fateOf, flowFromList, tickerOf } from "./disclosure-logic";
+import { Funnel, type FunnelFilter } from "./funnel";
+import { DisclosureHours, Worthwhile } from "./disclosure-rows";
+import { readingSentence, type FunnelCounts } from "./reading-words";
 
-type Filter = "all" | DisclosureFate;
-/** Rows at first; "Daha fazla göster" adds as many again. */
+/** Rows at first; "tane daha göster" adds as many again. */
 const PAGE = 25;
-const FILTERS: readonly Filter[] = ["all", "processed", "archived", "noise"];
 
 /**
- * /bildirimler — one session's KAP disclosures with what the desk did with each. Opens on the
- * day Bugün talks about (the last session on a weekend); step back and forth by session,
- * narrow by ticker or company, or by what happened.
+ * /bildirimler ("Okunanlar"): what KAPtan read on a day and what became of it. The sentence, what a
+ * bildirim is, the day's funnel (which is also the filter), what might matter to you, then
+ * everything else, hour by hour.
  */
 export function DisclosuresScreen() {
   const now = useNow(60_000);
   const { counters } = useDesk();
   const [picked, setPicked] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<FunnelFilter>("all");
   const [shown, setShown] = useState(PAGE);
   const session = now === null ? null : sessionView(now, counters?.total ?? null);
   const day = picked ?? session?.shown ?? null;
@@ -42,6 +43,7 @@ export function DisclosuresScreen() {
   const q = useApiQuery((api) => (day ? api.disclosures({ day, limit: MAX_DISCLOSURES }) : Promise.resolve(null)), [day]);
   // The day's exact total (the list stops at MAX_DISCLOSURES): GET /disclosures/counters?day=.
   const exact = useApiQuery((api) => (day ? api.counters(day) : Promise.resolve(null)), [day]);
+  const cards = useApiQuery((api) => api.listApprovals("all"), []);
   useEventStream("feed", {
     counters: () => {
       if (day !== today) return;
@@ -49,115 +51,155 @@ export function DisclosuresScreen() {
       void exact.refetch();
     },
   });
+  useEventStream("desk", {
+    "approval.requested": () => void cards.refetch(),
+    "approval.decided": () => void cards.refetch(),
+  });
+
+  const cardOf = useMemo(() => {
+    const byIndex = new Map<number, ApprovalCard>();
+    for (const c of cards.data ?? []) byIndex.set(c.disclosure_index, c);
+    return byIndex;
+  }, [cards.data]);
+
+  const counts = useMemo<FunnelCounts | null>(() => {
+    if (!q.data) return null;
+    const list = flowFromList(q.data);
+    const usefulInList = q.data.filter((d) => cardOf.has(d.disclosure_index)).length;
+    const e = exact.data;
+    return e && e.total >= q.data.length
+      ? { total: e.total, noise: e.noise, archived: e.archived, processed: e.processed, useful: Math.max(e.proposals, usefulInList) }
+      : { total: list.total, noise: list.noise, archived: list.archived, processed: list.processed, useful: usefulInList };
+  }, [q.data, exact.data, cardOf]);
 
   const rows = useMemo(() => {
     const all = q.data ?? [];
     const needle = search.trim().toLocaleUpperCase("tr-TR");
     return all.filter(
       (d) =>
-        (filter === "all" || fateOf(d) === filter) &&
+        (filter === "all" || (filter === "useful" ? cardOf.has(d.disclosure_index) : fateOf(d) === filter)) &&
         (!needle || (tickerOf(d) ?? "").includes(needle) || d.company_name.toLocaleUpperCase("tr-TR").includes(needle)),
     );
-  }, [q.data, search, filter]);
-  const count = (f: Filter) => (q.data ?? []).filter((d) => f === "all" || fateOf(d) === f).length;
+  }, [q.data, search, filter, cardOf]);
+  const worthwhile = useMemo(() => (q.data ?? []).filter((d) => cardOf.has(d.disclosure_index)), [q.data, cardOf]);
   const capped = (q.data?.length ?? 0) >= MAX_DISCLOSURES;
 
+  const pickDay = (next: string) => {
+    setPicked(next);
+    setShown(PAGE);
+    setFilter("all");
+  };
+  const sentence = counts && day ? readingSentence({ total: counts.total, useful: counts.useful, day, today }) : q.error && !q.data ? "Duyuruları şu an getiremedim." : "Duyuruları getiriyorum…";
+
   return (
-    <div>
+    <div className="ok-screen">
       <PageHeader
-        title="Bildirimler"
-        lead={day ? `${dayLabel(day)}${day === today ? " · bugün" : ""} · KAP’ta yayımlananlar ve tayfanın ne yaptığı` : "KAP’ta yayımlananlar ve tayfanın ne yaptığı"}
-        actions={
-          day && today ? (
-            <div role="group" aria-label="Seans seç" className="flex items-center gap-2">
-              <Button
-                size="sm"
-                onClick={() => {
-                  setPicked(prevTradingDay(day));
-                  setShown(PAGE);
-                }}
-              >
-                ← Önceki seans
-              </Button>
-              <Button size="sm" disabled={day >= today} onClick={() => {
-                  setPicked(nextTradingDay(day) > today ? today : nextTradingDay(day));
-                  setShown(PAGE);
-                }}
-              >
-                Sonraki seans →
-              </Button>
-            </div>
-          ) : null
+        name="Okunanlar"
+        title={sentence}
+        lead={
+          <p>
+            Bildirim ya da duyuru, borsadaki bir şirketin yasa gereği herkese açıkladığı haberdir; <Term word="KAP">KAP</Term> adlı resmî sitede yayımlanır. KAPtan hepsini senin yerine okur.
+          </p>
         }
       />
 
-      <section aria-labelledby="bildirim-listesi" className={cn(CARD, "overflow-clip")}>
-        <div className="flex flex-col gap-3 px-5 pt-4 pb-4 lg:flex-row lg:items-center lg:justify-between">
-          <h2 id="bildirim-listesi" className="text-body font-semibold text-ink">
-            {exact.data && q.data ? `${fmtInt(Math.max(exact.data.total, q.data.length))} bildirim` : q.data ? `${fmtInt(q.data.length)}${capped ? "+" : ""} bildirim` : "Bildirimler"}
-          </h2>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div role="group" aria-label="Ne oldu" className="inline-flex flex-wrap gap-1 self-start rounded-xl bg-sunk p-1">
-              {FILTERS.map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  aria-pressed={filter === f}
-                  onClick={() => {
-                    setFilter(f);
-                    setShown(PAGE);
-                  }}
-                  className={cn(
-                    "h-9 rounded-lg px-3 text-dense font-medium transition-colors duration-[var(--dur-quick)] max-sm:h-10",
-                    filter === f ? "bg-panel text-ink shadow-[0_1px_3px_rgb(16_17_23/0.18)]" : "text-ink-soft hover:text-ink",
-                  )}
-                >
-                  {f === "all" ? "Tümü" : FATE_LABEL[f].charAt(0).toLocaleUpperCase("tr-TR") + FATE_LABEL[f].slice(1)}{" "}
-                  <span className="tabular-nums text-muted">{q.data ? fmtInt(count(f)) : ""}</span>
-                </button>
-              ))}
+      {q.error && !q.data ? (
+        <ScreenState kind="error" title="Bağlantı kurulamadı." onRetry={q.refetch}>
+          {q.error} Okuma sürüyor; yalnızca şu an gösteremiyorum.
+        </ScreenState>
+      ) : null}
+
+      {!q.data && !q.error ? <FunnelLoading /> : null}
+
+      {counts && q.data ? (
+        <>
+          <Funnel counts={counts} filter={filter} onFilter={(f) => { setFilter(f); setShown(PAGE); }} />
+          {day && today ? (
+            <div role="group" aria-label="Gün seç" className="ok-days">
+              <Button variant="link" onClick={() => pickDay(prevTradingDay(day))}>
+                ← Önceki borsa günü
+              </Button>
+              <Button variant="link" disabled={day >= today} onClick={() => pickDay(nextTradingDay(day) > today ? today : nextTradingDay(day))}>
+                Sonraki borsa günü →
+              </Button>
             </div>
-            <label className="block sm:w-[240px]">
-              <span className="sr-only">Hisse ya da şirket ara</span>
-              <Input
-                type="search"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setShown(PAGE);
-                }} placeholder="Ara: THYAO, şirket…" />
-            </label>
-          </div>
-        </div>
-        {q.error && !q.data ? (
-          <div className="px-5 pb-5">
-            <ErrorState message={q.error} onRetry={q.refetch} />
-          </div>
-        ) : q.data ? (
-          rows.length ? (
-            <div className="border-t border-line">
-              <DisclosureHours rows={rows.slice(0, shown)} label="Bildirim listesi" />
-              {rows.length > shown ? (
-                <div className="flex items-center justify-between gap-3 border-t border-line px-5 py-2">
-                  <p className="text-dense text-muted tabular-nums">
-                    {fmtInt(shown)} / {fmtInt(rows.length)} gösteriliyor
-                  </p>
-                  <Button variant="link" onClick={() => setShown((n) => n + PAGE)}>
-                    {fmtInt(Math.min(PAGE, rows.length - shown))} tane daha göster
-                  </Button>
-                </div>
-              ) : null}
-            </div>
+          ) : null}
+          {counts.total === 0 ? (
+            <ScreenState kind="empty" title={day === today ? "Henüz okunacak bir şey yok." : "Bu gün sessiz geçti."} action={day ? <Button onClick={() => pickDay(prevTradingDay(day))}>← Önceki borsa gününe bak</Button> : null}>
+              Şirketler açıklama yaptıkça buraya düşer. Sen bir şey yapmak zorunda değilsin.
+            </ScreenState>
           ) : (
-            <p className="border-t border-line px-5 py-8 text-center text-ui text-ink-soft">
-              {q.data.length ? "Bu aramaya uyan bildirim yok." : "Bu seansta bildirim yok."}
-            </p>
-          )
-        ) : (
-          <SkeletonLines lines={6} className="px-5 pb-5" />
-        )}
-        {capped ? <p className="border-t border-line px-5 py-2.5 text-dense text-muted">İlk {fmtInt(MAX_DISCLOSURES)} bildirim gösteriliyor (en yeniler).</p> : null}
-      </section>
+            <>
+              {filter === "all" && !search.trim() && worthwhile.length ? <Worthwhile rows={worthwhile} cardOf={cardOf} isToday={day === today} /> : null}
+              <section aria-labelledby="bildirim-listesi" className="ok-all">
+                <div className="ok-all-head">
+                  <h2 id="bildirim-listesi" className="u-chapter text-ink">
+                    {filter === "all" ? "Okuduğum her şey" : `${fmtInt(rows.length)} duyuru`}
+                  </h2>
+                  <label className="block w-full sm:w-[280px]">
+                    <span className="sr-only">Hisse ya da şirket ara</span>
+                    <Input
+                      type="search"
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value);
+                        setShown(PAGE);
+                      }}
+                      placeholder="Şirket ara: THYAO, Aselsan…"
+                    />
+                  </label>
+                </div>
+                {rows.length ? (
+                  <>
+                    <DisclosureHours rows={rows.slice(0, shown)} label="Bildirim listesi" cardOf={cardOf} />
+                    {rows.length > shown ? (
+                      <div className="ok-more">
+                        <p className="text-dense text-muted tabular-nums">
+                          {fmtInt(rows.length)} duyurudan {fmtInt(shown)} tanesi burada
+                        </p>
+                        <Button variant="secondary" onClick={() => setShown((n) => n + PAGE)}>
+                          {fmtInt(Math.min(PAGE, rows.length - shown))} tane daha göster
+                        </Button>
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <ScreenState
+                    kind="empty"
+                    title="Bu aramaya uyan duyuru yok."
+                    action={
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setSearch("");
+                          setFilter("all");
+                        }}
+                      >
+                        Hepsini göster
+                      </Button>
+                    }
+                  >
+                    Şirketin adını ya da kısa kodunu yazabilirsin.
+                  </ScreenState>
+                )}
+                {capped ? <p className="mt-3 text-dense text-muted">En yeni {fmtInt(MAX_DISCLOSURES)} duyuru burada; gün bundan uzun.</p> : null}
+              </section>
+            </>
+          )}
+        </>
+      ) : null}
     </div>
+  );
+}
+
+/** While the day arrives: the boat waits on the water. */
+function FunnelLoading() {
+  return (
+    <>
+      <ScreenState kind="loading" title="Bugünün yığınına bakıyorum…">
+        Yüzlerce duyuru arasından sana yarayabilecekleri ayırıyorum.
+      </ScreenState>
+      <div aria-hidden className="pf-water" />
+    </>
   );
 }

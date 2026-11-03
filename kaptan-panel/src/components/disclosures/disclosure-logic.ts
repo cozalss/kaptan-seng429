@@ -4,13 +4,7 @@ import { MAX_DISCLOSURES } from "@/lib/api/limits";
 /** What happened to a disclosure, the way the flow strip counts it. */
 export type DisclosureFate = "noise" | "archived" | "processed";
 
-export const FATE_LABEL: Readonly<Record<DisclosureFate, string>> = {
-  noise: "elendi",
-  archived: "arşivlendi",
-  processed: "tayfaya gönderildi",
-};
-
-/** Pure. Noise stops at the filter; a disclosure with a run went to the crew; the rest is archived. */
+/** Pure. Noise stops at the filter; a disclosure with a run was looked at closely; the rest is filed. */
 export function fateOf(d: Pick<DisclosureListItem, "is_noise" | "run_id">): DisclosureFate {
   if (d.is_noise) return "noise";
   return d.run_id !== null ? "processed" : "archived";

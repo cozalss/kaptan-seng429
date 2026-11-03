@@ -20,7 +20,7 @@ export const wrap = (x, m) => ((x % m) + m) % m;
 
 /** The exits along the rail, left to right: four gates and the end of the rail. */
 export const GATES = Object.freeze([
-  Object.freeze({ id: 'e1', code: 'E1', mono: true, rule: Object.freeze(['10 seansta', '≥ %0,25 sermaye']), short: '≥ %0,25' }),
+  Object.freeze({ id: 'e1', code: 'E1', mono: true, rule: Object.freeze(['10 borsa günü', '≥ %0,25 sermaye']), short: '≥ %0,25' }),
   Object.freeze({ id: 'e2', code: 'E2', mono: true, rule: Object.freeze(['sayısal', 'eşik yok']), short: 'eşik yok' }),
   Object.freeze({ id: 'e3', code: 'E3', mono: true, rule: Object.freeze(['yıllık gelirin', '≥ %10’u']), short: '≥ %10' }),
   Object.freeze({ id: 'e4', code: 'E4', mono: true, rule: Object.freeze(['sayısal', 'eşik yok']), short: 'eşik yok' }),
@@ -39,7 +39,7 @@ export const INPUTS = Object.freeze(
       serial: 201,
       issuer: 'ÖRNEK ENERJİ A.Ş.',
       code: 'E1',
-      field: 'Geri alım %0,31 · 10 seans',
+      field: 'Geri alım %0,31 · 10 borsa günü',
       slate: '%0,31 ≥ %0,25',
       gate: 'e1',
       holes: [1, 0, 1, 1, 0, 0],
@@ -59,7 +59,7 @@ export const INPUTS = Object.freeze(
       serial: 205,
       issuer: 'ÖRNEK GIDA A.Ş.',
       code: 'E1',
-      field: 'Geri alım %0,18 · 10 seans',
+      field: 'Geri alım %0,18 · 10 borsa günü',
       slate: '%0,18 < %0,25',
       gate: 'alti',
       holes: [1, 0, 0, 1, 0, 1],

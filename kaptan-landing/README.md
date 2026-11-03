@@ -1,7 +1,7 @@
 # KAPtan tanıtım sayfası
 
 KAPtan'ın halka açık tanıtım sayfası: pirinç kâğıdına sumi mürekkeple basılmış bir çizgi roman. Fırtınada küçük
-bir tekne, okuyan bir tayfa, dümeni tutan kurallar ve son imzayı atan bir insan. Vite ile derlenen düz
+bir tekne, okuyan bir tayfa, dümeni tutan kurallar ve son sözü söyleyen sen. Vite ile derlenen düz
 JavaScript; GSAP, Lenis, WebGL (mürekkep deniz) ve Canvas 2D (Pusula sahnesi).
 
 Yayında: [kaptan-seng429.vercel.app](https://kaptan-seng429.vercel.app/). Yayında ayrı bir deploy yoktur: panelin
@@ -17,7 +17,7 @@ klasörüne kopyalar; `/` bu sayfadır, `/login` paneldir.
 | Bölüm 3 · Seyir Kuralları | `#olaylar` | Dört olay türü (E1–E4), yalnızca alım |
 | Ara · 350'den 1'e | `#pusula` | Bildirimlerin üç halkadan geçip tek yöne inmesi |
 | Bölüm 4 · Rota | `#yolculuk` | Bir bildirimin rotası: Yakala · Anla · Kanıtla · Onayla |
-| Kolofon | `#kolofon` | Künye, ders bilgileri, ekip rolleri, yasal satır |
+| Kolofon | `#kolofon` | Kapanış çağrısı ("Giriş yap"), bağlantılar, yasal satır |
 
 ## Komutlar
 

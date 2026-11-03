@@ -9,9 +9,9 @@ from decimal import Decimal
 from typing import Any
 
 from kaptan.agents.nodes.merge import build_features
-from kaptan.agents.tools import ReplayToolbox
 from kaptan.evidence import LiveToolbox
 from kaptan.market.features import MergeInputs
+from tests.harness.replay import ReplayToolbox
 from tests.unit.agent_fixtures import context_for
 from tests.unit.test_evidence_live_nodes import _price
 

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { EventType, IsoDateTime, Ticker, Confidence } from "./common";
 
-/** 07 §9 disclosures. `ingest_source: "demo"` = an injected fixture ("DEMO FİKSTÜRÜ"). */
+/** 07 §9 disclosures. `ingest_source: "demo"` = a fixture, not a real KAP record: it has no page at KAP. */
 export const DisclosureClass = z.enum(["ODA", "FR", "DG", "DKB", "DUY"]);
 export const DisclosureReason = z.enum(["NEW", "UPD", "CORR", "CANC"]);
 export const SubjectRoute = z.union([

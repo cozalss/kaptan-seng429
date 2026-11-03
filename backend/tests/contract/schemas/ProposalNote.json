@@ -14,15 +14,6 @@
   "name": {
    "type": "string"
   },
-  "role": {
-   "type": "string",
-   "enum": [
-    "analyst",
-    "risk_officer",
-    "admin",
-    "auditor"
-   ]
-  },
   "body": {
    "type": "string",
    "minLength": 1,
@@ -39,7 +30,6 @@
   "proposal_id",
   "uid",
   "name",
-  "role",
   "body",
   "created_at"
  ],

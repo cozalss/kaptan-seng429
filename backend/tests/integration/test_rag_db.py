@@ -13,9 +13,7 @@ from typing import Any
 import pytest
 
 from kaptan.agents.context import DeskState, DisclosureInput, RunContext
-from kaptan.agents.tools import ReplayToolbox
 from kaptan.db import DictConn, connect
-from kaptan.demo.seed import SeedResult
 from kaptan.rag import eval as rag_eval
 from kaptan.rag import index as cli
 from kaptan.rag.agent_context import attach_similar
@@ -23,6 +21,8 @@ from kaptan.rag.embed import CachedEmbedder, build_embedder
 from kaptan.rag.hybrid import similar_disclosures
 from kaptan.rag.index import index_disclosures, index_new_disclosures
 from kaptan.settings import Settings
+from tests.harness.replay import ReplayToolbox
+from tests.harness.seed import SeedResult
 
 pytestmark = pytest.mark.integration
 

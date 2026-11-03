@@ -7,9 +7,9 @@ from decimal import Decimal
 
 import pytest
 
-from kaptan.demo.fixtures import DemoFixtures
 from kaptan.domain.schemas.rules import RISK_GATE_ORDER
 from kaptan.risk.gate import GateContext, GateLimits, GateOrder, evaluate, evaluate_at_send
+from tests.harness.fixtures import DemoFixtures
 
 FX = DemoFixtures()
 IDS = tuple(f"evt:{i}" for i in range(23))

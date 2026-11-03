@@ -16,8 +16,8 @@ export const STATUS_LABEL: Readonly<Record<ApprovalStatus, string>> = {
   claimed: "İnceleniyor",
   approved: "Onaylandı",
   rejected: "Reddedildi",
-  expired: "Süresi doldu (09:50)",
-  cancelled: "İptal (kill switch)",
+  expired: "Süresi doldu",
+  cancelled: "Durdurulduğu için düştü",
 };
 
 export function isOpen(status: ApprovalStatus): boolean {
@@ -47,10 +47,10 @@ export interface DecideGate {
 }
 
 export function decideGate(input: { status: ApprovalStatus; killSwitchOn: boolean; haltedToday: boolean }): DecideGate {
-  if (input.killSwitchOn) return { canDecide: false, canApprove: false, reason: "Kill switch açık: yeni emir onaylanamaz.", tone: "kill" };
+  if (input.killSwitchOn) return { canDecide: false, canApprove: false, reason: "Her şey durduruldu; öneriler şimdilik onaylanamaz.", tone: "kill" };
   if (!isOpen(input.status)) return { canDecide: false, canApprove: false, reason: `Bu öneri karara bağlandı: ${STATUS_LABEL[input.status]}.`, tone: "closed" };
   if (input.haltedToday) {
-    return { canDecide: true, canApprove: false, reason: "Günlük −%1 durdurması (R02): bugün onay verilemez, yalnızca ret.", tone: "halt" };
+    return { canDecide: true, canApprove: false, reason: "Paran bugün %1'den fazla düştü; bugün onay verilemez, yalnızca reddedebilirsin.", tone: "halt" };
   }
   return { canDecide: true, canApprove: true, reason: null, tone: null };
 }

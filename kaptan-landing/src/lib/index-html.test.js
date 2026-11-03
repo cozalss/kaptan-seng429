@@ -3,6 +3,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { SITE } from '../config/site.js';
+import { AGENTS } from '../data/agents.js';
+import { SIX_STEPS } from '../data/six-steps.js';
+import { BENCH_COPY, EVENT_ARTICLES, EVENT_FILTERS } from '../data/events.js';
 import { IMAGE_FORMATS, IMAGE_SETS, buildSrcset, variantPath } from './responsive-images.js';
 
 // Vitest runs from the project root (import.meta.url is not a file: URL under jsdom).
@@ -63,7 +67,7 @@ describe('index.html content', () => {
     const heads = [...html.matchAll(/class="running-head[^"]*">[\s\S]*?<\/div>/g)].map((match) =>
       match[0].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
     );
-    const chapters = ['Bölüm 2 · Tayfa', 'Bölüm 3 · Seyir Kuralları', 'Ara · 350’den 1’e', 'Bölüm 4 · Rota', 'Kolofon'];
+    const chapters = ['Bölüm 2 · Tayfa', 'Bölüm 3 · Seyir Kuralları', 'Ara · 350’den 1’e', 'Bölüm 4 · Rota', 'Künye'];
     expect(heads.map((head) => chapters.find((chapter) => head.endsWith(chapter)))).toEqual(chapters);
     expect(html).toContain('Bölüm 1 · <span class="hero__masthead-title">Fırtına</span>');
   });
@@ -83,6 +87,33 @@ describe('index.html content', () => {
     const noscript = html.match(/<head>[\s\S]*?<noscript>([\s\S]*?)<\/noscript>[\s\S]*?<\/head>/)?.[1] ?? '';
     // :root: the built stylesheet link lands after this block, so a bare `.loader` would lose.
     expect(noscript).toMatch(/:root \.loader\s*\{\s*display:\s*none;?\s*\}/);
+  });
+});
+
+describe('the page speaks to one person', () => {
+  // What a reader can see or hear: the markup without comments and without the og image's alt,
+  // which has to describe the baked image truthfully.
+  const readable = html.replace(/<!--[\s\S]*?-->/g, '').replace(/<meta property="og:image:alt"[\s\S]*?\/>/, '');
+  const spokenAgents = AGENTS.map(({ name, meta, description, notDoes, category }) => ({ name, meta, description, notDoes, category }));
+  const copy = JSON.stringify([spokenAgents, SIX_STEPS, EVENT_ARTICLES, EVENT_FILTERS, BENCH_COPY, SITE]);
+  const BANNED =
+    /(^|[^\p{L}])(analist\p{L}*|insan\p{L}*|İnsan\p{L}*|ekip\p{L}*|ekibi|üye\p{L}*|Üye\p{L}*|rol|roller\p{L}*|seans\p{L}*|kill switch|LLM|RAG|deterministik|denetim\p{L}*|Proposal|panele)([^\p{L}]|$)/iu;
+
+  it.each([
+    ['index.html', readable],
+    ['the data modules', copy],
+  ])('%s names no team, role, analyst or jargon the reader has no use for', (_name, text) => {
+    expect(text.match(BANNED)?.[0] ?? null).toBeNull();
+  });
+
+  it('signs in plainly from the header', () => {
+    expect(html).toContain('<a class="nav-link nav-link--panel" href="/login">Giriş yap</a>');
+  });
+
+  it('closes on one clear call to action', () => {
+    const footer = html.match(/<footer[\s\S]*?<\/footer>/)[0];
+    expect(footer).toContain('Bildirimleri KAPtan okusun, kararı sen ver.');
+    expect(footer).toMatch(/<a class="pill colophon__cta" href="\/login">\s*<span class="pill__label">Giriş yap<\/span>/);
   });
 });
 

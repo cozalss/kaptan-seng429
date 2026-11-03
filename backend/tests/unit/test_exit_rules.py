@@ -8,13 +8,13 @@ from typing import Any
 
 import pytest
 
-from kaptan.demo.fixtures import DemoFixtures
 from kaptan.domain.schemas import ApprovalCard
 from kaptan.domain.schemas.run import Explain
 from kaptan.domain.schemas.trading import TradeProposal
 from kaptan.portfolio import exit_docs
 from kaptan.portfolio.exit_facts import is_buyback_sale, reversal
 from kaptan.portfolio.exit_rules import ExitFacts, break_even_stop, evaluate, hold_sessions
+from tests.harness.fixtures import DemoFixtures
 
 BASE = ExitFacts(
     event_type="E1",

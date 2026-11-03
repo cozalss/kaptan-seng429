@@ -1,57 +1,626 @@
 /* ──────────────────────────────────────────────────────────────────────────
-   Öneri: the one short signing moment and the Kopyala flash (oneri- prefix).
-   When the second signature is given here, its mark is pressed in once and the emir
-   fişi rises into place. Nothing loops; reduced motion keeps only quick fades.
+   The decision (oneri- prefix): the suggestion as one physical sheet of paper, the ink seal that
+   lands on it. What it turns into is in oneri-slip.css, the "Neden?" story in oneri-page.css.
+   All motion is transform, opacity or clip-path. Nothing loops, nothing holds up input, and
+   reduced motion shows the end state at once.
    ────────────────────────────────────────────────────────────────────────── */
 
-/* The mark: set down from a touch larger, flat at its own angle. */
-@keyframes oneri-stamp-press {
+/* ── the paper ── */
+.oneri-paper {
+  --oneri-verb-ink: var(--ink);
+  position: relative;
+  container-type: inline-size;
+  background-color: var(--panel);
+  /* Paper tooth: a fixed tile, painted once. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .05 0 0 0 0 .08 0 0 0 0 .2 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  border: 2px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.oneri-paper[data-action="al"],
+.oneri-object[data-action="al"] {
+  --oneri-verb-ink: var(--gain);
+}
+.oneri-paper[data-action="sat"],
+.oneri-object[data-action="sat"] {
+  --oneri-verb-ink: var(--loss);
+}
+
+.oneri-section {
+  display: grid;
+  gap: clamp(1.25rem, 3vw, 2rem);
+  min-width: 0;
+}
+.oneri-section-head {
+  padding-top: 0.5rem;
+  color: var(--ink);
+}
+.oneri-closed {
+  max-width: 62ch;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--north);
+  background: var(--north-tint);
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+.oneri-steps {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  min-width: 0;
+}
+
+/* ── the big verb ── */
+.oneri-verb {
+  display: inline-block;
+  width: fit-content;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(5.5rem, 3rem + 13vw, 11rem);
+  line-height: 0.82;
+  letter-spacing: -0.03em;
+  color: var(--oneri-verb-ink);
+  /* Bodoni's hairlines die on a projector: the stroke keeps the A and the L whole. */
+  -webkit-text-stroke: 0.012em currentColor;
+}
+.oneri-verb-shared {
+  view-transition-name: oneri-verb;
+}
+
+/* ── the suggestion ── */
+.oneri-object {
+  display: grid;
+  padding: clamp(1.25rem, 2.6vw, 2.25rem);
+  gap: clamp(1rem, 2.2vw, 1.5rem);
+  min-width: 0;
+  overflow: clip;
+}
+.oneri-object-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1.5rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.oneri-object-lead {
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.oneri-object-by {
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.oneri-object-body {
+  display: grid;
+  gap: 0.875rem 2.5rem;
+}
+.oneri-object-head {
+  display: grid;
+  gap: 0.75rem;
+  outline: none;
+}
+.oneri-object-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.125rem 0.75rem;
+}
+.oneri-object-company {
+  color: var(--ink);
+  font-size: clamp(1.375rem, 1.2rem + 0.8vw, 1.875rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.oneri-object-symbol {
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.oneri-object-why {
+  max-width: 44ch;
+  color: var(--ink);
+  font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.3125rem);
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+.oneri-object-facts {
+  display: grid;
+  gap: 1rem 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule-soft);
+}
+.oneri-object-fact {
+  display: grid;
+  gap: 0.25rem;
+  align-content: start;
+}
+.oneri-object-amount {
+  color: var(--ink);
+  font-size: clamp(1.75rem, 1.5rem + 1vw, 2.5rem);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.oneri-object-detail {
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+}
+.oneri-object-sure {
+  display: flex;
+  align-items: baseline;
+  gap: 0.625rem;
+  color: var(--ink);
+  font-size: 1.0625rem;
+  font-weight: 550;
+  line-height: 1.35;
+}
+.oneri-sure-marks {
+  display: inline-flex;
+  gap: 3px;
+  flex: none;
+}
+.oneri-sure-marks i {
+  width: 7px;
+  height: 14px;
+  border: 1.5px solid var(--ink);
+  transform: skewX(-12deg);
+}
+.oneri-sure-marks[data-level="1"] i:nth-child(-n + 1),
+.oneri-sure-marks[data-level="2"] i:nth-child(-n + 2),
+.oneri-sure-marks[data-level="3"] i:nth-child(-n + 3) {
+  background: var(--ink);
+}
+.oneri-object-end {
+  display: grid;
+  gap: 0.875rem 2.5rem;
+}
+.oneri-object-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.625rem;
+  align-items: center;
+}
+.oneri-object-approve,
+.oneri-object-skip {
+  height: 3.25rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+.oneri-object-whylink {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  color: var(--ink);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.25em;
+}
+.oneri-object-whylink:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.oneri-object-says {
+  max-width: 64ch;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+.oneri-object-error {
+  padding: 0.625rem 0.875rem;
+  border-left: 4px solid var(--north);
+  background: var(--north-tint);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+@container (min-width: 620px) {
+  .oneri-object-body {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: end;
+  }
+  .oneri-object-head {
+    display: contents;
+  }
+  .oneri-object-who {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+  }
+  .oneri-object .oneri-verb {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .oneri-object-why {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .oneri-object-facts,
+  .oneri-object-end {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+  .oneri-object-end > .oneri-closed {
+    order: 2;
+  }
+  .oneri-object-actions {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .oneri-object-approve {
+    min-width: 9.5rem;
+  }
+  .oneri-object-skip {
+    min-width: 5.5rem;
+  }
+  .oneri-object-whylink {
+    margin-left: 0.5rem;
+    padding-inline: 0.25rem;
+  }
+}
+
+/* The heading takes focus when the object comes forward; it shows only for the keyboard. */
+.oneri-object-head:focus-visible .oneri-object-company,
+.oneri-slip-head:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 4px;
+}
+
+/* ── the queue: sheets behind, a plain list under ── */
+.oneri-stack-wrap {
+  position: relative;
+  min-width: 0;
+}
+.oneri-stack {
+  position: relative;
+  touch-action: pan-y;
+  transition: transform 180ms var(--ease-out-expo);
+}
+.oneri-stack[data-behind="1"],
+.oneri-stack[data-behind="2"] {
+  padding-bottom: 12px;
+}
+.oneri-stack[data-behind="2"] {
+  padding-bottom: 24px;
+}
+.oneri-stack::before,
+.oneri-stack::after {
+  content: "";
+  position: absolute;
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  z-index: 0;
+}
+.oneri-stack[data-behind="0"]::before,
+.oneri-stack[data-behind="0"]::after,
+.oneri-stack[data-behind="1"]::after {
+  display: none;
+}
+.oneri-stack::before {
+  inset: 16px -2px 12px 10px;
+  transform: rotate(0.5deg);
+}
+.oneri-stack[data-behind="2"]::before {
+  inset: 16px -2px 12px 10px;
+}
+.oneri-stack::after {
+  inset: 24px 8px 0 20px;
+  transform: rotate(-0.45deg);
+  z-index: -1;
+}
+.oneri-stack > * {
+  z-index: 1;
+}
+.oneri-object:not([data-state="sealing"]) {
+  animation: oneri-come-forward 180ms var(--ease-out-expo) both;
+}
+@keyframes oneri-come-forward {
+  from {
+    opacity: 0.2;
+    transform: translateY(10px);
+  }
+}
+
+.oneri-queue {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+.oneri-queue ol {
+  border-top: 2px solid var(--ink);
+}
+.oneri-queue-row {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.5rem 0.5rem;
+  border-bottom: 1px solid var(--rule-soft);
+  color: var(--ink);
+  text-align: left;
+  transition: background-color var(--dur-quick) ease;
+}
+.oneri-queue-row:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+.oneri-queue-row:active {
+  background: var(--wash-tint-strong);
+}
+@media (hover: hover) and (pointer: fine) {
+  .oneri-queue-row:hover {
+    background: var(--wash-tint);
+  }
+  .oneri-queue-row:hover .oneri-queue-go {
+    transform: translateX(3px);
+  }
+}
+.oneri-queue-verb {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.oneri-queue-row[data-action="al"] .oneri-queue-verb {
+  color: var(--gain);
+}
+.oneri-queue-row[data-action="sat"] .oneri-queue-verb {
+  color: var(--loss);
+}
+.oneri-queue-who {
+  overflow: hidden;
+  font-size: 1.0625rem;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.oneri-queue-error {
+  color: var(--north);
+  font-weight: 600;
+}
+.oneri-queue-amount {
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.oneri-queue-go {
+  font-weight: 600;
+  transition: transform var(--dur-quick) var(--ease-out-expo);
+}
+
+/* ── Geç: a quiet slide, drawn over the next sheet and never in its way ── */
+.oneri-leaving {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  gap: 1.25rem;
+  height: min(100%, 22rem);
+  padding: clamp(1.25rem, 2.6vw, 2.25rem);
+  pointer-events: none;
+  animation: oneri-leave 200ms var(--ease-ink) both;
+}
+.oneri-leaving-word {
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+@keyframes oneri-leave {
+  to {
+    opacity: 0;
+    transform: translateX(-56px) rotate(-1.2deg);
+  }
+}
+
+/* ── the seal: a short, heavy landing ── */
+.oneri-seal {
+  display: block;
+  color: var(--north);
+  overflow: visible;
+}
+.oneri-seal-word {
+  font-family: var(--font-sans);
+  letter-spacing: 0.01em;
+}
+.oneri-object[data-state="sealing"] > :not(.oneri-seal) {
+  opacity: 0.32;
+  transition: opacity 90ms linear 120ms;
+}
+.oneri-object-seal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(84%, 34rem);
+  margin: 0;
+  translate: -50% -50%;
+  rotate: -7deg;
+  pointer-events: none;
+}
+.oneri-seal-press {
+  animation: oneri-seal-press 380ms both;
+}
+/* Falls fast from above the paper, hits at 34%, then rocks to rest. No easing out of the sky:
+   the weight comes from arriving at speed. */
+@keyframes oneri-seal-press {
   0% {
     opacity: 0;
-    transform: rotate(var(--oneri-stamp-rot, -2deg)) scale(1.35);
+    transform: scale(2.1);
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.7);
+  }
+  34% {
+    opacity: 1;
+    transform: scale(0.94);
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1);
   }
   60% {
-    opacity: 1;
+    transform: scale(1.025);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.5, 1);
   }
   100% {
     opacity: 1;
-    transform: rotate(var(--oneri-stamp-rot, -2deg)) scale(1);
+    transform: scale(1);
   }
 }
-/* The emir fişi appears under the decision: a short rise and fade. */
-@keyframes oneri-slip-lay {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+/* The paper takes the blow at the same instant. */
+.oneri-thud {
+  animation: oneri-thud 380ms both;
+}
+@keyframes oneri-thud {
+  0%,
+  30% {
+    transform: none;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  42% {
+    transform: translate(2px, 4px) scale(0.994);
+    animation-timing-function: cubic-bezier(0.3, 0, 0.3, 1);
+  }
+  100% {
+    transform: none;
   }
 }
-/* Kopyala: the copied fields flash the wash once, so you see what went to the clipboard. */
-@keyframes oneri-copied {
+
+/* The next step opens out of the sealed sheet from the top. */
+.oneri-reveal {
+  animation: oneri-reveal 180ms var(--ease-out-expo) both;
+}
+@keyframes oneri-reveal {
   from {
-    background-color: var(--wash-tint-strong);
+    clip-path: inset(0 -12px 62% -12px);
+    opacity: 0.4;
   }
   to {
-    background-color: transparent;
+    clip-path: inset(0 -12px -12px -12px);
+    opacity: 1;
   }
 }
 
-.oneri-stamp-press {
-  animation: oneri-stamp-press 280ms var(--ease-ink) 80ms both;
+/* ── nothing to decide: a calm day ── */
+.oneri-empty {
+  position: relative;
+  display: grid;
+  gap: 0.875rem;
+  padding: 1.5rem 0 clamp(1.5rem, 3.5vw, 3rem);
+  background: var(--paper);
+  border-bottom: 2px solid var(--ink);
+  overflow: clip;
 }
-.oneri-slip-lay {
-  animation: oneri-slip-lay 280ms var(--ease-out-expo) 300ms both;
+.oneri-empty-sea {
+  position: relative;
+  height: clamp(116px, 14vw, 168px);
+  margin-bottom: 0.25rem;
+  border-bottom: 2px solid var(--ink);
 }
-.oneri-copied {
-  animation: oneri-copied 1200ms var(--ease-out-expo) both;
+/* A clear sky: the sun in the landing's engraving, never a colour of its own. */
+.oneri-empty-sun {
+  position: absolute;
+  top: 0.5rem;
+  right: clamp(1rem, 12%, 7rem);
+  width: clamp(56px, 7vw, 88px);
+  aspect-ratio: 1;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background-image: repeating-linear-gradient(-45deg, var(--rule-soft) 0 1px, transparent 1px 6px);
+}
+.oneri-empty-sea::after {
+  content: "";
+  position: absolute;
+  inset: 100% 0 auto;
+  height: 28px;
+  background-image: repeating-linear-gradient(-45deg, var(--rule-soft) 0 1px, transparent 1px 7px);
+  mask-image: linear-gradient(to bottom, #000, transparent);
+}
+.oneri-empty-boat {
+  position: absolute;
+  bottom: 0;
+  /* The drawing has air under its hull: the hull has to sit in the water. */
+  transform: translateY(15%);
+  left: clamp(0.5rem, 8%, 5rem);
+  width: clamp(88px, 10vw, 128px);
+  height: auto;
+  aspect-ratio: 1;
+}
+.oneri-empty-head {
+  margin-top: 1.25rem;
+  color: var(--ink);
+}
+.oneri-empty-body {
+  max-width: 54ch;
+  color: var(--ink);
+  font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.3125rem);
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+.oneri-empty-note {
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
 }
 
+/* ── shared element: the verb flies from the home to its "Neden?" page ── */
+::view-transition-group(oneri-verb) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+::view-transition-old(oneri-verb),
+::view-transition-new(oneri-verb) {
+  height: 100%;
+  width: auto;
+  object-fit: contain;
+  object-position: left center;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+}
+
+/* ── dark reading: the same paper by lamp light ── */
+@media (prefers-color-scheme: dark) {
+  .oneri-paper {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .035 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    box-shadow: 6px 6px 0 rgb(0 0 0 / 0.6);
+  }
+}
+
+/* ── reduced motion: the end state, at once ── */
 @media (prefers-reduced-motion: reduce) {
-  .oneri-stamp-press,
-  .oneri-slip-lay {
-    animation: fade-in 150ms ease-out both !important;
+  .oneri-seal-press,
+  .oneri-thud,
+  .oneri-reveal,
+  .oneri-object:not([data-state="sealing"]) {
+    animation: none;
   }
-  /* A colour change, not motion: kept, only shorter. */
-  .oneri-copied {
-    animation: oneri-copied 600ms linear both !important;
+  .oneri-object[data-state="sealing"] > :not(.oneri-seal) {
+    transition: none;
+  }
+  .oneri-leaving {
+    display: none;
+  }
+  .oneri-stack {
+    transition: none;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .oneri-seal {
+    color: CanvasText;
   }
 }

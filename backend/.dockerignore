@@ -20,15 +20,6 @@ ops/
 scripts/
 docs/
 *.md
-tests/*
-!tests/__init__.py
-!tests/fixtures/
-tests/fixtures/*
-!tests/fixtures/demo/
-# The demo seed (kaptan.demo.fixtures) reads these three; the rest of expected/ is test-only.
-tests/fixtures/demo/expected/*
-!tests/fixtures/demo/expected/orders.json
-!tests/fixtures/demo/expected/tickets.json
-!tests/fixtures/demo/expected/positions.json
+tests/
 Dockerfile
 docker-compose*.yml

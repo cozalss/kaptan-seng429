@@ -723,7 +723,7 @@
       '.'
       'acts'
       'rail';
-    /* the sticky demo bar owns the bottom edge on phones */
+    /* the sticky bar owns the bottom edge on phones */
     padding-bottom: calc(var(--sticky-cta-height, 56px) + 2 * var(--gutter-panel) + env(safe-area-inset-bottom, 0px));
   }
 

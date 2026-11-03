@@ -60,15 +60,15 @@
    }
   ],
   "proposed_by": {
-   "uid": "uye-1",
-   "name": "Üye 1",
-   "role": "admin",
+   "uid": "kurulum",
+   "name": "Kurulum",
+   "role": "risk_officer",
    "at": "2026-11-08T09:00:00.000Z",
    "reason": "Kanonik başlangıç limitleri."
   },
   "decided_by": {
-   "uid": "uye-3",
-   "name": "Üye 3",
+   "uid": "sahip",
+   "name": "Sahip",
    "role": "risk_officer",
    "at": "2026-11-08T11:30:00.000Z",
    "reason": "Kanonik değerlerle aynı; onay."

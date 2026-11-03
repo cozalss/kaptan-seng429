@@ -117,22 +117,22 @@ export const RISK_GATE_ORDER: readonly RiskRuleCode[] = [
 ];
 
 export const RISK_RULES: Readonly<Record<RiskRuleCode, { label_tr: string; summary_tr: string }>> = {
-  R01: { label_tr: "Kill switch", summary_tr: "Kill switch açık mı; zirveden düşüş ≤ −%5 mi" },
-  R02: { label_tr: "Günlük zarar", summary_tr: "Günlük K/Z ≤ −%1 ise yeni emir durur" },
+  R01: { label_tr: "Her şeyi durdurma", summary_tr: "Durduruldu mu; paran zirvesinden %5 düştü mü" },
+  R02: { label_tr: "Günlük zarar", summary_tr: "Bir günde %1 düşersen o gün yeni işlem olmaz" },
   R03: { label_tr: "Evren", summary_tr: "Hisse likidite ve halka açıklık alt sınırıyla evrende mi" },
   R04: { label_tr: "Tedbir", summary_tr: "SPK/VBTS tedbiri sert veto; 24 saatten eski tedbir verisi HOLD" },
   R05: { label_tr: "Kanıt", summary_tr: "Kanıt kimlikleri getirilenlerin alt kümesi, karar anından önce, n ≥ 5" },
   R06: { label_tr: "Avantaj / maliyet", summary_tr: "Beklenen avantaj ≥ 2 × tahmini maliyet" },
-  R07: { label_tr: "Büyüklük", summary_tr: "%0,5 risk / stop; pozisyon ≤ %10; hacmin ≤ %1'i; nakit" },
-  R08: { label_tr: "Portföy limitleri", summary_tr: "Mükerrer, en çok 10 pozisyon, günlük giriş, sektör %25, grup %20" },
+  R07: { label_tr: "Büyüklük", summary_tr: "Bir işlemde %0,5 risk; tek hisse en fazla %10; günlük alım satımın en fazla %1'i; yeterli nakit" },
+  R08: { label_tr: "Dağılım sınırları", summary_tr: "Aynı hisse iki kez yok, en çok 10 hisse, sektör en fazla %25, grup en fazla %20" },
   R09: { label_tr: "Fiyat bandı", summary_tr: "Son fiyat ±%2, tavana %1 yakınlık, 20 dakikadan eski fiyat" },
   R10: { label_tr: "Kriz rejimi", summary_tr: "Krizde maruziyet ×0,5; E3 reddedilir" },
   R11: { label_tr: "Kota ve veri", summary_tr: "LLM kotası, KAP gecikmesi (300 sn), şema, injection" },
-  R12: { label_tr: "Yalnızca alım", summary_tr: "Açığa satış yok, kaldıraç yok, kişisel mod silahlanmamış" },
-  R13: { label_tr: "Ekip engel listesi", summary_tr: "Ekip içeriden-öğrenen engel listesinde değil" },
+  R12: { label_tr: "Yalnızca alım", summary_tr: "Açığa satış yok, borçla işlem yok" },
+  R13: { label_tr: "Yasak listen", summary_tr: "Hisse, kendi yasak listende değil" },
   R14: { label_tr: "Tutar uyuşması", summary_tr: "Okuyucu tutarı metindeki regex tutarlarıyla eşleşiyor (±%0,5)" },
-  R15: { label_tr: "Onay zorunlu", summary_tr: "Her öneri insan onayına gider; ertesi seans 09:50'de düşer" },
-  R16: { label_tr: "Gönderim anı", summary_tr: "Onay süresi; R01–R04, R09, R12, R13 yeniden; fiş 30 dk" },
+  R15: { label_tr: "Onay zorunlu", summary_tr: "Her öneri senin onayına gelir; ertesi borsa günü 09:50'de düşer" },
+  R16: { label_tr: "Gönderim anı", summary_tr: "Onay süresi dolmadı; kurallar yeniden geçti; bankaya girmek için 30 dakika" },
 };
 
 export const RiskOutcome = z.enum(["pass", "resize", "reject", "hold", "approval_required"]);

@@ -1,10 +1,10 @@
 // "İçindekiler": the header's table of contents, set as the contents page of the book — each
 // chapter's title in Bodoni, a dotted leader, its chapter label on the right — then an ink button
-// on to the demo flow and the meta line.
+// on to the six steps and the meta line.
 
 import { h } from './dom.js';
 import { createOverlay } from './overlay.js';
-import { DEMO_LABEL } from './demo-drawer.js';
+import { STEPS_LABEL } from './steps-drawer.js';
 
 const TITLE_ID = 'menu-drawer-title';
 
@@ -16,11 +16,11 @@ export const SECTION_LINKS = Object.freeze(
     { label: 'Bölüm 3', title: 'Seyir Kuralları', target: '#olaylar' },
     { label: 'Ara', title: '350’den 1’e', target: '#pusula', kind: 'interlude' },
     { label: 'Bölüm 4', title: 'Rota', target: '#yolculuk' },
-    { label: 'Son', title: 'Kolofon', target: '#kolofon' },
+    { label: 'Son', title: 'Künye', target: '#kolofon' },
   ].map((entry) => Object.freeze(entry)),
 );
 
-/** What a contents line announces: "Bölüm 2 · Tayfa" (the colophon is just "Kolofon"). */
+/** What a contents line announces: "Bölüm 2 · Tayfa" (the colophon is just "Künye"). */
 export function entryName({ label, title }) {
   return label === 'Son' ? title : `${label} · ${title}`;
 }
@@ -38,9 +38,9 @@ function createEntry(entry, onActivate) {
 }
 
 /**
- * @param {{mount: Element, site: object, lockScroll?: Function, unlockScroll?: Function, scrollTo: Function, openDemo: Function}} options
+ * @param {{mount: Element, site: object, lockScroll?: Function, unlockScroll?: Function, scrollTo: Function, openSteps: Function}} options
  */
-export function createMenuDrawer({ mount, site, lockScroll, unlockScroll, scrollTo, openDemo }) {
+export function createMenuDrawer({ mount, site, lockScroll, unlockScroll, scrollTo, openSteps }) {
   const overlay = createOverlay({ mount, id: 'menu-drawer', label: 'İçindekiler', labelledBy: TITLE_ID, variant: 'drawer', lockScroll, unlockScroll });
 
   const closeButton = h(
@@ -63,12 +63,12 @@ export function createMenuDrawer({ mount, site, lockScroll, unlockScroll, scroll
   const ctaButton = h(
     'button',
     { type: 'button', class: 'pill menu-drawer__cta' },
-    h('span', { class: 'pill__label' }, DEMO_LABEL),
+    h('span', { class: 'pill__label' }, STEPS_LABEL),
     h('span', { class: 'pill__chip', 'aria-hidden': 'true' }),
   );
   ctaButton.addEventListener('click', () => {
     overlay.close();
-    openDemo();
+    openSteps();
   });
 
   const footer = h(

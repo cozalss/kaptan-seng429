@@ -2,28 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
-
 from kaptan.domain.schemas._base import KModel
-
-DemoScenario = Literal["e3_contract", "redteam_injection", "restricted_r04", "loss_simulation"]
-
-
-class DemoInjectInput(KModel):
-    scenario: DemoScenario
-
-
-class DemoInjectOut(KModel):
-    disclosure_index: int | None
-    run_id: str | None
-
-
-class DemoTamperInput(KModel):
-    on: bool
-
-
-class DemoTamperOut(KModel):
-    tamper_on: bool
 
 
 class SseTicketOut(KModel):

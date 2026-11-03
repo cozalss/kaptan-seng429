@@ -1,1 +1,1 @@
-"""Domain layer: schemas (mirroring the panel's zod), roles, permissions. No I/O."""
+"""Domain layer: schemas (mirroring the panel's zod) and the one account. No I/O."""

@@ -299,11 +299,11 @@ def extract_texts(payload: str) -> dict[str, str]:
 
 ### 5.2 PDF ekleri
 
-1. `attachment-detail/{idx}` → dosya listesi (`objId`, ad) **[!]**; `file/download/{objId}` → bayt.
-2. Boyut sınırı 20 MB; `sha256` ile içerik adresli depolama (`/data/raw/att/{sha256[:2]}/{sha256}.pdf`); aynı PDF iki bildirimde ise bir kez saklanır.
-3. Metin: `pypdf` (varsayılan) → boşsa `pdfplumber` (tablolar) → hâlâ boşsa `text_status='empty_needs_ocr'` (OCR opsiyonel: `ocrmypdf -l tur`). PyMuPDF AGPL olduğu için kullanılmaz.
-4. Sayfa başı/sonu tekrarları (antet, sayfa no) sayfalar arası frekansla atılır.
-5. PDF metni Okuyucu'ya **veri** olarak (fenced) verilir; prompt-injection skoru PDF metni için de hesaplanır.
+1. **Kapsam:** yalnızca kendi formunda işlem tablosu olmayan, eki olan E2 bildirimleri (günde ~20). Kuyruk `ops.attachment_fetch_queue`; ajan koşusu ek çözülene kadar bekler. Saklanmış satırlar için elle çalışan iş: `python -m kaptan.ingest.attachment_refetch` (kaldığı yerden sürer, koşu başlatmaz).
+2. **Liste [V, 03.11.2026]:** `/tr/Bildirim/{idx}` sayfasının RSC yükünde `"attachments":[{"objId","fileName","fileExtension"}]`. **Dosya [V]:** `GET /tr/api/file/download/{objId}`; yanıt dosyanın kendisi değil, **Java ile serileştirilmiş `byte[]`** (sabit 23 bayt başlık + 4 bayt uzunluk + dosya). Yalnızca bu başlık soyulur, hiçbir şey deserialize edilmez.
+3. **Metin:** `pypdf` düzen modu (düz mod MKK formunun alanlarını karışık sırada verir). 10 sayfadan uzun veya 10 MB'tan büyük dosya okunmaz. Metin yoksa ve sayfada görsel varsa taranmış sayılır; OCR yok, bildirim "ek okunamadı" nedeniyle işaretlenir ve Okuyucu `abstain(attachment_missing)` döner (model çağrılmaz). Adres, telefon, e-posta ve imza satırları saklanmadan atılır (09 §9.2).
+4. **Tablo:** 10 sütunlu satırlar kodla okunur; satır ancak kendi toplamları tutuyorsa (alım − satım = net, gün başı + net = gün sonu) geçerlidir, tek satır tutmazsa tablonun tamamı kullanılmaz. Doğrulanmış satırlar `core.disclosures.parsed` içine yazılır ve Okuyucunun verdiği işlem rakamlarının üzerine yazar.
+5. PDF metni Okuyucu'ya **veri** olarak (fenced) verilir: `text_tr`'nin parçasıdır, bu yüzden aynı guard, aynı kişi adı maskeleme ve aynı çit ondan da geçer.
 
 ---
 

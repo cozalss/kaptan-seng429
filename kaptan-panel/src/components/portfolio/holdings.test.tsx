@@ -4,7 +4,7 @@ import { Holdings } from "./holdings";
 
 const base: Position = {
   ticker: "ORNEK",
-  company_name: "ÖRNEK ENERJİ A.Ş.",
+  company_name: "MİSAL ENERJİ A.Ş.",
   qty: 1240,
   avg_cost: 48.32,
   last_price: 48.51,
@@ -21,25 +21,34 @@ const base: Position = {
   book: "paper",
 };
 
+const holdingRows = () => within(screen.getByRole("list", { name: "Elindekiler" })).getAllByRole("listitem").filter((i) => i.id.startsWith("elinde-"));
+
 describe("Holdings", () => {
-  it("tells the KAPtan account's fill from the slip you entered yourself, for the same company", () => {
-    render(<Holdings positions={[base, { ...base, qty: 620, avg_cost: 48.4, unrealized_pnl: -620, book: "personal" }]} today="2027-01-11" />);
-    const rows = within(screen.getByRole("table", { name: "Elindekiler" })).getAllByRole("row").slice(1);
-    expect(rows).toHaveLength(2);
-    expect(rows[0]).toHaveTextContent("KAPtan hesabı");
-    expect(rows[0]).not.toHaveTextContent("Kendi hesabın");
-    expect(rows[1]).toHaveTextContent("Kendi hesabın");
-    expect(rows[1]).not.toHaveTextContent("KAPtan hesabı");
+  it("reads a holding as sentences: company first, what you paid, what it is worth, when it may be sold", () => {
+    render(<Holdings positions={[base]} today="2027-01-11" />);
+    const row = holdingRows()[0] as HTMLElement;
+    expect(within(row).getByRole("heading", { level: 3, name: "Misal Enerji" })).toBeInTheDocument();
+    expect(row).toHaveTextContent("ORNEK");
+    expect(row).toHaveTextContent("1.240 adet aldın, 59.917 ₺ ödedin.");
+    expect(row).toHaveTextContent("60.152 ₺");
+    expect(row).toHaveTextContent("+236 ₺");
+    expect(row).toHaveTextContent("KAPtan bunu 18 Ocak’ta satmayı önerecek.");
   });
 
-  it("names the account once when every holding sits in it, with value and weight columns", () => {
-    render(<Holdings positions={[base, { ...base, ticker: "KRGCL", company_name: "KORU ÇELİK A.Ş.", qty: 100, last_price: 50 }]} today="2027-01-11" />);
-    const table = screen.getByRole("table", { name: "Elindekiler" });
-    expect(within(table).getByText("Hepsi KAPtan hesabında")).toBeInTheDocument();
-    const rows = within(table).getAllByRole("row").slice(1);
-    expect(rows[0]).not.toHaveTextContent("KAPtan hesabı");
-    expect(within(table).getByRole("columnheader", { name: "Değer (TL)" })).toBeInTheDocument();
-    expect(within(table).getByRole("columnheader", { name: "Ağırlık" })).toBeInTheDocument();
-    expect(rows[0]).toHaveTextContent("60.152");
+  it("cuts the ledger at the water: what is down sits under the line", () => {
+    render(<Holdings positions={[{ ...base, ticker: "DOWN", last_price: 40, unrealized_pnl: -10 }, base]} today="2027-01-11" />);
+    const items = within(screen.getByRole("list", { name: "Elindekiler" })).getAllByRole("listitem");
+    expect(items.map((i) => i.id || "su")).toEqual(["elinde-ORNEK", "su", "elinde-DOWN"]);
+  });
+
+  it("says what to do when nothing is held", () => {
+    render(<Holdings positions={[]} today="2027-01-11" />);
+    expect(screen.getByText("Henüz hisse almadın.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ana sayfaya dön" })).toHaveAttribute("href", "/benim");
+  });
+
+  it("names no account: there is one book, the person's own", () => {
+    render(<Holdings positions={[base]} today="2027-01-11" />);
+    expect(document.body).not.toHaveTextContent(/deneme|kendi bankanda/i);
   });
 });

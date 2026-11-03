@@ -4,6 +4,43 @@ Bu dosya tüm proje dokümanlarının ortak doğruluk kaynağıdır. Bir doküma
 
 ---
 
+## REVİZYON 4 — tek kullanıcı kararı (02.11.2026)
+
+> **Bu bölüm en üsttedir ve aşağıdaki bütün bölümlerle (Revizyon 3, Revizyon 2, orijinal kararlar) çelişirse bu bölüm geçerlidir.**
+
+**Karar.** KAPtan **tek bir kişi** içindir. Ders ekibi, analist, risk sorumlusu, yönetici ya da denetçi yoktur. Sistem
+**yalnızca tek kullanıcı modunda** çalışır: anahtar, ikinci mod, "gelişmiş görünüm", masa, rol seçimi ve ikinci kişi yoktur.
+Giriş tek parolalıdır; oturum açan herkes kendi hesabının bütün işlemlerini yapabilir.
+
+**Geçersiz kılınanlar** (bu belgelerde ne yazarsa yazsın artık geçerli değildir):
+- Dört rol (Analist, Risk Sorumlusu, Yönetici, Denetçi), rol seçimi ve rol bazlı yetki tabloları.
+- İki kişilik onay (iki imza, "önce kurallar sonra insan"nın ikinci kişisi), dört göz ve görev ayrılığı kuralları.
+- Ekip, takım, "Üye N" hesapları, ekip içi roller ve ekip kapasitesine dayalı planlar (bu belgelerdeki yeni ekip
+  ifadeleri "tek kullanıcı" anlamına okunur).
+- API'de "yanlış rol" (403 `forbidden`) ve "aynı kişi" (403 `same_person`) yanıtları. Oturum açmış kullanıcı için yetki
+  kontrolü yoktur.
+- Auditor (salt okunur rol) ve Admin'e özgü ekranlar, uçlar ve kullanıcı yönetimi.
+- "Kişisel mod" adı: tek kullanıcı modu artık tek moddur; ayrı bir "kişisel" mod yoktur.
+
+**Korunanlar** (değişmeyen güvenlik kuralları):
+1. **Her atlanan ikinci imza denetim defterine yazılır.** Tek kişi bir imzanın yerine geçtiğinde kayıt `auth.single_user_waiver`
+   olarak tutulur. Defter dürüst kalır: hangi kararın tek imzayla verildiği sonradan görülebilir.
+2. **Otomatik durdurma ve risk kapısı değişmez.** Zirveden −%5'te durdurma, günlük −%1'de yeni emir durması ve
+   R01–R16 ile E1–E4 kuralları aynen geçerlidir. Deterministik kurallar LLM ile esnetilemez.
+3. **Her öneriyi kişi onaylar veya reddeder.** Hiçbir öneri kendiliğinden kabul edilmez; yanıtsız öneri bir sonraki seansın
+   09:50'sinde düşer (R15).
+4. **Otomatik emir yoktur.** Onaylanan öneri bir emir fişi olur; kişi emri kendi aracı kurumunda girer. Demo hesabında
+   emri simüle borsa (SimBIST) doldurur.
+5. **Durdurduktan sonra yeniden başlatma bekler.** Gerçek veride iki adım arasında **en az 24 saat** ve durdurmadan
+   sonra **en az 5 seans** geçmeden yeniden başlatma onaylanamaz. Bu bekleme `RiskStatus.reset.ready_at` ile
+   gösterilir (`null` = şimdi onaylanabilir). `DEMO_MODE=true` bekleme süresini muaf tutar; muafiyet de denetim
+   defterine yazılır.
+
+**Uygulama notu.** Bu karar API sözleşmesini (`kaptan-panel/API.md`), panel ürün kurallarını (`kaptan-panel/SPEC.md`),
+risk ve güvenlik belgelerinin rol bölümlerini (`04`, `05`, `06 §11`, `09 §5–6`) ve işletim el kitabını
+(`docs/ops/RUNBOOK.md`) hizalar. Diğer tarihsel belgelerde (01, 02, 03, 07, 08, 10, 11, 12, 13, 14) geçen dört rol,
+ekip ve iki imza anlatımları bu kararla çelişir; onlar **arşiv niteliğindedir** ve bu kararla okunur.
+
 ## REVİZYON 3 — doğrulanmış bulgular ve düzeltmeler (30.09.2026)
 
 > Fizibilite araştırmasının sonuçları: KAP ve fiyat verisi **canlı denendi**, akademik ve teknik iddialar kaynağından kontrol edildi. **Bu bölüm Revizyon 2 ve orijinal metinle çelişirse bu bölüm geçerlidir.** Kapsam **değişmez**: 6 LLM ajanı ve tüm özellikler aynen kalır; stretch olanlar stretch kalır.
@@ -192,7 +229,7 @@ KAP `subject` alanı bildirimlerin ~%90'ını zaten tipliyor; LLM sınıflandır
 Her aramada `published_at < karar_anı`. Hibrit: bge-m3 dense + Postgres `turkish` FTS + trigram. Chroma karşılaştırma notebook'u.
 
 ## Veri
-- KAP canlı: kap.org.tr JSON uçları (`/tr/api/disclosure/list/main`, `/tr/api/disclosure/members/byCriteria`), 15–30 sn polling, kendi "ilk görülme" zamanı. Tam metin `/tr/Bildirim/{idx}`. Kütüphane: `kap-client` 1.2.0, `borsapy` 0.11.0. *(Revizyon 3: `kap-client` BIST hisselerinde çalışmıyor → kendi httpx istemcimiz.)*
+- KAP canlı: KAP JSON uçları (`/tr/api/disclosure/list/main`, `/tr/api/disclosure/members/byCriteria`), 15–30 sn polling, kendi "ilk görülme" zamanı. Tam metin `/tr/Bildirim/{idx}`. Kütüphane: `kap-client` 1.2.0, `borsapy` 0.11.0. *(Revizyon 3: `kap-client` BIST hisselerinde çalışmıyor → kendi httpx istemcimiz.)*
 - MKK API Portal ücretsiz plan = yalnızca sandbox (donmuş ~2023 verisi).
 - Fiyat: yfinance (günlük), borsapy (kurumsal işlemler), isyatirimhisse (düzeltilmiş + ham). 15 dk gecikme → strateji ertesi açılış.
 - Haber RSS: AA, Dünya, Foreks, Habertürk, TRT Haber, CNBC-e, Borsagündem. (Bloomberg HT RSS 14 Eylül'den beri ölü.)

@@ -14,7 +14,7 @@ pytestmark = pytest.mark.integration
 
 
 async def test_overview_on_the_demo_day(client: httpx.AsyncClient) -> None:
-    token = (await login(client, "analyst"))["access_token"]
+    token = (await login(client))["access_token"]
     res = await client.get("/api/v1/me/overview", headers=bearer(token))
     assert res.status_code == 200, res.text
     body = res.json()
@@ -32,7 +32,7 @@ async def test_overview_on_the_demo_day(client: httpx.AsyncClient) -> None:
 
 
 async def test_hold_and_skip_are_audited(client: httpx.AsyncClient, migrated: Settings) -> None:
-    token = (await login(client, "risk_officer"))["access_token"]
+    token = (await login(client))["access_token"]
     card = (await client.get("/api/v1/approvals", headers=bearer(token))).json()[0]
     try:
         res = await client.post(
@@ -51,10 +51,6 @@ async def test_hold_and_skip_are_audited(client: httpx.AsyncClient, migrated: Se
         assert card["proposal_id"] in [c["proposal_id"] for c in still]  # the card stays open
         missing = await client.post("/api/v1/me/suggestions/nope/hold", json={}, headers=bearer(token))
         assert missing.status_code == 404
-        analyst = (await login(client, "analyst"))["access_token"]
-        denied = await client.post(f"/api/v1/me/suggestions/{card['proposal_id']}/hold", json={},
-                                   headers=bearer(analyst))  # fmt: skip
-        assert denied.status_code == 403
     finally:
         await reseed_test_db(migrated)
 

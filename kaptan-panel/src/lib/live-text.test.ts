@@ -23,25 +23,24 @@ const veto = (reasons: unknown[]): AuditEntry =>
 describe("pre-gate veto wording", () => {
   it("says the stock is outside the universe for R03, not that it is restricted", () => {
     expect(auditSentence(veto(["R03_UNIVERSE: hisse evren dışında — sert veto", "LLM çağrısı yapılmadı"]))).toBe(
-      "Kurallar Mogan Enerji Yatırım Holding için öneriyi baştan reddetti (hisse izlenen evrenin dışında).",
+      "KAPtan Mogan Enerji Yatırım Holding için öneriyi baştan eledi (hisse izlenen evrenin dışında).",
     );
   });
 
   it("keeps 'tedbirli hisse' for R04 and names the insider list for R13", () => {
     expect(vetoReason(veto(["R04_RESTRICTED: tedbir"]))).toBe("tedbirli hisse");
-    expect(vetoReason(veto(["R13_INSIDER_BLOCKLIST: engel"]))).toBe("ekip engel listesinde");
+    expect(vetoReason(veto(["R13_INSIDER_BLOCKLIST: engel"]))).toBe("yasak listende");
   });
 
   it("says nothing extra when no rule code is given", () => {
-    expect(auditSentence(veto(["bilinmeyen"]))).toBe("Kurallar Mogan Enerji Yatırım Holding için öneriyi baştan reddetti.");
+    expect(auditSentence(veto(["bilinmeyen"]))).toBe("KAPtan Mogan Enerji Yatırım Holding için öneriyi baştan eledi.");
     expect(vetoReason({ payload: {} })).toBeNull();
   });
 
   it("says a failed sign-in in words, never as the raw action code", () => {
     const failed = { ...veto([]), actor: "auth", action: "auth.login_failed", payload: {} } as AuditEntry;
-    expect(auditSentence(failed)).toBe("Hatalı parolayla bir giriş denendi.");
-    expect(actorParts("auth")).toEqual({ name: "Giriş kapısı", kind: "Sistem" });
-    expect(actorParts("system:auth")).toEqual({ name: "Giriş kapısı", kind: "Sistem" });
+    expect(auditSentence(failed)).toBe("Yanlış parolayla giriş denendi.");
+    expect(actorParts("auth")).toEqual({ name: "KAPtan", kind: "giriş" });
   });
 });
 
