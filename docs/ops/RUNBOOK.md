@@ -17,7 +17,7 @@ Bir işaret yoksa o satır bir komut değil, bir açıklamadır.
 1. Docker Desktop kurulu olsun ve açık olsun. Ekranın sağ altındaki balina simgesi yeşil olmalı.
 2. Proje klasöründe **`kur.cmd`** dosyasına çift tıkla. Siyah bir pencere açılır ve sana sorular sorar.
    Soruları yanıtlarken yazdığın parolalar ve anahtarlar ekranda görünmez; bu normaldir.
-   - **Parola seç.** En az 10 karakter. KAPtan'a bu parolayla gireceksin. Unutursan kurtaramazsın, yeniden
+   - **Parola seç.** En az 6 karakter. KAPtan'a bu parolayla gireceksin. Unutursan kurtaramazsın, yeniden
      kurmak gerekir: kopyası hiçbir yerde durmaz, yalnız özeti saklanır.
    - **Yapay zekâ anahtarı.** KAPtan bildirimleri okumak için bir yapay zekâ hizmetinin anahtarını ister.
      En az biri gerekir. Hangisini yapıştıracağını bilmiyorsan Gemini'nin ücretsiz anahtarı yeter.

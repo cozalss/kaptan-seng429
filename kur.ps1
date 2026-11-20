@@ -8,7 +8,7 @@ param([switch]$PasswordFromStdin)
 
 . "$PSScriptRoot\backend\ops\kaptan-ortak.ps1"
 
-$MinPasswordLength = 10
+$MinPasswordLength = 6
 $MaxPasswordLength = 200
 $ProviderKeys = @('GEMINI_API_KEY', 'DEEPSEEK_API_KEY', 'GROQ_API_KEY')
 $GeneratedSecrets = @{ JWT_SECRET = 64; POSTGRES_PASSWORD = 40; KAPTAN_APP_PASSWORD = 40; REDIS_PASSWORD = 40 }
