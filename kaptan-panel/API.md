@@ -7,28 +7,26 @@
 Panel **yalnızca** aşağıdaki uç noktaları kullanır. Tipler `src/lib/domain/*.ts` içindeki zod şemalarıdır (tek doğruluk
 kaynağı); istemci, arayüz ve mock bu şemalara uymalı. Ürün kuralları: [SPEC.md](SPEC.md).
 
-## 1. Panele gerçek backend'i bağlamak
+## 1. Panelin backend'e bağlanması
 
-```bash
-NEXT_PUBLIC_API_MODE=http                 # varsayılan: mock (backend gerekmez)
-KAPTAN_API_ORIGIN=http://127.0.0.1:8000   # FastAPI kökü; Next /api/v1/* isteklerini buraya yönlendirir
-NEXT_PUBLIC_DEMO_MODE=true                # isteğe bağlı: demo enjeksiyonu (backend DEMO_MODE açıksa)
-```
-
-Tarayıcı her zaman `/api/v1/...` çağırır; `next.config.ts` bunu `KAPTAN_API_ORIGIN/api/v1/...`'e yeniden yazar,
-böylece çerez birinci taraf kalır. `src/proxy.ts` (oturum yönlendirmesi) `/api/v1/*`'e dokunmaz: kimliği API denetler.
+Ürün http'dir. Backend'in kökü `KAPTAN_API_ORIGIN`'dedir (örnek `http://127.0.0.1:8000`); `next dev` boşsa oraya düşer.
+Tarayıcı her zaman `/api/v1/...` çağırır; `next.config.ts` bunu `KAPTAN_API_ORIGIN/api/v1/...`'e yeniden yazar, böylece
+çerez birinci taraf kalır. `src/proxy.ts` (oturum yönlendirmesi) `/api/v1/*`'e dokunmaz: kimliği API denetler.
 SSE akışları aynı yeniden yazmadan geçer (tamponlanmaz, sıkıştırılmaz; backend `Cache-Control: no-transform` ve 15 sn'de
-bir yorum satırı gönderir). Yanıt şemaya uymazsa panel `502 schema` gösterir. Panelin saati http modunda sunucunun saatine
-uyar (`/disclosures/counters` ve `/risk/status` yanıtlarındaki `as_of`): backend `DEMO_MODE`'da bu demo saatidir.
+bir yorum satırı gönderir). Yanıt şemaya uymazsa panel `502 schema` gösterir. Panelin saati sunucunun saatine uyar
+(`/disclosures/counters` ve `/risk/status` yanıtlarındaki `as_of`).
+
+Tarayıcı içi sahte API yalnızca bir **test ikizidir** (`NEXT_PUBLIC_KAPTAN_TEST_DOUBLE=1`, vitest ve Playwright için);
+ürün değildir, kullanıcıya gösterilmez.
 
 ```bash
-npm run dev:api     # http modu, KAPTAN_API_ORIGIN=http://127.0.0.1:8000, NEXT_PUBLIC_DEMO_MODE=true
-npm run e2e:api     # Playwright paketi http modunda: API'yi (DEMO_MODE, LLM_MODE=replay) ve paneli açar;
-                    # paketten ve durum değiştiren her testten önce POST /demo/reset
-npm run dev         # mock (varsayılan, backend gerekmez) · npm run e2e: mock'a karşı aynı paket
+npm run dev         # gerçek backend'e karşı, port 3100
+npm run dev:api     # aynısı, KAPTAN_API_ORIGIN açıkça verilir
+npm run e2e         # test ikizine karşı Playwright paketi (backend gerekmez)
+npm run e2e:api     # aynı paket gerçek backend'e karşı: API'yi (LLM_MODE=replay, canlı kaynaklar kapalı) ve paneli açar
 ```
 
-Backend'in kurulumu ve demo günü: [`../backend/README.md`](../backend/README.md).
+Backend'in kurulumu: [`../backend/README.md`](../backend/README.md).
 
 ## 2. Oturum: tek parola
 
@@ -77,12 +75,28 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
 | 17 | POST | `/limits/proposals/{version}/decision` | `LimitDecisionInput` | `LimitsView` |
 | 18 | GET | `/audit?scope=today\|all&q=&limit=` | — | `AuditPage` |
 | 19 | POST | `/audit/verify` | — | `ChainVerifyResult` |
-| 20 | POST | `/demo/inject` | `{"scenario":"e3_contract\|redteam_injection\|restricted_r04\|loss_simulation"}` | `{"disclosure_index":int\|null,"run_id":str\|null}` (yalnız `DEMO_MODE`) |
-| 21 | POST | `/demo/tamper` | `{"on":true\|false}` | `{"tamper_on":bool}` (yalnız `DEMO_MODE`) |
-| 22 | POST | `/demo/reset` | — | `204` (yalnız `DEMO_MODE`) |
+| 20 | GET | `/me/money` | — | `MoneyBook` = `{cash, put_in, movements: MoneyMovement[]}` (yeniden eskiye) |
+| 21 | POST | `/me/money` | `MoneyInput` = `{kind:"start\|deposit\|withdrawal", amount_try (>0, ≤1e10), note?}` | `MoneyBook`. `409 already_started`, `409 not_started`, `422 over_cash` |
+| 22 | POST | `/me/holdings` | `HoldingInput` = `{ticker, qty, avg_cost, bought_on}` | `Position` (`origin:"own"`). `422 unknown_ticker`, `409 not_started` |
 | 23 | POST | `/sse/ticket` | — | `{"ticket":"…"}` (60 sn, tek kullanım) |
 | 24 | GET | `/me/overview` | — | `MeOverview` (tek kullanıcı ana sayfası; tek çağrı) |
 | 25 | POST | `/me/suggestions/{suggestion_id}/hold` | `{"kind":"held\|skipped","note"?}` | `SuggestionHoldOut` (backend'de; panel henüz çağırmıyor) |
+| 26 | POST | `/me/holdings/{position_id}/sell` | `HoldingSellInput` = `{qty, price, sold_at, commission_try?}` | `Position \| null` (kalmadıysa `null`). Yalnız elle eklenen hisse; `422 over_qty` |
+
+### 3.0 Kişinin kendi defteri (tek defter)
+
+- Tek defter kişinin kendi parasıdır. `MeOverview.needs_setup` başlangıç parası girilene kadar `true`; o sürece para
+  alanları `0`, listeler boş, `capital_start` `0`. Panel `/benim`'de tek soruluk ilk ekranı gösterir.
+- `capital_start` = koyulan para (başlangıç + eklenen − çekilen + elle eklenen hisselerin maliyeti). `pnl_abs` =
+  `equity_now − capital_start`. Para eklemek ya da çekmek kazanç/zarar değildir; panel çizgiyi her günü o güne kadar
+  koyulan paraya göre çizer (`src/lib/solo/flows.ts`).
+- `prices_as_of` ve `allocations[].price_as_of`/`Position.price_as_of`: fiyatın bilindiği an; panel düz sözle yaşını yazar.
+- `Position` yeni alanlar: `id`, `origin: "suggestion"\|"own"`, `price_as_of`. `own` için `source_proposal`/`run_id` `""`,
+  `event_type` `"IGNORE"`.
+- `TicketMarkInput.entered` isteğe bağlı `commission_try`; boşsa backend tahmin eder: `OrderTicket.entry.commission_try`,
+  `commission_estimated`, `late` (süre dolduktan sonra girilen işlem reddedilmez, `late: true` ile kaydedilir).
+- `/disclosures/counters` `waiting_for_money`: başlangıç parası girilene kadar öneri çıkmaz.
+- `RiskStatus.equity` / `peak_equity` kurulumdan önce `0` olabilir.
 
 ### 3.1 Onay, durdurma ve yeniden başlatma
 
@@ -96,7 +110,7 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
      arasında **en az 24 saat** ve durdurmadan sonra **en az 5 seans** geçtikten sonradır. `ready_at` `null` ise ya da
      geçmişteyse onay hemen yapılabilir.
   3. `reset/confirm` `ready_at` gelmeden çağrılırsa `409` döner; mesajı panel olduğu gibi gösterir.
-  4. `DEMO_MODE=true` bekleme süresini muaf tutar (`ready_at` `null` gelir); muafiyet `auth.single_user_waiver`
+  4. Bekleme süresi yalnızca test ortamında atlanır (`ready_at` `null` gelir); atlama `auth.single_user_waiver`
      olarak denetim defterine yazılır.
 
   Panel akışı: "Yeniden başlat" → `reset/request`. Yanıttaki `ready_at` boşsa ya da geçmişteyse hemen `reset/confirm`.
@@ -135,8 +149,8 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
 
 Panelin okuduğu eylem adları (denetim defteri): `disclosure.ingested`, `proposal.created`, `approval.decided`, `note.added`,
 `ticket.issued|entered|unfilled|canceled`, `order.filled`, `kill_switch.on`, `kill_switch.reset_started`, `kill_switch.reset`,
-`risk.halted`, `risk.rejected`, `compliance.rejected`, `limits.proposed|approved|rejected`, `audit.verified`, `demo.injected`,
-`auth.single_user_waiver`. Bilinmeyen eylem "Sen: eylem" ya da "KAPtan: eylem" olarak gösterilir.
+`risk.halted`, `risk.rejected`, `compliance.rejected`, `limits.proposed|approved|rejected`, `audit.verified`,
+`money.started|deposited|withdrawn`, `holding.added|sold`, `auth.single_user_waiver`. Bilinmeyen eylem "Sen: eylem" ya da "KAPtan: eylem" olarak gösterilir.
 
 ### 3.3 Hatalar
 
@@ -154,7 +168,7 @@ Gövde `{"detail":"Türkçe, gösterilebilir mesaj","code":"makine_kodu"}`. Pane
 
 ### 3.4 Örnekler
 
-`POST /approvals/prop-demo-e3-ornek/decision`
+`POST /approvals/{proposal_id}/decision`
 ```json
 { "decision": "approve", "approved_notional_try": null, "comment": "" }
 ```
@@ -166,14 +180,36 @@ Gövde `{"detail":"Türkçe, gösterilebilir mesaj","code":"makine_kodu"}`. Pane
 `POST /limits/proposals/2/decision` `{"decision":"approve"}` → `active.version = 2`, eski sürüm `superseded`.
 
 `POST /risk/kill-switch/reset/request` `{"reason":"Olay incelendi, eşikler doğru çalıştı."}` →
-`reset.started` dolu, `reset.ready_at` gerçek veride ileri bir tarih, demo modunda `null`.
+`reset.started` dolu, `reset.ready_at` ileri bir tarih (bekleme süresi dolduysa `null`).
 `POST /risk/kill-switch/reset/confirm` erken çağrılırsa `409 conflict`; uygunsa `kill_switch:"off"`, `reset:null`.
 
-`POST /audit/verify` → kurcalanmış demo şemasında `{"ok":false,"first_bad_pos":3907,"kind":"hash_mismatch",…}`.
+`POST /audit/verify` → zincir bozulmuşsa `{"ok":false,"first_bad_pos":3907,"kind":"hash_mismatch",…}`.
 
 `POST /tickets/T-2027-0111-003/mark` → `{ "mark": "entered", "filled_qty": 620, "avg_price": 48.32, "filled_at": "…" }`
 ya da `{"mark":"unfilled"}` / `{"mark":"canceled"}`. Kurallar: `filled_qty ≤ qty`, `avg_price ≤ limit_price`,
 `filled_at ≤ valid_until`, tek işaret.
+
+### 3.5 Sistem durumu, uyarılar ve sıra gelmeyen bildirimler
+
+Panelin "KAPtan gerçekten çalışıyor mu?" sorusu. Şemalar `src/lib/domain/system.ts` ve `disclosure.ts`.
+
+| Yöntem | Yol | Yanıt |
+|---|---|---|
+| GET | `/system/status` | `SystemStatus` |
+| GET | `/me/alerts` | `AlertSettings` |
+| POST | `/me/alerts/test` | `AlertSettings` (`429 rate_limited`: dakikada en çok bir) |
+
+- **`SystemStatus`** = `{reading, message|null, checked_at, ingest{ok, last_poll_at|null, age_s|null}, agents{ok,
+  last_run_at|null, age_s|null}, scheduler{ok}, backup{ok, last_at|null, age_h|null}, problems: {code, message}[]}`.
+  `problems` en önemlisi önce gelir; `message` = `problems[0].message`, sorun yoksa `null`. Panel dakikada bir sorar:
+  `message` doluysa her sayfanın üstünde tek sakin satır, Ayarlar "Sistem" bölümünde bütün `problems[].message`.
+  Hiç yanıt gelmezse panel ulaşamadığını söyler, bir şey uydurmaz.
+- **`AlertSettings`** = `{ntfy, email, last_sent_at|null, last_error_tr|null}`: telefon ve e-posta kanallarından hangisi
+  kurulu, son gönderim. Konu adı ya da adres **dönmez**. Mesajlar ticker, şirket, tutar ya da yön taşımaz. Masaüstü
+  uyarısı backend'siz, tarayıcının Notification API'siyle SSE'den çıkar.
+- **`DayCounters`** iki alan ekler: `deferred_reason_tr: string | null` (sıra gelmeyen bildirimlerin nedeni, tek cümle; `deferred`
+  zaten vardı) ve `waiting_for_money: boolean` (başlangıç parası girilene kadar `true`: bildirimler okunup listelenir, ama
+  öneri çıkmaz ve LLM kotası harcanmaz).
 
 ## 4. Canlı olaylar (SSE)
 
@@ -262,7 +298,7 @@ yoksa `404 {"detail":"Bu gün için sabah özeti yok.","code":"not_found"}`.
 - **Yapılandırma.** `settings` gizli olmayan ayarlardır: her `SecretStr` ve adı key/secret/token/password/hash/url/dsn içeren
   ayar düşülür.
 - **EvalSummary.** L4 (`pnl_daily`), gölge getiriler, gecikme ve LLM maliyeti tablolardan gelir; L1/L2/L3, ablation ve red-team
-  çevrimdışı değerlendirmeler tabloya yazılana kadar boştur (sıfır, boş liste). `is_sample` = `DEMO_MODE`.
+  çevrimdışı değerlendirmeler tabloya yazılana kadar boştur (sıfır, boş liste). `is_sample` sayıların örnek olup olmadığını söyler.
 - **ForwardWeeklyReport** (`08` §4.2, İstanbul Pazartesi 00:00 → sonraki Pazartesi): `{week, start, end, generated_at,
   config_hash, audit_head|null, pipeline, portfolio, trades, shadow, agent_health}`. Olaylar ve yorum bölümleri insan yazar.
 - **PersonalStageStatus:** aşama takvimden (9 Kas 2026 öncesi Kanıt, sonrası Paper); gölgeden ve küçük gerçek paraya

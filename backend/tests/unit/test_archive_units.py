@@ -206,7 +206,7 @@ def test_stage_only_repeats_the_recorded_run() -> None:
     none = evidence_criteria(None)
     assert none[0]["met"] is False and none[0]["progress"] == 0.0 and none[0]["current_tr"] == "Henüz ölçülmedi"
     passed = evidence_criteria(_report(True))
-    assert passed[0]["met"] is True and passed[0]["current_tr"].startswith("E1: t = 2,88")
+    assert passed[0]["met"] is True and passed[0]["current_tr"].startswith("E1 türü: 64 olay, ortalama %1,80")
     failed = evidence_criteria(_report(False, t=1.2, mean=-0.01))
     assert failed[0]["met"] is False and failed[0]["progress"] == 0.0
     crit = paper_criteria(60, 120, -0.04)

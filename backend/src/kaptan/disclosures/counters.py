@@ -16,6 +16,7 @@ from psycopg import AsyncConnection
 from kaptan.clock import istanbul_date
 from kaptan.domain.schemas._base import iso_ms
 from kaptan.events.publish import publish
+from kaptan.portfolio.ledger import started as book_started
 from kaptan.text.turkish import IST
 
 COUNTERS_SQL: Final = """
@@ -62,6 +63,26 @@ SELECT
  WHERE updated_at >= %(day_start)s OR status = 'deferred'
 """
 
+#: Why the newest waiting disclosure waits (the reason `kaptan.agents.feed` wrote when it deferred it).
+DEFERRED_REASON_SQL: Final = """
+SELECT reason FROM ops.agent_feed WHERE status = 'deferred' ORDER BY updated_at DESC LIMIT 1
+"""
+
+#: Only reasons the feed really writes; anything else gets no claim at all.
+DEFERRED_REASON_TR: Final = {
+    "hourly_cap": "Saatlik okuma sınırı doldu; sıradakiler bir sonraki saatte okunacak.",
+    "hourly_reserved": "Saatlik okuma sınırı doldu; sıradakiler bir sonraki saatte okunacak.",
+    "daily_cap": "Günlük okuma sınırı doldu; kalanlar yarın okunacak.",
+    "daily_reserved": "Günlük okuma sınırı doldu; kalanlar yarın okunacak.",
+    "llm_daily_cap": "Yapay zekâ sağlayıcılarının bugünkü ücretsiz kotası doldu.",
+    "waiting_for_money": "Başlangıç paranı girene kadar KAPtan bildirimleri yorumlamaz.",
+}
+
+
+def deferred_reason_tr(deferred: int, reason: str | None) -> str | None:
+    """One plain sentence when something waits and the feed knows why; else None."""
+    return DEFERRED_REASON_TR.get(reason or "") if deferred > 0 else None
+
 
 def counters_from_row(row: dict[str, Any], now: datetime) -> dict[str, Any]:
     """Pure: the DayCounters document from the aggregate row."""
@@ -78,6 +99,8 @@ def counters_from_row(row: dict[str, Any], now: datetime) -> dict[str, Any]:
         "rejections": int(row["rejections"]),
         "llm_calls": int(row["llm_calls"] or 0),
         "llm_tokens": int(row["llm_tokens"] or 0),
+        "deferred": 0,
+        "deferred_reason_tr": None,
     }
 
 
@@ -92,8 +115,19 @@ async def day_counters(conn: AsyncConnection[Any], now: datetime, *, day: date |
         assert row is not None
         await cur.execute(AGENT_FEED_SQL, params)
         feed = await cur.fetchone()
-    doc = counters_from_row(dict(row), now)
+    doc = {**counters_from_row(dict(row), now), "waiting_for_money": not await book_started(conn)}
     counts = {k: int(v) for k, v in dict(feed or {}).items()}
+    if counts.get("deferred", 0) > 0:
+        async with conn.cursor() as cur:
+            await cur.execute(DEFERRED_REASON_SQL)
+            why = await cur.fetchone()
+        # while the starting money is missing that is the reason, whatever an older row says
+        reason = "waiting_for_money" if doc["waiting_for_money"] else (dict(why) if why else {}).get("reason")
+        doc = {
+            **doc,
+            "deferred": counts["deferred"],
+            "deferred_reason_tr": deferred_reason_tr(counts["deferred"], reason),
+        }
     return {**doc, "agent_feed": counts} if any(counts.values()) else doc
 
 

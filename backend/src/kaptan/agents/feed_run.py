@@ -49,10 +49,11 @@ from kaptan.llm.provider import LLMProvider
 from kaptan.llm.usage import sync_usage
 from kaptan.risk.cooldown import cooldown_active
 from kaptan.risk.security_kill import announce_kill, check_security_kill
-from kaptan.settings import get_settings
 
 log = logging.getLogger("kaptan.agents.feed_run")
 
+#: The recorded desk of a replay run (offline harness only); a live run reads the person's own book.
+REPLAY_EQUITY_TRY: Final = Decimal(1_000_000)
 RUN_PREFIX: Final = "run-live-"
 KIND_OF: Final[dict[str | None, str]] = {
     "PROPOSE": "propose",
@@ -141,7 +142,7 @@ async def desk_for(
         last_price=Decimal(str(issuer["price"])),
         adv20_try=Decimal(str(issuer["adv20_try"])),
         free_float=float(issuer["free_float"]),
-        equity_try=Decimal(str(get_settings().paper_capital_try)),
+        equity_try=REPLAY_EQUITY_TRY,
         restrictions=tuple(Restriction(r["kind"], r["source_ref"]) for r in await q.restrictions(conn, ticker)),
         kill_switch_on=risk["kill_switch"] == "on",
         halted_today=bool(risk["halted_today"]),
@@ -165,7 +166,6 @@ async def desk_for(
         at,
         published_at=d.published_at if d else at,
         available_at=d.available_at if d else at,
-        capital=get_settings().paper_capital_try,
     )
     return replace(
         desk,

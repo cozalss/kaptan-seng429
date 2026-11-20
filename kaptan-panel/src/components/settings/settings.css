@@ -153,6 +153,124 @@
   border-bottom: 1px solid var(--hairline);
 }
 
+/* Bildirimler and Sistem: a name, the answer as a sentence, then hairline rows in the limits' rhythm. */
+.ay-block {
+  min-width: 0;
+  scroll-margin-top: 6rem;
+}
+.ay-block-lead {
+  max-width: 58ch;
+  margin-top: 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.ay-channels {
+  list-style: none;
+  margin-top: 1.25rem;
+  border-top: 2px solid var(--ink);
+}
+.ay-channel {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr) auto;
+  gap: 0.25rem 1.25rem;
+  align-items: start;
+  padding-block: 1rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.ay-channel > .ay-title {
+  padding-top: 0.1875rem;
+}
+.ay-channel-state {
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ay-channel-detail {
+  max-width: 58ch;
+  margin-top: 0.125rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.ay-test {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 1.25rem;
+}
+.ay-test-note {
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.ay-result {
+  margin-top: 0.75rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.ay-result:empty {
+  display: none;
+}
+.ay-result[data-ok="false"] {
+  padding-inline-start: 0.75rem;
+  border-inline-start: 3px solid var(--north);
+}
+.ay-setup {
+  margin-top: 1.5rem;
+}
+.ay-setup-head {
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ay-steps {
+  list-style: none;
+  margin-block: 0.25rem 0.5rem;
+}
+.ay-step {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  align-items: baseline;
+  padding-block: 0.5rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.ay-step-n {
+  font-size: 1.75rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.ay-problems {
+  list-style: none;
+  margin-top: 1.25rem;
+  border-top: 2px solid var(--ink);
+}
+.ay-problem {
+  padding-block: 1rem;
+  border-bottom: 1px solid var(--hairline);
+}
+@media (max-width: 639px) {
+  .ay-channel {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .ay-channel > .ay-title {
+    grid-column: 1 / -1;
+  }
+  .ay-channel-act {
+    align-self: start;
+  }
+}
+
 /* How it works, and you. */
 .ay-pair {
   display: grid;

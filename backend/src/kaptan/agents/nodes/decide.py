@@ -16,6 +16,7 @@ from pydantic import ValidationError
 
 from kaptan.agents.context import DeskState, RunContext
 from kaptan.agents.nodes._common import step
+from kaptan.agents.nodes.merge import e2_stated_value
 from kaptan.agents.state import KaptanState
 from kaptan.agents.trace import elapsed_until_now
 from kaptan.domain.schemas._base import iso_ms
@@ -44,6 +45,7 @@ def rule_input(state: KaptanState, ctx: RunContext, sizing: dict[str, Any] | Non
     sk = state.get("skeptic")
     e4 = m.get("e4") or {}
     flags = (sk or {}).get("flags", [])
+    stated = e2_stated_value(reader)  # E2.min_value judges TL the notice wrote, never a nominal
     return RuleInput(
         event_type=str(state.get("event_type")),
         ticker=ctx.disclosure.ticker,
@@ -63,7 +65,7 @@ def rule_input(state: KaptanState, ctx: RunContext, sizing: dict[str, Any] | Non
         insider_role=reader.get("role"),
         insider_threshold_notice=bool(reader.get("holder_threshold_notice")),
         insider_open_market=reader.get("open_market"),
-        insider_net_buy_value_try=m.get("insider_net_buy_value_try") or _stated_value(reader),
+        insider_net_buy_value_try=m.get("insider_net_buy_value_try") or (float(stated) if stated else None),
         materiality_ratio=m.get("amount_to_revenue_annualized") or m.get("amount_to_mcap"),
         materiality_denominator=m.get("e3_denominator"),
         binding_status=reader.get("binding_status"),

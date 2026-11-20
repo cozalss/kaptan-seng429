@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Final
 
 from psycopg import AsyncConnection
@@ -19,11 +20,14 @@ from kaptan.approvals.execute import Event, execute_approved, run_audit
 from kaptan.approvals.reads import RiskFlags, card_from_row, card_rows, risk_flags, ticket_from_row, ticket_rows
 from kaptan.approvals.ticket_doc import parse_iso
 from kaptan.audit.writer import append
+from kaptan.brokers import config as broker_config
+from kaptan.brokers.costs import commission_of
 from kaptan.domain.schemas import ApprovalDecision, iso_ms
 from kaptan.domain.schemas.trading import TicketMarkEntered, TicketMarkInput
+from kaptan.portfolio import ledger
+from kaptan.portfolio.ledger import cents
 from kaptan.portfolio.positions import open_position
 from kaptan.risk.at_send import check_at_send
-from kaptan.settings import get_settings
 
 NOT_FOUND_PROPOSAL: Final = "Öneri bulunamadı."
 NOT_FOUND_TICKET: Final = "İşlem bulunamadı."
@@ -103,7 +107,7 @@ async def _at_send_block(
         run = await cur.fetchone()
     if run is None or run["run_set"] != "live":
         return None
-    check = await check_at_send(conn, card, now, capital=get_settings().paper_capital_try)
+    check = await check_at_send(conn, card, now)
     if check.ok:
         return None
     payload = {
@@ -210,20 +214,28 @@ def _check_entered(ticket: dict[str, Any], m: TicketMarkEntered) -> None:
             raise ApiError(422, "under_limit", "Satışta ortalama fiyat, yazdığın en düşük fiyatın altında olamaz.")
     elif m.avg_price > ticket["limit_price"]:
         raise ApiError(422, "over_limit", "Ortalama fiyat, yazdığın en yüksek fiyatı aşamaz.")
-    if m.filled_at > parse_iso(ticket["valid_until"]):
-        raise ApiError(422, "after_ttl", "Süresi dolduktan sonra girilen işlem sayılmaz.")
+    # A fill after `valid_until` is still the person's real fill: it is recorded (flagged late), never refused.
+
+
+def _commission(m: TicketMarkEntered) -> tuple[Decimal, bool]:
+    """What the bank charged, as typed; else the cost model's estimate (commission + BSMV) and `estimated`."""
+    if m.commission_try is not None:
+        return cents(m.commission_try), False
+    broker, bsmv = commission_of(Decimal(str(m.avg_price)) * m.filled_qty, broker_config.current().trading.costs)
+    return broker + bsmv, True
 
 
 MARK_SQL: Final = """
 UPDATE trading.order_tickets SET entry_status = %s, filled_qty = %s, avg_price = %s, filled_at = %s, note = %s,
-  marked_at = %s WHERE ticket_no = %s
+  marked_at = %s, commission_try = %s, commission_estimated = %s, late = %s WHERE ticket_no = %s
 """
 
 
 async def mark_ticket(
     conn: AsyncConnection[Any], ticket_no: str, m: TicketMarkInput, actor: Actor, *, now: datetime
 ) -> Outcome:
-    """markTicket(): girildi / dolmadı / iptal; an entered ticket becomes a `personal` position."""
+    """markTicket(): girildi / dolmadı / iptal; an entered ticket is the person's real fill: a buy opens the position
+    and takes `qty x price + commission` out of cash, a sell closes it and adds `qty x price - commission`."""
     async with conn.transaction():
         rows = await ticket_rows(conn, ticket_no=ticket_no, lock=True)
         if not rows:
@@ -232,8 +244,12 @@ async def mark_ticket(
         if ticket["entry"]["status"] not in MARKABLE:
             raise ApiError(409, "already_marked", "Bunu zaten işaretledin.")
         entered = m if isinstance(m, TicketMarkEntered) else None
+        commission, estimated, late = Decimal(0), False, False
         if entered is not None:
             _check_entered(ticket, entered)
+            commission, estimated = _commission(entered)
+            late = entered.filled_at > parse_iso(ticket["valid_until"])
+            await ledger.lock(conn)  # one writer of the book at a time
         note = (m.note or "").strip() or None
         entry = {
             "status": m.mark,
@@ -242,13 +258,28 @@ async def mark_ticket(
             "filled_at": iso_ms(entered.filled_at) if entered else None,
             "note": note,
             "marked_at": iso_ms(now),
+            "commission_try": float(commission),
+            "commission_estimated": estimated,
+            "late": late,
         }
         filled_at = entered.filled_at if entered else None
         async with conn.cursor() as cur:
             await cur.execute(
-                MARK_SQL, (m.mark, entry["filled_qty"], entry["avg_price"], filled_at, note, now, ticket_no)
-            )
-        payload: dict[str, Any] = {"qty": entered.filled_qty, "price": entered.avg_price} if entered else {}
+                MARK_SQL,
+                (m.mark, entry["filled_qty"], entry["avg_price"], filled_at, note, now, commission, estimated, late,
+                 ticket_no),
+            )  # fmt: skip
+        payload: dict[str, Any] = (
+            {
+                "qty": entered.filled_qty,
+                "price": entered.avg_price,
+                "commission_try": float(commission),
+                "commission_estimated": estimated,
+                "late": late,
+            }
+            if entered
+            else {}
+        )
         if ticket.get("side") == "sell":
             payload = {**payload, "side": "sell"}
         draft = run_audit(actor.audit_actor, f"ticket.{m.mark}", "order_ticket", ticket_no, payload, ticket["run_id"])
@@ -256,12 +287,15 @@ async def mark_ticket(
         if entered is not None:
             await open_position(
                 conn,
-                book="personal",
                 proposal_id=ticket["proposal_id"],
                 run_id=ticket["run_id"],
                 qty=entered.filled_qty,
                 avg_cost=entered.avg_price,
                 opened_at=entered.filled_at,
+                commission=commission,
+                commission_estimated=estimated,
+                ticket_no=ticket_no,
+                now=now,
             )
         updated = {**ticket, "entry": entry}
     return Outcome(updated, [("ticket", updated)])

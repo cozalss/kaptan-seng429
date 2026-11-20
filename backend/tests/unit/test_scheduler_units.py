@@ -19,8 +19,8 @@ def ist(y: int, m: int, d: int, hh: int, mm: int) -> datetime:
 def test_the_table_has_every_job_of_the_day_once() -> None:
     names = [j.name for j in s.JOBS]
     assert len(names) == len(set(names))
-    for want in ("issuer_profiles", "universe", "morning_brief", "open_fill", "risk_monitor", "quotes",
-                 "eod_prices", "eod_fills", "exits", "pnl_eod", "regime", "audit_anchor", "retention"):  # fmt: skip
+    for want in ("issuer_profiles", "universe", "morning_brief", "risk_monitor", "quotes",
+                 "eod_prices", "exits", "pnl_eod", "regime", "audit_anchor", "retention"):  # fmt: skip
         assert want in s.BY_NAME
     for job in s.JOBS:
         assert (job.at is None) != (job.every_min is None), job.name
@@ -63,12 +63,14 @@ def test_interval_slots_round_down_and_respect_the_session() -> None:
 def test_due_skips_done_running_and_waits_for_the_predecessor() -> None:
     now = ist(2026, 10, 20, 18, 31)
     names = {j.name for j, _ in s.due(now, set(), set())}
-    assert "eod_prices" in names and "eod_fills" not in names and "exits" not in names
+    assert "eod_prices" in names and "exits" not in names
     done = {("eod_prices", "2026-10-20")}
     names = {j.name for j, _ in s.due(now, done, set())}
-    assert "eod_prices" not in names and "eod_fills" in names
-    names = {j.name for j, _ in s.due(now, done, {"eod_fills"})}
-    assert "eod_fills" not in names
+    assert "eod_prices" not in names and "exits" in names
+    names = {j.name for j, _ in s.due(now, done, {"exits"})}
+    assert "exits" not in names
+    later = {j.name for j, _ in s.due(ist(2026, 10, 20, 18, 50), done, set())}
+    assert "exits" in later and "pnl_eod" not in later  # pnl_eod waits for exits
 
 
 def test_trigger_marks_a_late_start_as_catchup() -> None:
@@ -98,7 +100,7 @@ def test_summary_is_small_plain_json() -> None:
 def test_cli_list_and_args(capsys: pytest.CaptureFixture[str]) -> None:
     assert s.main(["list"]) == 0
     out = capsys.readouterr().out
-    assert "morning_brief" in out and "08:45" in out and "after eod_fills" in out
+    assert "morning_brief" in out and "08:45" in out and "after eod_prices" in out
     args = s.parse_args(["run", "dq", "--day", "2026-10-20"])
     assert args.job == "dq" and args.day == date(2026, 10, 20)
     with pytest.raises(SystemExit):

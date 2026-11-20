@@ -1,4 +1,4 @@
-"""Closing a position: an exit's SELL fill (paper) or its ticket marked "entered" (personal).
+"""Closing a position: an exit ticket marked "entered" (the person's real sell fill).
 
 trading.positions holds open positions only; a full exit moves the row to trading.closed_positions
 (with the exit price, rule and realised P&L), a partial one shrinks it and books the realised part.
@@ -8,10 +8,12 @@ A stop exit (X2) starts the P8 cooldown: no new entry in the symbol for 10 sessi
 from __future__ import annotations
 
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any, Final
 
 from psycopg import AsyncConnection
 
+from kaptan.portfolio import ledger
 from kaptan.portfolio.marks import round_to
 from kaptan.prices.calendar import add_sessions, istanbul_date, next_session
 
@@ -22,7 +24,7 @@ SIGNAL_SQL: Final = "SELECT source_proposal, rule, ticker FROM trading.exit_sign
 POSITION_SQL: Final = """
 SELECT id, book, ticker, company_name, qty, avg_cost, opened_at, planned_exit_date, source_proposal, run_id,
        event_type, strategy_version, realized_pnl
-FROM trading.positions WHERE book = %s AND source_proposal = %s FOR UPDATE
+FROM trading.positions WHERE book = 'personal' AND source_proposal = %s FOR UPDATE
 """
 CLOSED_SQL: Final = """
 INSERT INTO trading.closed_positions (book, ticker, qty, avg_cost, exit_price, realized_pnl, opened_at, closed_at,
@@ -52,10 +54,20 @@ def cooldown_until(exit_day: date) -> date:
 
 
 async def close_position(
-    conn: AsyncConnection[Any], *, book: str, exit_proposal: str, qty: int, price: float, at: datetime
+    conn: AsyncConnection[Any],
+    *,
+    exit_proposal: str,
+    qty: int,
+    price: float,
+    at: datetime,
+    commission: Decimal = Decimal(0),
+    commission_estimated: bool = False,
+    ticket_no: str | None = None,
+    now: datetime | None = None,
 ) -> dict[str, Any] | None:
     """Sell `qty` at `price` out of the position the exit proposal was raised for (caller's transaction).
 
+    The sale goes into the book's ledger: cash rises by `qty x price - commission`.
     Returns {book, ticker, qty_sold, qty_left, realized_pnl, exit_rule} or None when the exit or the
     position is unknown (already closed)."""
     async with conn.cursor() as cur:
@@ -63,7 +75,7 @@ async def close_position(
         signal = await cur.fetchone()
         if signal is None:
             return None
-        await cur.execute(POSITION_SQL, (book, signal["source_proposal"]))
+        await cur.execute(POSITION_SQL, (signal["source_proposal"],))
         pos = await cur.fetchone()
         if pos is None:
             return None
@@ -72,7 +84,7 @@ async def close_position(
         await cur.execute(
             CLOSED_SQL,
             (
-                book,
+                "personal",
                 pos["ticker"],
                 sold,
                 pos["avg_cost"],
@@ -97,8 +109,13 @@ async def close_position(
             )
         if signal["rule"] == "X2":
             await cur.execute(COOLDOWN_SQL, (pos["ticker"], cooldown_until(istanbul_date(at)), exit_proposal, at))
+    await ledger.add_fill(
+        conn, side="sell", ticker=pos["ticker"], qty=sold, price=Decimal(str(price)), commission=commission,
+        estimated=commission_estimated, filled_at=at, now=now or at, position_id=int(pos["id"]),
+        ticket_no=ticket_no,
+    )  # fmt: skip
     return {
-        "book": book,
+        "book": "personal",
         "ticker": pos["ticker"],
         "qty_sold": sold,
         "qty_left": left,

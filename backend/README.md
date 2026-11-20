@@ -2,7 +2,7 @@
 
 FastAPI + psycopg 3 (async, parametrised SQL) + Postgres 16/pgvector + Redis 7. Goal of M1: the panel
 (`../kaptan-panel`, `NEXT_PUBLIC_API_MODE=http`) runs end-to-end on this API exactly as on its mock.
-Contract: `../kaptan-panel/API.md`. Work split for the next agents: [PLAN.md](PLAN.md).
+Contract: `../kaptan-panel/API.md`. What is built and how the parts fit: [PLAN.md](PLAN.md).
 
 ## Run
 
@@ -78,6 +78,19 @@ Integration tests skip when Postgres is down; the cross-language tests skip when
 
 ## Decisions worth knowing
 
+- **One book: the person's own.** There is no simulated market and no paper account. The person enters their
+  starting money (`POST /me/money`, ledger `trading.book_ledger`, migration 0026), KAPtan writes a ticket
+  (`emir fişi`) when they approve a suggestion, and the person's real fill (`POST /tickets/{no}/mark`, with the
+  bank's commission, or an estimate that says so) is what moves cash and shares. A fill after the ticket expired is
+  kept and flagged `late`: the book must match the bank. Shares owned before KAPtan are entered by hand
+  (`POST /me/holdings`, `/me/holdings/{id}/sell`); they count in equity, exposure caps and the stops, but get no exit
+  suggestion. Cash, equity, the day P&L, the peak, the −1 % halt and the −5 % stop (`risk/book.py` `own_book`),
+  `/me/overview`, `/portfolio/*` and ticket sizing all read it. A deposit or withdrawal is not a gain or a loss:
+  the day-start level and the peak are shifted by the flow. Before the starting money exists every number is 0
+  (`needs_setup`), no agent run reaches an LLM (disclosures are still read and listed, deferred with
+  `waiting_for_money`, and run once the money is entered) and no suggestion appears. `PAPER_CAPITAL_TRY`,
+  `PERSONAL_ACCOUNT_TRY`, SimBIST and the fill jobs are gone. Alerts (`kaptan.alerts`, ntfy/SMTP, never a ticker or
+  an amount) and `GET /system/status` tell the person when something stops.
 - **Single user (Revizyon 4, 02.11.2026).** KAPtan is for one person and runs in one mode. There are no roles, no
   team accounts and no `KAPTAN_SINGLE_USER` switch. Every signed-in request may use every endpoint. Where the old
   design needed a second person (two-signature restart, limit changes, restricted-list removal, live arming), the
@@ -108,7 +121,7 @@ Integration tests skip when Postgres is down; the cross-language tests skip when
 
 ## Prices (M2, `kaptan.prices`)
 
-Daily bars for the rule engine, event study, SimBIST and position marks. Basis rule (P8): **levels are
+Daily bars for the rule engine, event study and position marks. Basis rule (P8): **levels are
 raw, returns are adjusted.**
 
 | Source | What it gives | Stored as |
@@ -280,6 +293,7 @@ duplicate). The consumer keeps one `ops.agent_feed` row per disclosure index (id
 |---|---|
 | `skipped` | out of scope: not a live KAP row (`not_kap`, `backfill`), subject route not E1–E4/`llm` (`route:noise`, `route:archive_only`, `route:avoid:*`), or no ticker; no run |
 | `awaiting_text` | in scope, TR text not stored yet; the `text` entry starts the run |
+| `deferred` (`waiting_for_money`) | the person has not entered their starting money: nothing is run, nothing is lost; the first sweep after the money exists re-drives the row (`/disclosures/counters`: `waiting_for_money`, `deferred_reason_tr`) |
 | `deferred` | Over a cap, inside its entry window: `hourly_cap` / `daily_cap` (`AGENT_MAX_RUNS_PER_HOUR` 25, `AGENT_MAX_RUNS_PER_DAY` 70, runs that reached an LLM; pre-gate vetoes with 0 calls do not count), `hourly_reserved` / `daily_reserved` (llm-route rows stop at 60 % of a cap, the rest is kept for E rows) or `llm_daily_cap` (every live provider over a `LLM_CAP_*` for the day). The worker's sweep re-drives it, best first: in universe, E1/E2, E3/E4, llm, freshest |
 | `window_closed` | `arrived_after_window`: its entry window (06 §5) had closed when it arrived, e.g. a backlog after downtime; no budget, no run |
 | `expired_unrun` | Its window closed while it waited; the reason says why: a cap reason above, `no_text`, `interrupted`, or `legacy_capped:<reason>` (rows from before migration 0023) |
@@ -287,7 +301,7 @@ duplicate). The consumer keeps one `ops.agent_feed` row per disclosure index (id
 | `waiting_approval` / `done` | the run is persisted; parked runs are settled (see below) |
 | `failed` | the run raised 3 times |
 
-A run is `run-live-<index>` (`run_set='live'`, `mode='paper'`, real published/available times) and is
+A run is `run-live-<index>` (`run_set='live'`, real published/available times) and is
 written in one transaction with its feed row: `trading.agent_runs`,
 `core.disclosures.run_id` + classification, proposal + pending card (`prop-live-<index>`), today's LLM
 counters, the audit outcome. After commit its SSE events go out at once (node/crew/classification/
@@ -371,8 +385,9 @@ The gate reads the desk as it is.
   `GateLimits` field names; `risk_tolerance` (R07 lot-rounding band, default 1.05) and the other gate-only
   keys keep their documented defaults when the version has no row. Live audit outcomes carry `limits_version`.
 - **Live desk (`risk/desk.py`, `risk/book.py`; real runs = `LLM_MODE=live`, or `LiveDeps(live_desk=True)`).**
-  Equity = `PAPER_CAPITAL_TRY` (default 1 000 000) + fill cash flows + positions × point-in-time raw marks;
-  free cash = equity − open notional − unfilled SimBIST buys; day start / peak from `trading.pnl_daily`.
+  Equity = the person's cash (`trading.book_ledger`) + positions × point-in-time raw marks (a share with no
+  stored price stands at its cost); free cash = cash − buy tickets still waiting to be entered; day start / peak
+  from `trading.pnl_daily`, shifted by deposits and withdrawals. Nothing counts before the starting money exists.
   R04 age = now − `core.restriction_refresh` (the tedbir job calls `mark_restrictions_refreshed`; no row =
   stale = HOLD), R11 KAP delay = available − published, R09 price age (intraday orders, session open only;
   `core.prices_intraday` when filled), P7 entries today, P3/P4 sector/group exposure (`core.issuer_groups`,
@@ -443,12 +458,10 @@ connection and timeout; one failure never stops the others.
 | trading 08:30 | `universe` | `reference.universe.run_universe` |
 | every 30 min | `tedbir_sync` | `reference.tedbir.run_tedbir_sync` (+ SPK bulletin when `TEDBIR_BULLETIN_URL`) |
 | trading 08:45 | `morning_brief` | `brief.run_morning_brief` → `ops.morning_briefs`, `GET /brief/today\|{date}` |
-| trading 10:16 | `open_fill` | `brokers.fills.run_open_fill` |
 | in session, every 5 min | `risk_monitor` | `risk.monitor.run_risk_monitor` (SSE `halt` / `kill_switch`) |
 | in session, every 4 min | `quotes` | `prices.intraday.refresh_quotes` for held + pending-order tickers |
 | trading 18:30 | `eod_prices` | `prices.ingest.fetch_ticker` + `store_fetched` (bars + corporate actions) for the day's universe, held/pending tickers, XU100 |
-| after `eod_prices` | `eod_fills` | `brokers.fills.run_eod_fills` (its docstring: after the 18:30 EOD prices, not 18:15) |
-| after `eod_fills` | `exits` | `portfolio.exits.run_exits` (SSE `approval.requested` per exit card + `counters`) |
+| after `eod_prices` | `exits` | `portfolio.exits.run_exits` (SSE `approval.requested` per exit card + `counters`) |
 | 18:45, after `exits` | `pnl_eod` | `risk.pnl_eod.run_pnl_eod` |
 | after `pnl_eod` | `regime` | `risk.regime.run_regime` |
 | trading 19:00 | `intraday_archive` | `prices.intraday.run_intraday_archive` |

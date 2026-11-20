@@ -2,6 +2,8 @@
 
 import "./portfolio.css";
 
+import Link from "next/link";
+import { HOME } from "@/lib/nav";
 import { useApiQuery } from "@/lib/api/react";
 import { MSG_UNREACHABLE } from "@/lib/api/types";
 import { useNow } from "@/lib/clock";
@@ -11,12 +13,14 @@ import { Band, PageHeader, ScreenState } from "@/components/shell/page-frame";
 import { useDesk } from "@/components/shell/desk-state";
 import { StopCard, StoppedBanner, useStopRestart } from "@/components/solo/stop-panel";
 import { signTone } from "@/components/story/sign-tone";
+import { Button } from "@/components/ui/button";
 import { OrderSlip } from "@/components/proposal/order-slip";
 import { slipsToEnter } from "@/components/tickets/ticket-logic";
 import { fmtSignedPct } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Guards } from "./guards";
 import { Holdings } from "./holdings";
+import { MoneySection } from "./money-section";
 import { placesSentence, todayLira } from "./param-words";
 import { istanbulDate } from "./risk-math";
 import { Skyline } from "./skyline";
@@ -35,11 +39,14 @@ export function PortfolioScreen() {
   // The cash comes from the home's call, the brakes from the limits: without them their sentences are dropped.
   const money = useApiQuery((api) => api.overview(), [riskKey]);
   const limits = useApiQuery((api) => api.limits(), []);
+  const book = useApiQuery((api) => api.money(), [riskKey]);
+  const reload = () => {
+    void q.refetch();
+    void money.refetch();
+    void book.refetch();
+  };
   useEventStream("desk", {
-    fill: () => {
-      void q.refetch();
-      void money.refetch();
-    },
+    fill: reload,
     ticket: () => void q.refetch(),
     order: () => void q.refetch(),
     "limits.changed": () => void limits.refetch(),
@@ -51,6 +58,8 @@ export function PortfolioScreen() {
   const stopped = risk?.kill_switch === "on";
   const controls = useStopRestart(refresh);
   const unreachable = deskError !== null && risk === null;
+
+  if (money.data?.needs_setup) return <NeedsSetup />;
 
   const sentence = positions && (money.data || money.error) ? placesSentence(new Set(positions.map((p) => p.ticker)).size, cash) : "Paranı sayıyorum…";
 
@@ -83,7 +92,7 @@ export function PortfolioScreen() {
       {positions && today ? (
         <>
           <Skyline positions={positions} cash={cash ?? 0} />
-          <Holdings positions={positions} today={today} />
+          <Holdings positions={positions} today={today} onChanged={reload} />
         </>
       ) : !q.error ? (
         <ScreenState kind="loading" title="Elindekilere bakıyorum…">
@@ -91,10 +100,27 @@ export function PortfolioScreen() {
         </ScreenState>
       ) : null}
 
+      <MoneySection book={book.data ?? null} onChanged={reload} />
+
       <Band aria-label="Seni koruyan şeyler" className="pm-protect">
         <Guards risk={risk} limits={limits.data ?? null} />
         {risk && !stopped ? <StopCard pending={controls.stopPending} error={controls.stopError} onStop={controls.onStop} /> : null}
       </Band>
+    </div>
+  );
+}
+
+/** A new install: no money yet, so no figure here would be true. The one thing to do is on the home. */
+function NeedsSetup() {
+  return (
+    <div className="pm-screen">
+      <PageHeader name="Param" title="Önce başlangıç paranı yaz." />
+      <section aria-label="Başlangıç parası" className="mt-6">
+        <p className="max-w-[60ch] text-body text-ink-soft">Param, senin paranla başlar. Ana sayfada ne kadar parayla başladığını yazınca burası dolar.</p>
+        <Button asChild variant="primary" size="lg" className="mt-6">
+          <Link href={HOME}>Başlangıç paramı yazayım</Link>
+        </Button>
+      </section>
     </div>
   );
 }

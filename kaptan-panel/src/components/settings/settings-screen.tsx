@@ -12,10 +12,12 @@ import { PageHeader } from "@/components/shell/page-frame";
 import { logout } from "@/components/shell/session-actions";
 import { Button } from "@/components/ui/button";
 import { Boat } from "@/components/ufuk/boat";
+import { AlertsSection } from "./alerts-section";
 import { LimitsSection } from "./limits-section";
 import { settingsSentence, PLAIN_LIMITS, valueOf } from "./limits-logic";
+import { SystemSection } from "./system-section";
 
-/** /ayarlar: your limits and what each means for you, how KAPtan works, and your account. */
+/** /ayarlar: your limits and what each means for you, how KAPtan reaches you and whether it is working, how it works, and your account. */
 export function SettingsScreen() {
   const q = useApiQuery((api) => api.limits(), []);
   useEventStream("desk", { "limits.changed": () => void q.refetch() });
@@ -25,6 +27,10 @@ export function SettingsScreen() {
     <div className="ay-screen">
       <PageHeader name="Ayarlar" title={settingsSentence(count)} lead="KAPtan bu sınırların dışına çıkamaz. Değiştirince hemen geçerli olur ve Geçmiş’e yazılır." />
       <LimitsSection view={q.data ?? null} error={q.error} onRetry={q.refetch} onChanged={() => void q.refetch()} />
+      <div className="ay-pair">
+        <AlertsSection />
+        <SystemSection />
+      </div>
       <HowAndAccount />
     </div>
   );

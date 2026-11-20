@@ -32,6 +32,6 @@ def test_stage_helpers() -> None:
     assert none[0]["met"] is False and none[0]["progress"] == 0.0
     base = {"passed": True, "t_bmp_kp": 2.88, "mean_car_net": 0.018}
     passed = evidence_criteria({"types": {"E1": {"n": 64, "base": base}}})
-    assert passed[0]["met"] is True and passed[0]["current_tr"].startswith("E1: t = 2,88")
+    assert passed[0]["met"] is True and passed[0]["current_tr"].startswith("E1 türü: 64 olay, ortalama %1,80")
     crit = paper_criteria(60, 120, -0.04)
     assert all(c["met"] for c in crit) and crit[0]["progress"] == 1.0

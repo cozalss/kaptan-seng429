@@ -128,6 +128,38 @@
   }
 }
 
+/* What was read but got no turn: plain sentences under the day's numbers, an ink rule on the left. */
+.ok-waiting {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 62ch;
+  margin-top: 1rem;
+}
+.ok-waiting:empty {
+  display: none;
+}
+.ok-waiting > p {
+  padding-inline-start: 0.75rem;
+  border-inline-start: 3px solid var(--ink);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.ok-waiting-what {
+  font-weight: 600;
+  color: var(--ink);
+}
+.ok-waiting-link {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1.5px;
+}
+
 .ok-days {
   display: flex;
   flex-wrap: wrap;

@@ -1,12 +1,16 @@
 """R14's reference set (06 R14, 05 §4.2): the amounts the source document itself holds, read by code only.
 
-The gate asks one question: is the Reader's figure among these, within ±0.5 %? This module never sees the Reader's
-figure, so a model cannot influence what counts. What it reads, for E1 and E2:
+The gate asks one question: is the Reader's figure among these, within ±0.5 %? What counts is decided here from the
+document alone; the Reader's figure can only take a confirmation away (`SourceAmounts.confirming`), never add one.
+What it reads, for E1 and E2:
 
-- written: "<amount> TL" in the text, minus prices, plus the table's nominal cells. A real form puts "(TL)" in the column
-  header and leaves the cells bare, so the cells are read by column: price, ratio and holding columns never count.
+- written: "<amount> TL" in the text, minus prices, plus the table's nominal cells. A real form puts "(TL)" in the
+  column header and leaves the cells bare, so the cells are read by column: price, ratio and holding columns never
+  count.
 - derived: what the table implies but does not write, each kept apart so the trace can say so. The rows' sum, earlier
   programme total + last row (E1), nominal × the midpoint of the text's price (E2, 06 §3.2's `orta_nokta`).
+- not amounts: the table's price, earlier-total and holding cells. The ±0.5 % is for rounding, not for the next
+  column: a Reader figure that is exactly one of these is confirmed by nothing, however close an amount lies.
 
 A table is read only where the form puts one. Its heading must appear exactly once, in the notice's own body: a heading
 planted in free text turns the table off and never adds to it. E3 and E4 read the text as they always did.
@@ -63,10 +67,16 @@ _SUM_TOLERANCE: Final = Decimal(1)  # filers round kuruş in the holding columns
 class SourceAmounts:
     written: tuple[Decimal, ...] = ()
     derived: tuple[tuple[Decimal, Basis], ...] = ()
+    #: Cells of a column that is not an amount (price, earlier programme total, holding) and equal no amount.
+    not_amounts: tuple[Decimal, ...] = ()
 
     @property
     def values(self) -> tuple[Decimal, ...]:
         return (*self.written, *(value for value, _ in self.derived))
+
+    def confirming(self, amount: Decimal | None) -> tuple[Decimal, ...]:
+        """The amounts R14 may hold this Reader figure against: none when it is one of the form's non-amount cells."""
+        return () if amount is not None and amount in self.not_amounts else self.values
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +84,7 @@ class _Table:
     cells: tuple[Decimal, ...] = ()
     derived: tuple[tuple[Decimal, Basis], ...] = ()
     prices: tuple[Decimal, ...] = ()
+    other: tuple[Decimal, ...] = ()  # earlier programme totals (E1), holdings (E2): written, never the amount
 
 
 def _within(a: Decimal, amount: Decimal) -> bool:
@@ -82,7 +93,7 @@ def _within(a: Decimal, amount: Decimal) -> bool:
 
 def amount_basis(amount: Decimal | None, source: SourceAmounts) -> Literal["written"] | Basis | None:
     """Where a confirmed figure came from; the same comparison the gate runs. Written beats derived."""
-    if amount is None:
+    if amount is None or not source.confirming(amount):
         return None
     if any(_within(a, amount) for a in source.written):
         return "written"
@@ -138,7 +149,7 @@ def _dec(value: Any) -> Decimal | None:
 
 
 def _body(text: str) -> str:
-    """The notice without its attachment blocks: a table is read from the form, an attachment's from its verified rows."""
+    """The notice without its attachment blocks: the form's table is read here, an attachment's from verified rows."""
     return text.split("[EK ", 1)[0]
 
 
@@ -156,7 +167,8 @@ def _buyback_table(body: str, ticker: str) -> _Table:
     derived: list[tuple[Decimal, Basis]] = [(sum(cells, Decimal(0)), "table_sum")]
     if rows[-1]["prior_nominal_try"]:
         derived.append((rows[-1]["prior_nominal_try"] + rows[-1]["nominal_try"], "table_cumulative"))
-    return _Table(cells, tuple(derived), tuple(t["price_try"] for t in rows if t["price_try"]))
+    priors = tuple(t["prior_nominal_try"] for t in rows if t["prior_nominal_try"])
+    return _Table(cells, tuple(derived), tuple(t["price_try"] for t in rows if t["price_try"]), priors)
 
 
 def _old_insider_table(body: str) -> _Table | None:
@@ -166,6 +178,7 @@ def _old_insider_table(body: str) -> _Table | None:
         return None
     cells: list[Decimal] = []
     prices: list[Decimal] = []
+    holdings: list[Decimal] = []
     for row in rows:
         nominal, price, value = (parse_tr_decimal(row[k]) or Decimal(0) for k in ("nominal", "price", "value"))
         before, after = (parse_tr_decimal(row[k]) or Decimal(0) for k in ("before", "after"))
@@ -173,7 +186,8 @@ def _old_insider_table(body: str) -> _Table | None:
             return _Table()
         cells += [nominal, value]
         prices.append(price)
-    return _Table(tuple(cells), (), tuple(prices))
+        holdings += [before, after]
+    return _Table(tuple(cells), (), tuple(prices), tuple(holdings))
 
 
 def _row_holds(row: Mapping[str, Any]) -> bool:
@@ -207,11 +221,12 @@ def _nominal_table(rows: Iterable[Mapping[str, Any]], prices: set[tuple[Decimal,
     bought, sold = sum(buys, Decimal(0)), sum(sells, Decimal(0))
     totals = _unique((bought, sold, bought + sold, abs(bought - sold)))
     derived: list[tuple[Decimal, Basis]] = [(t, "table_sum") for t in totals if t not in cells]
+    holdings = _unique(_dec(r.get(k)) or Decimal(0) for r in listed for k in ("start_nominal_try", "end_nominal_try"))
     if len(prices) != 1:  # none, or the text gives two different ones: no value to compute
-        return _Table(cells, tuple(derived), tuple(p for pair in prices for p in pair))
+        return _Table(cells, tuple(derived), tuple(p for pair in prices for p in pair), holdings)
     low, high = next(iter(prices))
     derived += [(t * (low + high) / 2, "nominal_x_price") for t in totals]
-    return _Table(cells, tuple(derived), (low, high))
+    return _Table(cells, tuple(derived), (low, high), holdings)
 
 
 def _insider_table(body: str, attachment: AttachmentFacts | None) -> _Table:
@@ -244,7 +259,8 @@ def read_source(
     table = _buyback_table(body, ticker) if event == "E1" else _insider_table(body, attachment)
     written = _unique(a for a in (*text_amounts(text, skip_prices=True), *table.cells) if a not in table.prices)
     derived = tuple((value, how) for value, how in table.derived if value not in written)
-    return SourceAmounts(written, derived)
+    amounts = {*written, *(value for value, _ in derived)}
+    return SourceAmounts(written, derived, _unique(a for a in (*table.prices, *table.other) if a not in amounts))
 
 
 __all__ = ["AMOUNT_TOLERANCE", "SourceAmounts", "amount_basis", "read_source", "regex_amounts", "text_amounts"]

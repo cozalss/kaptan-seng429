@@ -56,6 +56,38 @@
    "type": "integer",
    "minimum": 0,
    "maximum": 9007199254740991
+  },
+  "waiting_for_money": {
+   "default": false,
+   "type": "boolean"
+  },
+  "deferred": {
+   "default": 0,
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "deferred_reason_tr": {
+   "default": null,
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "agent_feed": {
+   "type": "object",
+   "properties": {
+    "deferred": {
+     "default": 0,
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    }
+   },
+   "required": [
+    "deferred"
+   ],
+   "additionalProperties": false
   }
  },
  "required": [
@@ -69,7 +101,10 @@
   "approvals",
   "rejections",
   "llm_calls",
-  "llm_tokens"
+  "llm_tokens",
+  "waiting_for_money",
+  "deferred",
+  "deferred_reason_tr"
  ],
  "additionalProperties": false
 }

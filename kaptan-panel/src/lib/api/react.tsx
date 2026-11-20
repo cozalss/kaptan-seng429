@@ -21,6 +21,11 @@ export function useApi(): KaptanApi {
   return api;
 }
 
+/** The client when there is one (a few small pieces may run without it); null outside an <ApiProvider>. */
+export function useOptionalApi(): KaptanApi | null {
+  return useContext(ApiContext);
+}
+
 export interface QueryState<T> {
   data: T | undefined;
   error: string | null;

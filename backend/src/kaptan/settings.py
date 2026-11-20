@@ -74,6 +74,17 @@ class Settings(BaseSettings):
     llm_cap_deepseek_usd: float = Field(default=0.50, ge=0)  # paid: the owner's balance
     llm_cache_ttl_s: int = Field(default=30 * 24 * 3600, gt=0)
 
+    #: Phone and e-mail alerts (kaptan.alerts). Each channel is off unless set; the topic and the password are
+    #: secrets (never logged, never returned). The values stay text here: kaptan.alerts.config judges them and
+    #: switches a wrong channel off instead of stopping KAPtan from starting.
+    alert_ntfy_topic: SecretStr | None = None
+    alert_ntfy_server: str = "https://ntfy.sh"
+    alert_smtp_host: str | None = None
+    alert_smtp_port: str | None = None
+    alert_smtp_user: str | None = None
+    alert_smtp_password: SecretStr | None = None
+    alert_smtp_to: str | None = None
+
     #: Live KAP ingestion (M2, kaptan.ingest). Off unless asked for: every compose file turns it on.
     kap_live: bool = False
     kap_base_url: str = "https://www.kap.org.tr"
@@ -138,12 +149,8 @@ class Settings(BaseSettings):
     #: KAPTAN_MODE (04 §env): paper | personal | live | backtest. Only what the config view shows and the live
     #: key K1; the restart rule (06 §11) does not depend on this.
     kaptan_mode: Literal["paper", "personal", "live", "backtest"] = "paper"
-    #: Starting capital of the paper desk (kaptan.risk.book): equity = capital + fills' cash flows + marks.
-    paper_capital_try: float = Field(default=1_000_000.0, gt=0)
-    #: M3 A3 (kaptan.brokers): the personal account the order tickets size for (12 §4).
-    personal_account_try: float = Field(default=350_000.0, gt=0)
     #: K2 of the three live keys (09 §8): true only on the production host. Without a real broker
-    #: adapter every order still goes to SimBIST (paper) and the fallback is audited.
+    #: adapter every order stays a ticket the person enters by hand and the fallback is audited.
     kaptan_live_enabled: bool = False
 
     cookie_secure: bool = True

@@ -23,7 +23,7 @@ vi.mock("next/navigation", async () => (await import("../nav.test-utils")).mockN
 const user = () => userEvent.setup({ delay: null });
 const plain = (t: string | null | undefined) => (t ?? "").replaceAll(NBSP, " ");
 
-const alloc = (symbol: string, amount: number, pnl = 0.01): Allocation => ({ symbol, name: `${symbol} A.Ş.`, amount, weight: amount / 1_000_000, pnl_pct: pnl });
+const alloc = (symbol: string, amount: number, pnl = 0.01): Allocation => ({ symbol, name: `${symbol} A.Ş.`, amount, weight: amount / 1_000_000, pnl_pct: pnl, price_as_of: null });
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -69,6 +69,8 @@ describe("the money hero", () => {
     equity: 1_000_000 + i * 500,
   }));
   const overview = (over: Partial<Overview> = {}): Overview => ({
+    needs_setup: false,
+    prices_as_of: null,
     capital_start: 1_000_000,
     equity_now: 1_059_500,
     cash: 900_000,
@@ -185,7 +187,7 @@ describe("Öneriler and Son işlemler", () => {
 
   it("says something true when today's reading could not be read, or everything is stopped", () => {
     const { rerender } = render(<Suggestions suggestions={[]} names={new Map()} stopped={false} today={null} decisions={decisions()} />);
-    expect(screen.getByText("KAPtan izliyor. Senden şu an bir şey beklemiyor.")).toBeInTheDocument();
+    expect(screen.getByText("KAPtan KAP duyurularını okuyor. Söyleyecek bir şeyi olunca burada konuşur; şu an senden bir şey beklemiyor.")).toBeInTheDocument();
     rerender(<Suggestions suggestions={[]} names={new Map()} stopped today={null} decisions={decisions()} />);
     expect(screen.getByRole("heading", { name: "İşlemler durdu; şimdilik karar yok." })).toBeInTheDocument();
   });
@@ -247,6 +249,7 @@ describe("Öneriler and Son işlemler", () => {
 describe("loading and errors", () => {
   it("shows a plain error and a retry when the home cannot be read", async () => {
     const failing = {
+      money: () => Promise.resolve(null),
       overview: () => Promise.reject(new ApiError(503, "down", "Servis şu an kapalı.")),
       riskStatus: () => new Promise(() => {}),
       listApprovals: () => new Promise(() => {}),

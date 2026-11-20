@@ -60,7 +60,7 @@ def base_session(now: datetime) -> date:
     return today if closed_today else prev_session(today)
 
 
-async def _limits(conn: AsyncConnection[Any], ticker: str, now: datetime) -> tuple[Decimal | None, Decimal | None]:
+async def price_band(conn: AsyncConnection[Any], ticker: str, now: datetime) -> tuple[Decimal | None, Decimal | None]:
     """R09's (taban, tavan): the previous close ± the band of the stock's market (06 §2 [V]; unknown → ±10 %)."""
     prev = await close_on(conn, ticker, base_session(now))
     if prev is None:
@@ -68,19 +68,17 @@ async def _limits(conn: AsyncConnection[Any], ticker: str, now: datetime) -> tup
     return price_limits(Decimal(str(prev)), await limit_pct_of(conn, ticker, now))
 
 
-async def check_at_send(
-    conn: AsyncConnection[Any], card: dict[str, Any], now: datetime, *, capital: float
-) -> AtSendCheck:
+async def check_at_send(conn: AsyncConnection[Any], card: dict[str, Any], now: datetime) -> AtSendCheck:
     """R16 for an approval card (ApprovalCard document) at `now`."""
     ticker = str(card["ticker"])
     active = await active_limits(conn)
-    desk = await live_desk(conn, ticker, now, published_at=now, available_at=now, capital=capital)
+    desk = await live_desk(conn, ticker, now, published_at=now, available_at=now)
     issuer = await _one(conn, ISSUER_SQL, (ticker,))
     state = await _one(conn, STATE_SQL) or {"kill_switch": "off", "halted_today": False, "live_armed": False}
     async with conn.cursor() as cur:
         await cur.execute(RESTRICTIONS_SQL, (ticker,))
         kinds = tuple(str(r["kind"]) for r in await cur.fetchall())
-    lower, upper = await _limits(conn, ticker, now)
+    lower, upper = await price_band(conn, ticker, now)
     last = desk.last_price or (Decimal(str(issuer["price"])) if issuer else Decimal(str(card["limit_price"])))
     order = GateOrder(
         ticker=ticker,

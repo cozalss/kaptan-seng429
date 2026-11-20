@@ -7,25 +7,29 @@ import type {
   Explain,
   Order,
   OrderTicket,
+  PnlPoint,
   Position,
   RiskStatus,
   RunSummary,
 } from "@/lib/domain";
 import { appendToChain } from "@/lib/audit-chain";
-import { addDays, nextTradingDay } from "@/lib/time";
+import type { MoneyBook } from "@/lib/solo/money";
+import { addDays, istanbulIso, nextTradingDay } from "@/lib/time";
 import { baseAuditChain, tamperedChain } from "@/mocks/audit";
 import { CLOCK_ANCHOR_MS, DEMO_DAY, mockNowMs } from "@/mocks/clock";
 import { dayDisclosures } from "@/mocks/day";
 import { buildExplain } from "@/mocks/explain-builder";
-import { liveEquity } from "@/mocks/pnl";
+import { liveEquity, paperPnl } from "@/mocks/pnl";
 import { DEMO_ORDER_TICKET } from "@/mocks/governance";
 import { AUDIT_TAMPER_POS, DAY_BY_ANCHOR, DEMO_E3_RUN } from "@/mocks/ids";
 import { CURRENT_STAGE } from "@/mocks/personal";
 import { buildTicket, effectiveEntry } from "@/mocks/tickets";
-import { issuer } from "@/mocks/issuers";
+import { findIssuer, issuer } from "@/mocks/issuers";
 import { DAY_SPECS, EXIT_SPECS, HISTORY_SPECS } from "@/mocks/runs-day";
 import type { RunSpec } from "@/mocks/run-spec";
+import { cashOf, dayFigures, flowsOf, hasStarted, movementsOf, oldestPrice, ownPositions, putInOf, type BookFill } from "./ledger";
 import type { MockState } from "./state";
+import { statusOf } from "./status";
 
 export function nowMs(state: MockState, realNow: number = Date.now()): number {
   return mockNowMs(realNow, state.startedAtReal);
@@ -76,6 +80,9 @@ export function counters(state: MockState, realNow: number = Date.now()): DayCou
     rejections: approvals.filter((a) => a.status === "rejected").length,
     llm_calls: 31,
     llm_tokens: Math.max(tokens, 412_000),
+    waiting_for_money: !hasStarted(state.book),
+    deferred: statusOf(state).deferred,
+    deferred_reason_tr: statusOf(state).deferredReason,
   };
 }
 
@@ -103,6 +110,9 @@ export function countersOn(state: MockState, day: string, realNow: number = Date
     rejections: cards.filter((a) => a.status === "rejected").length,
     llm_calls: 0,
     llm_tokens: 0,
+    // What waits for a turn is a snapshot of now, not of that day.
+    deferred: 0,
+    deferred_reason_tr: null,
   };
 }
 
@@ -131,12 +141,13 @@ export function explainFor(state: MockState, runId: string, realNow: number = Da
   const spec = specById(runId);
   if (!spec) return undefined;
   const base = baseExplain(spec);
-  const approval = base.approval ? patchApproval(state, base.approval, realNow) : null;
+  // A fresh book (no starting money, or a brand-new one) carries none of the fixture's suggestions or orders.
+  const approval = base.approval && state.book.seeded ? patchApproval(state, base.approval, realNow) : null;
   const ticket = approval ? ticketFor(state, spec, base, approval, realNow) : null;
   // Session orders (approvals) replace fixture orders with the same id; the ticket's own order follows.
   const sessionOrders = state.orders.filter((o) => o.run_id === runId).map((o) => applyCancel(state, o));
   const sessionIds = new Set(sessionOrders.map((o) => o.id));
-  const fixtureOrders = base.orders.filter((o) => !sessionIds.has(o.id));
+  const fixtureOrders = state.book.seeded ? base.orders.filter((o) => !sessionIds.has(o.id)) : [];
   const ticketOrders = ticket ? [ticketOrder(ticket, approval?.decided_at ?? null)] : [];
   // Paper (SimBIST) orders first; the personal-mode ticket order follows.
   const orders = [...fixtureOrders, ...sessionOrders, ...ticketOrders].sort((a, b) => Number(a.broker !== "simbist") - Number(b.broker !== "simbist"));
@@ -167,7 +178,7 @@ function ticketFor(state: MockState, spec: RunSpec, base: Explain, approval: App
   const raw =
     spec.run_id === DEMO_E3_RUN
       ? DEMO_ORDER_TICKET
-      : buildTicket(approval, base, { seq: 10 + allSpecs().findIndex((s) => s.run_id === spec.run_id), decidedAt: approval.decided_at, stage: CURRENT_STAGE });
+      : buildTicket(approval, base, { seq: 10 + allSpecs().findIndex((s) => s.run_id === spec.run_id), decidedAt: approval.decided_at, stage: CURRENT_STAGE, accountEquity: sizingEquity(state) });
   return { ...raw, entry: effectiveEntry(raw, state.ticketMarks[raw.ticket_no], nowMs(state, realNow)) };
 }
 
@@ -194,7 +205,7 @@ function ticketOrder(t: OrderTicket, decidedAt: string | null): Order {
     is_fixture: t.is_fixture,
   };
   if (e.status === "entered" && e.filled_qty && e.avg_price && e.filled_at) {
-    const fill = { id: `fill-${t.ticket_no}`, order_id: t.order_id, qty: e.filled_qty, price: e.avg_price, commission: 0, bsmv: 0, slippage_bps: 0, filled_at: e.filled_at, source: "manual" as const };
+    const fill = { id: `fill-${t.ticket_no}`, order_id: t.order_id, qty: e.filled_qty, price: e.avg_price, commission: e.commission_try, bsmv: 0, slippage_bps: 0, filled_at: e.filled_at, source: "manual" as const };
     return { ...base, status: e.filled_qty < t.qty ? "partially_filled" : "filled", fills: [fill] };
   }
   if (e.status === "unfilled") return { ...base, status: "canceled", cancel_reason: "ticket_unfilled" };
@@ -240,16 +251,23 @@ export function allOrders(state: MockState, realNow: number = Date.now()): Order
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
 }
 
-export function positions(state: MockState, realNow: number = Date.now()): Position[] {
+/** When the double's prices were "known": five minutes before its clock starts. */
+export const PRICES_AS_OF = istanbulIso(DEMO_DAY, "13:35");
+
+const valueOf = (p: Pick<Position, "qty" | "last_price">) => p.qty * p.last_price;
+const cents = (n: number) => Math.round(n * 100) / 100;
+
+/** What the seeded book held this morning: every fixture buy that filled and was not sold in the fixtures. */
+function seedPositions(state: MockState, realNow: number): Position[] {
+  if (!state.book.seeded) return [];
   const out: Position[] = [];
   const specs = allSpecs();
-  // A filled sell (exit) closes the paper position in that ticker; it never opens one.
-  const exited = new Set(specs.filter((s) => s.side === "sell" && (explainFor(state, s.run_id, realNow)?.fills.length ?? 0) > 0).map((s) => s.ticker));
+  const exited = new Set(specs.filter((s) => s.side === "sell" && baseExplain(s).fills.length > 0).map((s) => s.ticker));
   for (const s of specs) {
     if (s.side === "sell" || exited.has(s.ticker)) continue;
-    const e = explainFor(state, s.run_id, realNow);
-    const fill = e?.fills[0];
-    if (!e?.proposal || !fill || !s.event) continue;
+    const e = baseExplain(s);
+    const fill = e.fills[0];
+    if (!e.proposal || !fill || !s.event) continue;
     const iss = issuer(s.ticker);
     const opened = fill.filled_at;
     let exit = opened.slice(0, 10);
@@ -257,6 +275,8 @@ export function positions(state: MockState, realNow: number = Date.now()): Posit
     const holdingDays = Math.max(0, Math.round((nowMs(state, realNow) - Date.parse(opened)) / 86_400_000));
     const last = s.run_id === DEMO_E3_RUN ? 48.51 : iss.price * (1 + ((s.disclosure_index % 7) - 2) / 100);
     out.push({
+      id: `pos-${s.run_id.replace(/^run-/, "")}`,
+      origin: "suggestion",
       ticker: s.ticker,
       company_name: iss.name,
       qty: fill.qty,
@@ -272,23 +292,26 @@ export function positions(state: MockState, realNow: number = Date.now()): Posit
       unrealized_pnl: Math.round((last - fill.price) * fill.qty),
       realized_pnl: 0,
       managed_by_exit_rule: state.positionsManagedByExit,
-      book: "paper",
+      book: "personal",
+      price_as_of: PRICES_AS_OF,
     });
   }
-  return [...out, ...personalPositions(state, realNow)].sort((a, b) => Date.parse(b.opened_at) - Date.parse(a.opened_at));
+  return out;
 }
 
-/** Positions you opened yourself: tickets marked "girildi" with the fill you saw at your broker. */
-function personalPositions(state: MockState, realNow: number): Position[] {
+/** Buys you entered at your bank in this session: tickets marked "girildi" with the fill you saw. */
+function enteredBuys(state: MockState, realNow: number): Position[] {
   return allTickets(state, realNow).flatMap((t): Position[] => {
     const e = t.entry;
     const spec = specById(t.run_id);
-    if (e.status !== "entered" || !e.filled_qty || !e.avg_price || !e.filled_at || !spec?.event) return [];
+    if (t.side !== "buy" || e.status !== "entered" || !e.filled_qty || !e.avg_price || !e.filled_at || !spec?.event) return [];
     const last = issuer(t.ticker).price;
     let exit = e.filled_at.slice(0, 10);
     for (let i = 0; i < 5; i += 1) exit = nextTradingDay(exit);
     return [
       {
+        id: `pos-${t.ticket_no}`,
+        origin: "suggestion",
         ticker: t.ticker,
         company_name: t.company_name,
         qty: e.filled_qty,
@@ -305,28 +328,111 @@ function personalPositions(state: MockState, realNow: number): Position[] {
         realized_pnl: 0,
         managed_by_exit_rule: state.positionsManagedByExit,
         book: "personal",
+        price_as_of: PRICES_AS_OF,
       },
     ];
   });
 }
 
+/** Every fill recorded in this session, as the cash sees it. */
+function sessionFills(state: MockState, realNow: number): Array<BookFill & { ticker: string }> {
+  return allTickets(state, realNow).flatMap((t) => {
+    const e = t.entry;
+    if (e.status !== "entered" || !e.filled_qty || !e.avg_price) return [];
+    return [{ side: t.side, ticker: t.ticker, qty: e.filled_qty, price: e.avg_price, commission: e.commission_try }];
+  });
+}
+
+/** The seeded holdings less what a recorded sale took out of them. */
+function afterSales(seed: readonly Position[], fills: ReadonlyArray<BookFill & { ticker: string }>): Position[] {
+  const sold = new Map<string, number>();
+  for (const f of fills) if (f.side === "sell") sold.set(f.ticker, (sold.get(f.ticker) ?? 0) + f.qty);
+  return seed.flatMap((p) => {
+    const qty = p.qty - (sold.get(p.ticker) ?? 0);
+    return qty > 0 ? [{ ...p, qty, unrealized_pnl: Math.round((p.last_price - p.avg_cost) * qty) }] : [];
+  });
+}
+
+/** The fixture's own view of the seeded book this instant (nothing for a fresh one). */
+function seedLevels(state: MockState): { equity: number; peak: number; daily: number; drawdown: number } {
+  if (!state.book.seeded) return { equity: 0, peak: 0, daily: 0, drawdown: 0 };
+  const r = state.risk;
+  const live = liveEquity(r.daily_pnl_pct);
+  const drawdown = Math.min(0, r.drawdown_pct);
+  // The fixture's running peak; only a post-reset override (drawdown floor) re-derives it.
+  const peak = drawdown === live.drawdown ? live.peak : Math.round(live.equity / (1 + drawdown));
+  return { equity: live.equity, peak, daily: r.daily_pnl_pct, drawdown };
+}
+
+/** What an order is sized against: the book before today's fills (the seeded value plus what was moved in by hand). */
+export function sizingEquity(state: MockState): number {
+  return cents(seedLevels(state).equity + flowsOf(state.book));
+}
+
+export interface BookView {
+  started: boolean;
+  cash: number;
+  put_in: number;
+  equity: number;
+  positions: Position[];
+  prices_as_of: string | null;
+  daily_pnl_pct: number;
+  peak_equity: number;
+  drawdown_pct: number;
+}
+
+/**
+ * The one book every money figure reads: cash, holdings at their last known price, and today's
+ * change with the flows taken out (ledger.ts).
+ */
+export function bookOf(state: MockState, realNow: number = Date.now()): BookView {
+  const seed = seedPositions(state, realNow);
+  const fills = sessionFills(state, realNow);
+  const levels = seedLevels(state);
+  const seedCash = levels.equity - seed.reduce((sum, p) => sum + valueOf(p), 0);
+  const own = ownPositions(state.book, { nowMs: nowMs(state, realNow), priceOf: (t) => issuer(t).price, priceAsOf: PRICES_AS_OF, managedByExit: state.positionsManagedByExit });
+  const held = [...afterSales(seed, fills), ...enteredBuys(state, realNow), ...own].sort((a, b) => Date.parse(b.opened_at) - Date.parse(a.opened_at));
+  const cash = cashOf(state.book, seedCash, fills);
+  const equity = cents(cash + held.reduce((sum, p) => sum + valueOf(p), 0));
+  const touched = !state.book.seeded || state.book.movements.length > 0 || state.book.holdings.length > 0 || fills.length > 0;
+  const day = dayFigures({ equity, seedEquity: levels.equity, seedDaily: levels.daily, seedPeak: levels.peak, seedDrawdown: levels.drawdown, flows: flowsOf(state.book), touched });
+  return { started: hasStarted(state.book), cash, put_in: putInOf(state.book), equity, positions: held, prices_as_of: oldestPrice(held), ...day };
+}
+
+export function positions(state: MockState, realNow: number = Date.now()): Position[] {
+  return bookOf(state, realNow).positions;
+}
+
+/** GET /portfolio/pnl: the book's daily history; a fresh book has none yet. */
+export function bookPnl(state: MockState): readonly PnlPoint[] {
+  return state.book.seeded ? paperPnl() : [];
+}
+
+/** GET /me/money. */
+export function moneyBook(state: MockState, realNow: number = Date.now()): MoneyBook {
+  return { cash: bookOf(state, realNow).cash, put_in: putInOf(state.book), movements: movementsOf(state.book) };
+}
+
+/** The company behind a ticker the double knows, or null. */
+export function companyOf(ticker: string): { name: string; price: number } | null {
+  const found = findIssuer(ticker);
+  return found ? { name: found.name, price: found.price } : null;
+}
+
 /* ── risk ────────────────────────────────────────────────────────────── */
 export function riskStatus(state: MockState, realNow: number = Date.now()): RiskStatus {
   const r = state.risk;
-  const live = liveEquity(r.daily_pnl_pct);
-  const { equity } = live;
-  const drawdown = Math.min(0, r.drawdown_pct);
+  const book = bookOf(state, realNow);
   return {
     kill_switch: r.kill_switch,
     kill_reason: r.kill_reason,
     kill_at: r.kill_at,
     kill_by: r.kill_by,
     halted_today: r.halted_today,
-    daily_pnl_pct: r.daily_pnl_pct,
-    drawdown_pct: drawdown,
-    // The fixture's running peak; only a post-reset override (drawdown floor) re-derives it.
-    peak_equity: drawdown === live.drawdown ? live.peak : Math.round(equity / (1 + drawdown)),
-    equity,
+    daily_pnl_pct: book.daily_pnl_pct,
+    drawdown_pct: book.drawdown_pct,
+    peak_equity: book.peak_equity,
+    equity: book.equity,
     regime: "normal",
     live_armed: state.liveArm.armed,
     quota: [

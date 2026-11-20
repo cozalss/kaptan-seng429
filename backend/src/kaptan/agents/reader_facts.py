@@ -22,6 +22,8 @@ from kaptan.rules.params import E2_ROLES
 _NOTE_READ: Final = "İşlem rakamları ekteki tablodan kodla alındı."
 _NOTE_INVENTED: Final = "Okuyucunun verdiği işlem rakamları metinde yok."
 _NOTE_THRESHOLD: Final = "Bu bir kurumsal yatırımcının pay eşiği bildirimi: yönetici alımı değil."
+#: The Reader's trace row when the code, not the model, said so (`is_threshold_notice`).
+THRESHOLD_STEP_NOTE: Final = "Kurumsal yatırımcının pay eşiği bildirimi: yönetici alımı değil (formdan, kodla)"
 _DIGITS: Final = re.compile(r"\d")
 #: 05 §1.4 md.12/b lists 5 % and up; the real forms also report 3 % ("%3 eşiğini yukarı yönlü olarak aşmıştır").
 _THRESHOLD_LEVELS: Final = tuple(Decimal(n) for n in (3, 5, 10, 15, 20, 25, 33, 50, 67, 95))
@@ -188,4 +190,11 @@ def ground_insider(out: Mapping[str, Any], facts: AttachmentFacts, text: str) ->
     }
 
 
-__all__ = ["AttachmentFacts", "attachment_facts", "ground_insider", "is_threshold_notice", "unreadable_answer"]
+__all__ = [
+    "THRESHOLD_STEP_NOTE",
+    "AttachmentFacts",
+    "attachment_facts",
+    "ground_insider",
+    "is_threshold_notice",
+    "unreadable_answer",
+]

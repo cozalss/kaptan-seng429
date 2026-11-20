@@ -22,6 +22,7 @@ from psycopg.types.json import Jsonb
 from psycopg_pool import AsyncConnectionPool
 
 from kaptan.agents.feed_run import LiveDeps, LiveResult, run_disclosure
+from kaptan.agents.nodes.merge import DERIVED_NOTES
 from kaptan.db import DictConn, create_pool
 from kaptan.ingest.parsers import parse_detail
 from kaptan.ingest.repo import classification_for
@@ -106,7 +107,7 @@ WITH_TL_SENTENCE: Final = REAL_FORM.replace(
 )
 
 
-def _reader_answer(text: str) -> dict[str, Any]:
+def _reader_answer(text: str, cumulative: float = 2 * NOMINAL_ROW) -> dict[str, Any]:
     trades = [
         {"trade_date": d.isoformat(), "nominal_tl": NOMINAL_ROW, "capital_pct": 0.0015, "price_tl": 54.1,
          "price_raw": "54,10", "prior_nominal_in_program_tl": None}
@@ -118,7 +119,7 @@ def _reader_answer(text: str) -> dict[str, Any]:
         "board_decision_date": "2020-03-12",
         "programme_max_nominal_tl": 36_328_125,
         "transactions": trades,
-        "cumulative_nominal_tl": 2 * NOMINAL_ROW,
+        "cumulative_nominal_tl": cumulative,
         "cumulative_capital_pct": 0.003,
         "quotes": [{"field": "amount", "quote": quote}],
     }
@@ -129,9 +130,9 @@ class RecordedLive:
 
     name = "live"
 
-    def __init__(self, cited: list[str], text: str) -> None:
+    def __init__(self, cited: list[str], text: str, cumulative: float = 2 * NOMINAL_ROW) -> None:
         rec = recording_of(fixture_run("run-day-e1-krgcl"))
-        outputs = {**rec.outputs, "reader": _reader_answer(text)}
+        outputs = {**rec.outputs, "reader": _reader_answer(text, cumulative)}
         recorded = replace(rec, ticker=TICKER, fingerprint=fingerprint(TICKER, text), outputs=outputs)
         self.base = ReplayProvider(Cassette([recorded]))
         self.cited = cited
@@ -226,10 +227,11 @@ async def world(seeded: SeedResult, migrated: Settings) -> AsyncIterator[World]:
         past: list[date],
         sealed: tuple[date, ...] | list[date] = SEALED_DAYS,
         text: str = WITH_TL_SENTENCE,
+        cumulative: float = 2 * NOMINAL_ROW,
     ) -> LiveResult:
         ars = {add_sessions(d, 1): _ar(k, level) for k, d in enumerate(past)}
         ars |= {add_sessions(d, 1): 0.25 for d in sealed}  # the sealed period screams: it must not be heard
-        provider = RecordedLive([f"evt:kap:{FIRST_PAST + k}" for k in range(len(past))], text)
+        provider = RecordedLive([f"evt:kap:{FIRST_PAST + k}" for k in range(len(past))], text, cumulative)
         live_index = next(LIVE_INDEXES)
         async with pool.connection() as conn:
             await _clean_prices(conn)
@@ -276,15 +278,42 @@ async def test_an_e1_reaches_the_rules_with_evidence_and_passes_the_risk_gate(wo
     assert p["evidence_ids"] and set(p["evidence_ids"]) <= set(p["retrieved_ids"])
 
 
-async def test_the_real_form_today_stops_at_r14(world: World) -> None:
-    """THE BLOCKER: a real E1 form writes no "<amount> TL" for its trades, so merge's regex finds nothing to confirm the
-    Reader's nominal and R14 rejects, after every rule before it passed. When merge reads the table this test changes.
+def _r14(explain: dict[str, Any]) -> dict[str, Any]:
+    return next(c for c in explain["risk_checks"] if c["rule_code"] == "R14")
+
+
+def _merge_note(explain: dict[str, Any]) -> str | None:
+    note: str | None = next(n for n in explain["trace"]["nodes"] if n["node"] == "merge")["note_tr"]
+    return note
+
+
+async def test_the_real_form_passes_r14_by_its_table_and_the_trace_says_the_sum_was_computed(world: World) -> None:
+    """A real E1 form writes no "<amount> TL" for its trades: the column header says (TL), the cells are bare. Merge
+    reads the table (`agents.source_amounts`), so the Reader's total is confirmed by the rows' sum and nothing else.
     """
     result = await world(0.04, PAST_DAYS, text=REAL_FORM)
     explain = result.explain
+    merged = explain["merged"]
+    assert merged["reader_amount"] == 2 * NOMINAL_ROW and merged["amount_in_text"] is True
+    assert merged["regex_amounts"] == [NOMINAL_ROW, 2 * NOMINAL_ROW]  # the cell, then the sum the code made
+    assert _merge_note(explain) == DERIVED_NOTES["table_sum"]
+    assert _r14(explain)["outcome"] == "pass", explain["risk_checks"]
+    assert result.outcome == "PROPOSE" and result.feed_status == "waiting_approval", explain["risk_checks"]
+
+
+@pytest.mark.parametrize(
+    ("figure", "note"),
+    [
+        (3_000_000, "Tutar metinde yok ✗"),  # a digit too many
+        (54.1, "Okuyucunun tutarı tablonun tutar olmayan bir sütununda (fiyat ya da önceki toplam) ✗"),  # the price
+    ],
+)
+async def test_a_reader_total_the_real_form_does_not_hold_stops_at_r14(world: World, figure: float, note: str) -> None:
+    result = await world(0.04, PAST_DAYS, text=REAL_FORM, cumulative=figure)
+    explain = result.explain
     assert explain["rule_decision"]["outcome"] == "PROPOSE" and "risk_gate" in _nodes(result)
-    assert explain["merged"]["reader_amount"] == 2 * NOMINAL_ROW
-    assert 2 * NOMINAL_ROW not in explain["merged"]["regex_amounts"] and explain["merged"]["amount_in_text"] is False
+    assert explain["merged"]["reader_amount"] == figure and explain["merged"]["amount_in_text"] is False
+    assert _merge_note(explain) == note
     last = explain["risk_checks"][-1]
     assert (last["rule_code"], last["outcome"]) == ("R14", "reject"), explain["risk_checks"]
     assert result.outcome != "PROPOSE" and explain["approval"] is None

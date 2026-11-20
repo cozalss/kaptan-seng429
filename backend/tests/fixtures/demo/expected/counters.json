@@ -9,5 +9,8 @@
  "approvals": 1,
  "rejections": 1,
  "llm_calls": 31,
- "llm_tokens": 412000
+ "llm_tokens": 412000,
+ "waiting_for_money": false,
+ "deferred": 0,
+ "deferred_reason_tr": null
 }

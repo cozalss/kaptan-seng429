@@ -1,11 +1,13 @@
-"""`GET /me/overview` (single-user dashboard): the existing services read once and folded into MeOverview.
+"""`GET /me/overview` (the person's home): the one book read once and folded into MeOverview.
 
-- equity_now: `/risk/status` equity (the marked book);
-- capital_start: PAPER_CAPITAL_TRY; pnl_abs / pnl_pct against it;
-- equity_series: the live strategy's daily closes (`/portfolio/pnl`, strategy kaptan:v1.1-fwd);
-- allocations: the paper book's open positions at their last price (`/portfolio/positions`), weight of equity;
-- cash: equity_now − the allocations (never below zero);
-- open_suggestions: the pending approval cards (`/approvals`): buy → "al", sell → "sat"; `confidence` is the
+- needs_setup: the starting money is not entered yet; every money field is 0 and the lists are empty;
+- capital_start: the money put in so far (start + deposits - withdrawals + cost of holdings entered by hand);
+- cash: the book's cash; equity_now: cash + holdings at their last known price (`kaptan.risk.book`);
+  pnl_abs / pnl_pct: equity_now against capital_start (0 % while nothing is put in);
+- prices_as_of: the oldest "known at" time among the prices used (null when no holding has a stored price);
+- equity_series: the daily closes of the person's book (`/portfolio/pnl`, strategy kaptan:v1.1-fwd);
+- allocations: the holdings per ticker at their last price, weight of equity, with their price time;
+- open_suggestions: the pending approval cards (`/approvals`): buy -> "al", sell -> "sat"; `confidence` is the
   card's skeptic size multiplier (1, 0.75, 0.5, 0.25). "tut" (hold) is in the contract for the panel; no
   card proposes it, so the backend never sends it.
 """
@@ -22,20 +24,27 @@ from kaptan.approvals.reads import list_cards
 from kaptan.audit.writer import AuditDraft, append
 from kaptan.portfolio.pnl import LIVE_STRATEGY, list_pnl
 from kaptan.portfolio.positions import list_positions
-from kaptan.risk.status import risk_status
+from kaptan.risk.book import own_book
 
 
 def _allocations(positions: list[dict[str, Any]], equity: float) -> list[dict[str, Any]]:
-    out = []
+    """One allocation per ticker (a suggested and a hand-entered position of the same share are one holding)."""
+    grouped: dict[str, list[dict[str, Any]]] = {}
     for p in positions:
-        amount = round(float(p["qty"]) * float(p["last_price"]), 2)
+        grouped.setdefault(p["ticker"], []).append(p)
+    out = []
+    for ticker, rows in grouped.items():
+        amount = round(sum(float(p["qty"]) * float(p["last_price"]) for p in rows), 2)
+        cost = sum(float(p["qty"]) * float(p["avg_cost"]) for p in rows)
+        times = [p["price_as_of"] for p in rows if p["price_as_of"] is not None]
         out.append(
             {
-                "symbol": p["ticker"],
-                "name": p["company_name"],
+                "symbol": ticker,
+                "name": rows[0]["company_name"],
                 "amount": amount,
                 "weight": round(amount / equity, 4) if equity > 0 else 0.0,
-                "pnl_pct": round(float(p["last_price"]) / float(p["avg_cost"]) - 1, 4),
+                "pnl_pct": round(amount / cost - 1, 4) if cost > 0 else 0.0,
+                "price_as_of": min(times) if len(times) == len(rows) else None,
             }
         )
     return sorted(out, key=lambda a: -a["amount"])
@@ -56,25 +65,38 @@ def _suggestions(cards: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
-async def me_overview(
-    conn: AsyncConnection[Any],
-    *,
-    now: datetime,
-    prices_live: bool,
-    capital: float,
-) -> dict[str, Any]:
-    status = await risk_status(conn, now, capital=capital)
-    equity = float(status["equity"])
-    paper = [p for p in await list_positions(conn, now, live=prices_live) if p["book"] == "paper"]
-    allocations = _allocations(paper, equity)
-    series = [p for p in await list_pnl(conn, None, None) if p["strategy"] == LIVE_STRATEGY]
-    pnl_abs = round(equity - capital, 2)
+def _empty() -> dict[str, Any]:
     return {
-        "capital_start": capital,
+        "needs_setup": True,
+        "capital_start": 0.0,
+        "equity_now": 0.0,
+        "cash": 0.0,
+        "pnl_abs": 0.0,
+        "pnl_pct": 0.0,
+        "prices_as_of": None,
+        "equity_series": [],
+        "allocations": [],
+        "open_suggestions": [],
+    }
+
+
+async def me_overview(conn: AsyncConnection[Any], *, now: datetime) -> dict[str, Any]:
+    book = await own_book(conn, now)
+    if not book.started:
+        return _empty()
+    equity, put_in = float(book.equity), float(book.put_in)
+    allocations = _allocations(await list_positions(conn, now), equity)
+    series = [p for p in await list_pnl(conn, None, None) if p["strategy"] == LIVE_STRATEGY]
+    times = [h.mark_known_at for h in book.holdings if h.mark_known_at is not None]
+    pnl_abs = round(equity - put_in, 2)
+    return {
+        "needs_setup": False,
+        "capital_start": put_in,
         "equity_now": equity,
-        "cash": max(0.0, round(equity - sum(a["amount"] for a in allocations), 2)),
+        "cash": float(book.cash),
         "pnl_abs": pnl_abs,
-        "pnl_pct": round(pnl_abs / capital, 6),
+        "pnl_pct": round(pnl_abs / put_in, 6) if put_in > 0 else 0.0,
+        "prices_as_of": min(times) if times else None,
         "equity_series": [{"date": p["d"], "equity": float(p["equity"])} for p in series],
         "allocations": allocations,
         "open_suggestions": _suggestions(await list_cards(conn, now=now)),

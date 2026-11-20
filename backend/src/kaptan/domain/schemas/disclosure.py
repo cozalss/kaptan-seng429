@@ -98,6 +98,12 @@ class DayCounters(KModel):
     rejections: NonNegInt
     llm_calls: NonNegInt
     llm_tokens: NonNegInt
+    #: The starting money is not entered yet: no run starts, disclosures are only read and listed.
+    waiting_for_money: bool = False
+    #: Disclosures that still wait for a turn (run caps, provider quota or the missing starting money).
+    deferred: NonNegInt = 0
+    #: One plain sentence on why disclosures wait, when `deferred > 0` and the feed knows why.
+    deferred_reason_tr: str | None = None
     #: Absent on a day the worker saw nothing.
     agent_feed: AgentFeedCounts | None = None
 

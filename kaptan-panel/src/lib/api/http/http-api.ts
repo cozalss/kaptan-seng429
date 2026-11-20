@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { ApprovalCard, AuditPage, ChainVerifyResult, DayCounters, DisclosureListItem, Explain, LimitsView, Me, OrderTicket, PnlPoint, Position, ProposalNote, RiskStatus } from "@/lib/domain";
 import { noteServerTime } from "@/lib/clock";
+import { AlertSettings, SystemStatus } from "@/lib/domain/system";
+import { MoneyBook } from "@/lib/solo/money";
 import { HoldResult, Overview } from "@/lib/solo/overview";
 import { ApiError, unreachableError, type KaptanApi } from "../types";
 import { repairDeep } from "./mojibake";
@@ -126,6 +128,11 @@ export function createHttpApi(): KaptanApi {
     markTicket: (no, input) => request(OrderTicket, `/tickets/${id(no)}/mark`, post(input)),
     overview: () => request(Overview, "/me/overview"),
     holdSuggestion: (sid, input) => request(HoldResult, `/me/suggestions/${id(sid)}/hold`, post(input)),
+    money: () => request(MoneyBook, "/me/money"),
+    moveMoney: (input) => request(MoneyBook, "/me/money", post(input)),
+    addHolding: (input) => request(Position, "/me/holdings", post(input)),
+    // "Nothing is left" may come as JSON null or as an empty 204: both mean the holding is gone.
+    sellHolding: (pid, input) => request(Position.nullish(), `/me/holdings/${id(pid)}/sell`, post(input)).then((p) => p ?? null),
     positions: () => request(z.array(Position), "/portfolio/positions"),
     pnl: (from, to) => request(z.array(PnlPoint), `/portfolio/pnl${qs({ from, to })}`),
     riskStatus: () => request(RiskStatus, "/risk/status").then(withServerTime),
@@ -137,6 +144,9 @@ export function createHttpApi(): KaptanApi {
     decideLimit: (version, input) => request(LimitsView, `/limits/proposals/${version}/decision`, post(input)),
     auditList: (q = {}) => request(AuditPage, `/audit${qs({ scope: q.scope, q: q.q, limit: q.limit })}`),
     verifyAudit: () => request(ChainVerifyResult, "/audit/verify", post()),
+    systemStatus: () => request(SystemStatus, "/system/status"),
+    alertSettings: () => request(AlertSettings, "/me/alerts"),
+    testAlerts: () => request(AlertSettings, "/me/alerts/test", post()),
   };
 }
 

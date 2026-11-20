@@ -66,10 +66,10 @@ async def test_cooldown_reaches_the_agent_desk_and_the_gate(pg: DictConn) -> Non
 
 async def test_reset_active_reaches_the_live_desk(pg: DictConn) -> None:
     await pg.execute("UPDATE trading.risk_state SET reset_at = NULL WHERE id = 1")
-    off = await live_desk(pg, "ORNEK", NOW, published_at=NOW, available_at=NOW, capital=1_000_000)
+    off = await live_desk(pg, "ORNEK", NOW, published_at=NOW, available_at=NOW)
     assert not off.reset_active
     await pg.execute("UPDATE trading.risk_state SET reset_at = %s WHERE id = 1", (NOW - timedelta(days=1),))
-    on = await live_desk(pg, "ORNEK", NOW, published_at=NOW, available_at=NOW, capital=1_000_000)
+    on = await live_desk(pg, "ORNEK", NOW, published_at=NOW, available_at=NOW)
     assert on.reset_active
     demo = await desk_for(pg, "ORNEK", now=NOW)
     assert not demo.reset_active  # the demo replay keeps its seeded desk

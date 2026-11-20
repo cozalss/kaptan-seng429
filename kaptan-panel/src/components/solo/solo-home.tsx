@@ -2,6 +2,9 @@
 
 import { useMemo } from "react";
 import { useApiQuery } from "@/lib/api/react";
+import { useNow } from "@/lib/clock";
+import { istanbulDay } from "@/lib/session-day";
+import { homeSeries } from "@/lib/solo/flows";
 import { recentActivity } from "@/lib/solo/activity";
 import { useHolds } from "@/lib/solo/holds";
 import { titleTr } from "@/lib/solo/words";
@@ -14,6 +17,7 @@ import { ErrorState, Skeleton } from "@/components/ui/primitives";
 import { useDecisions } from "@/components/proposal/use-decisions";
 import { Activity } from "./activity";
 import { AllocationPanel } from "./allocation";
+import { FirstRun } from "./first-run";
 import { MoneyHero } from "./money-hero";
 import { ConfirmAction, StoppedBanner, useStopRestart } from "./stop-panel";
 import { Suggestions, type OrderFigures } from "./suggestions";
@@ -26,14 +30,16 @@ import { Suggestions, type OrderFigures } from "./suggestions";
 export function SoloHome() {
   const q = useApiQuery(async (api) => {
     // Today's reading counts only colour the empty state: when they fail, the home still opens.
-    const [overview, risk, approvals, positions, counters] = await Promise.all([
+    const [overview, risk, approvals, positions, counters, book] = await Promise.all([
       api.overview(),
       api.riskStatus(),
       api.listApprovals("all"),
       api.positions(),
       api.counters().catch(() => null),
+      // The movements only shape the line (a deposit is not a gain): without them it is drawn as before.
+      api.money().catch(() => null),
     ]);
-    return { overview, risk, approvals, positions, counters };
+    return { overview, risk, approvals, positions, counters, movements: book?.movements ?? null };
   });
   const desk = useDesk();
   const session = useSession();
@@ -66,10 +72,20 @@ export function SoloHome() {
     const done = new Set(holds.map((h) => h.id));
     return (data?.overview.open_suggestions ?? []).filter((s) => !done.has(s.id));
   }, [data, holds]);
+  const now = useNow(60_000);
+  const today = now === null ? null : istanbulDay(now);
+  // The line is each day's gain over the money put in by then, so adding money leaves no step in it.
+  const overview = useMemo(() => {
+    const o = data?.overview;
+    if (!o || o.needs_setup) return o;
+    return { ...o, equity_series: homeSeries(o.equity_series, data.movements, today, o.equity_now, o.capital_start) };
+  }, [data, today]);
   const activity = useMemo(() => (data ? recentActivity(data.approvals, data.positions, holds) : []), [data, holds]);
 
   if (q.loading && !data) return <HomeSkeleton />;
-  if (!data) return <ErrorState message={q.error ?? "Bilgiler alınamadı."} onRetry={() => void q.refetch()} />;
+  if (!data || !overview) return <ErrorState message={q.error ?? "Bilgiler alınamadı."} onRetry={() => void q.refetch()} />;
+  // A new install: one question first, then everything below.
+  if (data.overview.needs_setup) return <FirstRun onDone={() => void q.refetch()} />;
 
   const stopped = data.risk.kill_switch === "on";
 
@@ -81,7 +97,7 @@ export function SoloHome() {
           {stopped ? <StoppedBanner risk={data.risk} pending={controls.restartPending} error={controls.restartError} onRestart={controls.onRestart} /> : null}
         </div>
       ) : null}
-      <MoneyHero overview={data.overview} todayPct={data.risk.daily_pnl_pct} positions={data.positions} name={realName(session.name)} />
+      <MoneyHero overview={overview} todayPct={data.risk.daily_pnl_pct} positions={data.positions} name={realName(session.name)} />
       <div className="home-sheet u-page">
         <Suggestions
           suggestions={suggestions}

@@ -37,6 +37,7 @@ from typing import Any, Final, Literal
 import redis.asyncio as aioredis
 from psycopg.types.json import Jsonb
 
+from kaptan.alerts import run_alert_watch
 from kaptan.api.loop import run
 from kaptan.db import create_pool
 from kaptan.ops.runtime import run_worker_process
@@ -145,12 +146,6 @@ async def job_morning_brief(conn: Any, ctx: Ctx, day: date, now: datetime) -> An
     return await run_morning_brief(conn, day, now, live_marks=ctx.settings.prices_live)
 
 
-async def job_open_fill(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
-    from kaptan.brokers.fills import run_open_fill
-
-    return await run_open_fill(conn, day)
-
-
 async def job_risk_monitor(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
     from kaptan.risk.monitor import run_risk_monitor
 
@@ -188,12 +183,6 @@ async def job_eod_prices(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
         return {"tickers": len(tickers), "raw_rows": stored, "failed": failed}
 
     return await _polite(ctx, body)
-
-
-async def job_eod_fills(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
-    from kaptan.brokers.fills import run_eod_fills
-
-    return await run_eod_fills(conn, day)
 
 
 async def job_exits(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
@@ -286,13 +275,10 @@ JOBS: Final[tuple[Job, ...]] = (
     Job("universe", job_universe, at=time(8, 30), days="trading", timeout_s=10 * 60),
     Job("tedbir_sync", job_tedbir, every_min=30, days="daily", timeout_s=10 * 60),
     Job("morning_brief", job_morning_brief, at=time(8, 45), days="trading", timeout_s=5 * 60),
-    Job("open_fill", job_open_fill, at=time(10, 16), days="trading", timeout_s=10 * 60),
     Job("risk_monitor", job_risk_monitor, every_min=5, in_session=True, timeout_s=4 * 60, own_tx=True),
     Job("quotes", job_quotes, every_min=4, in_session=True, timeout_s=3 * 60),
     Job("eod_prices", job_eod_prices, at=time(18, 30), days="trading", timeout_s=60 * 60),
-    #: brokers.fills.run_eod_fills: "after the 18:30 EOD prices" (needs the session close).
-    Job("eod_fills", job_eod_fills, at=time(18, 30), days="trading", after="eod_prices", timeout_s=10 * 60),
-    Job("exits", job_exits, at=time(18, 30), days="trading", after="eod_fills", timeout_s=10 * 60, own_tx=True),
+    Job("exits", job_exits, at=time(18, 30), days="trading", after="eod_prices", timeout_s=10 * 60, own_tx=True),
     Job("pnl_eod", job_pnl_eod, at=time(18, 45), days="trading", after="exits", timeout_s=10 * 60),
     Job("regime", job_regime, at=time(18, 45), days="trading", after="pnl_eod", timeout_s=5 * 60, own_tx=True),
     Job("intraday_archive", job_intraday_archive, at=time(19, 0), days="trading", timeout_s=60 * 60),
@@ -504,6 +490,8 @@ async def run_worker(settings: Settings, stop: asyncio.Event | None = None) -> i
     redis = aioredis.from_url(settings.redis_url.get_secret_value(), decode_responses=True)
     ctx = make_ctx(settings, pool, redis)
     running: dict[str, asyncio.Task[RunResult]] = {}
+    # phone/e-mail alerts: one long-running side task, only here (one replica, behind the leader lock)
+    alert_task = asyncio.create_task(run_alert_watch(settings, pool, redis, stop), name="alert-watch")
     try:
         log.info("scheduler started: %d jobs, Europe/Istanbul", len(JOBS))
         while not stop.is_set():
@@ -516,6 +504,8 @@ async def run_worker(settings: Settings, stop: asyncio.Event | None = None) -> i
             log.info("draining %d running job(s)", len(running))
             await asyncio.gather(*running.values(), return_exceptions=True)
     finally:
+        alert_task.cancel()
+        await asyncio.gather(alert_task, return_exceptions=True)
         for task in running.values():
             task.cancel()
         await asyncio.gather(*running.values(), return_exceptions=True)

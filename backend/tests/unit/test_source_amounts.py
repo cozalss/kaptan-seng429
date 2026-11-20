@@ -32,11 +32,14 @@ def source(event: str, index: int, ticker: str) -> SourceAmounts:
 
 
 def confirmed(figure: str | int, amounts: SourceAmounts) -> bool | None:
-    return amount_in_text(Decimal(str(figure)), list(amounts.values))
+    """Merge's own comparison: the figure against what the document lets it be held to."""
+    amount = Decimal(str(figure))
+    return amount_in_text(amount, list(amounts.confirming(amount)))
 
 
 def gate_outcome(figure: str | int, amounts: SourceAmounts) -> str:
-    order = replace(BUY, reader_amount=Decimal(str(figure)), regex_amounts=amounts.values)
+    amount = Decimal(str(figure))
+    order = replace(BUY, reader_amount=amount, regex_amounts=amounts.confirming(amount))
     return str(r14(order, CTX, LIM, "pre_trade").outcome)
 
 
@@ -61,6 +64,22 @@ def test_1010940_reads_the_wrapped_rows_and_the_cumulative_column() -> None:
     assert "table_sum" in basis.values()
     for figure in ("15.56", "0.004", "30000000", "3600000", "797892"):
         assert confirmed(figure, amounts) is False, figure
+
+
+def test_1010940_the_earlier_total_is_not_the_amount_though_the_new_total_is_a_rounding_away() -> None:
+    amounts = source("E1", 1010940, "LKMNH")
+    assert amount_in_text(Decimal(797_892), list(amounts.values)) is True  # 0.13 % from 798.892: the tolerance alone
+    assert Decimal(797_892) in amounts.not_amounts and amounts.confirming(Decimal(797_892)) == ()
+    assert confirmed(798_892, amounts) is True and amount_basis(Decimal(798_892), amounts) == "table_cumulative"
+    assert confirmed("798892.4", amounts) is True  # a rounding of the real total still passes
+    assert amount_basis(Decimal(797_892), amounts) is None
+    assert gate_outcome(797_892, amounts) == "reject" and gate_outcome(798_892, amounts) == "pass"
+
+
+def test_a_cell_that_is_also_a_real_amount_stays_an_amount() -> None:
+    amounts = source("E1", 1010940, "LKMNH")
+    assert not set(amounts.not_amounts) & set(amounts.values)
+    assert confirmed(1_000, amounts) is True
 
 
 def test_844819_reads_the_nominal_and_derives_the_value_at_the_midpoint() -> None:
@@ -275,6 +294,7 @@ def test_verified_attachment_rows_are_read_without_the_holding_columns() -> None
     amounts = read_source("E2", "Pay Alım Satım Bildirimi", "ETYAT", attachment=VERIFIED)
     assert {Decimal(111_110), Decimal(12_180), Decimal(98_930)} <= set(amounts.written)
     assert Decimal(1_806_443) not in amounts.values and Decimal(1_707_513) not in amounts.values
+    assert {Decimal(1_806_443), Decimal(1_707_513)} <= set(amounts.not_amounts)  # a holding is never the amount
     assert (Decimal(123_290), "table_sum") in amounts.derived  # bought + sold
 
 

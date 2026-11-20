@@ -5,6 +5,7 @@ import "./onboarding.css";
 
 import { Dialog as D } from "radix-ui";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useOptionalApi } from "@/lib/api/react";
 import { Button } from "@/components/ui/button";
 import { StepDecide, StepRead, StepSift } from "./illustrations";
 import { hasSeenHowTo, markHowToSeen } from "./seen";
@@ -43,11 +44,19 @@ export function HowItWorks() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const heading = useRef<HTMLHeadingElement | null>(null);
+  const api = useOptionalApi();
 
   useEffect(() => {
-    // After mount: the server cannot know what this browser remembers.
+    // After mount: the server cannot know what this browser remembers. A brand-new install is first
+    // asked for its money, and that screen says the same three things: it is not read to them twice.
+    let alive = true;
     const first = setTimeout(() => {
-      if (!hasSeenHowTo(window.localStorage)) setOpen(true);
+      if (hasSeenHowTo(window.localStorage)) return;
+      if (!api) return setOpen(true);
+      api.overview().then(
+        (o) => alive && !o.needs_setup && setOpen(true),
+        () => undefined,
+      );
     }, 0);
     const show = () => {
       setStep(0);
@@ -55,10 +64,11 @@ export function HowItWorks() {
     };
     window.addEventListener(OPEN_EVENT, show);
     return () => {
+      alive = false;
       clearTimeout(first);
       window.removeEventListener(OPEN_EVENT, show);
     };
-  }, []);
+  }, [api]);
 
   const close = useCallback(() => {
     markHowToSeen(window.localStorage);

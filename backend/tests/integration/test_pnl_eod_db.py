@@ -9,7 +9,7 @@ import pytest
 from kaptan.db import DictConn
 from kaptan.portfolio.pnl import LIVE_STRATEGY, list_pnl
 from kaptan.risk.pnl_eod import EW_UNIVERSE, XU100_BH, run_pnl_eod
-from tests.integration.test_risk_live_db import CAPITAL, add_bar, one_position_desk, rows
+from tests.integration.test_risk_live_db import add_bar, one_position_desk, rows
 
 pytestmark = pytest.mark.integration
 
@@ -31,7 +31,7 @@ async def test_eod_rows_for_the_strategy_and_the_baselines(pg: DictConn) -> None
     )
     seeded = await rows(pg, "SELECT strategy, d, ord FROM trading.pnl_daily ORDER BY ord")
 
-    no_index = await run_pnl_eod(pg, DAY, capital=CAPITAL)
+    no_index = await run_pnl_eod(pg, DAY)
     assert [r.strategy for r in no_index] == [LIVE_STRATEGY]  # no XU100 / universe prices yet
     strat = no_index[0]
     assert strat.equity == 1_002_973.75  # cash 949 973.75 + 1 000 × 53
@@ -44,7 +44,7 @@ async def test_eod_rows_for_the_strategy_and_the_baselines(pg: DictConn) -> None
     await add_bar(pg, "ORNEK", PREV, 50.0, 50.0)  # ORNEK +6 %, ORNCM −2 %: equal weight +2 %
     await add_bar(pg, "ORNCM", PREV, 100.0, 100.0)
     await add_bar(pg, "ORNCM", DAY, 99.0, 98.0)
-    again = await run_pnl_eod(pg, DAY, capital=CAPITAL)
+    again = await run_pnl_eod(pg, DAY)
     by = {r.strategy: r for r in again}
     assert by[XU100_BH].daily_return == pytest.approx(0.02) and by[XU100_BH].equity == pytest.approx(1_030_200)
     assert by[EW_UNIVERSE].daily_return == pytest.approx(0.02)
@@ -53,7 +53,7 @@ async def test_eod_rows_for_the_strategy_and_the_baselines(pg: DictConn) -> None
     written = await rows(pg, "SELECT strategy, ord FROM trading.pnl_daily WHERE d = %s ORDER BY ord", (DAY,))
     assert [w["strategy"] for w in written] == [LIVE_STRATEGY, XU100_BH, EW_UNIVERSE]
     first_ord = written[0]["ord"]
-    await run_pnl_eod(pg, DAY, capital=CAPITAL)  # idempotent: same rows, same ord
+    await run_pnl_eod(pg, DAY)  # idempotent: same rows, same ord
     assert (await rows(pg, "SELECT ord FROM trading.pnl_daily WHERE d = %s AND strategy = %s", (DAY, LIVE_STRATEGY)))[
         0
     ]["ord"] == first_ord
@@ -64,4 +64,4 @@ async def test_eod_rows_for_the_strategy_and_the_baselines(pg: DictConn) -> None
 
 
 async def test_no_rows_on_holidays(pg: DictConn) -> None:
-    assert await run_pnl_eod(pg, date(2026, 10, 29), capital=CAPITAL) == []  # Cumhuriyet Bayramı
+    assert await run_pnl_eod(pg, date(2026, 10, 29)) == []  # Cumhuriyet Bayramı

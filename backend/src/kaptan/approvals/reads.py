@@ -36,7 +36,7 @@ ORDER BY a.created_at DESC, a.proposal_id
 
 TICKET_SQL: Final = """
 SELECT t.ticket_no, t.doc, t.entry_status, t.filled_qty, t.avg_price, t.filled_at, t.note, t.marked_at,
-       t.valid_until, t.created_at
+       t.valid_until, t.created_at, t.commission_try, t.commission_estimated, t.late
 FROM trading.order_tickets t JOIN trading.agent_runs r ON r.run_id = t.run_id
 WHERE r.visible AND (%(no)s::text IS NULL OR t.ticket_no = %(no)s)
   AND (%(run)s::text IS NULL OR t.run_id = %(run)s)
@@ -89,7 +89,7 @@ def card_from_row(row: dict[str, Any], *, kill_on: bool, now: datetime) -> dict[
         "decision_comment": row["decision_comment"],
         "approved_notional_try": row["approved_notional_try"],
     }
-    if card["status"] == "pending" and kill_on:
+    if card["status"] == "pending" and kill_on and card.get("side", "buy") == "buy":  # an exit stays open (X5)
         return {**card, "status": "cancelled"}
     if card["status"] == "pending" and row["expires_at"] <= now:
         return {**card, "status": "expired"}
@@ -124,6 +124,9 @@ def ticket_from_row(row: dict[str, Any], now: datetime) -> dict[str, Any]:
             "filled_at": _iso(row["filled_at"]),
             "note": row["note"],
             "marked_at": _iso(row["marked_at"]),
+            "commission_try": float(row["commission_try"] or 0),
+            "commission_estimated": bool(row["commission_estimated"]),
+            "late": bool(row["late"]),
         }
     return {**row["doc"], "entry": effective_entry(row["valid_until"], mark, now)}
 

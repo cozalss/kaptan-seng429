@@ -1,6 +1,7 @@
 import type { AuditEntry } from "@/lib/domain";
 import { actorParts, isPerson, SYSTEM } from "@/lib/actors";
 import { titleTr } from "@/components/story/turkish";
+import { fmtLira } from "@/lib/solo/words";
 
 /**
  * One audit record as one plain Turkish sentence ("Koru Çelik önerisini onayladın.").
@@ -69,6 +70,31 @@ function ticketIssued(e: AuditEntry, what: string): string {
   return `${qty} adetlik ${side ? `${side} ` : ""}işlem hazırlandı.`;
 }
 
+/** The payload's amount as "50.000 ₺" (kuruş only when there is one), or null when it is missing. */
+function lira(v: unknown): string | null {
+  return typeof v === "number" && Number.isFinite(v) ? fmtLira(v, !Number.isInteger(v)) : null;
+}
+
+/** "Başlangıç paranı girdin: 50.000 ₺." The amount is left out when the record has none. */
+const moneyPhrase = (lead: string): Phrase => (e) => {
+  const amount = lira(e.payload.amount_try);
+  return amount ? `${lead}: ${amount}.` : `${lead}.`;
+};
+
+function holdingAdded(e: AuditEntry, what: string): string {
+  const qty = str(e.payload.qty);
+  const cost = lira(e.payload.avg_cost);
+  const base = `Elindeki ${what} hissesini ekledin`;
+  if (!qty) return `${base}.`;
+  return cost ? `${base}: ${qty} adet, tanesi ${cost}.` : `${base}: ${qty} adet.`;
+}
+
+function holdingSold(e: AuditEntry, what: string): string {
+  const qty = str(e.payload.qty);
+  const base = `${upperFirst(what)} hissesini sattığını kaydettin`;
+  return qty ? `${base}: ${qty} adet.` : `${base}.`;
+}
+
 function regimeChanged(e: AuditEntry): string {
   if (e.payload.to === "crisis") return "Piyasa kriz günlerine girdi; yeni alımlar yarı tutarla yapılacak.";
   if (e.payload.to === "normal") return "Piyasa normale döndü.";
@@ -98,6 +124,11 @@ const PHRASES: Readonly<Record<string, Phrase>> = {
   "ticket.entered": () => "İşlemi bankana girdiğini işaretledin.",
   "ticket.unfilled": () => "İşlemin gerçekleşmediğini işaretledin.",
   "ticket.canceled": () => "İşlemi girmediğini işaretledin.",
+  "money.started": moneyPhrase("Başlangıç paranı girdin"),
+  "money.deposited": moneyPhrase("Kasana para ekledin"),
+  "money.withdrawn": moneyPhrase("Kasandan para çektin"),
+  "holding.added": (e, what) => holdingAdded(e, what),
+  "holding.sold": (e, what) => holdingSold(e, what),
   "kill_switch.on": (e) => (isPerson(e.actor) ? "Her şeyi durdurdun." : "Paran zirvesinden %5 düştü; KAPtan her şeyi durdurdu."),
   "kill_switch.reset_started": () => "Yeniden başlatmayı istedin.",
   "kill_switch.reset": () => "İşlemleri yeniden başlattın.",

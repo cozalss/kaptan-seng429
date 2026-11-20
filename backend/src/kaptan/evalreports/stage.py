@@ -28,19 +28,26 @@ HOLDOUT_T: Final = 2.0
 HOLDOUT_N: Final = 30
 
 STAGES: Final = (
-    ("evidence", 0, "Kanıt", "Eki–Kas 2026", "Geçmiş olaylarda kural bir kez, ayrılmış dönemde sınanır."),
-    ("paper", 1, "Paper", "9 Kas 2026 → en az 3 ay", "Dondurulmuş kurallarla SimBIST'te işlem; para yok."),
-    ("shadow", 2, "Gölge", "Paper'dan sonra, en az 4 hafta", "Gerçek işlem bilgisi çıkar, gerçek para kullanılmaz."),
+    ("evidence", 0, "Kanıt", "Ekim–Kasım 2026", "Geçmiş bildirimlerde kural bir kez, ayrılmış dönemde sınanır."),
+    (
+        "paper",
+        1,
+        "Deneme",
+        "9 Kasım 2026'dan başlayarak en az 3 ay",
+        "Kurallar sabit; öneriler çıkar, gerçek para şart değil.",
+    ),
+    ("shadow", 2, "İzleme", "Denemeden sonra, en az 4 hafta", "İşlem bilgisi çıkar, gerçek para kullanılmaz."),
     ("small_real", 3, "Küçük gerçek para", "Nisan–Haziran 2027", "Ayrı hesapta küçük tutar, işlemi sen girersin."),
 )
 TICKET_MODE_TR: Final = {
     "evidence": "Onaylanan öneri yalnızca kayda geçer; işlem bilgisi çıkmaz.",
-    "paper": "Onaylanan öneri deneme hesabında gerçekleşir; işlem bilgisi yalnızca bilgi içindir.",
+    # No simulated fill on a running system: the person enters the order at their bank, or does not, and records it.
+    "paper": "Onayladığın öneri için işlem bilgisi çıkar; KAPtan kendisi işlem yapmaz, gerçekleşeni sen kaydedersin.",
     "shadow": "İşlem bilgisi çıkar; gerçek para kullanılmaz, fiyatı not edersin.",
     "small_real": "İşlem bilgisini banka ya da aracı kurum uygulamana sen girersin.",
 }
 
-CLOSED_SQL: Final = "SELECT count(*)::int AS n FROM trading.closed_positions WHERE book = 'paper' AND closed_at < %s"
+CLOSED_SQL: Final = "SELECT count(*)::int AS n FROM trading.closed_positions WHERE closed_at < %s"
 DD_SQL: Final = "SELECT min(drawdown)::float8 AS dd FROM trading.pnl_daily WHERE strategy = %s AND d <= %s"
 
 
@@ -71,8 +78,8 @@ def _criterion(
 
 def evidence_criteria(report: Mapping[str, Any] | None) -> list[dict[str, Any]]:
     """The one criterion from the stored run: unmeasured until it ran; the first passing type, else the closest."""
-    target = f"t ≥ 2,0 · n ≥ {HOLDOUT_N} · ortalama > 0"
-    label = "Ayrılmış dönemde en az bir olay tipi geçer"
+    target = f"en az {HOLDOUT_N} olayda, ortalama kazançlı ve tesadüf olmayacak kadar tutarlı"
+    label = "Ayrılmış dönemde en az bir bildirim türü sınavı geçer"
     types = (report or {}).get("types") or {}
     if not types:
         return [_criterion("holdout", label, "Henüz ölçülmedi", target, 0.0, False, "kanonik")]
@@ -82,7 +89,7 @@ def evidence_criteria(report: Mapping[str, Any] | None) -> list[dict[str, Any]]:
     )
     best = types[best_code]["base"]
     t, n, mean = float(best["t_bmp_kp"] or 0.0), int(types[best_code]["n"]), float(best["mean_car_net"] or 0.0)
-    cur = f"{best_code}: t = {t:.2f}".replace(".", ",") + f" · n = {n} · ort. {pct_tr(mean, 2)}"
+    cur = f"{best_code} türü: {n} olay, ortalama {pct_tr(mean, 2)}, tutarlılık puanı " + f"{t:.2f}".replace(".", ",")
     progress = min(t / HOLDOUT_T, n / HOLDOUT_N, 1.0) if mean > 0 else 0.0
     return [_criterion("holdout", label, cur, target, progress, bool(best["passed"]), "kanonik")]
 
@@ -100,7 +107,7 @@ def paper_criteria(trades: int, days: int, dd: float) -> list[dict[str, Any]]:
         ),
         _criterion(
             "paper_days",
-            "Paper süresi",
+            "Deneme süresi",
             f"{days} / {MIN_PAPER_DAYS} gün",
             "en az 3 ay",
             days / MIN_PAPER_DAYS,
@@ -109,7 +116,7 @@ def paper_criteria(trades: int, days: int, dd: float) -> list[dict[str, Any]]:
         ),
         _criterion(
             "max_dd",
-            "En büyük düşüş",
+            "En büyük değer kaybı",
             pct_tr(dd),
             f"en fazla {pct_tr(-MAX_PAPER_DD, 0)}",
             None,

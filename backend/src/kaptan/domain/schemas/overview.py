@@ -22,6 +22,7 @@ class Allocation(KModel):
     amount: float = Field(ge=0)
     weight: float = Field(ge=0)
     pnl_pct: float
+    price_as_of: IsoDateTime | None
 
 
 class OpenSuggestion(KModel):
@@ -34,11 +35,18 @@ class OpenSuggestion(KModel):
 
 
 class MeOverview(KModel):
-    capital_start: float = Field(gt=0)
+    """The person's own book. `needs_setup`: the starting money is not entered yet; every money field is 0 and
+    the lists are empty. `capital_start` = money put in so far (start + deposits - withdrawals + cost of the
+    holdings entered by hand); `pnl_abs` = `equity_now - capital_start`; `prices_as_of` = the oldest "known at"
+    time among the prices used for the holdings (null with none)."""
+
+    needs_setup: bool
+    capital_start: float = Field(ge=0)
     equity_now: float
     cash: float = Field(ge=0)
     pnl_abs: float
     pnl_pct: float
+    prices_as_of: IsoDateTime | None
     equity_series: list[EquityPoint]
     allocations: list[Allocation]
     open_suggestions: list[OpenSuggestion]

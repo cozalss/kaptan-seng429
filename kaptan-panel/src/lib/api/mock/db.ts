@@ -21,9 +21,10 @@ export class MockDb {
   /** The last chain built and what it was built from (appends + tamper flag). */
   private chain: { appends: MockState["auditAppends"]; tamperOn: boolean; entries: readonly AuditEntry[] } | null = null;
 
-  constructor(storage: Storage | null, realNow: number = Date.now()) {
+  /** `fresh`: start as a new install with no starting money (tests of the first-run screen). */
+  constructor(storage: Storage | null, realNow: number = Date.now(), fresh = false) {
     this.storage = storage;
-    this.state = loadState(storage, realNow);
+    this.state = loadState(storage, realNow, fresh);
   }
 
   get snapshot(): MockState {
@@ -59,8 +60,8 @@ export class MockDb {
     this.state = loadState(this.storage, realNow);
   }
 
-  reset(realNow: number = Date.now()): void {
-    this.state = initialState(realNow);
+  reset(realNow: number = Date.now(), fresh = false): void {
+    this.state = initialState(realNow, fresh);
     saveState(this.storage, this.state);
   }
 
@@ -89,10 +90,22 @@ function browserStorage(): Storage | null {
   }
 }
 
+/** A browser test sets this key to "1" before the first load to begin as a new install (no starting money yet). */
+export const FRESH_KEY = "kaptan-mock-fresh";
+
+function wantsFresh(storage: Storage | null): boolean {
+  try {
+    return storage?.getItem(FRESH_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 /** One MockDb per browser tab. On the server a throwaway instance is returned. */
 export function getMockDb(): MockDb {
   if (typeof window === "undefined") return new MockDb(null);
-  singleton ??= new MockDb(browserStorage());
+  const storage = browserStorage();
+  singleton ??= new MockDb(storage, Date.now(), wantsFresh(storage));
   return singleton;
 }
 

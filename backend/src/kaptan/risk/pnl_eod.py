@@ -3,8 +3,10 @@ two baselines, the series the P&L chart and the risk status read.
 
     rows = await run_pnl_eod(conn, date(2026, 10, 20))         # after 18:30 Istanbul (EOD prices stored)
 
-- `kaptan:v1.1-fwd`: the paper book marked at the session's EOD time (close_known_at), daily return
-  against the previous row (or the capital), running peak, drawdown, open positions, today's fills.
+- `kaptan:v1.1-fwd`: the person's own book marked at the session's EOD time (close_known_at), daily return
+  against the day-start level (the previous close shifted by the day's deposits and withdrawals, see
+  `kaptan.risk.book`), running peak, drawdown, open positions, today's recorded fills. Nothing is written
+  before the starting money exists.
 - `baseline:xu100_bh`: XU100 buy-and-hold, chained from its previous row (first row: the strategy's
   previous equity) with the index's adjusted close-to-close return; skipped without both closes.
 - `baseline:ew_universe`: equal weight over the in-universe issuers with an adjusted close on both
@@ -22,12 +24,13 @@ from typing import Any, Final
 
 from psycopg import AsyncConnection
 
+from kaptan.portfolio import ledger
+from kaptan.portfolio.ledger import CENT
 from kaptan.portfolio.pnl import LIVE_STRATEGY
 from kaptan.prices.calendar import close_known_at, is_trading_day, prev_session
 from kaptan.prices.reads import adjusted_series
-from kaptan.risk.book import CENT, paper_book
+from kaptan.risk.book import own_book
 from kaptan.risk.desk import istanbul_day_bounds
-from kaptan.settings import get_settings
 
 XU100_BH: Final = "baseline:xu100_bh"
 EW_UNIVERSE: Final = "baseline:ew_universe"
@@ -42,10 +45,6 @@ VALUES (%s, %s, (SELECT coalesce(max(ord), -1) + 1 FROM trading.pnl_daily), %s, 
 ON CONFLICT (strategy, d) DO UPDATE SET equity = EXCLUDED.equity, daily_return = EXCLUDED.daily_return,
   peak_equity = EXCLUDED.peak_equity, drawdown = EXCLUDED.drawdown, n_positions = EXCLUDED.n_positions,
   n_trades = EXCLUDED.n_trades
-"""
-TRADES_SQL: Final = """
-SELECT count(*) AS n FROM trading.fills f JOIN trading.orders o ON o.id = f.order_id
- WHERE o.broker = 'simbist' AND f.filled_at >= %s AND f.filled_at < %s
 """
 EW_SQL: Final = """
 SELECT a.ticker, a.d, a.adj_close FROM core.prices_daily_adj a JOIN core.issuers i ON i.ticker = a.ticker
@@ -76,7 +75,7 @@ def chained(strategy: str, day: date, prev: tuple[Decimal, Decimal], ret: Decima
     """The next point of a series: equity = previous × (1 + ret), running peak, drawdown ≤ 0."""
     equity = (prev[0] * (1 + ret)).quantize(CENT)
     peak = max(prev[1], prev[0], equity)
-    drawdown = round(float(min(Decimal(0), equity / peak - 1)), 5)
+    drawdown = round(float(min(Decimal(0), equity / peak - 1)), 5) if peak > 0 else 0.0
     return PnlRow(strategy, day, float(equity), round(float(ret), 5), float(peak), drawdown, **kw)
 
 
@@ -105,17 +104,16 @@ async def _ew_return(conn: AsyncConnection[Any], day: date) -> Decimal | None:
     return sum(rets, Decimal(0)) / len(rets) if rets else None
 
 
-async def run_pnl_eod(conn: AsyncConnection[Any], day: date, *, capital: float | None = None) -> list[PnlRow]:
+async def run_pnl_eod(conn: AsyncConnection[Any], day: date) -> list[PnlRow]:
     """Write `day`'s rows (inside the caller's transaction if there is one); returns what was written.
     A non-session day writes nothing."""
     if not is_trading_day(day):
         return []
-    cap = Decimal(str(capital or get_settings().paper_capital_try))
     at = close_known_at(day)
-    book = await paper_book(conn, at, capital=cap)
-    async with conn.cursor() as cur:
-        await cur.execute(TRADES_SQL, istanbul_day_bounds(at))
-        trades = await cur.fetchone()
+    book = await own_book(conn, at)
+    if not book.started:
+        return []
+    trades = await ledger.trades_between(conn, *istanbul_day_bounds(at))
     strategy_prev = (book.day_start_equity, book.prior_peak)
     ret = book.equity / book.day_start_equity - 1 if book.day_start_equity > 0 else Decimal(0)
     rows = [
@@ -125,7 +123,7 @@ async def run_pnl_eod(conn: AsyncConnection[Any], day: date, *, capital: float |
             strategy_prev,
             ret,
             n_positions=len(book.holdings),
-            n_trades=int(trades["n"]) if trades else 0,
+            n_trades=trades,
         )
     ]
     for strategy, fetch in ((XU100_BH, _index_return), (EW_UNIVERSE, _ew_return)):
@@ -133,6 +131,8 @@ async def run_pnl_eod(conn: AsyncConnection[Any], day: date, *, capital: float |
         if r is None:
             continue
         prev = await _prev(conn, strategy, day) or (book.day_start_equity, book.day_start_equity)
+        if prev[0] <= 0:
+            continue  # an empty book has no baseline to chain from
         rows.append(chained(strategy, day, prev, r))
     for row in rows:
         await _write(conn, row)

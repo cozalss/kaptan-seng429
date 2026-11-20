@@ -1,5 +1,6 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { mockApi, renderWithApi } from "@/components/solo/money.test-utils";
 import { HowItWorks, openHowItWorks } from "./how-it-works";
 import { HOWTO_KEY } from "./seen";
 
@@ -61,5 +62,26 @@ describe("KAPtan nasıl çalışır", () => {
     render(<HowItWorks />);
     const dialog = await screen.findByRole("dialog");
     await waitFor(() => expect(within(dialog).getByRole("heading", { level: 2 })).toHaveFocus());
+  });
+
+  it("does not open on a new install: the first question says the same three things", async () => {
+    renderWithApi(<HowItWorks />, mockApi({ fresh: true }));
+    await act(() => new Promise((r) => setTimeout(r, 50)));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(window.localStorage.getItem(HOWTO_KEY)).toBeNull();
+  });
+
+  it("opens on the first visit once the money has been entered", async () => {
+    const api = mockApi({ fresh: true });
+    await api.moveMoney({ kind: "start", amount_try: 5_000 });
+    renderWithApi(<HowItWorks />, api);
+    expect(await screen.findByRole("dialog", { name: "KAPtan okur." })).toBeInTheDocument();
+  });
+
+  it("can still be opened by hand on a new install", async () => {
+    renderWithApi(<HowItWorks />, mockApi({ fresh: true }));
+    await act(() => new Promise((r) => setTimeout(r, 50)));
+    act(() => openHowItWorks());
+    expect(await screen.findByRole("dialog", { name: "KAPtan okur." })).toBeInTheDocument();
   });
 });

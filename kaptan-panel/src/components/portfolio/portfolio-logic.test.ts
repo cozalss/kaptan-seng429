@@ -2,6 +2,9 @@ import type { Position } from "@/lib/domain";
 import { holdingProgress, istanbulDate, positionReturn, sessionsBetween } from "./risk-math";
 
 const pos = (over: Partial<Position> = {}): Position => ({
+  id: "pos-1",
+  origin: "suggestion",
+  price_as_of: null,
   ticker: "ORNEK",
   company_name: "MİSAL ENERJİ A.Ş.",
   qty: 100,

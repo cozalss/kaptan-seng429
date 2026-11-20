@@ -12,10 +12,13 @@ $MinPasswordLength = 10
 $MaxPasswordLength = 200
 $ProviderKeys = @('GEMINI_API_KEY', 'DEEPSEEK_API_KEY', 'GROQ_API_KEY')
 $GeneratedSecrets = @{ JWT_SECRET = 64; POSTGRES_PASSWORD = 40; KAPTAN_APP_PASSWORD = 40; REDIS_PASSWORD = 40 }
+$AlertNames = @(
+    'ALERT_NTFY_TOPIC', 'ALERT_SMTP_HOST', 'ALERT_SMTP_PORT', 'ALERT_SMTP_USER', 'ALERT_SMTP_PASSWORD', 'ALERT_SMTP_TO'
+)
 $OrderedNames = @(
     'JWT_SECRET', 'PASSPHRASE_HASH', 'POSTGRES_PASSWORD', 'KAPTAN_APP_PASSWORD', 'REDIS_PASSWORD',
-    'GEMINI_API_KEY', 'DEEPSEEK_API_KEY', 'GROQ_API_KEY', 'KAPTAN_BACKUP_DIR'
-)
+    'GEMINI_API_KEY', 'DEEPSEEK_API_KEY', 'GROQ_API_KEY'
+) + $AlertNames + @('KAPTAN_BACKUP_DIR')
 
 function New-Secret([int]$Length) {
     $rng = New-Object System.Security.Cryptography.RNGCryptoServiceProvider
@@ -52,6 +55,7 @@ function Read-NewPassword {
 function Get-Password($Current) {
     if ($PasswordFromStdin) {
         $line = [Console]::In.ReadLine()
+        if ($line) { $line = $line.TrimStart([char]0xFEFF) }  # başka bir PowerShell'den borulanınca başa BOM gelebilir
         if ([string]::IsNullOrEmpty($line)) {
             if ($Current['PASSPHRASE_HASH']) { return $null }
             Fail 'Parola gelmedi.'
@@ -103,6 +107,73 @@ function Get-BackupDir($Current) {
     if ($dir -match "'") { Fail "Yedek klasörünün adında ' olamaz: $dir" }
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
     return ((Resolve-Path $dir).Path -replace '\\', '/')
+}
+
+function Test-Topic([string]$Topic) { return ($Topic -match '^[A-Za-z0-9_-]{16,64}$') }
+
+function Read-Yes([string]$Prompt, [bool]$Default) {
+    $answer = Read-Host $Prompt
+    if (-not $answer) { return $Default }
+    return ($answer -match '^[eEyY]')
+}
+
+function Get-PhoneTopic($Current) {
+    # Konu adı bir sırdır: bilen herkes bildirimleri okuyabilir. Var olan korunur; yenisi yalnız bir kez gösterilir.
+    $topic = $Current['ALERT_NTFY_TOPIC']
+    if ($topic -and (Test-Topic $topic)) {
+        if (-not (Read-Yes 'Telefon bildirimi açık. Yeni bir konu adı üretilsin mi? Eskisi çalışmaz olur. (e/H)' $false)) { return $topic }
+    } elseif (-not (Read-Yes 'Telefona bildirim ister misin? (E/h)' $true)) {
+        return ''
+    }
+    $topic = 'kaptan-' + (New-Secret 24)
+    Say ''
+    Say 'Telefon bildirimi için sırayla:'
+    Say '  1) Telefonuna ücretsiz ntfy uygulamasını kur.'
+    Say "  2) Konu adın: $topic"
+    Say '  3) Telefondaki ntfy uygulamasında “konuya abone ol”a dokun ve o konu adını yaz.'
+    Say '  4) Konu adını kimseyle paylaşma.'
+    Say 'Bu adı bir daha göstermem. Bildirimde hisse adı ya da tutar olmaz; yalnız "Yeni bir önerin var" gibi bir cümle gelir.'
+    [void](Read-Host 'Telefona yazdıysan Enter''a bas')
+    return $topic
+}
+
+function Read-EmailSettings($Current) {
+    # Hepsi isteğe bağlı: Enter'la geçilir. Parola görünmez ve ekrana yazılmaz.
+    $none = @{ ALERT_SMTP_HOST = ''; ALERT_SMTP_PORT = ''; ALERT_SMTP_USER = ''; ALERT_SMTP_PASSWORD = ''; ALERT_SMTP_TO = '' }
+    $kept = @{}
+    foreach ($name in $none.Keys) { $kept[$name] = $Current[$name] }
+    $isOn = [bool]$Current['ALERT_SMTP_HOST']
+    $question = if ($isOn) { 'E-posta bildirimi açık. Ayarlarını değiştirmek ister misin? (e/H)' } else { 'E-posta ile de bildirim ister misin? (e/H)' }
+    if (-not (Read-Yes $question $false)) { return $kept }
+    Say 'Bildirim e-postayı gönderecek bir hesabın posta sunucusu bilgisi gerekir. Enter: vazgeç.'
+    $hostName = (Read-Host 'Sunucu adı (örn. smtp.gmail.com)').Trim()
+    if (-not $hostName) { return $kept }
+    $port = (Read-Host 'Port (Enter: 587; 465 de olabilir)').Trim()
+    if (-not $port) { $port = '587' }
+    $user = (Read-Host 'Kullanıcı adı').Trim()
+    $password = Read-Hidden 'E-posta parolası (görünmez)'
+    $to = (Read-Host 'Bildirimin gideceği e-posta adresi').Trim()
+    $fields = @($hostName, $port, $user, $password, $to)
+    $problem = $null
+    if ($hostName -notmatch '^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$') { $problem = 'Sunucu adı geçersiz.' }
+    elseif ($port -notmatch '^[0-9]{1,5}$') { $problem = 'Port bir sayı olmalı.' }
+    elseif ($to -notmatch '^[^@\s'']+@[^@\s'']+\.[^@\s'']+$') { $problem = 'E-posta adresi geçersiz.' }
+    elseif (@($fields | Where-Object { $_ -match "['\r\n]" }).Count -gt 0) { $problem = 'Değerlerde '' ve satır sonu olamaz.' }
+    if ($problem) { Say "$problem E-posta ayarı değişmedi. İstersen .\kur.ps1'i yeniden çalıştır."; return $kept }
+    return @{ ALERT_SMTP_HOST = $hostName; ALERT_SMTP_PORT = $port; ALERT_SMTP_USER = $user; ALERT_SMTP_PASSWORD = $password; ALERT_SMTP_TO = $to }
+}
+
+function Get-AlertSettings($Current) {
+    # Deneme kurulumunda (-PasswordFromStdin) hiçbir şey sorulmaz ve bildirim açılmaz; var olan değerler korunur.
+    $result = @{}
+    foreach ($name in $AlertNames) { $result[$name] = $Current[$name] }
+    if ($PasswordFromStdin) { return $result }
+    Say ''
+    Say 'Bildirimler. KAPtan yeni bir önerin olunca ya da bir şey takılınca haber verebilir.'
+    $result['ALERT_NTFY_TOPIC'] = Get-PhoneTopic $Current
+    $mail = Read-EmailSettings $Current
+    foreach ($name in $mail.Keys) { $result[$name] = $mail[$name] }
+    return $result
 }
 
 function Get-PasswordHash([string]$Password, [string]$Image) {
@@ -177,9 +248,14 @@ $password = Get-Password $current
 $keys = Get-ImportedKeys $current
 if (-not $PasswordFromStdin) { $keys = Read-ProviderKeys $keys }
 $usable = @($ProviderKeys | Where-Object { $keys[$_] })
-if ($usable.Count -eq 0) { Fail 'En az bir sağlayıcı anahtarı gerekli. Yeniden çalıştır ve anahtarı yapıştır.' }
+if ($usable.Count -eq 0) {
+    # Otomatik denemede anahtar verilmez: değerlendirme çalışmaz ama geri kalan her şey sınanır.
+    if (-not $PasswordFromStdin) { Fail 'En az bir sağlayıcı anahtarı gerekli. Yeniden çalıştır ve anahtarı yapıştır.' }
+    Say 'Not: deneme kurulumu, sağlayıcı anahtarı yok; bildirimler değerlendirilmez.'
+}
 if (-not $keys['GEMINI_API_KEY']) { Say 'Not: GEMINI_API_KEY yok; geçmiş bildirim hafızası çalışmaz.' }
 $backupDir = Get-BackupDir $current
+$alerts = Get-AlertSettings $current
 
 $values = @{}
 foreach ($name in $current.Keys) { $values[$name] = $current[$name] }
@@ -188,6 +264,7 @@ foreach ($name in $GeneratedSecrets.Keys) {
 }
 foreach ($name in $ProviderKeys) { $values[$name] = $keys[$name] }
 $values['KAPTAN_BACKUP_DIR'] = $backupDir
+foreach ($name in $AlertNames) { $values[$name] = $alerts[$name] }
 
 $image = if ($values['KAPTAN_BACKEND_IMAGE']) { $values['KAPTAN_BACKEND_IMAGE'] } else { 'kaptan-backend:local' }
 if ($password) {

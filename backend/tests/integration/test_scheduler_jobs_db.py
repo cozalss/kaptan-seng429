@@ -32,7 +32,7 @@ def ctx_for(settings: Settings) -> s.Ctx:
 
 @pytest.mark.parametrize(
     "name",
-    ["market_changes", "universe", "tedbir_sync", "morning_brief", "open_fill", "eod_fills", "pnl_eod", "regime",
+    ["market_changes", "universe", "tedbir_sync", "morning_brief", "pnl_eod", "regime",
      "event_returns", "shadow_returns", "dq", "audit_anchor", "retention"],
 )  # fmt: skip
 async def test_job_body_runs_on_the_seeded_day(pg: DictConn, migrated: Settings, name: str) -> None:

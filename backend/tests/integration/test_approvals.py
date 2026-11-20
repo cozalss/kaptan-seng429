@@ -115,7 +115,7 @@ async def test_halt_blocks_approvals_but_not_rejections(api: httpx.AsyncClient, 
     assert not await sql(migrated, "SELECT 1 FROM trading.orders WHERE proposal_id = 'prop-day-e1-krgcl'")
 
 
-async def test_approving_an_auction_card_places_an_opg_order_and_a_ticket(
+async def test_approving_an_auction_card_writes_only_a_ticket_for_the_auction(
     api: httpx.AsyncClient, migrated: Settings
 ) -> None:
     body = {"decision": "approve", "approved_notional_try": 30_000, "comment": ""}
@@ -123,13 +123,17 @@ async def test_approving_an_auction_card_places_an_opg_order_and_a_ticket(
     assert res.status_code == 200, res.text
     assert res.json()["status"] == "approved"
     assert res.json()["approved_notional_try"] == 30_000
-    order = (await sql(migrated, "SELECT * FROM trading.orders WHERE id = 'ord-s-day-e1-krgcl'"))[0]
-    assert (order["tif"], order["status"], order["qty"]) == ("opg", "pending_open", 878)
+    assert (
+        await sql(migrated, "SELECT 1 FROM trading.orders WHERE broker = 'simbist' AND run_id = 'run-day-e1-krgcl'")
+        == []
+    )  # nothing simulated
+    row = (await sql(migrated, "SELECT doc FROM trading.order_tickets WHERE run_id = 'run-day-e1-krgcl'"))[0]
+    assert row["doc"]["order_type"] == "limit" and row["doc"]["ticket_no"] == "T-2027-0111-013"
     explain = (await call(api, "GET", "/runs/run-day-e1-krgcl/explain")).json()
     assert_matches("Explain", explain)
     assert explain["run"]["status"] == "completed"
     assert explain["ticket"]["ticket_no"] == "T-2027-0111-013"
-    assert [o["broker"] for o in explain["orders"]] == ["simbist", "order_ticket"]
+    assert [o["broker"] for o in explain["orders"]] == ["order_ticket"]
     tickets = (await call(api, "GET", "/tickets")).json()
     assert tickets[0]["ticket_no"] == "T-2027-0111-013"
     actions = await sql(migrated, "SELECT action, payload FROM audit.audit_log ORDER BY chain_pos DESC LIMIT 2")
@@ -141,7 +145,7 @@ async def test_approving_an_auction_card_places_an_opg_order_and_a_ticket(
     assert issued["payload"]["company"] == card["company_name"]  # the ledger line names the company
 
 
-async def test_an_approval_writes_its_ticket_and_order_and_nothing_fills_by_itself(
+async def test_an_approval_writes_its_ticket_and_nothing_fills_by_itself(
     api: httpx.AsyncClient, migrated: Settings
 ) -> None:
     redis = aioredis.from_url(migrated.redis_url.get_secret_value(), decode_responses=True)
@@ -157,7 +161,7 @@ async def test_an_approval_writes_its_ticket_and_order_and_nothing_fills_by_itse
         assert res.status_code == 200, res.text
         events = await redis.xrange(bus.stream_key("desk"), min=f"({before}", max="+")
         names = [fields["event"] for _, fields in events]
-        assert names == ["approval.decided", "ticket", "order"], names
+        assert names == ["approval.decided", "ticket"], names
         decided = json.loads(events[0][1]["data"])
         assert (decided["proposal_id"], decided["status"]) == (DEMO_E3_PROPOSAL, "approved")
         frames = bus.frames(redis, "desk", last_event_id=before, is_disconnected=_never, keepalive_s=1)
@@ -169,8 +173,8 @@ async def test_an_approval_writes_its_ticket_and_order_and_nothing_fills_by_itse
         await redis.aclose()
     explain = (await call(api, "GET", f"/runs/{DEMO_E3_RUN}/explain")).json()
     assert_matches("Explain", explain)
-    simbist = explain["orders"][0]
-    assert (simbist["status"], simbist["fills"]) == ("accepted", [])
+    placed = explain["orders"][0]
+    assert (placed["broker"], placed["fills"]) == ("order_ticket", [])
     assert explain["ticket"]["ticket_no"] == DEMO_TICKET
     assert await sql(migrated, "SELECT 1 FROM trading.positions WHERE run_id = %s", (DEMO_E3_RUN,)) == []
 

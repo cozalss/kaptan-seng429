@@ -18,6 +18,8 @@ import type {
   RiskStatus,
   TicketMarkInput,
 } from "@/lib/domain";
+import type { AlertSettings, SystemStatus } from "@/lib/domain/system";
+import type { HoldingInput, HoldingSellInput, MoneyBook, MoneyInput } from "@/lib/solo/money";
 import type { HoldInput, HoldResult, Overview } from "@/lib/solo/overview";
 
 /**
@@ -59,6 +61,16 @@ export interface KaptanApi {
   /** "Tut" / "Geç" on a suggestion (POST /me/suggestions/{id}/hold): audited; the card itself stays open. */
   holdSuggestion(id: string, input: HoldInput): Promise<HoldResult>;
 
+  // the person's own book: the money they put in and the shares they already held
+  /** GET /me/money: free cash, money put in so far, and every movement of it, newest first. */
+  money(): Promise<MoneyBook>;
+  /** POST /me/money: the starting money (once), a deposit or a withdrawal. Never a gain or a loss. */
+  moveMoney(input: MoneyInput): Promise<MoneyBook>;
+  /** POST /me/holdings: a share already owned before KAPtan joins the book at its cost; cash is untouched. */
+  addHolding(input: HoldingInput): Promise<Position>;
+  /** POST /me/holdings/{id}/sell: a hand-entered holding was sold at the bank; null when nothing is left. */
+  sellHolding(positionId: string, input: HoldingSellInput): Promise<Position | null>;
+
   // portfolio
   positions(): Promise<Position[]>;
   pnl(from?: string, to?: string): Promise<PnlPoint[]>;
@@ -77,6 +89,13 @@ export interface KaptanApi {
   // the audit ledger (hash chain)
   auditList(query?: AuditListQuery): Promise<AuditPage>;
   verifyAudit(): Promise<ChainVerifyResult>;
+
+  /** GET /system/status: is KAPtan actually working (the shell's one line, and Ayarlar · Sistem). */
+  systemStatus(): Promise<SystemStatus>;
+  /** GET /me/alerts: which phone and e-mail channels are set up on this computer. */
+  alertSettings(): Promise<AlertSettings>;
+  /** POST /me/alerts/test: one test message through every channel that is set up (one a minute). */
+  testAlerts(): Promise<AlertSettings>;
 }
 
 export interface DisclosureQuery {

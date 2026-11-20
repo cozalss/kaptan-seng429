@@ -62,7 +62,7 @@ async def test_halt_then_kill_switch(app_conn: DictConn, migrated: Settings) -> 
     await _reset_flags(app_conn)
     await app_conn.commit()
 
-    calm = await run_risk_monitor(app_conn, NOW, capital=CAPITAL)
+    calm = await run_risk_monitor(app_conn, NOW)
     assert calm.ran and calm.events == () and not calm.halted
     state = await _state(app_conn)
     assert state["daily_pnl_pct"] == pytest.approx(-0.00795, abs=1e-5) and not state["halted_today"]
@@ -76,7 +76,7 @@ async def test_halt_then_kill_switch(app_conn: DictConn, migrated: Settings) -> 
     redis = Redis.from_url(migrated.redis_url.get_secret_value())
     try:
         before = await redis.xrevrange(bus.stream_key("desk"), count=1)
-        halt = await run_risk_monitor(app_conn, NOW, redis=redis, capital=CAPITAL)
+        halt = await run_risk_monitor(app_conn, NOW, redis=redis)
         assert halt.halted and halt.events == ("halt",) and not halt.killed
         after = await redis.xrevrange(bus.stream_key("desk"), count=1)
         assert after and after != before
@@ -88,28 +88,26 @@ async def test_halt_then_kill_switch(app_conn: DictConn, migrated: Settings) -> 
     assert (entry["actor"], entry["action"]) == ("system:risk_monitor", "risk.halted")
     assert entry["payload"]["daily_pnl_pct"] == pytest.approx(1_001_973.75 / 1_018_500 - 1, abs=1e-5)
     assert entry["payload"]["limits_version"] == 1
-    again = await run_risk_monitor(app_conn, NOW + timedelta(minutes=5), capital=CAPITAL)
+    again = await run_risk_monitor(app_conn, NOW + timedelta(minutes=5))
     assert not again.halted  # once per day
 
-    # the peak far above: −6 % from it → kill switch, the open ORNCM order cancelled
+    # the peak far above: −6 % from it → kill switch (no simulated order exists to cancel)
     await app_conn.execute("UPDATE trading.pnl_daily SET peak_equity = 1066000 WHERE d = %s", (date(2026, 10, 19),))
     await app_conn.commit()
-    kill = await run_risk_monitor(app_conn, NOW + timedelta(minutes=10), capital=CAPITAL)
+    kill = await run_risk_monitor(app_conn, NOW + timedelta(minutes=10))
     assert kill.killed and kill.events == ("kill_switch",)
     state = await _state(app_conn)
     assert (state["kill_switch"], state["kill_by"]) == ("on", "system:risk_monitor")
     (entry,) = await _audit(app_conn, 1)
     assert entry["action"] == "kill_switch.on"
     assert entry["payload"]["reason"] == "Zirveden −%5 düşüş (R01)"
-    assert entry["payload"]["canceled_orders"] == 1 and entry["payload"]["peak_equity"] == 1_066_000
-    canceled = await rows(app_conn, "SELECT status, cancel_reason FROM trading.orders WHERE id = 'o-orncm'")
-    assert canceled == [{"status": "canceled", "cancel_reason": "kill_switch"}]
+    assert entry["payload"]["canceled_orders"] == 0 and entry["payload"]["peak_equity"] == 1_066_000
     await app_conn.commit()
 
     # next session (after pnl_eod wrote today's close): the halt lifts by itself, the kill switch does not
     await add_pnl(app_conn, date(2026, 10, 20), 1_001_973.75, 1_066_000)
     await app_conn.commit()
-    tomorrow = await run_risk_monitor(app_conn, NOW + timedelta(days=1), capital=CAPITAL)
+    tomorrow = await run_risk_monitor(app_conn, NOW + timedelta(days=1))
     assert tomorrow.halt_cleared and not tomorrow.killed
     state = await _state(app_conn)
     assert not state["halted_today"] and state["kill_switch"] == "on"
@@ -122,13 +120,13 @@ async def test_after_a_restart_the_floor_holds_until_three_percent_more(app_conn
     await add_pnl(app_conn, date(2026, 10, 19), 1_000_000, 1_060_000)  # −5.7 % from the peak, flat today
     await app_conn.execute("UPDATE trading.risk_state SET reset_at = %s", (NOW - timedelta(hours=1),))
     await app_conn.commit()
-    held = await run_risk_monitor(app_conn, NOW, capital=CAPITAL)
+    held = await run_risk_monitor(app_conn, NOW)
     assert not held.killed and float(held.drawdown_pct) == pytest.approx(-0.049)
     assert (await _state(app_conn))["reset_equity"] == CAPITAL
     # a further −3 % below the reset level (cash out of the desk = a loss): real drawdown → kill again
     await app_conn.execute("UPDATE trading.risk_state SET reset_equity = 1032000")
     await app_conn.commit()
-    killed = await run_risk_monitor(app_conn, NOW + timedelta(minutes=5), capital=CAPITAL)
+    killed = await run_risk_monitor(app_conn, NOW + timedelta(minutes=5))
     assert killed.killed and killed.drawdown_pct < -0.05
 
 
@@ -136,6 +134,6 @@ async def test_a_fresh_database_gets_its_risk_state_row(app_conn: DictConn) -> N
     await app_conn.execute("DELETE FROM trading.risk_state")
     await clean_book(app_conn)
     await app_conn.commit()
-    result = await run_risk_monitor(app_conn, datetime(2026, 10, 20, 9, 0, tzinfo=UTC), capital=CAPITAL)
+    result = await run_risk_monitor(app_conn, datetime(2026, 10, 20, 9, 0, tzinfo=UTC))
     assert result.ran and result.equity == CAPITAL
     assert (await _state(app_conn))["kill_switch"] == "off"

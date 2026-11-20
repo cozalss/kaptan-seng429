@@ -1,5 +1,4 @@
-import type { Order } from "@/lib/domain";
-import { DAY_BY_ANCHOR, DAY_TOTAL, DEMO_E3_RUN } from "@/mocks/ids";
+import { DAY_BY_ANCHOR, DAY_TOTAL } from "@/mocks/ids";
 import type { MockDb } from "./db";
 import { approvalCards, counters, explainFor, riskStatus, visibleDisclosures } from "./selectors";
 
@@ -48,58 +47,18 @@ export function stopLiveTicker(): void {
   tickerOn = false;
 }
 
-/* ── after approval: SimBIST paper order + fill, and your order ticket ─ */
+/* ── after approval: the order to enter at the bank ──────────────────── */
+/**
+ * An approval only issues the order the person enters at their own bank. Nothing is bought or sold
+ * here: the book changes when they record the fill they saw (markTicket).
+ */
 export function executeApproved(db: MockDb, proposalId: string): void {
   const card = approvalCards(db.snapshot).find((a) => a.proposal_id === proposalId);
   if (!card) return;
   const ticket = explainFor(db.snapshot, card.run_id)?.ticket;
-  if (ticket) {
-    db.audit("system:order_ticket", "ticket.issued", "order_ticket", ticket.ticket_no, { ticker: card.ticker, company: card.company_name, qty: ticket.qty, side: card.side, limit_price: ticket.limit_price, stage: ticket.stage }, card.run_id);
-    db.bus.emit("desk", "ticket", ticket);
-  }
-  const id = card.run_id.replace(/^run-/, "ord-s-");
-  const isOpenAuction = card.entry === "next_open_auction";
-  const qty = card.approved_notional_try ? Math.max(1, Math.floor(card.approved_notional_try / card.limit_price)) : card.qty;
-  const order: Order = {
-    id,
-    client_order_id: `kaptan-${id}`,
-    proposal_id: proposalId,
-    run_id: card.run_id,
-    ticker: card.ticker,
-    company_name: card.company_name,
-    side: card.side,
-    order_type: "limit",
-    tif: isOpenAuction ? "opg" : "day",
-    qty,
-    limit_price: card.limit_price,
-    status: isOpenAuction ? "pending_open" : "accepted",
-    broker: "simbist",
-    created_at: db.nowIso(),
-    fills: [],
-    is_fixture: card.is_fixture,
-  };
-  db.update((s) => ({ ...s, orders: [...s.orders.filter((o) => o.id !== id), order] }));
-  db.bus.emit("desk", "order", order);
-  if (isOpenAuction) return;
-  later(1_800, () => {
-    const price = card.run_id === DEMO_E3_RUN ? 48.32 : Math.round(card.limit_price * 0.995 * 100) / 100;
-    const notional = price * qty;
-    const commission = Math.round(notional * 0.0005 * 100) / 100;
-    const fill = {
-      id: id.replace(/^ord-/, "fill-"),
-      order_id: id,
-      qty,
-      price,
-      commission,
-      bsmv: Math.round(commission * 0.05 * 100) / 100,
-      slippage_bps: 6,
-      filled_at: db.nowIso(),
-      source: "simbist" as const,
-    };
-    db.update((s) => ({ ...s, orders: s.orders.map((o) => (o.id === id ? { ...o, status: "filled", fills: [fill] } : o)) }));
-    db.audit("system:simbist", "order.filled", "order", id, { ticker: card.ticker, company: card.company_name, qty, price }, card.run_id);
-    db.bus.emit("desk", "fill", { ...fill, ticker: card.ticker });
-  });
+  if (!ticket) return;
+  db.audit("system:order_ticket", "ticket.issued", "order_ticket", ticket.ticket_no, { ticker: card.ticker, company: card.company_name, qty: ticket.qty, side: card.side, limit_price: ticket.limit_price, stage: ticket.stage }, card.run_id);
+  db.bus.emit("desk", "ticket", ticket);
 }
 
 /* ── kill switch & loss simulation (06 §11, 11 Adım 4) ───────────────── */

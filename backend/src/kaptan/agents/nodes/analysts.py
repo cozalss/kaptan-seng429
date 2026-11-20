@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 from kaptan.agents.context import RunContext
 from kaptan.agents.nodes._common import FANOUT_GROUP, ask_or_fail, step
-from kaptan.agents.reader_facts import ground_insider, unreadable_answer
+from kaptan.agents.reader_facts import THRESHOLD_STEP_NOTE, ground_insider, unreadable_answer
 from kaptan.agents.state import KaptanState
 from kaptan.domain.schemas.agents import (
     BuybackExtraction,
@@ -98,6 +98,8 @@ async def reader(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, 
     out, row = await ask_or_fail(ctx, "reader", READER_SCHEMAS[event_type], group=FANOUT_GROUP, state=state)
     if out is not None and facts is not None:
         out = ground_insider(out, facts, ctx.disclosure.text_tr)
+        if out.get("holder_threshold_notice"):  # the trace says it where it was read, not only at the rule
+            row = {**row, "note_tr": THRESHOLD_STEP_NOTE}
     return {"reader": out, "steps": [row], "llm_calls": _called(out)}
 
 

@@ -792,6 +792,16 @@
    "items": {
     "type": "object",
     "properties": {
+     "id": {
+      "type": "string"
+     },
+     "origin": {
+      "type": "string",
+      "enum": [
+       "suggestion",
+       "own"
+      ]
+     },
      "ticker": {
       "type": "string",
       "pattern": "^[A-Z0-9]{3,6}$"
@@ -834,12 +844,20 @@
       "type": "string"
      },
      "event_type": {
-      "type": "string",
-      "enum": [
-       "E1",
-       "E2",
-       "E3",
-       "E4"
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "E1",
+         "E2",
+         "E3",
+         "E4"
+        ]
+       },
+       {
+        "type": "string",
+        "const": "IGNORE"
+       }
       ]
      },
      "strategy_version": {
@@ -860,9 +878,17 @@
        "paper",
        "personal"
       ]
+     },
+     "price_as_of": {
+      "type": [
+       "string",
+       "null"
+      ]
      }
     },
     "required": [
+     "id",
+     "origin",
      "ticker",
      "company_name",
      "qty",
@@ -878,7 +904,8 @@
      "unrealized_pnl",
      "realized_pnl",
      "managed_by_exit_rule",
-     "book"
+     "book",
+     "price_as_of"
     ],
     "additionalProperties": false
    }
@@ -888,6 +915,16 @@
    "items": {
     "type": "object",
     "properties": {
+     "id": {
+      "type": "string"
+     },
+     "origin": {
+      "type": "string",
+      "enum": [
+       "suggestion",
+       "own"
+      ]
+     },
      "ticker": {
       "type": "string",
       "pattern": "^[A-Z0-9]{3,6}$"
@@ -930,12 +967,20 @@
       "type": "string"
      },
      "event_type": {
-      "type": "string",
-      "enum": [
-       "E1",
-       "E2",
-       "E3",
-       "E4"
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "E1",
+         "E2",
+         "E3",
+         "E4"
+        ]
+       },
+       {
+        "type": "string",
+        "const": "IGNORE"
+       }
       ]
      },
      "strategy_version": {
@@ -956,9 +1001,17 @@
        "paper",
        "personal"
       ]
+     },
+     "price_as_of": {
+      "type": [
+       "string",
+       "null"
+      ]
      }
     },
     "required": [
+     "id",
+     "origin",
      "ticker",
      "company_name",
      "qty",
@@ -974,7 +1027,8 @@
      "unrealized_pnl",
      "realized_pnl",
      "managed_by_exit_rule",
-     "book"
+     "book",
+     "price_as_of"
     ],
     "additionalProperties": false
    }

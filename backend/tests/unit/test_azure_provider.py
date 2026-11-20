@@ -12,7 +12,7 @@ from kaptan.llm.factory import azure_spec, build_live_provider
 from kaptan.llm.live import LiveProvider
 from kaptan.llm.provider import LLMRequest
 from kaptan.llm.store import MemoryStore
-from kaptan.settings import Settings, production_problems
+from kaptan.settings import NO_LLM_PROVIDER, Settings, has_llm_provider, production_problems
 from tests.harness.replay import default_cassette
 from tests.unit.llm_support import DEEPSEEK_URL, GEMINI_URL, GROQ_URL, MODELS, chat_body, fake_settings
 
@@ -73,8 +73,11 @@ def test_azure_alone_is_enough_for_live_mode_in_prod_checks() -> None:
     live = _live(_settings(gemini=None, deepseek=None, groq=None))
     assert live.available == ("azure",)
     base = _settings(gemini=None, deepseek=None, groq=None).model_copy(update={"llm_mode": "live"})
-    assert not any("LLM_MODE=live" in p for p in production_problems(base))
+    # the model check belongs to the one process that calls a model (test_settings_prod: only the agent worker)
+    assert not any("LLM_MODE=live" in p for p in production_problems(base, "agent_worker"))
+    assert has_llm_provider(base) is True
     off = _settings(on=False, gemini=None, deepseek=None, groq=None).model_copy(
         update={"llm_mode": "live", "ollama_base_url": None}
     )
-    assert any("LLM_MODE=live" in p for p in production_problems(off))
+    assert NO_LLM_PROVIDER in production_problems(off, "agent_worker")
+    assert has_llm_provider(off) is False  # what /health reports as `llm_ready`

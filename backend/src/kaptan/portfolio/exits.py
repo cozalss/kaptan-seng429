@@ -1,6 +1,7 @@
 """The end-of-day exit job (FR-29, 06 §6): `await run_exits(conn, day)` after the 18:30 EOD prices.
 
-Per open position (paper and personal books of one source proposal are one position here):
+Per open position a ticket fill of the person opened (a share entered by hand has no source
+proposal and is not evaluated):
 X6 raises the stop to break-even; X2 (close ≤ stop), X3 (N1: a new tedbir / restriction or an
 avoid-route disclosure), X4 (E1: sale of bought-back shares; E2: insiders sold ≥ 50 % of the
 original purchase) and X1 (time) raise one SELL proposal through the normal approval flow

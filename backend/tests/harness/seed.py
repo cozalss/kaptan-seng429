@@ -24,6 +24,7 @@ SEEDED_TABLES = (
     "audit.anchors",
     "ops.demo_injections",
     "ops.demo_state",
+    "trading.book_ledger",
     "trading.positions",
     "trading.fills",
     "trading.order_tickets",
@@ -180,6 +181,41 @@ async def _load_execution(conn: AsyncConnection[Any], fx: DemoFixtures, counts: 
     )
 
 
+async def _load_book(conn: AsyncConnection[Any], fx: DemoFixtures, counts: dict[str, int]) -> None:
+    """The person's own book behind the recorded day: the starting money equals the last recorded close (so the
+    day starts level and the peak / drawdown read as recorded) and every recorded position is a buy at its cost."""
+    live = [p for p in fx.json("pnl.json") if p["strategy"] == "kaptan:v1.1-fwd"]
+    start = float(live[-1]["equity"]) if live else 1_000_000.0
+    long_ago = datetime(2020, 1, 1, tzinfo=UTC)
+    insert = """
+        INSERT INTO trading.book_ledger (kind, occurred_at, recorded_at, amount_try, cash_delta, capital_delta,
+          flow_try, equity_before, ticker, qty_delta, price, position_id)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+    rows: list[Row] = [("start", long_ago, long_ago, start, start, start, start, 0, None, 0, None, None)]
+    async with conn.cursor() as cur:
+        await cur.execute("SELECT id, ticker, qty, avg_cost, opened_at FROM trading.positions ORDER BY id")
+        for p in await cur.fetchall():
+            cost = round(p["qty"] * p["avg_cost"], 2)
+            rows.append(
+                (
+                    "buy",
+                    p["opened_at"],
+                    p["opened_at"],
+                    cost,
+                    -cost,
+                    0,
+                    0,
+                    None,
+                    p["ticker"],
+                    p["qty"],
+                    p["avg_cost"],
+                    p["id"],
+                )
+            )
+        await cur.executemany(insert, rows)
+    counts["trading.book_ledger"] = len(rows)
+
+
 async def _load_governance(conn: AsyncConnection[Any], fx: DemoFixtures, counts: dict[str, int]) -> None:
     await _insert(
         conn,
@@ -254,6 +290,7 @@ async def reseed(
         await _load_reference(conn, fx, counts)
         await _load_runs(conn, fx, counts)
         await _load_execution(conn, fx, counts)
+        await _load_book(conn, fx, counts)
         await _load_governance(conn, fx, counts)
         await _insert(conn, AUDIT_INSERT_SQL, audit_rows(fx), counts, "audit.audit_log")
         await conn.execute("ALTER TABLE audit.audit_log ENABLE TRIGGER USER")

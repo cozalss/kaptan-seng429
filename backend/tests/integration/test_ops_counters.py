@@ -60,3 +60,22 @@ async def test_counters_endpoint_takes_a_day(client: Any) -> None:
     assert other.status_code == 200 and other.json()["total"] == 0
     bad = await client.get("/api/v1/disclosures/counters?day=2027-02-30", headers=bearer(session["access_token"]))
     assert bad.status_code == 422
+
+
+async def test_a_waiting_disclosure_says_why_only_when_the_feed_wrote_a_reason(pg: DictConn) -> None:
+    day = datetime(2027, 1, 11, 10, 40, tzinfo=UTC)
+    row = await (await pg.execute("SELECT disclosure_index FROM core.disclosures LIMIT 1")).fetchone()
+    assert row is not None
+    await pg.execute("DELETE FROM ops.agent_feed WHERE status = 'deferred'")
+    assert (await day_counters(pg, day))["deferred_reason_tr"] is None
+    await pg.execute(
+        "INSERT INTO ops.agent_feed (disclosure_index, status, reason, seen_at) VALUES (%s, 'deferred', %s, %s) "
+        "ON CONFLICT (disclosure_index) DO UPDATE SET status = 'deferred', reason = EXCLUDED.reason, "
+        "seen_at = EXCLUDED.seen_at, updated_at = now()",
+        (row["disclosure_index"], "daily_cap", day),
+    )
+    doc = await day_counters(pg, day)
+    assert doc["agent_feed"]["deferred"] == 1
+    assert doc["deferred_reason_tr"] == "Günlük okuma sınırı doldu; kalanlar yarın okunacak."
+    await pg.execute("UPDATE ops.agent_feed SET reason = 'something_new' WHERE status = 'deferred'")
+    assert (await day_counters(pg, day))["deferred_reason_tr"] is None

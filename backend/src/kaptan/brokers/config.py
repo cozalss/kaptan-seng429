@@ -19,8 +19,6 @@ from kaptan.market.ticks import DAILY_LIMIT_BY_MARKET, DAILY_LIMIT_FALLBACK_PCT,
 from kaptan.settings import BACKEND_DIR, Settings
 
 TRADING_FILE: Final = BACKEND_DIR / "config" / "trading.yaml"
-#: The personal account the tickets size for (12 §4); KAPTAN_PERSONAL_ACCOUNT_TRY overrides it.
-DEFAULT_PERSONAL_ACCOUNT_TRY: Final = Decimal(350_000)
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,9 +57,6 @@ class ExecConfig:
     live_env_enabled: bool = False
     #: KAPTAN_MODE=live also asks for live (besides trading.yaml `mode: live`).
     mode_live: bool = False
-    personal_account_try: Decimal = DEFAULT_PERSONAL_ACCOUNT_TRY
-    #: Paper capital when there is no P&L series yet (risk.book uses the same setting).
-    paper_capital_try: Decimal = Decimal(1_000_000)
 
     @property
     def live_requested(self) -> bool:
@@ -117,8 +112,6 @@ def from_settings(settings: Settings) -> ExecConfig:
         trading=load_trading(),
         live_env_enabled=settings.kaptan_live_enabled,
         mode_live=getattr(settings, "kaptan_mode", "paper") == "live",
-        personal_account_try=Decimal(str(settings.personal_account_try)),
-        paper_capital_try=Decimal(str(getattr(settings, "paper_capital_try", 1_000_000))),
     )
 
 

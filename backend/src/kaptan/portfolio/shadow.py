@@ -15,16 +15,17 @@ Idempotent: a signal is collected once (`signal_id`), a return is written once.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Any, Final
 
 from psycopg import AsyncConnection
 
-from kaptan.brokers.fills import auction_day
-from kaptan.prices.calendar import add_sessions, close_known_at
+from kaptan.prices.calendar import IST, add_sessions, close_known_at, is_trading_day, next_session
 from kaptan.prices.reads import forward_return
 
+#: The opening auction collects orders 09:40-09:55; a signal decided before 09:40 joins today's.
+AUCTION_START: Final = time(9, 40)
 BENCHMARK: Final = "XU100"
 HORIZONS: Final = (5, 20)
 EVENTS: Final = ("E1", "E2", "E3", "E4")
@@ -63,6 +64,15 @@ UPDATE trading.shadow_signals SET return_5d = coalesce(return_5d, %s), excess_5d
 class ShadowReport:
     collected: int = 0
     updated: list[str] = field(default_factory=list)
+
+
+def auction_day(decided_at: datetime) -> date:
+    """The session whose opening auction a signal decided at `decided_at` would have joined."""
+    local = decided_at.astimezone(IST)
+    d = local.date()
+    if is_trading_day(d) and local.time() < AUCTION_START:
+        return d
+    return next_session(d)
 
 
 def run_reason(checks: Any, compliance: Any, rule_decision: Any) -> tuple[str, str] | None:

@@ -70,3 +70,13 @@ def istanbul_minutes(at: datetime) -> int:
 def istanbul_at(day: date, hour: int, minute: int, second: int = 0) -> datetime:
     """istanbulIso(day, "HH:MM", s) as an aware UTC datetime."""
     return datetime(day.year, day.month, day.day, hour, minute, second, tzinfo=UTC) - ISTANBUL
+
+
+MONTHS_TR: Final = (
+    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
+)  # fmt: skip
+
+
+def fmt_day_tr(day: date) -> str:
+    """ "20 Kasım 2026"."""
+    return f"{day.day} {MONTHS_TR[day.month - 1]} {day.year}"

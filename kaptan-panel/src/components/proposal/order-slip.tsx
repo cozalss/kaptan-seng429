@@ -97,7 +97,7 @@ export function OrderSlip({
         )}
         {!marked && proposedQty !== null && proposedQty !== t.qty ? (
           <p className="oneri-slip-note">
-            Öneride {fmtInt(proposedQty)} adet yazıyordu. Bu bilgiler {fmtLira(t.account_equity_try)}’lik hesabına göre hesaplandı, bu yüzden {fmtInt(t.qty)} adet.
+            Öneride {fmtInt(proposedQty)} adet yazıyordu. Bu bilgiler paranın şu anki durumuna ({fmtLira(t.account_equity_try)}) göre hesaplandı, bu yüzden {fmtInt(t.qty)} adet.
           </p>
         ) : null}
       </div>
@@ -161,6 +161,8 @@ function Marked({ ticket }: { ticket: OrderTicket }) {
         {ENTRY_LABEL[e.status]}
         {e.status === "entered" && e.filled_qty && e.avg_price ? ` · ${fmtInt(e.filled_qty)} adet, tanesi ${fmtLira(e.avg_price, true)}` : ""}
       </p>
+      {e.status === "entered" ? <p data-testid="komisyon">{e.commission_estimated ? `Komisyonu yazmadın; KAPtan tahmin etti: ${fmtLira(e.commission_try, true)}.` : `Bankanın kestiği komisyon: ${fmtLira(e.commission_try, true)}.`}</p> : null}
+      {e.status === "entered" && e.late ? <p>Süresi dolduktan sonra girdin; yine de Param’a yazıldı, çünkü bankandakiyle aynı olmalı.</p> : null}
       {e.status === "entered" ? (
         <Link href={ROUTES.portfoy} className="oneri-slip-link">
           Param’da gör →

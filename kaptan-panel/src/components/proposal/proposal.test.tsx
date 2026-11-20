@@ -85,10 +85,11 @@ describe("Neden?", () => {
     await waitFor(() => expect(head).toHaveFocus());
     // It opens once, only because it was approved here.
     expect(slip).toHaveClass("oneri-reveal");
-    expect(slip).toHaveTextContent("Öneride 1.480 adet yazıyordu.");
+    // Sized from the real book, the ticket now matches the suggestion: no "Öneride … yazıyordu" note.
+    expect(slip).toHaveTextContent("1.480");
     expect(within(slip).getByRole("button", { name: "Kopyala" })).toBeEnabled();
     await u.click(within(slip).getByRole("button", { name: "Girdim" }));
-    await u.click(within(slip).getByRole("button", { name: "Kaydet" }));
+    await u.click(within(slip).getByRole("button", { name: "Girdiğimi kaydet" }));
     expect(await within(slip).findByText(/^Girildi · /)).toBeInTheDocument();
     expect(within(slip).getByRole("link", { name: "Param’da gör →" })).toHaveAttribute("href", "/portfoy");
   });
@@ -102,7 +103,7 @@ describe("Neden?", () => {
     const qty = within(slip).getByRole("textbox", { name: "Adet" });
     await u.clear(qty);
     await u.type(qty, "999999");
-    await u.click(within(slip).getByRole("button", { name: "Kaydet" }));
+    await u.click(within(slip).getByRole("button", { name: "Girdiğimi kaydet" }));
     expect(within(slip).getByRole("alert")).toHaveTextContent(/fazla olamaz/);
     await u.click(within(slip).getByRole("button", { name: "Vazgeç" }));
     await u.click(within(slip).getByRole("button", { name: "Giremedim" }));

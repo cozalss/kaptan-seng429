@@ -10,16 +10,25 @@ from __future__ import annotations
 
 import hashlib
 import math
-from datetime import datetime, timedelta
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta
 from typing import Any, Final
 
-from kaptan.approvals.fmt_tr import fmt_dec, fmt_int, fmt_pct, fmt_price, ist_date, istanbul_at, istanbul_minutes
+from kaptan.approvals.fmt_tr import (
+    fmt_day_tr,
+    fmt_dec,
+    fmt_int,
+    fmt_pct,
+    fmt_price,
+    ist_date,
+    istanbul_at,
+    istanbul_minutes,
+)
 from kaptan.domain.schemas import iso_ms
-from kaptan.portfolio.marks import js_round, next_trading_day
+from kaptan.portfolio.marks import is_trading_day, js_round, next_trading_day
 
 TICKET_TTL: Final = timedelta(minutes=30)
 TICKET_CREATED_AFTER: Final = timedelta(seconds=20)  # the ticket is printed 20 s after the approval
-CURRENT_STAGE: Final = "paper"
 TICKET_SEQ_BASE: Final = 10
 PASSING: Final = frozenset({"pass", "resize", "approval_required"})
 
@@ -30,6 +39,9 @@ EMPTY_ENTRY: Final[dict[str, Any]] = {
     "filled_at": None,
     "note": None,
     "marked_at": None,
+    "commission_try": 0,
+    "commission_estimated": False,
+    "late": False,
 }
 
 
@@ -52,23 +64,46 @@ def ticket_valid_until(created: datetime) -> datetime:
     return min(created + TICKET_TTL, istanbul_at(day, 18, 0))
 
 
+def entry_day(created: datetime) -> date:
+    """The session the order is entered in: today when the ticket is printed before 18:00 on a trading day,
+    else the next session (the same rule as `ticket_valid_until`)."""
+    day = ist_date(created)
+    if istanbul_minutes(created) >= 18 * 60 or not is_trading_day(day):
+        return next_trading_day(day)
+    return day
+
+
 def ticket_number(created: datetime, seq: int) -> str:
     d = ist_date(created)
     return f"T-{d.year:04d}-{d.month:02d}{d.day:02d}-{seq:03d}"
 
 
-def personal_qty(
-    card: dict[str, Any],
-    *,
-    account_equity_try: float,
-    paper_equity_try: float,
-) -> int:
-    """The approved notional scaled from the paper desk to the personal account, in whole lots."""
+class NoCashError(ValueError):
+    """The book's free cash does not buy even one share at the limit price."""
+
+
+@dataclass(frozen=True, slots=True)
+class TicketContext:
+    """What the ticket needs from the person's book and the market at issue time (all real, none fixed)."""
+
+    equity_try: float
+    free_cash_try: float
+    market_label: str
+    upper_limit: float
+    stage: str
+    exit_min: date
+    exit_max: date
+
+
+def book_qty(card: dict[str, Any], *, free_cash_try: float) -> int:
+    """Whole shares of the approved notional, never more than the book's free cash buys at the limit."""
     approved = card["approved_notional_try"]
     notional: float = approved if approved is not None else card["final_notional_try"]
-    scaled = (notional * account_equity_try) / paper_equity_try
     limit: float = card["limit_price"]
-    return max(1, math.floor(scaled / limit))
+    qty = math.floor(min(notional, free_cash_try) / limit)
+    if qty < 1:
+        raise NoCashError(card["ticker"])
+    return qty
 
 
 def _num(x: float) -> float | int:
@@ -106,19 +141,18 @@ def build_ticket(
     *,
     seq: int,
     decided_at: str,
-    account_equity_try: float,
-    paper_equity_try: float,
+    context: TicketContext,
     mode_keys: dict[str, bool] | None = None,
     qty: int | None = None,
 ) -> dict[str, Any]:
-    """buildTicket(card, explain, {seq, decidedAt, stage: CURRENT_STAGE}) — `entry` is EMPTY_ENTRY.
+    """The ticket document; `entry` is EMPTY_ENTRY.
 
-    The caller passes the configured account, the desk's equity and the live_arm keys.
-    A SELL (an exit) sells what your personal book holds: the caller passes that as `qty` (no short
-    selling); a buy is sized from the approved notional."""
+    `context` is the person's book (equity, free cash) and the market's facts at issue time. A SELL (an exit)
+    sells what the book holds: the caller passes that as `qty` (no short selling); a buy is sized from the
+    approved notional and the free cash (`book_qty`)."""
     created = parse_iso(decided_at) + TICKET_CREATED_AFTER
     if qty is None:
-        qty = personal_qty(card, account_equity_try=account_equity_try, paper_equity_try=paper_equity_try)
+        qty = book_qty(card, free_cash_try=context.free_cash_try)
     elif qty <= 0:
         raise ValueError("a ticket needs a positive qty")
     side = "sell" if card.get("side") == "sell" else "buy"
@@ -144,7 +178,7 @@ def build_ticket(
         "side": side,
         "ticker": card["ticker"],
         "company_name": card["company_name"],
-        "market": "Ana Pazar",
+        "market": context.market_label,
         "order_type": "limit",
         "session_tr": "AÇILIŞ (09:40–09:55) · GÜNLÜK"
         if card["entry"] == "next_open_auction"
@@ -152,16 +186,16 @@ def build_ticket(
         "qty": qty,
         "limit_price": card["limit_price"],
         "ref_price": p["ref_price"] if p else card["limit_price"],
-        "upper_limit": js_round(card["limit_price"] * 1.1 * 100) / 100,
+        "upper_limit": context.upper_limit,
         "est_notional_try": js_round(qty * card["limit_price"]),
-        "account_equity_try": _num(account_equity_try),
+        "account_equity_try": _num(context.equity_try),
         "event_line_tr": f"{card['event_type']} — {card['sub_type_tr']}",
         "kap_line_tr": f"idx {card['disclosure_index']} · {card['headline_tr']}",
         "materiality_line_tr": _first(trace, lambda r: r["passed"], "Kural izi: Neden ekranında"),
         "leakage_line_tr": _first(trace, lambda r: str(r["rule"]).startswith("LEAK"), "Sızıntı kontrolü geçti ✓"),
         "evidence_line_tr": (
             f"Benzer {fmt_int(ev['n'])} olay · medyan 5 günlük anormal getiri {fmt_pct(ev['median_car_5d'])}"
-            f" · isabet {fmt_pct(ev['hit_rate_5d'], 0)} (örnek değer)"
+            f" · isabet {fmt_pct(ev['hit_rate_5d'], 0)}"
         ),
         "cost_line_tr": cost_line,
         "edge_cost_line_tr": edge_line,
@@ -170,13 +204,13 @@ def build_ticket(
         if amount_ok
         else "Tutar kontrolü (R14): uygulanmadı",
         # The mock prints "TL" twice ("80,89 TL TL"); kept for parity with the panel.
-        "stop_line_tr": f"Kapanış bazlı stop {fmt_price(p['stop_price'])} TL" if p else "Stop: Neden ekranında",
+        "stop_line_tr": f"Kapanış bazlı stop {fmt_price(p['stop_price'])}" if p else "Stop: Neden ekranında",
         "planned_exit_tr": (
-            f"{card['holding_days'][0]}. borsa günü kapanışı (en çok {card['holding_days'][1]} borsa günü)"
+            f"{fmt_day_tr(context.exit_min)} kapanışı (en geç {fmt_day_tr(context.exit_max)} kapanışı)"
         ),
         "gate_results": [{"code": c["rule_code"], "passed": c["outcome"] in PASSING} for c in checks],
         "approval_level": card["level"],
-        "stage": CURRENT_STAGE,
+        "stage": context.stage,
         "audit_hash": digest,
         "prev_hash": sha256_hex(f"prev:{digest}"),
         "entry": dict(EMPTY_ENTRY),
@@ -220,7 +254,7 @@ def ticket_order(ticket: dict[str, Any], decided_at: str | None) -> dict[str, An
             "order_id": ticket["order_id"],
             "qty": entry["filled_qty"],
             "price": entry["avg_price"],
-            "commission": 0,
+            "commission": entry.get("commission_try", 0),
             "bsmv": 0,
             "slippage_bps": 0,
             "filled_at": entry["filled_at"],

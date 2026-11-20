@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useRef, useState } from "react";
 import type { Position } from "@/lib/domain";
 import { fmtInt, fmtSignedPct } from "@/lib/format";
 import { href, ROUTES } from "@/lib/nav";
@@ -10,6 +11,9 @@ import { titleTr } from "@/components/story/turkish";
 import { Boat } from "@/components/ufuk/boat";
 import { ScreenState } from "@/components/shell/page-frame";
 import { Button } from "@/components/ui/button";
+import { PriceAge } from "@/components/solo/price-age";
+import { SellForm } from "./sell-form";
+import "./own-money.css";
 import { dateWords, exitSentence, waterSplit } from "./param-words";
 import { holdingProgress, istanbulDate, positionReturn } from "./risk-math";
 
@@ -18,7 +22,7 @@ import { holdingProgress, istanbulDate, positionReturn } from "./risk-math";
  * and what it is worth; when KAPtan will suggest selling; the voyage so far. The ledger is cut by the
  * water: what is up sits above the line, what is down under it.
  */
-export function Holdings({ positions, today }: { positions: readonly Position[]; today: string }) {
+export function Holdings({ positions, today, onChanged }: { positions: readonly Position[]; today: string; onChanged?: () => void }) {
   if (!positions.length) {
     return (
       <ScreenState
@@ -45,7 +49,7 @@ export function Holdings({ positions, today }: { positions: readonly Position[];
       </div>
       <ol aria-label="Elindekiler" className="pm-rows">
         {above.map((p) => (
-          <Holding key={`${p.ticker}-${p.book}-${p.opened_at}`} p={p} today={today} />
+          <Holding key={p.id} p={p} today={today} onChanged={onChanged} />
         ))}
         <li aria-hidden={below.length === 0 ? true : undefined} className="pm-waterline">
           <Boat className="pm-waterline-boat" />
@@ -54,15 +58,16 @@ export function Holdings({ positions, today }: { positions: readonly Position[];
           </span>
         </li>
         {below.map((p) => (
-          <Holding key={`${p.ticker}-${p.book}-${p.opened_at}`} p={p} today={today} />
+          <Holding key={p.id} p={p} today={today} onChanged={onChanged} />
         ))}
       </ol>
     </section>
   );
 }
 
-function Holding({ p, today }: { p: Position; today: string }) {
+function Holding({ p, today, onChanged }: { p: Position; today: string; onChanged?: () => void }) {
   const r = positionReturn(p);
+  const own = p.origin === "own";
   const worth = p.qty * p.last_price;
   const paid = p.qty * p.avg_cost;
   return (
@@ -72,15 +77,19 @@ function Holding({ p, today }: { p: Position; today: string }) {
           {p.ticker}
         </p>
         <h3 className="pm-row-name">
-          <Link href={href.proposal(p.source_proposal)} className="pm-row-link">
-            {titleTr(shortName(p.company_name))}
-          </Link>
+          {own ? (
+            titleTr(shortName(p.company_name))
+          ) : (
+            <Link href={href.proposal(p.source_proposal)} className="pm-row-link">
+              {titleTr(shortName(p.company_name))}
+            </Link>
+          )}
         </h3>
         <p className="pm-row-line">
           {fmtInt(p.qty)} adet aldın, {fmtLira(paid)} ödedin.
         </p>
       </div>
-      <Voyage p={p} today={today} />
+      {own ? <div /> : <Voyage p={p} today={today} />}
       <div className="pm-row-money">
         <p className="pm-row-worth">{fmtLira(worth)}</p>
         <p className="u-caption">şimdi ediyor</p>
@@ -88,7 +97,50 @@ function Holding({ p, today }: { p: Position; today: string }) {
           <span aria-hidden>{r >= 0 ? "▲" : "▼"}</span> {fmtSignedLira(p.unrealized_pnl)} <span className="font-medium">{fmtSignedPct(r)}</span>
         </p>
       </div>
+      <div className="pm-row-extra">
+        <p className="pm-row-age">
+          <PriceAge asOf={p.price_as_of} holding />
+        </p>
+        {own ? <OwnNote p={p} onChanged={onChanged} /> : null}
+      </div>
     </li>
+  );
+}
+
+/** A share the person added by hand: the plain note, and the way to write down that they sold it. */
+function OwnNote({ p, onChanged }: { p: Position; onChanged?: () => void }) {
+  const [selling, setSelling] = useState(false);
+  const [sold, setSold] = useState<string | null>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const back = () => {
+    setSelling(false);
+    requestAnimationFrame(() => button.current?.focus());
+  };
+  return (
+    <>
+      <p className="pm-row-note">Bunu sen ekledin; KAPtan satış önerisi vermez.</p>
+      {sold ? (
+        <p role="status" className="pm-row-sold">
+          {sold}
+        </p>
+      ) : null}
+      {selling ? (
+        <SellForm
+          position={p}
+          onCancel={back}
+          onSold={(left, draft) => {
+            setSelling(false);
+            const estimated = draft.commission.trim() ? "" : " Komisyonu yazmadın; KAPtan tahmin etti.";
+            setSold((left ? `Satışı yazdım: ${draft.qty} adet. ${fmtInt(left.qty)} adet kaldı.` : "Satışı yazdım: hepsi satıldı. Para nakde geçti.") + estimated);
+            onChanged?.();
+          }}
+        />
+      ) : (
+        <Button ref={button} variant="secondary" className="pm-row-sell" onClick={() => setSelling(true)} aria-label={`${p.ticker}: sattım`}>
+          Sattım
+        </Button>
+      )}
+    </>
   );
 }
 

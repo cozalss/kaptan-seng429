@@ -15,7 +15,6 @@
 
 <p align="center">
   <a href="https://kaptan-seng429.vercel.app/">Canlı site</a> ·
-  <a href="https://kaptan-seng429.vercel.app/login">Panel</a> ·
   <a href="https://github.com/cozalss/kaptan-seng429">Kod deposu</a> ·
   <a href="docs/README.md">Belgeler</a> ·
   <a href="#in-english">In English</a>
@@ -36,7 +35,8 @@ geçmiş olayların ne getirdiğine bakar ve sana tek bir öneri çıkarır:
 
 Yapay zekâ bir öneri **yazabilir**, ama al ya da sat kararını vermez. Kararı yazılı kurallar verir ve kurallardan
 geçen her öneri senin onayını bekler. Onayladığında KAPtan kendi başına hiçbir emir vermez: sana bir emir fişi
-çıkarır, emri kendi aracı kurum uygulamanda sen girersin. Demo hesabında emri simüle borsa doldurur.
+çıkarır, emri kendi bankanın ya da aracı kurumunun uygulamasında sen girersin. Emir gerçekleşince gerçek fiyatı,
+adedi ve komisyonu KAPtan'a yazarsın; paran ve kazancın bu kayıtlardan hesaplanır.
 
 Her adım değiştirilemez bir kayda yazılır. "Bu hisseyi neden aldık?" sorusunun cevabı hep oradadır.
 
@@ -205,8 +205,8 @@ güvenlik bunun için sadeleştirilmiştir, ama iki şey aynen kalır:
 - **Her öneriyi sen onaylarsın.** Kurallar ve risk kapısı öneriyi büyütemez; yalnızca küçültebilir ya da reddedebilir.
 - **Her atlanan ikinci imza kayda geçer.** Tek kişi olduğun için iki imza yerine geçtiğinde bu `auth.single_user_waiver`
   olarak Geçmiş'e yazılır. Hangi kararın tek imzayla verildiği sonradan görülebilir.
-- **Durdurduktan sonra yeniden başlatmak beklemek ister.** Gerçek veride en az 24 saat ve en az 5 seans geçmeden
-  yeniden başlatma onaylanmaz. Demo hesabında bu bekleme yoktur ve bu da kayda geçer.
+- **Durdurduktan sonra yeniden başlatmak beklemek ister.** En az 24 saat ve en az 5 seans geçmeden yeniden
+  başlatma onaylanmaz.
 
 Karar ve gerekçesi: [`docs/proje/_KANONIK-KARARLAR.md`](docs/proje/_KANONIK-KARARLAR.md) (Revizyon 4).
 
@@ -215,12 +215,18 @@ Karar ve gerekçesi: [`docs/proje/_KANONIK-KARARLAR.md`](docs/proje/_KANONIK-KAR
 | Parça | Durum |
 |---|---|
 | Tanıtım sayfası | Yayında: [kaptan-seng429.vercel.app](https://kaptan-seng429.vercel.app/) |
-| Panel | Yayında: [kaptan-seng429.vercel.app/login](https://kaptan-seng429.vercel.app/login), tek parolalı giriş. Çalışır, tarayıcı içinde deterministik bir mock API ile |
-| Backend | FastAPI + LangGraph ajan grafı, Postgres + pgvector, Redis. Varsayılan replay modu kayıtlı ajan cevaplarıyla anahtarsız çalışır; canlı KAP ve canlı LLM ortam değişkenleriyle açılır. Sözleşme: [`kaptan-panel/API.md`](kaptan-panel/API.md), ayrıntı: [`backend/README.md`](backend/README.md) |
+| Panel | Senin bilgisayarında çalışır (`http://localhost:3100`). Genel adreste yalnız tanıtım sayfası vardır; orada panel açılmaz |
+| Backend | FastAPI + LangGraph ajan grafı, Postgres + pgvector, Redis. Gerçek KAP bildirimleri ve gerçek fiyatlarla, senin bilgisayarında. Sözleşme: [`kaptan-panel/API.md`](kaptan-panel/API.md), ayrıntı: [`backend/README.md`](backend/README.md) |
 | Belgeler | Kanonik kararlar ve bütün belgeler: [`docs/`](docs/README.md) |
 
-Paneldeki şirketler ve rakamlar örnek veridir (ör. ÖRNEK ENERJİ A.Ş.); gerçek şirket, gerçek fiyat ya da gerçek sinyal
-yoktur. Mock modunda parola giriş sayfasında yazar: `kaptan2026`.
+Yeni kurulum dürüstçe boştur: paran, öneriler ve geçmiş sen kullandıkça dolar. Ekranda sahte para ya da sahte
+şirket gösterilmez. Kurulumdan çalıştırmaya her adım [`docs/ops/RUNBOOK.md`](docs/ops/RUNBOOK.md) içinde.
+
+## Gerçek para
+
+Strateji gerçek veride henüz kanıtlanmadı: belgelerdeki sınama merdiveni çalıştırılmadı. Beklenti, BIST-100'e göre
+yılda kabaca 0 ile +%5'tir ve zarar da edebilirsin. Günlük −%1 ve toplam −%5 durdurucuları vardır, ama bunlar kaybı
+sıfırlamaz. Ne kadar paranın girileceği senin kararındır; KAPtan üst sınır koymaz. Ayrıntı: RUNBOOK, bölüm 10.
 
 ## Teknoloji
 
@@ -231,7 +237,7 @@ yoktur. Mock modunda parola giriş sayfasında yazar: `kaptan2026`.
 | Backend | Python 3.11 (uv), LangGraph 1.x, FastAPI (SSE, JWT), psycopg 3, Alembic, Postgres 16 + pgvector, Redis 7 Streams, gemini-embedding-001 (1024 boyut) |
 | Modeller | Gemini Flash-Lite (ana), Groq gpt-oss ve Llama Prompt Guard 2; geri dönüş zinciri Azure for Students, yerel Ollama, en sonda HOLD (bekle) |
 | Değerlendirme | RAGAS 0.4, kendi replay düzeneği, vectorbt |
-| Yayın | Vercel: tek deploy, `/` tanıtım sayfası, `/login` ve diğer yollar panel (mock API). Bütün sistem: Docker Compose (yerel `docker-compose.yml`, üretim `backend/docker-compose.prod.yml`) |
+| Yayın | Vercel: yalnız tanıtım sayfası. Bütün sistem senin bilgisayarında, Docker Compose ile (`docker-compose.yml`) |
 
 Mimari, diyagramlar ve karar kayıtları (ADR): [`docs/proje/04-mimari.md`](docs/proje/04-mimari.md).
 
@@ -242,7 +248,8 @@ Mimari, diyagramlar ve karar kayıtları (ADR): [`docs/proje/04-mimari.md`](docs
 ├── kaptan-landing/        Tanıtım sayfası (Vite)
 ├── kaptan-panel/          Uygulama (Next.js 16); tanıtım sayfasını da "/" adresinde sunar
 ├── backend/               Python backend: FastAPI, LangGraph ajanları, işçiler, migrasyonlar, testler
-├── docker-compose.yml     Bütün sistem tek komutla (yerel)
+├── kur.cmd · baslat.cmd · durdur.cmd   Kur, başlat, durdur (çift tıkla); geri-yukle.ps1 yedekten döner
+├── docker-compose.yml     Bütün sistem (senin bilgisayarında)
 ├── Dockerfile.panel       Panelin imajı (http modu, tanıtım sayfası dahil)
 ├── docs/
 │   ├── README.md          Belgelerin dizini
@@ -265,101 +272,38 @@ flowchart LR
     A <-->|"SSE olayları, hız sınırı, önbellek"| R[("Redis 7")]
     S["Scheduler<br/>günlük işler"] --> PG
     S --> R
-    subgraph LIVE["--profile live · KAP_LIVE=true"]
+    subgraph LIVE["Okuyucular"]
         I["ingest_worker<br/>KAP poller"] -->|"kaptan:kap.disclosures"| AG["agent_worker<br/>ajan grafı"]
     end
     I --> PG
     AG --> PG
-    AG -.->|"LLM_MODE=live"| LLM["Gemini · DeepSeek · Groq<br/>Azure · Ollama"]
-    M["migrate · seed<br/>tek seferlik"] --> PG
+    AG -.->|"yapay zekâ"| LLM["Gemini · DeepSeek · Groq<br/>Azure · Ollama"]
+    M["migrate · bootstrap<br/>tek seferlik"] --> PG
 ```
 
 <sub>`migrate` Alembic'i sahip rolüyle çalıştırır; API ve işçiler `kaptan_app` rolüyle bağlanır (Geçmiş kaydında yalnız
 INSERT/SELECT). Ayrıntılı mimari: [`docs/proje/04-mimari.md`](docs/proje/04-mimari.md).</sub>
 
-## Çalıştır
+## Kur ve çalıştır
 
-### Hızlı başlangıç (Docker Desktop)
+Bilgisayarında Docker Desktop kurulu ve açık olmalı. Terminal bilmen gerekmez.
 
-Gerekenler: Docker Desktop (Compose v2). Depo kökünde:
+1. Proje klasöründe **`kur.cmd`** dosyasına çift tıkla. Parola seçersin, yapay zekâ anahtarını yapıştırırsın,
+   istersen telefona bildirim açarsın. İlk derleme 5-10 dakika sürer.
+2. **`baslat.cmd`** dosyasına çift tıkla. Hazır olunca tarayıcı `http://localhost:3100/login` adresini açar.
+3. İlk açılışta KAPtan geçmiş bildirimleri ve fiyatları yükler (15-25 dakika). Sonra uygulama başlangıç parasını sorar.
+4. Kapatmak için **`durdur.cmd`**. Veriler silinmez.
 
-```bash
-docker compose up -d --build
-# open http://localhost:3100/login, passphrase kaptan2026 (local only)
-```
+Yedekten dönmek için `geri-yukle.ps1`, güncellemek için `baslat.cmd -Guncelle`. Hepsi, ne paraya mal olduğu ve sık
+sorunlar [`docs/ops/RUNBOOK.md`](docs/ops/RUNBOOK.md) içinde.
 
-Sıra: Postgres + pgvector ve Redis sağlıklı → `migrate` (alembic head) → `seed` (kayıtlı demo günü, yalnız ilk seferde)
-→ `api` (replay LLM, demo saati) + `scheduler` → `panel`. İlk derleme birkaç dakika sürer. Sonra:
+### Geliştirici için
 
-| Ne | Adres |
+| Ne | Komut |
 |---|---|
-| Uygulama | http://localhost:3100/login (parola: `kaptan2026`, yalnız yerelde) |
-| Tanıtım sayfası | http://localhost:3100/ |
-| API sağlığı | http://localhost:8000/api/v1/health · http://localhost:8000/readyz |
-
-```bash
-docker compose ps                  # api, panel, scheduler, postgres, redis: healthy · migrate, seed: Exited (0)
-docker compose logs -f api
-docker compose down                # durdur; -v ile veritabanı da silinir
-KAPTAN_API_PORT=8300 KAPTAN_PANEL_PORT=3300 docker compose up -d   # portlar doluysa
-```
-
-Bu yığın yalnız yerel içindir: parolalar sabit yerel değerlerdir ve API `KAPTAN_ENV=dev` ile çalışır. Üretim için
-`backend/docker-compose.prod.yml` ve [`backend/prod.env.example`](backend/prod.env.example); işletim (yedek, geri yükleme,
-durdurma sıfırlama, defter doğrulama, anahtar döndürme): [`docs/ops/RUNBOOK.md`](docs/ops/RUNBOOK.md).
-
-### Yalnız panel (backend gerekmez)
-
-```bash
-cd kaptan-panel
-npm ci
-npm run dev                        # http://localhost:3100 · mock API, parola: kaptan2026
-```
-
-### Panel ve backend birlikte (Docker'sız)
-
-Backend'i [`backend/README.md`](backend/README.md) "Run the whole system locally" bölümündeki gibi aç (API `:8000`), sonra:
-
-```bash
-cd kaptan-panel
-npm run dev:api                    # http modu, API'ye bağlanır · http://localhost:3100/login
-```
-
-### Bugünkü gerçek veriyle
-
-Gerçek KAP bildirimleri, Borsa İstanbul fiyatları ve canlı ajanlar. Anahtarlar `backend/.env` içindedir, asla depoya girmez:
-
-```bash
-docker compose down && docker compose --env-file live.env --profile live up -d --build
-```
-
-### Replay'den canlı moda
-
-Varsayılan `LLM_MODE=replay`: ajanlar kayıtlı cevaplarla çalışır, ağ ve anahtar gerekmez. Değişken adları (anahtarlar
-gitignore'daki `backend/.env`'e ya da `backend/prod.env`'e yazılır):
-
-| Değişken | Etkisi |
-|---|---|
-| `LLM_MODE=live` | Ajanlar gerçek modellere gider (zincir ve model kimlikleri `backend/config/models.yaml`) |
-| `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY` | Sağlayıcı anahtarları; anahtarı olmayan sağlayıcı atlanır |
-| `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `OLLAMA_BASE_URL` | İsteğe bağlı ek halkalar |
-| `LLM_CAP_*` | Sağlayıcı başına günlük sert sınırlar |
-| `KAP_LIVE=true`, `DEMO_MODE=false` | Gerçek KAP bildirimleri, kendi veritabanında (`live.env`: `KAPTAN_PGDATA=pgdata_live`) |
-| `AGENT_MAX_RUNS_PER_HOUR`, `AGENT_MAX_RUNS_PER_DAY` | Modele giden ajan koşusu üst sınırı (saat / İstanbul günü) |
-| `PRICES_LIVE=true`, `CHECKPOINTER=postgres` | Gerçek fiyat işaretleri; yeniden başlatmaya dayanıklı ajan grafı |
-
-### Sorun giderme
-
-| Belirti | Çözüm |
-|---|---|
-| `port is already allocated` | `KAPTAN_API_PORT` / `KAPTAN_PANEL_PORT` ile başka port seç |
-| `seed` Exited (1) | `docker compose logs seed`; eski imajsa `docker compose build --no-cache api` |
-| Girişte "Çok fazla deneme" (429) | Bir dakika bekle |
-| Giriş olur, sayfa yenilenince oturum düşer | Paneli `localhost` ya da `127.0.0.1` ile aç (yenileme çerezi `__Host-` önekli ve `Secure`) |
-| Demo gününü baştan almak | `docker compose run --rm seed seed_demo --force` ve ardından `docker compose restart api` |
-| `readyz` içinde `ingest_worker` / `agent_worker` `missing` | Normal; canlı işçiler yalnız `--profile live` ile çalışır |
-
-Daha fazlası: [`docs/ops/RUNBOOK.md`](docs/ops/RUNBOOK.md), "Sık sorunlar".
+| Yalnız panel (mock API, backend gerekmez; yalnız geliştirme ve test için) | `cd kaptan-panel && npm ci && npm run dev` |
+| Panel ve backend birlikte (Docker'sız) | Backend'i [`backend/README.md`](backend/README.md)'deki gibi aç, sonra `cd kaptan-panel && npm run dev:api` |
+| Backend testleri için Postgres ve Redis | `docker compose -f backend/docker-compose.yml up -d` |
 
 ## Testler
 
@@ -368,7 +312,7 @@ Daha fazlası: [`docs/ops/RUNBOOK.md`](docs/ops/RUNBOOK.md), "Sık sorunlar".
 | Birim ve bileşen testleri | `kaptan-panel` | `npm test` |
 | Kapsam (satır, ifade, fonksiyon %80; dal %75) | `kaptan-panel` | `npm run coverage` |
 | Uçtan uca akışlar (Playwright, Microsoft Edge kanalı), mock | `kaptan-panel` | `npm run e2e` |
-| Aynı akışlar gerçek backend'e karşı (API'yi ve paneli kendisi açar, demo gününü sıfırlar) | `kaptan-panel` | `npm run e2e:api` |
+| Aynı akışlar gerçek backend'e karşı (API'yi ve paneli kendisi açar) | `kaptan-panel` | `npm run e2e:api` |
 | Erişilebilirlik (axe-core, WCAG 2.1 A/AA, 390 ve 1440 px) | `kaptan-panel` | `npx playwright test e2e/a11y.spec.ts` |
 | Hepsi: tip denetimi, lint, kapsam, derleme | `kaptan-panel` | `npm run check` |
 | Backend: birim + sözleşme + entegrasyon, lint, tip | `backend` | `uv run pytest`, `uv run ruff check.`, `uv run mypy` |
@@ -410,8 +354,10 @@ Bodoni Moda, Inter ve Instrument Serif yazı tipleri SIL Open Font License 1.1 i
 
 **KAPtan** reads the Borsa İstanbul disclosure feed (KAP) for you and brings you, one at a time, the few that may
 matter to your money. A language model writes the reading and the evidence; written rules decide what is proposed; a
-risk gate can only shrink or reject. Nothing is ordered by itself: you approve, then enter the order at your own broker
-(on the demo account a simulated exchange fills it). Every step is written to a hash-chained record.
+risk gate can only shrink or reject. Nothing is ordered by itself: you approve, then enter the order at your own
+bank or broker and record the real fill and commission. It runs on your own Windows PC, on localhost only. Every step
+is written to a hash-chained record.
 
-The product is for one person and runs in one mode. Screens are in Turkish, and so are the documents in `docs/`. The
-quick start is the Docker command above; the panel alone runs with `cd kaptan-panel && npm ci && npm run dev`.
+The product is for one person. Screens are in Turkish, and so are the documents in `docs/`. To install it, double-click
+`kur.cmd`, then `baslat.cmd` (Docker Desktop required); the guide is `docs/ops/RUNBOOK.md`. The strategy is not yet
+proven on real data: expect roughly 0 to +5 % a year over the index, and losses are possible.

@@ -5,15 +5,16 @@ import { LIVE_STRATEGY, paperPnl } from "@/mocks/pnl";
 import { round } from "@/mocks/rng";
 import { ApiError, type KaptanApi } from "../types";
 import { parse, userActor, type MockCtx } from "./guard";
+import { SEED_START_TRY } from "./ledger";
 import type { MockState } from "./state";
 import * as sel from "./selectors";
 
 /**
- * The home's one call (GET /me/overview) over the mock state the other screens read too: equity from the risk status, holdings from the positions, suggestions from the
- * pending approvals plus "keep holding" for the biggest positions that are not due to exit.
- * Deterministic for a given state and clock.
+ * The home's one call (GET /me/overview) over the one book the other screens read too (ledger.ts):
+ * money put in, cash, holdings at their last known price, suggestions from the pending approvals
+ * plus "keep holding" for the biggest positions that are not due to exit. Before the starting
+ * money exists everything is zero and empty (`needs_setup`). Deterministic for a given state and clock.
  */
-export const CAPITAL_START = 1_000_000;
 /** At most this many "TUT" cards (the biggest holdings that are not due to exit). */
 const MAX_HOLDS = 2;
 
@@ -62,10 +63,13 @@ function holdFor(p: Position, today: string): Suggestion {
 }
 
 export function overviewFor(state: MockState, realNow: number = Date.now()): Overview {
-  const risk = sel.riskStatus(state, realNow);
-  const today = risk.as_of.slice(0, 10);
-  const held = sel.positions(state, realNow);
-  const equity = risk.equity;
+  const book = sel.bookOf(state, realNow);
+  if (!book.started) {
+    return { needs_setup: true, capital_start: 0, equity_now: 0, cash: 0, pnl_abs: 0, pnl_pct: 0, prices_as_of: null, equity_series: [], allocations: [], open_suggestions: [] };
+  }
+  const today = new Date(sel.nowMs(state, realNow) + 3 * 3_600_000).toISOString().slice(0, 10);
+  const held = book.positions;
+  const equity = book.equity;
 
   const allocations: Allocation[] = held
     .map((p) => ({
@@ -74,29 +78,35 @@ export function overviewFor(state: MockState, realNow: number = Date.now()): Ove
       amount: amountOf(p),
       weight: equity > 0 ? round(amountOf(p) / equity, 4) : 0,
       pnl_pct: round(p.last_price / p.avg_cost - 1, 4),
+      price_as_of: p.price_as_of,
     }))
     .sort((a, b) => b.amount - a.amount || a.symbol.localeCompare(b.symbol));
-  const invested = allocations.reduce((s, a) => s + a.amount, 0);
 
   const pending = sel.approvalCards(state, realNow).filter((c) => c.status === "pending" && !c.run_id.startsWith("run-hist"));
   const sellingNow = new Set(pending.filter((c) => c.side === "sell").map((c) => c.ticker));
+  // KAPtan never suggested a share the person added by hand, so it has no word on keeping it either.
   const holds = [...held]
-    .filter((p) => !sellingNow.has(p.ticker) && p.planned_exit_date > today)
+    .filter((p) => p.origin === "suggestion" && !sellingNow.has(p.ticker) && p.planned_exit_date > today)
     .sort((a, b) => amountOf(b) - amountOf(a))
     .slice(0, MAX_HOLDS)
     .map((p) => holdFor(p, today));
 
-  const history = paperPnl()
-    .filter((p) => p.strategy === LIVE_STRATEGY)
-    .map((p) => ({ date: p.d, equity: p.equity }));
-  const equity_series = [{ date: addDays(history[0]?.date ?? today, -1), equity: CAPITAL_START }, ...history.filter((p) => p.date < today), { date: today, equity }];
+  // The daily closes since the start; today has not closed, so it is not in the series (the home adds "now" itself).
+  const history = state.book.seeded
+    ? paperPnl()
+        .filter((p) => p.strategy === LIVE_STRATEGY && p.d < today)
+        .map((p) => ({ date: p.d, equity: p.equity }))
+    : [];
+  const equity_series = history.length ? [{ date: addDays(history[0]?.date ?? today, -1), equity: SEED_START_TRY }, ...history] : [];
 
   return {
-    capital_start: CAPITAL_START,
+    needs_setup: false,
+    capital_start: book.put_in,
     equity_now: equity,
-    cash: round(Math.max(0, equity - invested), 2),
-    pnl_abs: round(equity - CAPITAL_START, 2),
-    pnl_pct: round(equity / CAPITAL_START - 1, 5),
+    cash: book.cash,
+    pnl_abs: round(equity - book.put_in, 2),
+    pnl_pct: book.put_in > 0 ? round(equity / book.put_in - 1, 5) : 0,
+    prices_as_of: book.prices_as_of,
     equity_series,
     allocations,
     open_suggestions: [...pending.map(fromApproval), ...holds],

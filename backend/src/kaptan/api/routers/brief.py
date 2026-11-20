@@ -1,7 +1,7 @@
-"""Morning brief (FR-35) — backend-only (the panel does not call it yet), M3 B1.
+"""Morning brief (FR-35), M3 B1.
 
-    GET /brief/today  -> MorningBrief  (all roles; today = the clock's Istanbul day)
-    GET /brief/{date} -> MorningBrief  (all roles; YYYY-MM-DD)
+    GET /brief/today  -> MorningBrief  (today = the clock's Istanbul day)
+    GET /brief/{date} -> MorningBrief  (YYYY-MM-DD)
 
 The scheduler builds the brief at 08:45 (kaptan.brief, ops.morning_briefs). 404 `not_found`
 "Bu gün için sabah özeti yok." when none was built for that day; 422 for a malformed date.

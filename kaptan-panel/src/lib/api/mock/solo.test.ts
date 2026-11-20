@@ -3,7 +3,8 @@ import { PENDING_PROPOSALS } from "@/mocks/ids";
 import { createMockApi } from "./mock-api";
 import { MockDb } from "./db";
 import { stopAllTimers, stopLiveTicker } from "./scenarios";
-import { CAPITAL_START, overviewFor } from "./solo";
+import { SEED_START_TRY } from "./ledger";
+import { overviewFor } from "./solo";
 import * as sel from "./selectors";
 import { isApiError } from "../types";
 
@@ -25,10 +26,10 @@ describe("mock /me/overview", () => {
     const { db, api } = setup();
     const o = Overview.parse(await api.overview());
     const risk = sel.riskStatus(db.snapshot);
-    expect(o.capital_start).toBe(CAPITAL_START);
+    expect(o.capital_start).toBe(SEED_START_TRY);
     expect(o.equity_now).toBe(risk.equity);
-    expect(o.pnl_abs).toBeCloseTo(risk.equity - CAPITAL_START, 2);
-    expect(o.pnl_pct).toBeCloseTo(risk.equity / CAPITAL_START - 1, 4);
+    expect(o.pnl_abs).toBeCloseTo(risk.equity - SEED_START_TRY, 2);
+    expect(o.pnl_pct).toBeCloseTo(risk.equity / SEED_START_TRY - 1, 4);
     const invested = o.allocations.reduce((s, a) => s + a.amount, 0);
     expect(o.cash).toBeCloseTo(o.equity_now - invested, 0);
     expect(o.cash).toBeGreaterThan(0);
@@ -67,8 +68,9 @@ describe("mock /me/overview", () => {
     await api.decideApproval(id, { decision: "approve", approved_notional_try: null, comment: "" });
     const o = await api.overview();
     expect(o.open_suggestions.map((s) => s.id)).not.toContain(id);
-    expect(o.equity_series[0]?.equity).toBe(CAPITAL_START);
-    expect(o.equity_series[o.equity_series.length - 1]?.equity).toBe(o.equity_now);
+    expect(o.equity_series[0]?.equity).toBe(SEED_START_TRY);
+    // Today has not closed: the series holds closed days only, the home adds "now" itself.
+    expect(o.equity_series.length).toBeGreaterThan(1);
     const dates = o.equity_series.map((p) => p.date);
     expect(dates).toEqual([...dates].sort());
   });

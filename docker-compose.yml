@@ -37,6 +37,14 @@ x-app-env: &app-env
   AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
   AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
   AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-}
+  # Phone / e-mail alerts: each channel is off unless set (kaptan.alerts). The text sent is a fixed sentence.
+  ALERT_NTFY_TOPIC: ${ALERT_NTFY_TOPIC:-}
+  ALERT_NTFY_SERVER: ${ALERT_NTFY_SERVER:-https://ntfy.sh}
+  ALERT_SMTP_HOST: ${ALERT_SMTP_HOST:-}
+  ALERT_SMTP_PORT: ${ALERT_SMTP_PORT:-}
+  ALERT_SMTP_USER: ${ALERT_SMTP_USER:-}
+  ALERT_SMTP_PASSWORD: ${ALERT_SMTP_PASSWORD:-}
+  ALERT_SMTP_TO: ${ALERT_SMTP_TO:-}
   # The browser reaches the panel at these two names: localhost is a secure context, so the Secure __Host-
   # refresh cookie works over plain http (Chrome, Edge and Firefox; Safari is not verified).
   COOKIE_SECURE: "true"

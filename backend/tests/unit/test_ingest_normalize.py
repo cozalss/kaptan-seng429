@@ -133,8 +133,11 @@ def test_company_index_prefers_the_subject_company_for_kap_notices() -> None:
     assert CompanyIndex(by_member={own.member_oid or "": (2, "CVK MADEN")}).resolve(own) == (2, "CVK MADEN", "CVKMD")
     assert CompanyIndex().resolve(own) == (None, own.company_name, "CVKMD")
     broker = from_list_main(_by_index(list_main(DAY_16), 1683334), source="live", seen_at=SEEN)
-    assert broker.primary_ticker == "PIE"  # the fund manager's own member code
+    # A fund manager's trade notice: `stockCode` is its own member code, the traded share is the related stock.
+    assert broker.stock_codes == ("PIE",) and broker.related_stocks == ("AHSGY", "RE8")
+    assert broker.subject_route == "E2" and broker.primary_ticker == "AHSGY"
     assert CompanyIndex(by_ticker={"AHSGY": (4, "AHES GYO")}).resolve(broker) == (4, "AHES GYO", "AHSGY")
+    assert CompanyIndex().resolve(broker) == (None, broker.company_name, "AHSGY")
 
 
 def test_payload_hash_ignores_key_order() -> None:

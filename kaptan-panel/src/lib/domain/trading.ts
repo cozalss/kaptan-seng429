@@ -168,6 +168,10 @@ export const Order = z.object({
 export type Order = z.infer<typeof Order>;
 
 export const Position = z.object({
+  /** The book's own id for this holding (POST /me/holdings/{id}/sell takes it). */
+  id: z.string(),
+  /** suggestion = KAPtan suggested it and you entered it; own = a share you already held and added by hand. */
+  origin: z.enum(["suggestion", "own"]),
   ticker: Ticker,
   company_name: z.string(),
   qty: z.number().int().positive(),
@@ -176,16 +180,20 @@ export const Position = z.object({
   opened_at: IsoDateTime,
   planned_exit_date: IsoDate,
   holding_days: z.number().int().nonnegative(),
+  /** "" for a holding you added by hand (as is `run_id`). */
   source_proposal: z.string(),
   run_id: z.string(),
-  event_type: EventCode,
+  /** IGNORE = no disclosure behind it: a holding you added by hand. */
+  event_type: z.union([EventCode, z.literal("IGNORE")]),
   strategy_version: z.string(),
   unrealized_pnl: z.number(),
   realized_pnl: z.number(),
   /** Set once the kill switch fires: positions are not sold, they exit by their own rules. */
   managed_by_exit_rule: z.boolean(),
-  /** paper = SimBIST ledger; personal = a ticket you entered at your own broker (12 §2). */
+  /** Always "personal": the person's own book is the only book. */
   book: z.enum(["paper", "personal"]),
+  /** When `last_price` was known; null when no price has arrived yet (the holding then stands at its cost). */
+  price_as_of: z.string().nullable(),
 });
 export type Position = z.infer<typeof Position>;
 
@@ -204,6 +212,12 @@ export const TicketEntry = z.object({
   filled_at: IsoDateTime.nullable(),
   note: z.string().nullable(),
   marked_at: IsoDateTime.nullable(),
+  /** What the bank charged in total for this fill (0 until one is recorded). */
+  commission_try: z.number().nonnegative(),
+  /** True when you left the commission empty and the backend estimated it with its cost model. */
+  commission_estimated: z.boolean(),
+  /** True when the fill was recorded after `valid_until`: it is still your real fill, the book must match the bank. */
+  late: z.boolean().default(false),
 });
 export type TicketEntry = z.infer<typeof TicketEntry>;
 
@@ -214,6 +228,8 @@ export const TicketMarkInput = z.discriminatedUnion("mark", [
     filled_qty: z.number().int().positive("Adet pozitif olmalı"),
     avg_price: z.number().positive("Fiyat pozitif olmalı"),
     filled_at: IsoDateTime,
+    /** What the bank charged in total; left out, the backend estimates it and says so. */
+    commission_try: z.number().nonnegative("Komisyon eksi olamaz").optional(),
     note: z.string().trim().max(500).optional(),
   }),
   z.object({ mark: z.literal("unfilled"), note: z.string().trim().max(500).optional() }),
@@ -307,8 +323,9 @@ export const RiskStatus = z.object({
   halted_today: z.boolean(),
   daily_pnl_pct: z.number(),
   drawdown_pct: z.number().max(0),
-  peak_equity: z.number().positive(),
-  equity: z.number().positive(),
+  /** Both are 0 until the person has entered their starting money. */
+  peak_equity: z.number().nonnegative(),
+  equity: z.number().nonnegative(),
   regime: z.enum(["normal", "crisis"]),
   live_armed: z.boolean(),
   quota: z.array(z.object({ provider: z.string(), used: z.number().int().nonnegative(), limit: z.number().int().positive() })),

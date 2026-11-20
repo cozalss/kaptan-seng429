@@ -98,8 +98,8 @@ async def test_nobody_waiving_the_wait_means_the_wait_applies(pg: DictConn) -> N
 
 async def test_status_carries_ready_at_until_the_wait_is_over(pg: DictConn) -> None:
     await _stopped_and_requested(pg, NOW, NOW)
-    live = await risk_status(pg, NOW + timedelta(hours=1), capital=1_000_000.0)
+    live = await risk_status(pg, NOW + timedelta(hours=1))
     assert live["reset"]["ready_at"] == OPENS_AT
     assert RiskStatus.model_validate(live).model_dump(mode="json")["reset"]["ready_at"] == "2027-01-18T07:00:00.000Z"
-    opened = await risk_status(pg, OPENS_AT, capital=1_000_000.0)
+    opened = await risk_status(pg, OPENS_AT)
     assert opened["reset"]["ready_at"] is None

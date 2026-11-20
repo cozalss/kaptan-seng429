@@ -41,6 +41,16 @@ async def _marks(settings: Settings, rows: list[tuple[str, datetime, datetime | 
         await conn.close()
 
 
+async def _fresh_install(settings: Settings) -> None:
+    """No job has ever run: the install's first day (the backup grace period counts from the first job run)."""
+    assert settings.database_owner_url is not None
+    conn = await connect(settings.database_owner_url.get_secret_value(), autocommit=True)
+    try:
+        await conn.execute("DELETE FROM ops.job_runs")
+    finally:
+        await conn.close()
+
+
 async def _quiet(redis: aioredis.Redis) -> None:
     for name in WORKERS:
         await clear(redis, name)
@@ -55,13 +65,14 @@ async def test_nothing_running_says_kaptan_is_not_reading(client: httpx.AsyncCli
     redis = aioredis.from_url(migrated.redis_url.get_secret_value(), decode_responses=True)
     try:
         await _quiet(redis)
-        await _marks(migrated, [])
+        await _fresh_install(migrated)
         doc = (await client.get(URL, headers=await _headers(client))).json()
     finally:
         await redis.aclose()
     assert doc["reading"] is False
     assert doc["message"] == "KAPtan şu an bildirim okumuyor."
-    assert [p["code"] for p in doc["problems"]] == ["ingest_down", "agents_down", "scheduler_down", "backup_never"]
+    # a fresh database has not warmed up (the agents wait for it) and has no backup yet: not a problem on day one
+    assert [p["code"] for p in doc["problems"]] == ["ingest_down", "waiting_for_warmup", "scheduler_down"]
 
 
 async def test_workers_alive_and_a_fresh_backup_is_all_clear(client: httpx.AsyncClient, migrated: Settings) -> None:
@@ -98,4 +109,4 @@ async def test_a_failed_backup_does_not_count_and_a_warm_up_in_progress_is_named
         await redis.aclose()
         await _marks(migrated, [])
     codes = [p["code"] for p in doc["problems"]]
-    assert "backup_never" in codes and "warming_up" in codes and "agents_down" not in codes
+    assert "backup_failed" in codes and "warming_up" in codes and "agents_down" not in codes

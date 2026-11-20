@@ -1,0 +1,99 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Param's own money: what was put in, the buttons that write money moved at the bank,
+   the sentences of every movement, and the small notes on a share added by hand.
+   ────────────────────────────────────────────────────────────────────────── */
+.om {
+  margin-top: clamp(2.5rem, 2rem + 3vw, 5rem);
+  padding-top: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  border-top: 2px solid var(--ink);
+}
+.om-head {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 58rem;
+}
+.om-lead {
+  max-width: 62ch;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.om-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+@media (max-width: 479px) {
+  .om-actions > * {
+    flex: 1 1 100%;
+  }
+}
+.om-status {
+  min-height: 1.5rem;
+  margin-top: 0.875rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gain);
+}
+.om-status:empty {
+  min-height: 0;
+  margin-top: 0;
+}
+.om-panel {
+  margin-top: 1rem;
+  padding: clamp(1rem, 0.75rem + 1.5vw, 1.75rem);
+  border-left: 3px solid var(--ink);
+  background: var(--sunk);
+}
+.om-panel-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.om-panel-lead {
+  margin: 0.375rem 0 1.25rem;
+  max-width: 60ch;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.om-log {
+  margin-top: 2rem;
+}
+.om-list {
+  margin-top: 0.5rem;
+  padding: 0;
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+.om-list li {
+  padding-block: 0.625rem;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+/* A share added by hand: the plain note, and the button that writes its sale. */
+.pm-row-extra {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.75rem;
+}
+.pm-row-note {
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+.pm-row-age {
+  font-size: 0.9375rem;
+}
+.pm-row-sell {
+  justify-self: start;
+}
+.pm-row-sold {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gain);
+}

@@ -20,6 +20,7 @@ from kaptan.agents.checkpoint import open_saver
 from kaptan.api.errors import install_error_handlers
 from kaptan.api.routers import (
     admin,
+    alerts,
     approvals,
     audit,
     auth,
@@ -61,6 +62,7 @@ ROUTERS: Final = (
     brief.router,  # backend-only: GET /brief/today|{date} (M3 B1)
     eval.router,  # backend-only: GET /eval/summary, /reports/forward/weekly (M3 B3)
     personal.router,  # backend-only: GET /personal/stage (M3 B3)
+    alerts.router,  # GET /me/alerts, POST /me/alerts/test
 )
 
 

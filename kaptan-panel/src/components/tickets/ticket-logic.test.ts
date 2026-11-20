@@ -31,7 +31,7 @@ const withEntry = (t: OrderTicket, status: OrderTicket["entry"]["status"], no = 
   created_at: created,
   entry: { ...t.entry, status },
 });
-const draft = (over: Partial<MarkDraft> = {}): MarkDraft => ({ kind: "entered", qty: "620", price: "48,32", time: "13:52", note: "", ...over });
+const draft = (over: Partial<MarkDraft> = {}): MarkDraft => ({ kind: "entered", qty: "620", price: "48,32", commission: "", time: "13:52", note: "", ...over });
 
 describe("validity window (12 §2, R16)", () => {
   it("starts at creation and lasts 30 minutes", () => {
@@ -99,7 +99,7 @@ describe("what the person is told after approving", () => {
     expect(validityWords(T, at("13:40"))).toBe("13:46’da açılır, 14:16’ya kadar girebilirsin.");
     // Opening within a couple of minutes is simply open.
     expect(validityWords(T, at("13:46"))).toBe("30 dk 20 sn içinde gir. 14:16’dan sonra geçmez.");
-    expect(validityWords(T, at("14:17"))).toBe("Süresi doldu, artık girme. Girdiysen yine de işaretle.");
+    expect(validityWords(T, at("14:17"))).toBe("Süresi doldu, yeni girme. Bankanda gerçekleştiyse aşağıdan yine de işaretle; Param bankandakiyle aynı kalmalı.");
   });
 });
 
@@ -126,18 +126,28 @@ describe("the mark form", () => {
     expect(defaultFillClock(T, at("13:55"))).toBe("13:55");
     expect(defaultFillClock(T, at("13:40"))).toBe("13:46");
     expect(defaultFillClock(T, at("15:00"))).toBe("14:15");
-    expect(initialDraft("entered", T, at("13:55"))).toEqual({ kind: "entered", qty: "620", price: "48,40", time: "13:55", note: "" });
+    expect(initialDraft("entered", T, at("13:55"))).toEqual({ kind: "entered", qty: "620", price: "48,40", time: "13:55", commission: "", note: "" });
   });
 
-  it("applies the API's own rules: qty ≤ ticket, price ≤ limit, time ≤ valid-until", () => {
+  it("applies the API's own rules: qty ≤ ticket, price ≤ limit, a plain commission", () => {
     expect(hasMarkErrors(markErrors(draft(), T))).toBe(false);
     expect(markErrors(draft({ qty: "621" }), T).qty).toMatch(/\(620\)/);
     expect(markErrors(draft({ qty: "0" }), T).qty).toMatch(/tam sayı/);
     expect(markErrors(draft({ price: "48,41" }), T).price).toMatch(/aşamaz/);
     expect(markErrors(draft({ price: "" }), T).price).toMatch(/fiyatı yaz/);
-    expect(markErrors(draft({ time: "14:17" }), T).time).toMatch(/sonrası sayılmaz/);
+    // After the window the fill is still the real one: it is never refused for its time.
+    expect(markErrors(draft({ time: "14:17" }), T).time).toBeNull();
+    expect(markErrors(draft({ commission: "abc" }), T).commission).toMatch(/komisyon/i);
+    expect(markErrors(draft({ commission: "" }), T).commission).toBeNull();
+    expect(markErrors(draft({ commission: "0" }), T).commission).toBeNull();
     expect(markErrors(draft({ time: "nope" }), T).time).toMatch(/SS:DD/);
     expect(markErrors(draft({ note: "x".repeat(501) }), T).note).toMatch(/500/);
+  });
+
+  it("records a late fill at the moment it is written, on the day it is written", () => {
+    const next = Date.parse("2027-01-12T09:05:00.000Z");
+    expect(buildMarkInput(draft(), T, next)).toMatchObject({ filled_at: "2027-01-12T09:05:00.000Z" });
+    expect(buildMarkInput(draft(), T, at("13:55"))).toMatchObject({ filled_at: istanbulIso("2027-01-11", "13:52") });
   });
 
   it("only checks the note for dolmadı / iptal", () => {
@@ -152,6 +162,7 @@ describe("the mark form", () => {
       filled_at: istanbulIso("2027-01-11", "13:52"),
       note: "Açılışta doldu",
     });
+    expect(buildMarkInput(draft({ commission: "12,50" }), T).mark === "entered" && buildMarkInput(draft({ commission: "12,50" }), T)).toMatchObject({ commission_try: 12.5 });
     expect(buildMarkInput(draft({ kind: "canceled" }), T)).toEqual({ mark: "canceled", note: undefined });
     expect(buildMarkInput(draft({ qty: "x", price: "y", time: "z" }), T)).toMatchObject({ filled_qty: 0, avg_price: 0 });
   });

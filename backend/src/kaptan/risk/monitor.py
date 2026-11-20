@@ -2,7 +2,7 @@
 
     result = await run_risk_monitor(conn, now, redis=app)      # the scheduler comes later
 
-One transaction: mark the paper book to market (risk/book.py), write today's daily P&L and drawdown
+One transaction: mark the person's book to market (risk/book.py), write today's daily P&L and drawdown
 into trading.risk_state, and with the *active* limit version (FR-33)
 - lift yesterday's daily halt at the next session (R02 lifts by itself, the kill switch never does);
 - daily P&L ≤ `daily_loss_halt_pct` (−1 %) → `halted_today`, audit `risk.halted` → SSE desk `halt`;
@@ -28,12 +28,11 @@ from kaptan.audit.writer import AuditDraft, append
 from kaptan.events.publish import publish
 from kaptan.prices.calendar import CalendarRangeError, is_trading_day, istanbul_date
 from kaptan.risk.active_limits import active_limits
-from kaptan.risk.book import effective_drawdown, paper_book
+from kaptan.risk.book import effective_drawdown, own_book
 from kaptan.risk.kill_switch import RISK_MONITOR, engage
 from kaptan.risk.pnl_eod import run_pnl_eod
 from kaptan.risk.status import risk_status
 from kaptan.rules.format import fmt_pct
-from kaptan.settings import get_settings
 
 RESET_RECOVER_DD: Final = Decimal("-0.025")
 
@@ -84,11 +83,9 @@ async def run_risk_monitor(
     now: datetime,
     *,
     redis: Any = None,
-    capital: float | None = None,
 ) -> MonitorResult:
     """One monitor tick. `redis`: an app / request / Redis client for the SSE events (after commit); None = no events.
     Use a connection that is not inside a transaction block: the tick commits before publishing."""
-    cap = capital or get_settings().paper_capital_try
     today = istanbul_date(now)
     halted = cleared = killed = False
     async with conn.transaction():
@@ -98,7 +95,7 @@ async def run_risk_monitor(
             state = dict(await cur.fetchone() or {})
         active = await active_limits(conn)
         lim = active.limits
-        book = await paper_book(conn, now, capital=cap)
+        book = await own_book(conn, now)
         reset_at, reset_eq = state["reset_at"], state["reset_equity"]
         reset_equity = None if reset_eq is None else Decimal(str(reset_eq))
         if reset_at is not None and reset_equity is None:
@@ -133,7 +130,7 @@ async def run_risk_monitor(
             extra = {"drawdown_pct": _f(drawdown), **snapshot}
             await engage(conn, by=RISK_MONITOR, reason=reason, role=None, now=now, check_off=False, extra=extra)
             killed = True
-    status = await risk_status(conn, now, capital=cap)
+    status = await risk_status(conn, now)
     await conn.commit()
     fired: list[MonitorEvent] = []
     if halted:

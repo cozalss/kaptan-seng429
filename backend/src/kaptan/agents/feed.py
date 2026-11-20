@@ -16,6 +16,8 @@ visible row, stage `text` after the detail fetcher stored its text). For each en
 4. **Spend limit:** at most `AGENT_MAX_RUNS_PER_HOUR` runs that reached an LLM (or are still running) per
    rolling hour, at most `AGENT_MAX_RUNS_PER_DAY` per Istanbul day (0 = no daily cap), and no run when
    every live provider is over its daily cap (kaptan.llm.budget). Such a row is `deferred`, with the reason.
+   Before the person has entered their starting money no run is made at all: every in-scope row is `deferred`
+   (`waiting_for_money`), is still listed, and is re-driven by the first sweep after the money exists.
    llm-route rows may use only part of a cap, so a flood of them leaves room for an E row.
 5. **Re-drive:** housekeeping (`sweep`) ends what can no longer run and puts deferred rows back on the stream in
    priority order, as many as the caps have room for. They then take the normal path below, so the ack, the
@@ -49,6 +51,7 @@ from kaptan.agents.nodes.screen import _veto_reasons
 from kaptan.ingest.publish import AGENT_STREAM, AGENT_STREAM_MAXLEN
 from kaptan.ingest.subject_routes import DETAIL_ROUTES
 from kaptan.llm.budget import DayUsage
+from kaptan.portfolio.ledger import started as book_started
 from kaptan.text.turkish import IST
 
 log = logging.getLogger("kaptan.agents.feed")
@@ -57,6 +60,8 @@ GROUP: Final = "agent-worker"
 AGENT_ROUTES: Final = DETAIL_ROUTES
 MAX_ATTEMPTS: Final = 3
 TERMINAL: Final = frozenset({"done", "waiting_approval", "skipped", "window_closed", "expired_unrun", "failed"})
+#: Why a row waits when the person has not entered their starting money (kaptan.disclosures.counters words it).
+WAITING_FOR_MONEY: Final = "waiting_for_money"
 NEVER_RAN: Final = -1  # no feed row has this index: count every run against the caps
 HOUR: Final = timedelta(hours=1)
 
@@ -301,6 +306,10 @@ class AgentFeed:
                 return await self._window_closed(conn, index, feed, disc, stream_id)
             if not disc["has_text"]:
                 return await self._mark(conn, index, "awaiting_text", None, stream_id)
+            if not await book_started(conn):  # no money, no suggestion: nothing may reach an LLM
+                await conn.commit()
+                log.info("disclosure %s deferred: %s", index, WAITING_FOR_MONEY)
+                return await self._mark(conn, index, "deferred", WAITING_FOR_MONEY, stream_id)
             resuming = feed is not None and feed["status"] == "running"
             if not resuming and not await _pre_gate_vetoes(conn, str(disc["primary_ticker"])):
                 capped = await self._over_cap(conn, index, str(disc["subject_route"]))
@@ -403,6 +412,8 @@ class AgentFeed:
     async def _picks(self, conn: Any, waiting: list[Waiting]) -> tuple[Waiting, ...]:
         if not waiting or (self.budget_ok is not None and not await self.budget_ok()):
             return ()
+        if not await book_started(conn):
+            return ()  # they stay deferred; the first sweep after the starting money puts them back
         hour, day = await self._spent(conn, NEVER_RAN)
         return pick_redrive(waiting, hour, day, self.cfg.max_runs_per_hour, self.cfg.max_runs_per_day, self.cfg.count)
 

@@ -7,6 +7,7 @@ agent_runs.explain, proposal + pending card, LLM usage counters (first injection
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -165,7 +166,9 @@ async def run_scenario(
     llm = provider or ReplayProvider()
     ctx, disc_doc, texts = await build_context(conn, run, now, provider=llm, tools=tools or ReplayToolbox())
     await conn.commit()  # release the read snapshot before the graph runs
-    state = await run_graph(ctx, thread_id=f"{run['run_id']}@{now.isoformat()}")
+    # A fresh thread per call: the demo clock restarts at the same anchor for every `Clock(...)`, so `now` alone repeats
+    # within a millisecond and the process-wide in-memory checkpointer would resume (and double) an earlier run.
+    state = await run_graph(ctx, thread_id=f"{run['run_id']}@{now.isoformat()}@{uuid.uuid4().hex[:8]}")
     explain = assemble(state, ctx, disc_doc, texts)
     await persist(conn, explain, now, first, manifest_hash=ctx.prompt_manifest_hash)
     await sync_usage(conn, llm)  # live mode: per-call usage rows + real quota counters (no-op in replay)

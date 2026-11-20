@@ -7,8 +7,9 @@ import { errorMessage } from "@/lib/api/types";
 import { currentTimeMs } from "@/lib/clock";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/field";
-import { buildMarkInput, hasMarkErrors, initialDraft, markErrors, ticketCopyText, type MarkDraft, type MarkKind } from "@/components/tickets/ticket-logic";
+import { MoneyField } from "@/components/solo/money-field";
+import { PlainField } from "@/components/solo/plain-field";
+import { buildMarkInput, hasMarkErrors, initialDraft, markErrors, ticketCopyText, type MarkDraft, type MarkErrors, type MarkKind } from "@/components/tickets/ticket-logic";
 
 /** How long "Kopyalandı" stays before the button says "Kopyala" again. */
 const COPIED_MS = 2_400;
@@ -27,6 +28,8 @@ export function SlipActions({ ticket, onMarked, onCopied }: { ticket: OrderTicke
   const [draft, setDraft] = useState<MarkDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Per-field words, shown under each field once the person has pressed "Girdiğimi kaydet".
+  const [fieldErrors, setFieldErrors] = useState<MarkErrors | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => (timer.current ? clearTimeout(timer.current) : undefined), []);
   const copyText = ticketCopyText(ticket);
@@ -44,14 +47,16 @@ export function SlipActions({ ticket, onMarked, onCopied }: { ticket: OrderTicke
   };
 
   const mark = async (d: MarkDraft) => {
-    if (d.kind === "entered" && hasMarkErrors(markErrors(d, ticket))) {
-      setError(Object.values(markErrors(d, ticket)).find(Boolean) ?? null);
+    const found = markErrors(d, ticket);
+    if (d.kind === "entered" && hasMarkErrors(found)) {
+      setFieldErrors(found);
       return;
     }
     setBusy(true);
     setError(null);
+    setFieldErrors(null);
     try {
-      onMarked(await api.markTicket(ticket.ticket_no, buildMarkInput(d, ticket)));
+      onMarked(await api.markTicket(ticket.ticket_no, buildMarkInput(d, ticket, currentTimeMs())));
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -63,6 +68,13 @@ export function SlipActions({ ticket, onMarked, onCopied }: { ticket: OrderTicke
     setMode("idle");
     setDraft(null);
     setError(null);
+    setFieldErrors(null);
+  };
+  const edit = (patch: Partial<MarkDraft>) => {
+    if (!draft) return;
+    const next = { ...draft, ...patch };
+    setDraft(next);
+    if (fieldErrors) setFieldErrors(markErrors(next, ticket));
   };
   const failure = error ? (
     <p role="alert" className="oneri-object-error">
@@ -79,21 +91,23 @@ export function SlipActions({ ticket, onMarked, onCopied }: { ticket: OrderTicke
           void mark(draft);
         }}
       >
-        <p className="oneri-slip-ask">Kaç adet, hangi fiyattan {ticket.side === "sell" ? "sattın" : "aldın"}?</p>
+        <p className="oneri-slip-ask">Bankanın gerçekten yaptığını yaz: kaç adet, hangi fiyattan {ticket.side === "sell" ? "sattın" : "aldın"}?</p>
         <div className="oneri-slip-fields">
-          <label>
-            <span className="u-caption">Adet</span>
-            <Input inputMode="numeric" value={draft.qty} onChange={(e) => setDraft({ ...draft, qty: e.target.value })} className="h-11 tabular-nums" autoFocus />
-          </label>
-          <label>
-            <span className="u-caption">Tanesi kaç ₺</span>
-            <Input inputMode="decimal" value={draft.price} onChange={(e) => setDraft({ ...draft, price: e.target.value })} className="h-11 tabular-nums" />
-          </label>
+          <PlainField label="Adet" inputMode="numeric" value={draft.qty} onChange={(e) => edit({ qty: e.target.value })} error={fieldErrors?.qty ?? null} className="tabular-nums" autoFocus autoComplete="off" />
+          <PlainField label="Tanesi kaç ₺" inputMode="decimal" value={draft.price} onChange={(e) => edit({ price: e.target.value })} error={fieldErrors?.price ?? null} className="tabular-nums" autoComplete="off" />
         </div>
+        <MoneyField
+          label="Bankan ne kadar komisyon kesti?"
+          value={draft.commission}
+          onChange={(commission) => edit({ commission })}
+          error={fieldErrors?.commission ?? null}
+          hint="Boş bırakabilirsin; o zaman KAPtan tahmin eder ve bunu sana söyler."
+          readOut={false}
+        />
         {failure}
         <div className="oneri-slip-buttons">
-          <Button type="submit" variant="primary" size="lg" disabled={busy}>
-            {busy ? "Kaydediliyor…" : "Kaydet"}
+          <Button type="submit" variant="primary" size="lg" disabled={busy} pending={busy}>
+            {busy ? "Kaydediliyor…" : "Girdiğimi kaydet"}
           </Button>
           <Button variant="ghost" size="lg" onClick={back} disabled={busy}>
             Vazgeç

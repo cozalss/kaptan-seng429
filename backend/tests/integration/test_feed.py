@@ -18,11 +18,15 @@ from psycopg_pool import AsyncConnectionPool
 
 from kaptan.agents.feed import GROUP, AgentFeed, FeedConfig, llm_budget_left
 from kaptan.agents.feed_run import LiveDeps, LiveResult, decision_for, run_disclosure, run_id_for, settle_waiting
+from kaptan.api.deps import Actor
 from kaptan.db import DictConn, create_pool
+from kaptan.disclosures.counters import day_counters
+from kaptan.domain.schemas.money import MoneyInput
 from kaptan.events import bus
 from kaptan.ingest.publish import AGENT_STREAM, publish_to_agents, sent_key
 from kaptan.llm.budget import Budget, Caps
 from kaptan.llm.store import MemoryStore
+from kaptan.portfolio import money
 from kaptan.runs.explain import explain_for
 from kaptan.settings import Settings
 from kaptan.workers import agent_worker
@@ -32,6 +36,8 @@ from tests.harness.seed import SeedResult
 from tests.unit.agent_fixtures import fixture_run
 
 pytestmark = pytest.mark.integration
+
+ACTOR = Actor(uid="sahip", name="Sahip", family="t")
 
 E3 = fixture_run("run-demo-e3-ornek")["explain"]
 E3_TICKER: str = E3["disclosure"]["primary_ticker"]
@@ -286,6 +292,40 @@ async def test_hourly_cap_and_llm_daily_cap(feed_db: AsyncConnectionPool[DictCon
     assert (await later.handle(e)).reason == "llm_daily_cap"
     off = AgentFeed(feed_db, redis, FakeRunner(), FeedConfig(max_runs_per_hour=0), now=lambda: NOW)
     assert (await off.handle(await add_disclosure(feed_db))).reason == "hourly_cap"
+
+
+async def test_nothing_reaches_an_llm_before_the_starting_money_then_the_queue_proceeds(
+    feed_db: AsyncConnectionPool[DictConn], redis: aioredis.Redis, migrated: Settings
+) -> None:
+    async with feed_db.connection() as conn:
+        await conn.execute("UPDATE ops.agent_feed SET started_at = %s", (NOW - timedelta(days=2),))  # earlier tests
+        await conn.execute("DELETE FROM trading.book_ledger")
+        await conn.commit()
+    try:
+        runner = FakeRunner()
+        feed = AgentFeed(feed_db, redis, runner, FeedConfig(max_runs_per_hour=10), now=lambda: NOW)
+        await feed.ensure_group()
+        a, b = await add_disclosure(feed_db), await add_disclosure(feed_db)
+        held = [await feed.handle(i) for i in (a, b)]
+        assert [(h.status, h.reason, h.ack) for h in held] == [("deferred", "waiting_for_money", True)] * 2
+        assert runner.calls == []  # not one run reached the model
+        assert (await feed.sweep()).redriven == ()  # nothing is queued again while the money is missing
+        async with feed_db.connection() as conn:
+            counters = await day_counters(conn, NOW)
+        assert counters["waiting_for_money"] is True and counters["deferred"] >= 2
+        assert counters["deferred_reason_tr"] == "Başlangıç paranı girene kadar KAPtan bildirimleri yorumlamaz."
+
+        async with feed_db.connection() as conn:
+            await money.add_money(conn, MoneyInput(kind="start", amount_try=100_000), ACTOR, now=NOW)
+        swept = await feed.sweep()
+        assert set(swept.redriven) >= {a, b}  # the disclosures were kept, not lost
+        await feed.read_new(block_ms=200)
+        assert sorted(runner.calls) == sorted(swept.redriven) and {a, b} <= set(runner.calls)
+        assert (await feed_row(feed_db, a) or {})["status"] == "done"
+        async with feed_db.connection() as conn:
+            assert (await day_counters(conn, NOW))["waiting_for_money"] is False
+    finally:
+        await reseed_test_db(migrated)
 
 
 async def test_daily_cap_counts_the_istanbul_day(feed_db: AsyncConnectionPool[DictConn], redis: aioredis.Redis) -> None:

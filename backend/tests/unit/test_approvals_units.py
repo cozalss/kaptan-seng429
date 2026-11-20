@@ -3,20 +3,21 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from kaptan.approvals.execute import paper_order
 from kaptan.approvals.fmt_tr import fmt_dec, fmt_int, fmt_pct, fmt_price
 from kaptan.approvals.reads import card_from_row
 from kaptan.approvals.ticket_doc import (
     EMPTY_ENTRY,
+    NoCashError,
+    TicketContext,
+    book_qty,
     build_ticket,
     effective_entry,
-    personal_qty,
     ticket_number,
     ticket_order,
     ticket_valid_until,
@@ -65,11 +66,24 @@ def test_fmt_dec_digits_and_pct() -> None:
     assert fmt_pct(0.61, 0) == "%61"
 
 
-# The account behind the recorded tickets.
-FIXTURE_ACCOUNT = {"account_equity_try": 350_000, "paper_equity_try": 1_016_480}
+def _context(expected: dict[str, Any] | None = None) -> TicketContext:
+    """The book and market facts of a ticket issued on the recorded day."""
+    return TicketContext(
+        equity_try=350_000,
+        free_cash_try=900_000,
+        market_label="Ana Pazar",
+        upper_limit=expected["upper_limit"] if expected else 100.0,
+        stage="paper",
+        exit_min=date(2027, 1, 18),
+        exit_max=date(2027, 1, 22),
+    )
 
 
-def test_build_ticket_reproduces_every_fixture_ticket() -> None:
+#: What a real ticket says differently from the recorded ones: no "(örnek değer)", no doubled "TL", real dates.
+CHANGED = ("evidence_line_tr", "stop_line_tr", "planned_exit_tr", "account_equity_try")
+
+
+def test_build_ticket_reproduces_every_fixture_ticket_but_the_fixed_defects() -> None:
     ids = [r["explain"]["run"]["run_id"] for r in FX.runs if r["set"] != "demo"]
     for expected in _expected("tickets.json"):
         run = _run(expected["run_id"])
@@ -79,17 +93,24 @@ def test_build_ticket_reproduces_every_fixture_ticket() -> None:
             run["explain"],
             seq=10 + ids.index(expected["run_id"]),
             decided_at=card["decided_at"],
-            **FIXTURE_ACCOUNT,
+            context=_context(expected),
+            qty=expected["qty"],
         )
         assert built["entry"] == EMPTY_ENTRY
-        assert {**built, "entry": expected["entry"]} == expected
+        assert {k: v for k, v in built.items() if k not in (*CHANGED, "entry")} == {
+            k: v for k, v in expected.items() if k not in (*CHANGED, "entry")
+        }
+        assert "örnek değer" not in built["evidence_line_tr"]
+        assert not built["stop_line_tr"].endswith("TL TL") and built["stop_line_tr"].count("TL") <= 1
+        assert built["planned_exit_tr"] == "18 Ocak 2027 kapanışı (en geç 22 Ocak 2027 kapanışı)"
+        assert built["account_equity_try"] == 350_000
 
 
 def test_build_ticket_without_proposal_falls_back() -> None:
     run = _run("run-day-e1-tmsmk")
     card = {**run["explain"]["approval"], "rule_trace_summary": [], "approved_notional_try": 1000.0}
     built = build_ticket(
-        card, {"proposal": None, "risk_checks": []}, seq=7, decided_at=card["decided_at"], **FIXTURE_ACCOUNT
+        card, {"proposal": None, "risk_checks": []}, seq=7, decided_at=card["decided_at"], context=_context()
     )
     assert built["ticket_no"].endswith("-007")
     assert built["cost_line_tr"] == "Maliyet: Neden ekranında"
@@ -97,7 +118,15 @@ def test_build_ticket_without_proposal_falls_back() -> None:
     assert built["stop_line_tr"] == "Stop: Neden ekranında"
     assert built["materiality_line_tr"] == "Kural izi: Neden ekranında"
     assert built["amount_check_line_tr"] == "Tutar kontrolü (R14): uygulanmadı"
-    assert built["qty"] == personal_qty(card, **FIXTURE_ACCOUNT) == 3
+    assert built["qty"] == book_qty(card, free_cash_try=900_000) == 11
+
+
+def test_book_qty_is_capped_by_the_free_cash() -> None:
+    card = {**_run("run-day-e1-tmsmk")["explain"]["approval"], "approved_notional_try": 10_000.0, "limit_price": 100.0}
+    assert book_qty(card, free_cash_try=900_000) == 100
+    assert book_qty(card, free_cash_try=2_500) == 25
+    with pytest.raises(NoCashError):
+        book_qty(card, free_cash_try=99)
 
 
 def test_ticket_validity_windows() -> None:
@@ -150,17 +179,3 @@ def test_card_effective_status() -> None:
     assert card_from_row(row, kill_on=False, now=before)["status"] == "pending"
     assert card_from_row(row, kill_on=True, now=before)["status"] == "cancelled"
     assert card_from_row(row, kill_on=False, now=datetime(2027, 1, 12, 7, tzinfo=UTC))["status"] == "expired"
-
-
-def test_paper_order_and_fill() -> None:
-    card = _run("run-day-e1-krgcl")["explain"]["approval"]
-    now = datetime(2027, 1, 11, 10, 41, tzinfo=UTC)
-    auction = paper_order(card, now)
-    assert (auction["id"], auction["tif"], auction["status"], auction["qty"]) == (
-        "ord-s-day-e1-krgcl",
-        "opg",
-        "pending_open",
-        card["qty"],
-    )
-    smaller = paper_order({**card, "entry": "intraday_limit", "approved_notional_try": 1000.0}, now)
-    assert (smaller["tif"], smaller["status"], smaller["qty"]) == ("day", "accepted", 29)

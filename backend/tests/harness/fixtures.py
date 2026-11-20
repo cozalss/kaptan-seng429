@@ -257,7 +257,7 @@ class DemoFixtures:
     def position_rows(self) -> list[Row]:
         return [
             (
-                p["book"],
+                "personal",  # one book: the recorded paper positions are the person's holdings
                 p["ticker"],
                 p["company_name"],
                 p["qty"],

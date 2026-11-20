@@ -32,7 +32,9 @@ CENT: Final = Decimal("0.01")
 #: Trace notes for a figure the document implies but does not write (`source_amounts.Basis`).
 DERIVED_NOTES: Final = {
     "table_sum": "Tutar tablodaki satırların toplamıyla doğrulandı: metinde yazılı değil, kodla hesaplandı",
-    "table_cumulative": "Tutar tablodaki önceki toplam + son satırla doğrulandı: metinde yazılı değil, kodla hesaplandı",
+    "table_cumulative": (
+        "Tutar tablodaki önceki toplam + son satırla doğrulandı: metinde yazılı değil, kodla hesaplandı"
+    ),
     "nominal_x_price": "Tutar nominal × metindeki fiyatla doğrulandı: metinde yazılı değil, kodla hesaplandı",
 }
 
@@ -71,14 +73,18 @@ def reader_amount(reader: dict[str, Any] | None) -> Decimal | None:
 
 
 def source_of(state: KaptanState, ctx: RunContext) -> SourceAmounts:
-    """What the document itself says, for R14. Never reads the Reader's figures, only the duration of an E3."""
+    """What the document itself says, for R14. Reads the document, and of the Reader only the duration of an E3."""
     d, reader = ctx.disclosure, state.get("reader")
     duration = reader.get("duration_months") if reader else None
-    return read_source(str(state.get("event_type")), d.text_tr, d.ticker, duration_months=duration, attachment=d.attachment)
+    return read_source(
+        str(state.get("event_type")), d.text_tr, d.ticker, duration_months=duration, attachment=d.attachment
+    )
 
 
 def amount_note(merged: dict[str, Any], source: SourceAmounts, amount: Decimal | None) -> str:
     if merged.get("amount_in_text") is False:
+        if amount is not None and amount in source.not_amounts:
+            return "Okuyucunun tutarı tablonun tutar olmayan bir sütununda (fiyat ya da önceki toplam) ✗"
         return "Tutar metinde yok ✗"
     return DERIVED_NOTES.get(str(amount_basis(amount, source)), "Oranlar Decimal ile hesaplandı")
 
@@ -181,7 +187,7 @@ def build_features(
     event = str(state.get("event_type"))
     snapshot = dict(ctx.tools.features(d.fingerprint) or {})
     amount = reader_amount(reader)
-    amounts = list(source_of(state, ctx).values)
+    amounts = list(source_of(state, ctx).confirming(amount))  # what the gate's R14 gets as `regex_amounts`
     last = Decimal(str((mat or {}).get("trade_day_close", {}).get("value") or desk.last_price))
     computed: dict[str, Any] = {
         "run_id": d.run_id,

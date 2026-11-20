@@ -83,5 +83,18 @@ export const DayCounters = z.object({
   rejections: z.number().int().nonnegative(),
   llm_calls: z.number().int().nonnegative(),
   llm_tokens: z.number().int().nonnegative(),
+  /** True until the person has entered their starting money: disclosures are read and listed, no suggestion is made. */
+  waiting_for_money: z.boolean().default(false),
+  /** Disclosures that still wait for a turn (run caps or provider quota). The API sends it inside `agent_feed`. */
+  deferred: z.number().int().nonnegative().default(0),
+  /** Why they wait, as one plain sentence; null when the API cannot say. */
+  deferred_reason_tr: z.string().nullable().default(null),
+  /** What the worker did with the day's disclosures; absent on a day it saw nothing. Only `deferred` is read. */
+  agent_feed: z.object({ deferred: z.number().int().nonnegative().default(0) }).optional(),
 });
 export type DayCounters = z.infer<typeof DayCounters>;
+
+/** How many disclosures got no turn, wherever the API put the number. */
+export function deferredCount(c: Pick<DayCounters, "deferred" | "agent_feed">): number {
+  return Math.max(c.deferred, c.agent_feed?.deferred ?? 0);
+}

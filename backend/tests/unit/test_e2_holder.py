@@ -4,16 +4,22 @@ shareholder buying is. The holder comes from the form and the stake from the ver
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Final
 
 import pytest
 
-from kaptan.agents.reader_facts import AttachmentFacts, ground_insider, is_threshold_notice
+from kaptan.agents.reader_facts import THRESHOLD_STEP_NOTE, AttachmentFacts, ground_insider, is_threshold_notice
 from kaptan.ingest.attachments import AttachmentRef, StoredAttachment, clean_extracted, compose_text, extract_attachment
 from kaptan.ingest.parsers.insider_holder import holder_kind
-from kaptan.rules.events import RuleInput, e2_insider_role
+from kaptan.llm.provider import fingerprint
+from kaptan.rules.engine import decide
+from kaptan.rules.events import Check, RuleInput, e2_insider_role
 from kaptan.rules.params import DEFAULT_PARAMS
+from tests.harness.replay import Cassette, ReplayProvider, recording_of
+from tests.harness.scenario import run_graph
+from tests.unit.agent_fixtures import context_for, fixture_run
 
 ATT: Final = Path(__file__).resolve().parents[1] / "fixtures" / "kap_attachments"
 SAMPLES: Final[dict[str, dict[str, Any]]] = json.loads((ATT / "manifest.json").read_text("utf-8"))["disclosures"]
@@ -69,9 +75,20 @@ def ground(index: str, role: str) -> dict[str, Any]:
     return ground_insider(answer(role), AttachmentFacts("read", rows=rows_of(index)), run_text(index))
 
 
-def role_check(doc: dict[str, Any]) -> Any:
-    x = RuleInput(insider_role=doc["role"], insider_threshold_notice=bool(doc.get("holder_threshold_notice")))
-    return e2_insider_role(x, DEFAULT_PARAMS)
+def rule_input(doc: dict[str, Any]) -> RuleInput:
+    """The fields `agents.nodes.decide.rule_input` takes from the Reader's document for an E2."""
+    return RuleInput(
+        event_type="E2",
+        ticker="TSTEB",
+        insider_role=doc["role"],
+        insider_threshold_notice=bool(doc.get("holder_threshold_notice")),
+        insider_open_market=True,
+        insider_net_buy_value_try=5_000_000.0,
+    )
+
+
+def role_check(doc: dict[str, Any]) -> Check:
+    return e2_insider_role(rule_input(doc), DEFAULT_PARAMS)
 
 
 @pytest.mark.parametrize("index", STOPPED)
@@ -79,7 +96,16 @@ def test_an_institutions_threshold_notice_stops_with_the_reason(index: str) -> N
     # "executive" is the trap: these forms print the signatory's title ("Senior Manager", "Vice President")
     check = role_check(ground(index, "executive"))
     assert check.passed is False
-    assert check.detail == "Kurumsal yatırımcının pay eşiği bildirimi E2 değildir."
+    assert check.detail_tr == "Kurumsal yatırımcının pay eşiği bildirimi E2 değildir."
+
+
+@pytest.mark.parametrize("index", STOPPED)
+def test_the_rule_engine_ends_the_run_there_and_the_trace_says_why(index: str) -> None:
+    result = decide(rule_input(ground(index, "executive")), DEFAULT_PARAMS)
+    assert (result.outcome, result.reason_codes) == ("NO_TRADE", ("E2_RULE_NOT_MET",))
+    last = result.as_document()["trace"][-1]  # type: ignore[index]
+    assert (last["rule"], last["passed"], last["observed"]) == ("E2.insider_role", False, "kurumsal yatırımcı")
+    assert last["detail_tr"] == "Kurumsal yatırımcının pay eşiği bildirimi E2 değildir."
 
 
 @pytest.mark.parametrize("index", STOPPED)
@@ -174,3 +200,37 @@ def test_an_abstain_stays_an_abstain() -> None:
         run_text("1690390"),
     )
     assert doc["status"] == "abstain" and "holder_threshold_notice" not in doc
+
+
+# -- the whole graph ------------------------------------------------------
+E2_RUN: Final = "run-day-e2-orncm"  # a recorded E2 whose Reader says "board_member" and that ends in a proposal
+
+
+async def graph_state(index: str) -> dict[str, Any]:
+    """The recorded E2 run again, reading a real attachment: same model answers, the form and its table changed."""
+    ctx = context_for(E2_RUN)
+    text = run_text(index)
+    recorded = replace(recording_of(fixture_run(E2_RUN)), fingerprint=fingerprint(ctx.disclosure.ticker, text))
+    disclosure = replace(ctx.disclosure, text_tr=text, attachment=AttachmentFacts("read", rows=rows_of(index)))
+    ctx = replace(ctx, provider=ReplayProvider(Cassette([recorded])), disclosure=disclosure)
+    return dict(await run_graph(ctx, f"e2-holder-{index}"))
+
+
+@pytest.mark.parametrize("index", STOPPED)
+async def test_through_the_graph_an_institutions_notice_is_no_trade_and_the_trace_says_why(index: str) -> None:
+    state = await graph_state(index)
+    assert state["reader"]["role"] == "other_5pct_holder" and state["reader"]["holder_threshold_notice"] is True
+    reader_step = next(s for s in state["steps"] if s["node"] == "reader")
+    assert reader_step["note_tr"] == THRESHOLD_STEP_NOTE
+    rules = state["rules"]
+    assert (rules["outcome"], rules["reason_codes"]) == ("NO_TRADE", ["E2_RULE_NOT_MET"])
+    assert rules["trace"][-1]["rule"] == "E2.insider_role" and rules["trace"][-1]["passed"] is False
+    assert state["outcome"] == "NO_TRADE" and state.get("proposal") is None and state.get("approval_card") is None
+
+
+async def test_through_the_graph_a_chairmans_notice_passes_the_role_rule_without_the_note() -> None:
+    state = await graph_state("1683269")
+    assert state["reader"]["role"] == "board_member" and "holder_threshold_notice" not in state["reader"]
+    assert next(s for s in state["steps"] if s["node"] == "reader")["note_tr"] is None
+    role = next(c for c in state["rules"]["trace"] if c["rule"] == "E2.insider_role")
+    assert role["passed"] is True

@@ -21,7 +21,8 @@ def _book(cash: str, holdings: tuple[Holding, ...] = (), pending: tuple[Exposure
     base: dict[str, Any] = {"day_start_equity": Decimal(1_000_000), "prior_peak": Decimal(1_050_000)}
     return BookSnapshot(
         as_of=NOW,
-        capital=Decimal(1_000_000),
+        started=True,
+        put_in=Decimal(1_000_000),
         cash=Decimal(cash),
         reserved=sum((p.value for p in pending), Decimal(0)),
         holdings=holdings,
@@ -38,7 +39,7 @@ def test_book_equity_cash_peak_and_drawdown() -> None:
     book = _book("900000", (_h("AAAAA", 1000, "50", "banka"),), (Exposure("BBBBB", Decimal(20_000), "banka", None),))
     assert book.market_value == Decimal(50_000)
     assert book.equity == Decimal(950_000)
-    assert book.free_cash == Decimal(880_000)  # equity − open notional − reserved
+    assert book.free_cash == Decimal(880_000)  # cash − reserved tickets
     assert book.peak_equity == Decimal(1_050_000)
     assert book.daily_pnl_pct == Decimal("-0.05")
     assert book.drawdown_pct == Decimal(950_000) / Decimal(1_050_000) - 1

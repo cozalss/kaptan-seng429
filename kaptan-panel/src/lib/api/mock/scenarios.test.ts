@@ -19,7 +19,7 @@ afterEach(() => {
 });
 
 describe("kill switch", () => {
-  it("cancels open orders and hands positions to the exit rule", () => {
+  it("issues no order of its own on approval, and hands positions to the exit rule", () => {
     const db = new MockDb(null);
     const [p] = PENDING_PROPOSALS;
     db.update((s) => ({
@@ -27,8 +27,8 @@ describe("kill switch", () => {
       approvals: { ...s.approvals, [p]: { status: "approved", decided_by: "sen", decided_at: db.nowIso(), decision_comment: "ok", approved_notional_try: null } },
     }));
     executeApproved(db, p);
+    expect(db.snapshot.orders).toHaveLength(0);
     engageKillSwitch(db, "user:sen", "Test");
-    expect(db.snapshot.canceledOrderIds.length).toBeGreaterThan(0);
     expect(db.snapshot.positionsManagedByExit).toBe(true);
   });
 });

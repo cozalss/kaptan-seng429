@@ -15,7 +15,7 @@ from kaptan.db import DictConn, connect
 from kaptan.portfolio.pnl import LIVE_STRATEGY
 from kaptan.settings import Settings
 from tests.conftest import bearer, login, reseed_test_db
-from tests.integration.test_risk_live_db import rows
+from tests.integration.test_risk_live_db import clean_book, rows
 
 pytestmark = pytest.mark.integration
 
@@ -28,8 +28,7 @@ async def live_card(migrated: Settings, seeded: object) -> AsyncIterator[DictCon
     conn = await connect(migrated.database_url.get_secret_value())
     try:
         await conn.execute("UPDATE trading.agent_runs SET run_set = 'live' WHERE run_id = %s", (RUN,))
-        for sql in ("DELETE FROM trading.fills", "DELETE FROM trading.positions"):
-            await conn.execute(sql)
+        await clean_book(conn)
         await conn.execute("DELETE FROM trading.pnl_daily WHERE strategy = %s", (LIVE_STRATEGY,))
         await conn.execute("DELETE FROM core.restriction_refresh")
         await conn.commit()
@@ -76,7 +75,8 @@ async def test_unknown_restrictions_block_then_a_hard_restriction_then_it_sends(
     assert isinstance(payload, dict)
     assert (payload["rule_code"], payload["failed_rule"], payload["limits_version"]) == ("R16", "R04", 1)
     assert await _card_status(live_card) == "pending"
-    assert await rows(live_card, "SELECT id FROM trading.orders WHERE proposal_id = %s", (PROPOSAL,)) == []
+    tickets = await rows(live_card, "SELECT ticket_no FROM trading.order_tickets WHERE proposal_id = %s", (PROPOSAL,))
+    assert tickets == []
     await live_card.commit()
 
     now = datetime.now(UTC)
@@ -100,8 +100,8 @@ async def test_unknown_restrictions_block_then_a_hard_restriction_then_it_sends(
     assert ok.status_code == 200, ok.text
     assert ok.json()["status"] == "approved"
     assert await _card_status(live_card) == "approved"
-    orders = await rows(live_card, "SELECT broker FROM trading.orders WHERE proposal_id = %s", (PROPOSAL,))
-    assert {"broker": "simbist"} in orders
+    tickets = await rows(live_card, "SELECT ticket_no FROM trading.order_tickets WHERE proposal_id = %s", (PROPOSAL,))
+    assert len(tickets) == 1  # the ticket is the only order: nothing is simulated
     await live_card.commit()
 
 

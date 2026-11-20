@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { STATE_VERSION } from "../src/lib/api/mock/state";
 import { IS_API } from "./backend";
 
 /** The test double's passphrase; never shown anywhere. */
@@ -57,4 +58,35 @@ export async function openSettings(page: Page) {
   await page.getByRole("button", { name: "Hesabım" }).click();
   await page.getByRole("menuitem", { name: "Ayarlar" }).click();
   await expect(page).toHaveURL(/\/ayarlar$/);
+}
+
+/** What a browser test may put into the test double before the first load (status.ts, state.ts). */
+export interface MockSeed {
+  /** Problem codes the system reports, most important first. */
+  problems?: string[];
+  /** Disclosures that got no turn today, and the sentence the API gives for why. */
+  deferred?: number;
+  deferredReason?: string | null;
+  /** Phone / e-mail channels set up on "this computer"; `failing`: the next test message fails. */
+  alerts?: { ntfy?: boolean; email?: boolean; failing?: boolean };
+  /** A new install with no starting money yet. */
+  fresh?: boolean;
+}
+
+/** Start the test double in a chosen state (kept for the whole page, written once per context). */
+export async function seedMock(page: Page, seed: MockSeed) {
+  const { fresh, ...status } = seed;
+  await page.addInitScript(
+    ([stateKey, freshKey, slice, isFresh, version]) => {
+      try {
+        if (!window.localStorage.getItem(stateKey)) {
+          window.localStorage.setItem(stateKey, JSON.stringify({ v: version, startedAtReal: Date.now(), status: slice }));
+        }
+        if (isFresh) window.localStorage.setItem(freshKey, "1");
+      } catch {
+        // Storage blocked: the double starts in its default state.
+      }
+    },
+    ["kaptan-mock-state", "kaptan-mock-fresh", status, Boolean(fresh), STATE_VERSION] as const,
+  );
 }

@@ -19,7 +19,7 @@ from kaptan.domain.schemas._base import (
     Ticker,
 )
 from kaptan.domain.schemas.agents import EvidenceStrength, FlagCode, FlagSeverity
-from kaptan.domain.schemas.common import EventCode
+from kaptan.domain.schemas.common import EventCode, EventType
 from kaptan.domain.schemas.personal import StageId
 from kaptan.domain.schemas.rules import RuleTraceEntry
 from kaptan.domain.schemas.user import Signature
@@ -196,6 +196,12 @@ class Order(KModel):
 
 
 class Position(KModel):
+    """`origin` suggestion: a ticket the person entered. own: a share held before KAPtan, entered by hand
+    (`source_proposal` and `run_id` are "", `event_type` is IGNORE, KAPtan raises no exit for it).
+    `price_as_of`: when the price in `last_price` was known (null: no stored price, shown at cost)."""
+
+    id: str
+    origin: Literal["suggestion", "own"]
     ticker: Ticker
     company_name: str
     qty: PosInt
@@ -206,12 +212,13 @@ class Position(KModel):
     holding_days: NonNegInt
     source_proposal: str
     run_id: str
-    event_type: EventCode
+    event_type: EventType
     strategy_version: str
     unrealized_pnl: float
     realized_pnl: float
     managed_by_exit_rule: bool
-    book: Literal["paper", "personal"]
+    book: Literal["paper", "personal"]  # always "personal": there is one book
+    price_as_of: IsoDateTime | None
 
 
 TicketEntryStatus = Literal["awaiting", "entered", "unfilled", "canceled", "expired"]
@@ -224,6 +231,11 @@ class TicketEntry(KModel):
     filled_at: IsoDateTime | None
     note: str | None
     marked_at: IsoDateTime | None
+    #: What the bank charged in total (typed by the person, else the cost model's estimate).
+    commission_try: NonNegFloat
+    commission_estimated: bool
+    #: Recorded after `valid_until`: still the person's real fill, kept in the book.
+    late: bool
 
 
 def _note(v: str | None) -> str | None:
@@ -241,6 +253,7 @@ class TicketMarkEntered(KModel):
     avg_price: float
     filled_at: IsoDateTime
     note: str | None = None
+    commission_try: float | None = Field(default=None, ge=0)
 
     _note = field_validator("note")(_note)
 
@@ -377,8 +390,8 @@ class RiskStatus(KModel):
     halted_today: bool
     daily_pnl_pct: float
     drawdown_pct: float = Field(le=0)
-    peak_equity: PosFloat
-    equity: PosFloat
+    peak_equity: NonNegFloat  # 0 before the starting money is entered
+    equity: NonNegFloat
     regime: Literal["normal", "crisis"]
     live_armed: bool
     quota: list[QuotaRow]

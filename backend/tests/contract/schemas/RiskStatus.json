@@ -45,11 +45,11 @@
   },
   "peak_equity": {
    "type": "number",
-   "exclusiveMinimum": 0
+   "minimum": 0
   },
   "equity": {
    "type": "number",
-   "exclusiveMinimum": 0
+   "minimum": 0
   },
   "regime": {
    "type": "string",

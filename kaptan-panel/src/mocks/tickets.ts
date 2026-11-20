@@ -2,15 +2,12 @@ import type { ApprovalCard, Explain, OrderTicket, StageId, TicketEntry } from "@
 import { fmtDec, fmtInt, fmtPct, fmtPrice } from "@/lib/format";
 import { sha256Hex } from "@/lib/hash";
 import { istanbulIso, ISTANBUL_OFFSET_H, istanbulMinutes, nextTradingDay } from "@/lib/time";
-import { PERSONAL_ACCOUNT_TRY } from "./governance";
-import { PAPER_EQUITY_TRY } from "./explain-builder";
 
 /**
- * Personal-mode order tickets (12 §2) for any approved proposal. The canonical demo ticket
- * (T-2027-0111-003, governance.ts) stays hand-written; every other approval gets one built
- * here from its card and "Neden" payload. The ticket is sized for the sample personal account
- * (350.000 TL), not for the paper desk, and is valid for 30 minutes (R16, ticket_ttl): from
- * 09:40 if issued before the opening auction, never past the session close.
+ * The order to enter at the bank (12 §2) for any approved proposal, built from its card and
+ * "Neden" payload. It carries the amount that was approved, measured against the person's own
+ * book, and is valid for 30 minutes (R16, ticket_ttl): from 09:40 if issued before the opening
+ * auction, never past the session close.
  */
 export const TICKET_TTL_MS = 30 * 60_000;
 
@@ -21,6 +18,9 @@ export const EMPTY_ENTRY: TicketEntry = Object.freeze({
   filled_at: null,
   note: null,
   marked_at: null,
+  commission_try: 0,
+  commission_estimated: false,
+  late: false,
 }) as TicketEntry;
 
 const istDate = (iso: string) => new Date(Date.parse(iso) + ISTANBUL_OFFSET_H * 3_600_000).toISOString().slice(0, 10);
@@ -40,17 +40,16 @@ export function ticketNumber(createdIso: string, seq: number): string {
   return `T-${d.slice(0, 4)}-${d.slice(5, 7)}${d.slice(8, 10)}-${String(seq).padStart(3, "0")}`;
 }
 
-/** Approved notional scaled from the paper desk to the personal account, in whole lots. */
-export function personalQty(card: ApprovalCard): number {
-  const notional = card.approved_notional_try ?? card.final_notional_try;
-  const scaled = (notional * PERSONAL_ACCOUNT_TRY) / PAPER_EQUITY_TRY;
-  return Math.max(1, Math.floor(scaled / card.limit_price));
+/** How many whole shares the approved amount buys at the order's price (a shrunk approval buys fewer). */
+export function approvedQty(card: ApprovalCard): number {
+  if (card.approved_notional_try === null) return Math.max(1, card.qty);
+  return Math.max(1, Math.floor(card.approved_notional_try / card.limit_price));
 }
 
-export function buildTicket(card: ApprovalCard, e: Explain, opts: { seq: number; decidedAt: string; stage: StageId }): OrderTicket {
+export function buildTicket(card: ApprovalCard, e: Explain, opts: { seq: number; decidedAt: string; stage: StageId; accountEquity: number }): OrderTicket {
   const created = new Date(Date.parse(opts.decidedAt) + 20_000).toISOString();
   // A sell (an exit) sells the lots held, never more (no short selling).
-  const qty = card.side === "sell" ? Math.max(1, card.qty) : personalQty(card);
+  const qty = card.side === "sell" ? Math.max(1, card.qty) : approvedQty(card);
   const p = e.proposal;
   const gate = e.risk_checks.map((c) => ({ code: c.rule_code, passed: c.outcome === "pass" || c.outcome === "resize" || c.outcome === "approval_required" }));
   const edge = p ? p.expected_edge_bps / 100 / 100 : null;
@@ -80,7 +79,7 @@ export function buildTicket(card: ApprovalCard, e: Explain, opts: { seq: number;
     ref_price: p?.ref_price ?? card.limit_price,
     upper_limit: Math.round(card.limit_price * 1.1 * 100) / 100,
     est_notional_try: Math.round(qty * card.limit_price),
-    account_equity_try: PERSONAL_ACCOUNT_TRY,
+    account_equity_try: opts.accountEquity,
     event_line_tr: `${card.event_type} — ${card.sub_type_tr}`,
     kap_line_tr: `idx ${card.disclosure_index} · ${card.headline_tr}`,
     materiality_line_tr: card.rule_trace_summary.find((r) => r.passed)?.detail_tr ?? "Kural izi: Neden ekranında",

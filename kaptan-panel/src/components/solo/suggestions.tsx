@@ -271,7 +271,7 @@ function EmptySuggestions({ today, stopped }: { today: { read: number; toCrew: n
             KAPtan bugün <strong>{fmtInt(today.read)}</strong> bildirim okudu, <strong>{fmtInt(today.toCrew)}</strong> tanesine yakından baktı. Şu an senden bir şey beklemiyor.
           </>
         ) : (
-          "KAPtan izliyor. Senden şu an bir şey beklemiyor."
+          "KAPtan KAP duyurularını okuyor. Söyleyecek bir şeyi olunca burada konuşur; şu an senden bir şey beklemiyor."
         )}
       </p>
       {stopped ? null : <p className="oneri-empty-note">Bir şey çıkarsa burada görürsün; sayfayı yenilemen gerekmez.</p>}

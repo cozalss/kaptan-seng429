@@ -3,11 +3,13 @@
 Deterministic, no LLM: the same database and `now` give the same document. A MorningBrief JSON document
 (domain/schemas/reports.py) with:
 - important_disclosures: visible KAP rows that became known since the last session's close (not noise);
-- orders_for_open: SimBIST orders waiting for today's open;
+- orders_for_open: orders waiting for today's open (none on a running system: KAPtan places no order; the field
+  stays so the document keeps its shape);
 - pending_approvals / open_positions / expiring_today (planned exit date = today);
-- risk_warnings: kill switch, daily halt, crisis regime, yesterday's P&L of the live strategy;
+- risk_warnings: stop, day halt, crisis regime, yesterday's result of the person's book;
 - restriction_changes: tedbir/restriction rows that became known, or ended, since the last close;
-- summary_tr: plain Turkish sentences built from the counts above.
+- summary_tr: plain Turkish sentences built from the counts above (no finance jargon, nothing said that is not
+  known: a new install with no money, no holdings and no result yet says only what exists)
 Only data with `available_at <= now` is used (no look-ahead).
 """
 
@@ -25,7 +27,7 @@ from kaptan.domain.schemas.reports import MorningBrief
 from kaptan.portfolio.pnl import LIVE_STRATEGY
 from kaptan.portfolio.positions import list_positions
 from kaptan.prices.calendar import IST, CalendarRangeError, close_known_at, prev_session
-from kaptan.rules.format import fmt_int, fmt_pct, fmt_signed_pct, fmt_try
+from kaptan.rules.format import fmt_int, fmt_pct, fmt_try
 
 MAX_DISCLOSURES: Final = 30
 MAX_RESTRICTIONS: Final = 50
@@ -93,44 +95,66 @@ def risk_warnings(risk: dict[str, Any] | None, pnl: dict[str, Any] | None) -> li
     out: list[dict[str, Any]] = []
     if risk is not None:
         if risk["kill_switch"] == "on":
-            reason = f" ({risk['kill_reason']})" if risk.get("kill_reason") else ""
-            out.append({"level": "critical", "text_tr": f"Acil durdurma açık{reason}: yeni emir gönderilmez."})
+            out.append({"level": "critical", "text_tr": "KAPtan durduruldu: yeni öneri çıkmaz."})
         if risk["halted_today"]:
-            out.append({"level": "warn", "text_tr": "Günlük zarar durdurması sürüyor: bugün yeni alım yapılmaz."})
+            out.append({"level": "warn", "text_tr": "Günlük zarar sınırına gelindi: bugün yeni öneri çıkmaz."})
         if risk["regime"] == "crisis":
-            out.append({"level": "warn", "text_tr": "Piyasa rejimi kriz: pozisyon büyüklükleri düşürülür."})
+            out.append({"level": "warn", "text_tr": "Piyasa çok dalgalı: öneriler daha küçük tutulur."})
     if pnl is not None and float(pnl["daily_return"]) < 0:
-        text = f"Önceki borsa gününün getirisi {fmt_signed_pct(float(pnl['daily_return']), 2)}."
+        text = f"Önceki borsa gününde paran {fmt_pct(abs(float(pnl['daily_return'])), 2)} azaldı."
         level = "warn" if float(pnl["drawdown"]) <= -0.025 else "info"
         out.append({"level": level, "text_tr": text})
     return out
 
 
+def _holdings_sentence(n_pos: int, n_exp: int) -> str:
+    if not n_pos:
+        return "Elinde KAPtan'ın bildiği hisse yok."
+    text = f"Elinde {fmt_int(n_pos)} hisse var"
+    return text + (f", bugün satış günü gelen: {fmt_int(n_exp)}." if n_exp else ".")
+
+
+def _risk_sentence(risk: dict[str, Any] | None) -> str | None:
+    if risk is None:
+        return None
+    said = [
+        text
+        for on, text in (
+            (risk["kill_switch"] == "on", "KAPtan durduruldu, yeni öneri çıkmaz"),
+            (bool(risk["halted_today"]), "günlük zarar sınırına gelindi, bugün yeni öneri çıkmaz"),
+            (risk["regime"] == "crisis", "piyasa çok dalgalı, öneriler daha küçük tutulur"),
+        )
+        if on
+    ]
+    return f"{said[0][0].upper()}{said[0][1:]}{''.join(f'; {t}' for t in said[1:])}." if said else None
+
+
 def summary_text(day: date, doc: dict[str, Any], risk: dict[str, Any] | None, pnl: dict[str, Any] | None) -> str:
     """Plain Turkish sentences from the brief's facts (no model, same input → same text)."""
+    n_pending = len(doc["pending_approvals"])
     parts = [f"{date_tr(day)} sabah özeti."]
-    n_pos, n_exp = len(doc["open_positions"]), len(doc["expiring_today"])
-    parts.append(
-        f"Açık pozisyon: {fmt_int(n_pos)}"
-        + (f", bugün çıkış tarihi gelen: {fmt_int(n_exp)}." if n_exp else ", bugün çıkış tarihi gelen yok.")
-    )
-    parts.append(f"Açılışta gerçekleşecek emir: {fmt_int(len(doc['orders_for_open']))}.")
-    parts.append(f"Onay bekleyen öneri: {fmt_int(len(doc['pending_approvals']))}.")
-    if risk is not None:
-        kill = "açık" if risk["kill_switch"] == "on" else "kapalı"
-        regime = "kriz" if risk["regime"] == "crisis" else "normal"
-        halt = ", günlük durdurma sürüyor" if risk["halted_today"] else ""
-        parts.append(f"Risk: acil durdurma {kill}, rejim {regime}{halt}.")
+    parts.append(f"Onayını bekleyen {fmt_int(n_pending)} öneri var." if n_pending else "Onayını bekleyen öneri yok.")
+    parts.append(_holdings_sentence(len(doc["open_positions"]), len(doc["expiring_today"])))
+    stopped = _risk_sentence(risk)
+    if stopped:
+        parts.append(stopped)
     if pnl is not None:
+        change = float(pnl["daily_return"])
+        moved = "arttı" if change >= 0 else "azaldı"
         parts.append(
-            f"Önceki borsa günü ({date_tr(pnl['d'])}): getiri {fmt_signed_pct(float(pnl['daily_return']), 2)}, "
-            f"özsermaye {fmt_try(float(pnl['equity']))}, zirveden düşüş {fmt_pct(float(pnl['drawdown']), 1)}."
+            f"Önceki borsa gününde ({date_tr(pnl['d'])}) paran {fmt_pct(abs(change), 2)} {moved}; "
+            f"toplam {fmt_try(float(pnl['equity']))}, "
+            f"en yüksek seviyesinden {fmt_pct(abs(float(pnl['drawdown'])), 1)} aşağıda."
         )
-    else:
-        parts.append("Önceki borsa günü için gün sonu kâr/zarar kaydı yok.")
     n_res = len(doc["restriction_changes"])
-    parts.append(f"Yeni kısıtlama değişikliği: {fmt_int(n_res)}." if n_res else "Yeni kısıtlama değişikliği yok.")
-    parts.append(f"Son kapanıştan bu yana KAP bildirimi: {fmt_int(len(doc['important_disclosures']))}.")
+    if n_res:
+        parts.append(f"Bir hisseye getirilen ya da kalkan işlem kısıtı: {fmt_int(n_res)}.")
+    n_disc = len(doc["important_disclosures"])
+    parts.append(
+        f"Son kapanıştan bu yana {fmt_int(n_disc)} KAP bildirimi geldi."
+        if n_disc
+        else "Son kapanıştan bu yana KAPtan'ın önemli bulduğu bildirim gelmedi."
+    )
     return " ".join(parts)
 
 

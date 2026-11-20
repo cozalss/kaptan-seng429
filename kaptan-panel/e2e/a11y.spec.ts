@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { loginApi } from "./helpers";
+import { loginApi, seedMock, type MockSeed } from "./helpers";
 import { SCREENS } from "./screens";
 
 async function expectNoViolations(page: Page) {
@@ -35,6 +35,85 @@ for (const width of [320, 390, 1440]) {
         await loginApi(page);
         await page.goto(s.path);
         await s.ready(page);
+        await expectNoViolations(page);
+      });
+    }
+  });
+}
+
+/** The honest-state surfaces: a problem line, the Sistem and Bildirimler blocks, what got no turn. */
+const STATES: ReadonlyArray<{ name: string; path: string; seed: MockSeed; ready: (p: Page) => Promise<void> }> = [
+  { name: "one problem, line + Sistem", path: "/ayarlar", seed: { problems: ["ingest_stale"] }, ready: (p) => expect(p.getByTestId("system-line")).toBeVisible() },
+  { name: "several problems", path: "/ayarlar", seed: { problems: ["agents_down", "backup_stale"] }, ready: (p) => expect(p.getByRole("list", { name: "KAPtan’ın söyledikleri" })).toBeVisible() },
+  { name: "alerts set up", path: "/ayarlar", seed: { alerts: { ntfy: true } }, ready: (p) => expect(p.getByRole("button", { name: "Deneme bildirimi gönder" })).toBeVisible() },
+  { name: "line on Okunanlar", path: "/bildirimler", seed: { problems: ["ingest_stale"], deferred: 3, deferredReason: "Bugünkü okuma hakkı doldu." }, ready: (p) => expect(p.getByText("Bugün 3 bildirime sıra gelmedi.")).toBeVisible() },
+  { name: "waiting for money", path: "/bildirimler", seed: { fresh: true }, ready: (p) => expect(p.getByText(/Başlangıç paranı girene kadar/)).toBeVisible() },
+  { name: "first run, the question", path: "/benim", seed: { fresh: true }, ready: (p) => expect(p.getByRole("heading", { level: 1, name: "Ne kadar parayla başlıyorsun?" })).toBeVisible() },
+  { name: "first run, the question with its error", path: "/benim", seed: { fresh: true }, ready: firstRunError },
+  { name: "first run, the optional share", path: "/benim", seed: { fresh: true }, ready: firstRunHolding },
+  { name: "Param before any money", path: "/portfoy", seed: { fresh: true }, ready: (p) => expect(p.getByRole("heading", { level: 1, name: "Önce başlangıç paranı yaz." })).toBeVisible() },
+  { name: "set up, nothing owned: home", path: "/benim", seed: { fresh: true }, ready: setUpNothingOwned },
+  { name: "Param, money in", path: "/portfoy", seed: {}, ready: openDeposit },
+  { name: "Param, a sale with errors", path: "/portfoy", seed: {}, ready: openSaleWithError },
+  { name: "the bank step with the commission field", path: "/benim", seed: {}, ready: openBankStep },
+];
+
+async function startMoney(p: Page) {
+  await p.getByRole("textbox", { name: "Başlangıç paran" }).fill("25000");
+  await p.getByRole("button", { name: "Bu parayla başla" }).click();
+  await expect(p.getByRole("heading", { level: 1, name: "Elinde zaten hisse var mı?" })).toBeVisible();
+}
+async function firstRunError(p: Page) {
+  await p.getByRole("button", { name: "Bu parayla başla" }).click();
+  await expect(p.getByRole("alert").filter({ hasText: "Bir tutar yaz." })).toBeVisible();
+}
+async function firstRunHolding(p: Page) {
+  await startMoney(p);
+  await p.getByRole("button", { name: "Evet, hisse ekleyeyim" }).click();
+  await p.getByRole("button", { name: "Hisseyi ekle", exact: true }).click();
+  await expect(p.getByText("Hisse kodunu yaz; 3 ile 6 harf.")).toBeVisible();
+}
+async function setUpNothingOwned(p: Page) {
+  await startMoney(p);
+  await p.getByRole("button", { name: "Hayır, ana sayfaya geç" }).click();
+  await expect(p.getByRole("heading", { level: 1, name: /Paran hazır/ })).toBeVisible();
+}
+async function openDeposit(p: Page) {
+  await p.getByRole("button", { name: "Para ekle", exact: true }).click();
+  await p.getByRole("textbox", { name: "Ne kadar ekliyorsun?" }).fill("1250");
+  await expect(p.getByText("Bin iki yüz elli lira.")).toBeVisible();
+}
+async function openSaleWithError(p: Page) {
+  await p.getByRole("button", { name: "Elindeki bir hisseyi ekle", exact: true }).click();
+  await p.getByLabel("Hisse kodu").fill("KRGCL");
+  await p.getByLabel("Kaç adet?").fill("10");
+  await p.getByLabel("Tanesini kaç liradan aldın?").fill("30");
+  await p.getByLabel("Ne zaman aldın?").fill("2027-01-04");
+  await p.getByRole("button", { name: "Hisseyi ekle", exact: true }).click();
+  await p.getByRole("button", { name: "KRGCL: sattım" }).click();
+  await p.getByLabel("Kaç adet sattın?").fill("99");
+  await p.getByRole("button", { name: "Satışı kaydet" }).click();
+  await expect(p.getByText("Elinde 10 adet var; fazlasını satamazsın.")).toBeVisible();
+}
+async function openBankStep(p: Page) {
+  const suggestions = p.getByRole("region", { name: "Öneriler" });
+  await suggestions.getByRole("button", { name: /^Onayla: AL / }).first().click();
+  const slip = suggestions.getByRole("group", { name: /^Bankana gireceğin işlem/ }).first();
+  await slip.getByRole("button", { name: "Girdim" }).click();
+  await slip.getByLabel("Adet").fill("0");
+  await slip.getByRole("button", { name: "Girdiğimi kaydet" }).click();
+  await expect(slip.getByText("Adedi tam sayı olarak yaz.")).toBeVisible();
+}
+
+for (const width of [360, 1440]) {
+  test.describe(`axe states @${width}`, () => {
+    for (const st of STATES) {
+      test(st.name, async ({ page }) => {
+        await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
+        await seedMock(page, st.seed);
+        await loginApi(page);
+        await page.goto(st.path);
+        await st.ready(page);
         await expectNoViolations(page);
       });
     }

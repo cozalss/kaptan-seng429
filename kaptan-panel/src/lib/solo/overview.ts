@@ -19,6 +19,8 @@ export const Allocation = z.object({
   weight: z.number().min(0),
   /** Gain since bought (ratio: 0.031 = +%3,1). */
   pnl_pct: z.number(),
+  /** When the price behind `amount` was known (null for cash: it has no price). */
+  price_as_of: z.string().nullable(),
 });
 export type Allocation = z.infer<typeof Allocation>;
 
@@ -34,11 +36,21 @@ export const Suggestion = z.object({
 export type Suggestion = z.infer<typeof Suggestion>;
 
 export const Overview = z.object({
-  capital_start: z.number().positive(),
+  /** True until the person has entered their starting money: every money field is 0, the arrays are empty. */
+  needs_setup: z.boolean(),
+  /** Money put in so far: start + deposits − withdrawals + the cost of holdings entered by hand. */
+  capital_start: z.number().nonnegative(),
+  /** Cash + holdings at their last known price. */
   equity_now: z.number().nonnegative(),
+  /** The real free cash of the book. */
   cash: z.number(),
+  /** `equity_now − capital_start`: a deposit is never a gain. */
   pnl_abs: z.number(),
+  /** `pnl_abs / capital_start` (0 while nothing is put in). */
   pnl_pct: z.number(),
+  /** The oldest "known at" time among the prices used for the holdings; null with no holdings. */
+  prices_as_of: z.string().nullable(),
+  /** Daily close of the person's book since the start (empty before the first close). */
   equity_series: z.array(EquityPoint),
   allocations: z.array(Allocation),
   open_suggestions: z.array(Suggestion),

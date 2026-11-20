@@ -57,12 +57,23 @@ async def test_hold_and_skip_are_audited(client: httpx.AsyncClient, migrated: Se
 
 def test_allocation_and_suggestion_mapping() -> None:
     rows = [
-        {"ticker": "AAA", "company_name": "A", "qty": 10, "last_price": 11.0, "avg_cost": 10.0},
-        {"ticker": "BBB", "company_name": "B", "qty": 100, "last_price": 9.0, "avg_cost": 10.0},
-    ]
+        {"ticker": "AAA", "company_name": "A", "qty": 10, "last_price": 11.0, "avg_cost": 10.0,
+         "price_as_of": "2027-01-08T15:30:00.000Z"},
+        {"ticker": "BBB", "company_name": "B", "qty": 100, "last_price": 9.0, "avg_cost": 10.0, "price_as_of": None},
+    ]  # fmt: skip
     alloc = _allocations(rows, 1000.0)
     assert [a["symbol"] for a in alloc] == ["BBB", "AAA"]
-    assert alloc[1] == {"symbol": "AAA", "name": "A", "amount": 110.0, "weight": 0.11, "pnl_pct": 0.1}
+    assert alloc[1] == {
+        "symbol": "AAA",
+        "name": "A",
+        "amount": 110.0,
+        "weight": 0.11,
+        "pnl_pct": 0.1,
+        "price_as_of": "2027-01-08T15:30:00.000Z",
+    }
+    assert alloc[0]["price_as_of"] is None  # no stored price: no claim about its age
+    same = _allocations([rows[0], {**rows[0], "qty": 30, "price_as_of": "2027-01-07T15:30:00.000Z"}], 1000.0)
+    assert len(same) == 1 and same[0]["amount"] == 440.0 and same[0]["price_as_of"] == "2027-01-07T15:30:00.000Z"
     assert _allocations(rows[:1], 0.0)[0]["weight"] == 0.0
     cards = [
         {"proposal_id": "p1", "ticker": "AAA", "side": "sell", "headline_tr": "Stop", "size_multiplier": 1.0,

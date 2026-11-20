@@ -1,5 +1,5 @@
 import type { DisclosureListItem } from "@/lib/domain";
-import { funnelPolygon, funnelStages, kapUrl, plainSaid, readingSentence, whatKaptanDid } from "./reading-words";
+import { funnelPolygon, funnelStages, kapUrl, plainSaid, readingSentence, waitingNote, whatKaptanDid } from "./reading-words";
 
 const row = (over: Partial<DisclosureListItem> = {}): DisclosureListItem =>
   ({ disclosure_index: 1651901, subject: "Özel Durum Açıklaması (Genel)", summary: "Şube açılışı hakkında bilgilendirme.", is_noise: false, run_id: null, subject_route: "archive_only", ingest_source: "live", classification: null, stock_codes: [], primary_ticker: null, company_name: "MİSAL A.Ş.", ...over }) as DisclosureListItem;
@@ -99,5 +99,27 @@ describe("kapUrl", () => {
   it("links to the disclosure's own page at KAP, but not a fixture", () => {
     expect(kapUrl(row())).toBe("https://www.kap.org.tr/tr/Bildirim/1651901");
     expect(kapUrl(row({ ingest_source: "demo" }))).toBeNull();
+  });
+});
+
+describe("waitingNote", () => {
+  const base = { deferred: 0, reason: null, waitingForMoney: false, isToday: true };
+  it("says nothing when every duyuru got its turn and money is entered", () => {
+    expect(waitingNote(base)).toEqual({ deferred: null, money: null });
+  });
+  it("counts the ones that got no turn, with the reason only for today", () => {
+    expect(waitingNote({ ...base, deferred: 3, reason: "Bugünkü okuma hakkı doldu; yarın devam ederim." }).deferred).toEqual({
+      text: "Bugün 3 bildirime sıra gelmedi.",
+      reason: "Bugünkü okuma hakkı doldu; yarın devam ederim.",
+    });
+    expect(waitingNote({ ...base, deferred: 1 }).deferred).toEqual({ text: "Bugün 1 bildirime sıra gelmedi.", reason: null });
+    expect(waitingNote({ ...base, deferred: 1240, isToday: false, reason: "x" }).deferred).toEqual({ text: "O gün 1.240 bildirime sıra gelmedi.", reason: null });
+  });
+  it("says KAPtan does not interpret until the starting money is entered, today only", () => {
+    expect(waitingNote({ ...base, waitingForMoney: true }).money).toEqual({
+      text: "Başlangıç paranı girene kadar KAPtan bildirimleri yorumlamaz.",
+      link: "Başlangıç paranı gir",
+    });
+    expect(waitingNote({ ...base, waitingForMoney: true, isToday: false }).money).toBeNull();
   });
 });

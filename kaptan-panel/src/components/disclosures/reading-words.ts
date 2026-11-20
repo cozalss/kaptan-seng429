@@ -140,3 +140,21 @@ export function whatKaptanDid(d: Pick<DisclosureListItem, "is_noise" | "run_id" 
 export function kapUrl(d: Pick<DisclosureListItem, "disclosure_index" | "ingest_source">): string | null {
   return d.ingest_source === "demo" ? null : `https://www.kap.org.tr/tr/Bildirim/${d.disclosure_index}`;
 }
+
+export interface WaitingNote {
+  /** How many got no turn, and why when the API can say (today only: the reason is about now). */
+  deferred: { text: string; reason: string | null } | null;
+  /** KAPtan reads but does not interpret until the starting money is entered. */
+  money: { text: string; link: string } | null;
+}
+
+/** The honest part of the day's numbers: what was read but did not get a turn, and why. */
+export function waitingNote({ deferred, reason, waitingForMoney, isToday }: { deferred: number; reason: string | null; waitingForMoney: boolean; isToday: boolean }): WaitingNote {
+  return {
+    deferred:
+      deferred > 0
+        ? { text: `${isToday ? "Bugün" : "O gün"} ${fmtInt(deferred)} bildirime sıra gelmedi.`, reason: isToday ? reason : null }
+        : null,
+    money: waitingForMoney && isToday ? { text: "Başlangıç paranı girene kadar KAPtan bildirimleri yorumlamaz.", link: "Başlangıç paranı gir" } : null,
+  };
+}

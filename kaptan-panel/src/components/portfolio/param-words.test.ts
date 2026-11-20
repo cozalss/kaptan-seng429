@@ -2,6 +2,9 @@ import type { Position, RiskStatus } from "@/lib/domain";
 import { dateLocative, dayGuard, exitSentence, peakGuard, placesSentence, skyline, waterSplit } from "./param-words";
 
 const pos = (over: Partial<Position> = {}): Position => ({
+  id: "pos-1",
+  origin: "suggestion",
+  price_as_of: null,
   ticker: "ORNEK",
   company_name: "MİSAL ENERJİ A.Ş.",
   qty: 100,

@@ -3,6 +3,9 @@ import type { Position } from "@/lib/domain";
 import { Holdings } from "./holdings";
 
 const base: Position = {
+  id: "pos-1",
+  origin: "suggestion",
+  price_as_of: null,
   ticker: "ORNEK",
   company_name: "MİSAL ENERJİ A.Ş.",
   qty: 1240,

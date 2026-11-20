@@ -15,8 +15,8 @@ time, ≥ PRICES_MIN_INTERVAL_S / KAP_MIN_INTERVAL_S apart):
    disclosure go first) get their ~14 months of İş Yatırım daily bars — one request each — which the
    universe's U2 (20-session turnover) and U5 (250 sessions of history) need. XU100 comes from Yahoo.
 3. **Jobs** of the scheduler, recorded in ops.job_runs: market_changes, tedbir_sync, the universe of the
-   next session to trade, pnl_eod for the last few sessions (the paper book starts flat at PAPER_CAPITAL_TRY:
-   the equity line shows cash until the first fill), regime and the morning brief.
+   next session to trade, pnl_eod for the last few sessions (the person's own book: nothing is
+   written before the starting money exists), regime and the morning brief.
 
 A source that fails is logged and skipped (exit 0): the scheduler's daily jobs fill it in later. Without
 KAP_LIVE=true it does nothing (exit 0).

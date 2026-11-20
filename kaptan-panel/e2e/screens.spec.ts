@@ -7,7 +7,7 @@ import { SCREENS } from "./screens";
  * forms, and every word that would say this is not the real thing (brief §5c).
  */
 const BANNED =
-  /(?<!\p{L})(analist|risk sorumlusu|risk officer|admin|denetçi|auditor|ekip|takım|masa|üye|rol|ikinci imza|iki imza|dört göz|onay zinciri|kişisel mod|tek kullanıcı|gelişmiş görünüm|sharpe|rag|p95|drawdown|kill switch|escalate|emir fişi|seans\p{L}*|lot|limit fiyat|portföy\p{L}*|denetim\p{L}*|ders projesi|yatırım tavsiyesi|üye \d|deneme\p{L}*|demo\p{L}*|örnek\p{L}*|benzetim\p{L}*|simüle\p{L}*|simülasyon\p{L}*|kurgusal|temsili)(?!\p{L})/giu;
+  /(?<!\p{L})(analist|risk sorumlusu|risk officer|admin|denetçi|auditor|ekip|takım|masa|üye|rol|ikinci imza|iki imza|dört göz|onay zinciri|kişisel mod|tek kullanıcı|gelişmiş görünüm|sharpe|rag|p95|drawdown|kill switch|escalate|emir fişi|seans\p{L}*|lot|limit fiyat|portföy\p{L}*|denetim\p{L}*|ders projesi|yatırım tavsiyesi|üye \d|deneme\p{L}*(?!\s+bildirimi)|demo\p{L}*|örnek\p{L}*|benzetim\p{L}*|simüle\p{L}*|simülasyon\p{L}*|kurgusal|temsili)(?!\p{L})/giu;
 
 /** The grandmother test on what is on screen, with every folded detail opened first. */
 async function expectPlain(page: Page) {

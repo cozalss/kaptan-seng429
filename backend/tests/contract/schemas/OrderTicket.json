@@ -245,6 +245,17 @@
        "type": "null"
       }
      ]
+    },
+    "commission_try": {
+     "type": "number",
+     "minimum": 0
+    },
+    "commission_estimated": {
+     "type": "boolean"
+    },
+    "late": {
+     "default": false,
+     "type": "boolean"
     }
    },
    "required": [
@@ -253,7 +264,10 @@
     "avg_price",
     "filled_at",
     "note",
-    "marked_at"
+    "marked_at",
+    "commission_try",
+    "commission_estimated",
+    "late"
    ],
    "additionalProperties": false
   },

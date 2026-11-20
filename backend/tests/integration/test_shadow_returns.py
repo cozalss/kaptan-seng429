@@ -9,7 +9,7 @@ import pytest
 from kaptan.db import DictConn
 from kaptan.portfolio.shadow import run_shadow_returns
 from kaptan.prices.calendar import add_sessions
-from tests.integration.test_fill_engine import KRGCL, bar, desk, one
+from tests.integration.order_support import KRGCL, bar, desk, one
 
 pytestmark = pytest.mark.integration
 __all__ = ["desk"]

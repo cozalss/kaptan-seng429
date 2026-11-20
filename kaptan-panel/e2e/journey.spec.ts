@@ -54,7 +54,7 @@ test("login → home → approve → sees what to enter → copies → Girdim �
   const waiting = page.getByRole("region", { name: "Öneriler" }).getByRole("group", { name: /^Bankana gireceğin işlem/ }).first();
   await expect(waiting).toContainText(symbol);
   await waiting.getByRole("button", { name: "Girdim" }).click();
-  await waiting.getByRole("button", { name: "Kaydet" }).click();
+  await waiting.getByRole("button", { name: "Girdiğimi kaydet" }).click();
   await expect(waiting.getByRole("heading", { name: "Girdin. Param’a yazıldı." })).toBeVisible();
   await expect(waiting.getByRole("button", { name: "Girdim" })).toHaveCount(0);
   await expect(waiting.getByRole("link", { name: "Param’da gör →" })).toBeVisible();
@@ -116,7 +116,7 @@ test("stop asks first, closes the suggestions, and one press restarts", async ({
 
   // Everywhere else the band says so, with the way to Param.
   await go(page, "Geçmiş", /\/gecmis$/);
-  await expect(page.getByTestId("risk-banner")).toContainText("Durduruldu.");
+  await expect(page.getByTestId("shell-banner")).toContainText("Durduruldu.");
   await go(page, "Param", /\/portfoy$/);
   await expect(page.getByTestId("stop-state")).toBeVisible();
 

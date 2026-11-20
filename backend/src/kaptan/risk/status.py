@@ -9,9 +9,8 @@ from typing import Any, Final
 from psycopg import AsyncConnection
 
 from kaptan.portfolio.marks import js_round
-from kaptan.risk.book import effective_drawdown, paper_book
+from kaptan.risk.book import effective_drawdown, own_book
 from kaptan.risk.kill_switch import reset_view
-from kaptan.settings import get_settings
 
 STATE_SQL: Final = """
 SELECT rs.kill_switch, rs.kill_reason, rs.kill_at, rs.kill_by, rs.halted_today, rs.daily_pnl_pct,
@@ -31,8 +30,9 @@ def _whole(x: float) -> float | int:
     return int(x) if float(x).is_integer() else x
 
 
-async def risk_status(conn: AsyncConnection[Any], now: datetime, *, capital: float | None = None) -> dict[str, Any]:
-    """Equity, peak, drawdown and daily P&L from the book marked to market now (kaptan.risk.book)."""
+async def risk_status(conn: AsyncConnection[Any], now: datetime) -> dict[str, Any]:
+    """Equity, peak, drawdown and daily P&L from the person's book marked to market now (kaptan.risk.book).
+    Before the starting money exists they are all 0."""
     async with conn.cursor() as cur:
         await cur.execute(STATE_SQL)
         r = await cur.fetchone()
@@ -40,7 +40,7 @@ async def risk_status(conn: AsyncConnection[Any], now: datetime, *, capital: flo
             raise RiskStateMissingError("trading.risk_state is empty")
         await cur.execute(QUOTA_SQL)
         quota_rows = await cur.fetchall()
-    book = await paper_book(conn, now, capital=capital or get_settings().paper_capital_try)
+    book = await own_book(conn, now)
     equity, peak = js_round(float(book.equity)), float(js_round(float(book.peak_equity)))
     reset_eq = None if r["reset_equity"] is None else Decimal(str(r["reset_equity"]))
     dd = effective_drawdown(book, reset_eq, reset_active=r["reset_at"] is not None)

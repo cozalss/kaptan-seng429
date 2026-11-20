@@ -11,22 +11,16 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable, Mapping
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Final
 
 from kaptan.audit.canonical import js_json, js_number
 from kaptan.domain.schemas.run import NODE_LABELS
 
-SCENARIO_TR: Final[dict[str, str]] = {
-    "e3_contract": "yeni iş",
-    "redteam_injection": "gizli talimat",
-    "restricted_r04": "tedbirli hisse",
-    "loss_simulation": "zarar simülasyonu",
-}
-
 #: What each part of the system does, in a record's small print (actors.ts SYSTEM_PARTS).
 SYSTEM_PARTS: Final[dict[str, str]] = {
     "kap_poller": "bildirim okuma",
-    "simbist": "deneme hesabı",
+    "simbist": "işlem kaydı",
     "risk_monitor": "para kuralları",
     "order_ticket": "işlem bilgisi",
     "scheduler": "zamanlayıcı",
@@ -36,14 +30,6 @@ SYSTEM_PARTS: Final[dict[str, str]] = {
 
 YOU: Final = "Sen"
 SYSTEM: Final = "KAPtan"
-
-#: What a waiver covered: a step that used to need a second person.
-WAIVER_FLOW: Final[dict[str, str]] = {
-    "kill_reset": "Yeniden başlatmayı",
-    "limits": "Sınır değişikliğini",
-    "live_arm": "Canlı işlemi",
-    "restricted_removal": "Yasak listesinden çıkarmayı",
-}
 
 NO_COMPANY: Final = "bir şirket"
 _LEGAL_SUFFIX: Final = re.compile(r"\s+A\.Ş\.?$")
@@ -131,11 +117,16 @@ def audit_company(entry: Entry, issuers: Issuers) -> str:
 Phrase = Callable[[Entry, str], str]
 
 
+def _upper_first(text: str) -> str:
+    return f"{tr_upper(text[:1])}{text[1:]}"
+
+
 def _filled(e: Entry, what: str) -> str:
     qty = _str(e["payload"].get("qty"))
-    buy = f"{qty} adet alış" if qty else "alış"
-    line = buy if what == NO_COMPANY else f"{what} için {buy}"
-    return f"{tr_upper(line[:1])}{line[1:]} gerçekleşti (deneme hesabı)."
+    side = "satış" if e["payload"].get("side") == "sell" else "alış"
+    order = f"{qty} adet {side}" if qty else side
+    line = order if what == NO_COMPANY else f"{what} için {order}"
+    return f"{_upper_first(line)} gerçekleşti."
 
 
 def _ticket_issued(e: Entry, what: str) -> str:
@@ -146,6 +137,43 @@ def _ticket_issued(e: Entry, what: str) -> str:
         return "Bankana gireceğin işlem hazırlandı."
     side = {"sell": "satış ", "buy": "alış "}.get(str(e["payload"].get("side")), "")
     return f"{qty} adetlik {side}işlem hazırlandı."
+
+
+NBSP: Final = " "
+
+
+def _lira(value: Any) -> str | None:
+    """audit-words.ts lira(): "50.000 ₺" (kuruş only when there is one) from a payload number, else None."""
+    if isinstance(value, bool) or not isinstance(value, int | float) or value != value or abs(value) == float("inf"):
+        return None
+    whole_number = float(value).is_integer()
+    amount = Decimal(repr(float(value))).quantize(Decimal(1) if whole_number else Decimal("0.01"), ROUND_HALF_UP)
+    text = f"{abs(amount):,.0f}" if whole_number else f"{abs(amount):,.2f}"
+    text = text.translate({ord(","): ".", ord("."): ","})
+    return f"{'−' if amount < 0 else ''}{text}{NBSP}₺"
+
+
+def _money(lead: str) -> Phrase:
+    def phrase(e: Entry, _what: str) -> str:
+        amount = _lira(e["payload"].get("amount_try"))
+        return f"{lead}: {amount}." if amount else f"{lead}."
+
+    return phrase
+
+
+def _holding_added(e: Entry, what: str) -> str:
+    qty = _str(e["payload"].get("qty"))
+    cost = _lira(e["payload"].get("avg_cost"))
+    base = f"Elindeki {what} hissesini ekledin"
+    if not qty:
+        return f"{base}."
+    return f"{base}: {qty} adet, tanesi {cost}." if cost else f"{base}: {qty} adet."
+
+
+def _holding_sold(e: Entry, what: str) -> str:
+    qty = _str(e["payload"].get("qty"))
+    base = f"{_upper_first(what)} hissesini sattığını kaydettin"
+    return f"{base}: {qty} adet." if qty else f"{base}."
 
 
 def _decided(e: Entry, what: str) -> str:
@@ -163,14 +191,17 @@ def _verified(e: Entry, _what: str) -> str:
     return "KAPtan gece kayıtları baştan sona kontrol etti."
 
 
-def _injected(e: Entry, _what: str) -> str:
-    key = _str(e["payload"].get("scenario")) or str(e["entity_id"])
-    return f"Deneme olayı eklendi: {SCENARIO_TR.get(key, 'senaryo')}."
+def _expired(_e: Entry, what: str) -> str:
+    if what == NO_COMPANY:
+        return "Bir önerinin süresi doldu; karar vermedin."
+    return f"{what} önerisinin süresi doldu; karar vermedin."
 
 
-def _waiver(e: Entry, _what: str) -> str:
-    flow = WAIVER_FLOW.get(_str(e["payload"].get("flow")) or "", "Bu adımı")
-    return f"{flow} tek başına onayladın; bu da kayda geçti."
+def _regime_changed(e: Entry, _what: str) -> str:
+    to = e["payload"].get("to")
+    if to == "crisis":
+        return "Piyasa kriz günlerine girdi; yeni alımlar yarı tutarla yapılacak."
+    return "Piyasa normale döndü." if to == "normal" else "Piyasanın durumu değişti."
 
 
 #: Why the pre-gate vetoed, by the first rule code in the payload's reasons (panel audit-words.ts VETO_REASON).
@@ -213,29 +244,47 @@ PHRASES: Final[dict[str, Phrase]] = {
     "compliance.rejected": lambda _e, what: f"KAPtan {what} bildirimindeki gizli talimatı yakaladı; öneri çıkmadı.",
     "proposal.created": lambda _e, what: f"KAPtan {what} için öneri hazırladı.",
     "approval.decided": _decided,
+    "approval.requested": lambda _e, what: f"KAPtan {what} için kararını bekliyor.",
+    "approval.expired": _expired,
     "order.filled": _filled,
+    "order.missed": lambda _e, _x: "İşlem gerçekleşmedi.",
+    "order.refused": lambda _e, _x: "KAPtan işlemi kurallar yüzünden göndermedi.",
     "ticket.issued": _ticket_issued,
     "ticket.entered": lambda _e, _x: "İşlemi bankana girdiğini işaretledin.",
     "ticket.unfilled": lambda _e, _x: "İşlemin gerçekleşmediğini işaretledin.",
     "ticket.canceled": lambda _e, _x: "İşlemi girmediğini işaretledin.",
+    "money.started": _money("Başlangıç paranı girdin"),
+    "money.deposited": _money("Kasana para ekledin"),
+    "money.withdrawn": _money("Kasandan para çektin"),
+    "holding.added": _holding_added,
+    "holding.sold": _holding_sold,
     "kill_switch.on": _kill_on,
     "kill_switch.reset_started": lambda _e, _x: "Yeniden başlatmayı istedin.",
     "kill_switch.reset": lambda _e, _x: "İşlemleri yeniden başlattın.",
     "auth.login_failed": lambda _e, _x: "Yanlış parolayla giriş denendi.",
     "auth.login": lambda _e, _x: "Giriş yaptın.",
     "auth.logout": lambda _e, _x: "Çıkış yaptın.",
-    "auth.single_user_waiver": _waiver,
-    "kill_switch.wait_waived": lambda _e, _x: "Yeniden başlatma için beklemedin (deneme); bu da kayda geçti.",
+    "auth.single_user_waiver": lambda _e, _x: "Tek başına onayladın; bu da kayda geçti.",
+    "kill_switch.wait_waived": lambda _e, _x: "Yeniden başlatma için beklemedin; bu da kayda geçti.",
     "suggestion.held": lambda _e, what: f"{what} için “Tut” dedin.",
     "suggestion.skipped": lambda _e, what: f"{what} önerisini geçtin.",
     "risk.halted": lambda _e, _x: "Paran bir günde %1 düştü; bugünlük yeni işlem durdu.",
+    "risk.halt_cleared": lambda _e, _x: "Yeni gün başladı; günlük duraklama kalktı.",
+    "risk.regime_changed": _regime_changed,
+    "restricted.added": lambda _e, what: f"{_upper_first(what)} yasak listene girdi.",
+    "restricted.removal_requested": lambda _e, what: f"{_upper_first(what)} için yasak listesinden çıkmayı istedin.",
+    "restricted.removed": lambda _e, what: f"{_upper_first(what)} yasak listenden çıktı.",
+    "limits.changed": lambda _e, _x: "Yeni sınır geçerli oldu.",
     "limits.proposed": lambda _e, _x: "Bir sınırı değiştirmek istedin.",
     "limits.approved": lambda _e, _x: "Sınır değişikliğini onayladın.",
     "limits.rejected": lambda _e, _x: "Sınır değişikliğinden vazgeçtin.",
     "note.added": lambda _e, _x: "Not ekledin.",
     "audit.verified": _verified,
+    "audit.verify_failed": lambda _e, _x: "KAPtan kayıtlarda bir bozulma buldu.",
     "brief.generated": lambda _e, _x: "KAPtan sabah özetini hazırladı.",
-    "demo.injected": _injected,
+    "system.bootstrap": lambda _e, _x: "KAPtan çalışmaya başladı.",
+    # Written only by the test harness; an old ledger may still hold one, so it stays readable.
+    "demo.injected": lambda _e, _x: "Sınama amaçlı bir olay eklendi.",
 }
 
 

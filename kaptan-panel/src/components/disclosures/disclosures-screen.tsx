@@ -3,11 +3,13 @@
 import "./disclosures.css";
 
 import { useMemo, useState } from "react";
-import type { ApprovalCard } from "@/lib/domain";
+import Link from "next/link";
+import { deferredCount, type ApprovalCard } from "@/lib/domain";
 import { MAX_DISCLOSURES } from "@/lib/api/limits";
 import { useApiQuery } from "@/lib/api/react";
 import { useNow } from "@/lib/clock";
 import { fmtInt } from "@/lib/format";
+import { HOME } from "@/lib/nav";
 import { istanbulDay, sessionView } from "@/lib/session-day";
 import { useEventStream } from "@/lib/sse/use-event-stream";
 import { nextTradingDay, prevTradingDay } from "@/lib/time";
@@ -19,7 +21,7 @@ import { Input } from "@/components/ui/field";
 import { fateOf, flowFromList, tickerOf } from "./disclosure-logic";
 import { Funnel, type FunnelFilter } from "./funnel";
 import { DisclosureHours, Worthwhile } from "./disclosure-rows";
-import { readingSentence, type FunnelCounts } from "./reading-words";
+import { readingSentence, waitingNote, type FunnelCounts, type WaitingNote } from "./reading-words";
 
 /** Rows at first; "tane daha göster" adds as many again. */
 const PAGE = 25;
@@ -114,6 +116,14 @@ export function DisclosuresScreen() {
       {counts && q.data ? (
         <>
           <Funnel counts={counts} filter={filter} onFilter={(f) => { setFilter(f); setShown(PAGE); }} />
+          <WaitingLines
+            note={waitingNote({
+              deferred: exact.data ? deferredCount(exact.data) : 0,
+              reason: exact.data?.deferred_reason_tr ?? null,
+              waitingForMoney: Boolean(exact.data?.waiting_for_money),
+              isToday: day === today,
+            })}
+          />
           {day && today ? (
             <div role="group" aria-label="Gün seç" className="ok-days">
               <Button variant="link" onClick={() => pickDay(prevTradingDay(day))}>
@@ -187,6 +197,28 @@ export function DisclosuresScreen() {
             </>
           )}
         </>
+      ) : null}
+    </div>
+  );
+}
+
+/** What was read but got no turn, and why; always mounted so a change is read out politely. */
+function WaitingLines({ note }: { note: WaitingNote }) {
+  return (
+    <div role="status" className="ok-waiting">
+      {note.deferred ? (
+        <p>
+          <span className="ok-waiting-what">{note.deferred.text}</span>
+          {note.deferred.reason ? ` ${note.deferred.reason}` : null}
+        </p>
+      ) : null}
+      {note.money ? (
+        <p>
+          {note.money.text}{" "}
+          <Link href={HOME} className="ok-waiting-link">
+            {note.money.link}
+          </Link>
+        </p>
       ) : null}
     </div>
   );

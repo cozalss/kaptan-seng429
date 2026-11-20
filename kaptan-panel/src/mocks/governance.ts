@@ -97,7 +97,7 @@ export const DEMO_ORDER_TICKET: OrderTicket = {
   amount_check_line_tr: "Okuyucu tutarı metindeki regex tutarıyla eşleşti (R14) ✓",
   stop_line_tr: "Kapanış bazlı stop 43,30 TL (−%8,7)",
   planned_exit_tr: "5. borsa günü kapanışı → 18.01.2027",
-  entry: { status: "awaiting", filled_qty: null, avg_price: null, filled_at: null, note: null, marked_at: null },
+  entry: { status: "awaiting", filled_qty: null, avg_price: null, filled_at: null, note: null, marked_at: null, commission_try: 0, commission_estimated: false, late: false },
   stage: "paper",
   gate_results: ["R01", "R02", "R03", "R04", "R13", "R11", "R14", "R05", "R06", "R09", "R12", "R07", "R08", "R10", "R15", "R16"].map((code) => ({
     code,

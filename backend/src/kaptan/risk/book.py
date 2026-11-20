@@ -1,63 +1,67 @@
-"""The paper desk marked to market (FR-20, FR-29; 06 §10 GateContext equity / cash_free / peak).
+"""The person's own book marked to market: the one source of cash, equity, day P&L and drawdown
+(FR-20, FR-29; 06 §10 GateContext equity / cash_free / peak; 06 §11 the −1 % and −5 % stops).
 
-    equity     = capital + Σ fill cash flows (buys −, sells +, commission and BSMV included) + Σ qty × mark
-    free cash  = equity − open market value − reserved (unfilled SimBIST buy orders at their limit)
-    day start  = the live strategy's last close in trading.pnl_daily (before today), else the capital
-    peak       = max(every earlier peak, day start, equity)
+    cash       = Σ ledger cash movements: starting money + deposits − withdrawals
+                 − Σ buys (qty × price + commission) + Σ sells (qty × price − commission)
+    put in     = starting money + deposits − withdrawals + cost of the holdings entered by hand
+    equity     = cash + Σ qty × mark
+    free cash  = cash − reserved (buy tickets still waiting to be entered, at their limit), never below zero
 
-Marks are point in time (`kaptan.prices.latest_marks`: raw levels, the open from 10:15, the close
-from 18:30 Istanbul); a ticker without a stored price keeps the position's own `last_price`. Used
-the one source of equity.
+Before the starting money exists the book is empty: every number is 0, and neither stop can trip.
+
+Marks are point in time (`kaptan.prices.latest_marks`: raw levels, the open from 10:15, the close from 18:30
+Istanbul). A share with no stored price stands at the price of its last recorded movement (its cost), with no
+"known at" time: nothing invents a move.
+
+**A deposit or a withdrawal is not a gain or a loss.** Money that comes in or goes out (and a share added by
+hand, at what it is worth that moment) is an outside flow F, recorded with the book's equity E just before it.
+Every level a percentage is measured against is scaled by the same factor the flow scaled the book by:
+
+    level' = level × (E + F) / E          (E > 0)
+    level' = max(0, level) + F            (E ≤ 0: the book was empty, the flow is the new level)
+    level' = 0                            (E + F ≤ 0: everything was taken out)
+
+applied, oldest flow first, to
+    day start  = the last close in trading.pnl_daily before today, shifted by the flows since that close
+                 (no close yet: 0 shifted by every flow, so on the first day it is the money at setup);
+    peak       = max(that row's running peak shifted the same way, day start, equity).
+So equity / day start and equity / peak read the same just before and just after a flow: the day's P&L %, the
+drawdown and both stops move only with prices and commissions. (The factor uses the equity seen when the flow
+was recorded; a fill recorded later with an earlier time does not rewrite it.)
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Final
 
 from psycopg import AsyncConnection
 
+from kaptan.portfolio import ledger
+from kaptan.portfolio.ledger import CENT, Flow
 from kaptan.portfolio.pnl import LIVE_STRATEGY
-from kaptan.prices.calendar import istanbul_date
+from kaptan.prices.calendar import close_known_at, istanbul_date
 from kaptan.prices.reads import latest_marks
 
-CENT: Final = Decimal("0.01")
 #: After a confirmed restart (06 §11 step 4): drawdown floor while it holds, extra loss that kills again.
 RESET_DRAWDOWN_FLOOR: Final = Decimal("-0.049")
 RESET_EXTRA_DD: Final = Decimal("-0.03")
 
-CASH_FLOW_SQL: Final = """
-SELECT coalesce(sum(CASE WHEN o.side = 'buy' THEN -(f.qty * f.price + f.commission + f.bsmv)
-                         ELSE f.qty * f.price - f.commission - f.bsmv END), 0) AS flow
-  FROM trading.fills f JOIN trading.orders o ON o.id = f.order_id
- WHERE o.broker = 'simbist' AND f.filled_at <= %s
-"""
-HOLDINGS_SQL: Final = """
-SELECT p.ticker, sum(p.qty)::int AS qty, max(p.last_price) AS last_price, i.sector,
-       coalesce(g.group_name, i.group_name) AS group_name
-  FROM trading.positions p
-  LEFT JOIN core.issuers i ON i.ticker = p.ticker
-  LEFT JOIN core.issuer_groups g ON g.ticker = p.ticker
- WHERE p.book = 'paper' AND p.opened_at <= %s
- GROUP BY p.ticker, i.sector, coalesce(g.group_name, i.group_name)
- ORDER BY p.ticker
-"""
 RESERVED_SQL: Final = """
-SELECT o.ticker, i.sector, coalesce(g.group_name, i.group_name) AS group_name,
-       (o.qty - coalesce((SELECT sum(f.qty) FROM trading.fills f WHERE f.order_id = o.id), 0)) * o.limit_price
-         AS notional
-  FROM trading.orders o
-  LEFT JOIN core.issuers i ON i.ticker = o.ticker
-  LEFT JOIN core.issuer_groups g ON g.ticker = o.ticker
- WHERE o.broker = 'simbist' AND o.side = 'buy' AND o.limit_price IS NOT NULL
-   AND o.status IN ('pending_open', 'accepted', 'partially_filled') AND o.created_at <= %s
+SELECT t.doc->>'ticker' AS ticker, i.sector, coalesce(g.group_name, i.group_name) AS group_name,
+       (t.doc->>'qty')::numeric * (t.doc->>'limit_price')::numeric AS notional
+  FROM trading.order_tickets t
+  LEFT JOIN core.issuers i ON i.ticker = t.doc->>'ticker'
+  LEFT JOIN core.issuer_groups g ON g.ticker = t.doc->>'ticker'
+ WHERE t.entry_status = 'awaiting' AND t.marked_at IS NULL AND coalesce(t.doc->>'side', 'buy') = 'buy'
+   AND t.valid_until > %s
+ ORDER BY t.ticket_no
 """
-HISTORY_SQL: Final = """
-SELECT (SELECT equity FROM trading.pnl_daily WHERE strategy = %(s)s AND d < %(d)s ORDER BY d DESC LIMIT 1)
-         AS day_start,
-       (SELECT max(peak_equity) FROM trading.pnl_daily WHERE strategy = %(s)s AND d < %(d)s) AS peak
+LAST_CLOSE_SQL: Final = """
+SELECT d, equity, peak_equity FROM trading.pnl_daily WHERE strategy = %s AND d < %s ORDER BY d DESC LIMIT 1
 """
 
 
@@ -65,9 +69,23 @@ def dec(x: Any) -> Decimal:
     return x if isinstance(x, Decimal) else Decimal(str(x))
 
 
+def shift_level(level: Decimal, flows: Iterable[Flow]) -> Decimal:
+    """A day-start or peak level after the outside flows since it was taken (the module docstring's formula)."""
+    out = level
+    for f in flows:
+        before = f.equity_before
+        if before is None or before <= 0:
+            out = max(Decimal(0), out) + f.amount
+        elif before + f.amount <= 0:
+            out = Decimal(0)
+        else:
+            out = out * (before + f.amount) / before
+    return max(Decimal(0), out).quantize(CENT)
+
+
 @dataclass(frozen=True, slots=True)
 class Exposure:
-    """One open position or reserved order, for the sector / group caps (06 P3/P4)."""
+    """One holding or reserved ticket, for the sector / group caps (06 P3/P4)."""
 
     ticker: str
     value: Decimal
@@ -80,7 +98,7 @@ class Holding:
     ticker: str
     qty: int
     mark: Decimal
-    mark_known_at: datetime | None  # None: no stored price, the position's own last_price
+    mark_known_at: datetime | None  # None: no stored price, the share stands at its last recorded price
     sector: str | None
     group: str | None
 
@@ -92,7 +110,8 @@ class Holding:
 @dataclass(frozen=True, slots=True)
 class BookSnapshot:
     as_of: datetime
-    capital: Decimal
+    started: bool
+    put_in: Decimal
     cash: Decimal
     reserved: Decimal
     day_start_equity: Decimal
@@ -110,8 +129,8 @@ class BookSnapshot:
 
     @property
     def free_cash(self) -> Decimal:
-        """equity − open notional − reserved orders (never below zero)."""
-        return max(Decimal(0), self.equity - self.market_value - self.reserved)
+        """cash − reserved tickets (never below zero)."""
+        return max(Decimal(0), self.cash - self.reserved)
 
     @property
     def peak_equity(self) -> Decimal:
@@ -123,7 +142,8 @@ class BookSnapshot:
 
     @property
     def drawdown_pct(self) -> Decimal:
-        return min(Decimal(0), self.equity / self.peak_equity - 1)
+        peak = self.peak_equity
+        return min(Decimal(0), self.equity / peak - 1) if peak > 0 else Decimal(0)
 
     def exposures(self) -> tuple[Exposure, ...]:
         held = tuple(Exposure(h.ticker, h.value, h.sector, h.group) for h in self.holdings)
@@ -136,39 +156,44 @@ async def _rows(conn: AsyncConnection[Any], sql: str, params: Any) -> list[dict[
         return [dict(r) for r in await cur.fetchall()]
 
 
-async def paper_book(conn: AsyncConnection[Any], as_of: datetime, *, capital: Decimal | float) -> BookSnapshot:
-    """The paper book as known at `as_of` (tz-aware)."""
-    cap = dec(capital)
-    flow = (await _rows(conn, CASH_FLOW_SQL, (as_of,)))[0]["flow"]
-    held = await _rows(conn, HOLDINGS_SQL, (as_of,))
-    marks = await latest_marks(conn, [h["ticker"] for h in held], as_of) if held else {}
-    holdings = tuple(
-        Holding(
-            ticker=h["ticker"],
-            qty=int(h["qty"]),
-            mark=dec(marks[h["ticker"]].price) if h["ticker"] in marks else dec(h["last_price"]),
-            mark_known_at=marks[h["ticker"]].known_at if h["ticker"] in marks else None,
-            sector=h["sector"],
-            group=h["group_name"],
-        )
-        for h in held
-    )
+async def holdings_at(conn: AsyncConnection[Any], as_of: datetime) -> tuple[Holding, ...]:
+    """The shares the ledger holds at `as_of`, each at its latest stored price known then."""
+    held = await ledger.shares(conn, as_of)
+    marks = await latest_marks(conn, [h.ticker for h in held], as_of) if held else {}
+    out = []
+    for h in held:
+        mark = marks.get(h.ticker)
+        price = dec(mark.price) if mark is not None else (h.last_trade_price or Decimal(0))
+        out.append(Holding(h.ticker, h.qty, price, None if mark is None else mark.known_at, h.sector, h.group))
+    return tuple(out)
+
+
+async def last_close(conn: AsyncConnection[Any], strategy: str, before: date) -> tuple[date, Decimal, Decimal] | None:
+    """(day, equity, running peak) of `strategy`'s last stored close before `before`."""
+    rows = await _rows(conn, LAST_CLOSE_SQL, (strategy, before))
+    return None if not rows else (rows[0]["d"], dec(rows[0]["equity"]), dec(rows[0]["peak_equity"]))
+
+
+async def own_book(conn: AsyncConnection[Any], as_of: datetime) -> BookSnapshot:
+    """The person's book as known at `as_of` (tz-aware)."""
+    totals = await ledger.totals(conn, as_of)
     pending = tuple(
         Exposure(r["ticker"], dec(r["notional"]).quantize(CENT), r["sector"], r["group_name"])
         for r in await _rows(conn, RESERVED_SQL, (as_of,))
         if r["notional"] is not None and r["notional"] > 0
     )
-    hist = (await _rows(conn, HISTORY_SQL, {"s": LIVE_STRATEGY, "d": istanbul_date(as_of)}))[0]
-    day_start = dec(hist["day_start"]) if hist["day_start"] is not None else cap
-    peak = dec(hist["peak"]) if hist["peak"] is not None else day_start
+    prev = await last_close(conn, LIVE_STRATEGY, istanbul_date(as_of))
+    since = await ledger.flows(conn, None if prev is None else close_known_at(prev[0]), as_of)
+    base_equity, base_peak = (Decimal(0), Decimal(0)) if prev is None else (prev[1], prev[2])
     return BookSnapshot(
         as_of=as_of,
-        capital=cap,
-        cash=(cap + dec(flow)).quantize(CENT),
+        started=totals.started,
+        put_in=totals.put_in,
+        cash=totals.cash,
         reserved=sum((p.value for p in pending), Decimal(0)),
-        day_start_equity=day_start,
-        prior_peak=peak,
-        holdings=holdings,
+        day_start_equity=shift_level(base_equity, since),
+        prior_peak=shift_level(base_peak, since),
+        holdings=await holdings_at(conn, as_of) if totals.started else (),
         pending=pending,
     )
 

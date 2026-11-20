@@ -14,6 +14,7 @@ Her ekran şu durumları tasarlar:
 | Boş | Ne olduğu, neden boş olduğu ve bir sonraki adım. Örnek: "Bugün henüz bildirim yok. Borsa açılınca burada görünür." |
 | Hata | Ekran içinde düz bir cümle ve "Yeniden dene". Teknik ayrıntı katlanır, kişisel veri içermez. |
 | Canlı | Akışın bağlı olduğunu gösteren küçük bir gösterge; kopunca "yeniden bağlanıyor". |
+| Başlangıç parası yok | Para alanları `0` gösterilmez: `/benim` tek soru sorar ("Ne kadar parayla başlıyorsun?"), `/portfoy` buna yönlendirir. Önce `needs_setup` bakılır. |
 | Durdurulmuş | Durdurma açıkken yeni öneri ve emir yok; sebep ve yeniden başlatmanın durumu düz cümleyle yazılır. |
 | Bulunamadı | Tasarlanmış 404 (`src/app/not-found.tsx`). |
 
@@ -84,9 +85,9 @@ subject_map_version, published_at, first_seen_at, available_at, ingest_source: l
 `Order {id, client_order_id, proposal_id, ticker, side, order_type: market|limit, tif: day|opg, qty, limit_price, status:
 pending_open|accepted|awaiting_manual_entry|partially_filled|filled|canceled|rejected, created_at, broker: simbist|order_ticket}`
 · `Fill {id, order_id, qty, price, commission, bsmv, slippage_bps, filled_at, source: simbist|alpaca|manual}`
-· `Position {ticker, company_name, qty, avg_cost, last_price, opened_at, planned_exit_date, holding_days, source_proposal,
+· `Position {id, origin: suggestion|own, price_as_of|null, ticker, company_name, qty, avg_cost, last_price, opened_at, planned_exit_date, holding_days, source_proposal,
 run_id, event_type, strategy_version, unrealized_pnl, realized_pnl, managed_by_exit_rule}`
-· `OrderTicket` (emir fişi; `valid_until`, `side`, `limit_price` (satışta taban), `qty`, `mark`).
+· `OrderTicket` (emir fişi; `valid_until`, `side`, `limit_price` (satışta taban), `qty`, `mark`; `entry.commission_try`, `commission_estimated`, `late`).
 `PnlPoint {d, strategy, equity, daily_return, peak_equity, drawdown, n_positions, n_trades}`.
 `RiskStatus` ve `reset`: API.md §3.2.
 
@@ -118,11 +119,10 @@ düğüm çalışmadıysa her alan `null`. `RunTrace` düğüm listesini (`node`
 ## 3. Teknik özet
 
 - Next.js 16 (App Router, `src/proxy.ts`), React 19, TypeScript strict, Tailwind CSS 4 (`@theme`), zod 4, Radix tabanlı
-  primitifler, Recharts, sonner, `@noble/hashes` (senkron sha256), Vitest + Testing Library, Playwright (`channel: 'msedge'`).
-- `NEXT_PUBLIC_API_MODE=mock|http` (varsayılan mock). Mock durumu tarayıcıda, `localStorage` destekli.
-- Fikstür üreticisi deterministiktir (sabit tohum). Mock saat **11.01.2027 Pazartesi 13:40** (İstanbul), gerçek zamanla ilerler.
-- Vercel: Root Directory `kaptan-panel`, ortam değişkeni gerektirmez (mock modu).
-
-## 4. Fikstür kimlikleri
-
-Demo fikstür kimlikleri ve mock veri kuralları [PANEL-CONTRACT.md §4](./PANEL-CONTRACT.md) içindedir; tek liste oradadır.
+  primitifler, sonner, `@noble/hashes` (senkron sha256), Vitest + Testing Library, Playwright (`channel: 'msedge'`).
+- **Ürün http'dir:** tarayıcı `/api/v1/*` ile aynı adrese konuşur, Next bunu `KAPTAN_API_ORIGIN`'deki FastAPI'ye yönlendirir.
+  Tek kişi, yalnızca canlı: üründe demo, hazır sahte para ya da senaryo yoktur.
+- **Test ikizi:** tarayıcı içi sahte API (`src/lib/api/mock/`, fikstürler `src/mocks/`) yalnızca vitest ve Playwright içindir;
+  `NEXT_PUBLIC_KAPTAN_TEST_DOUBLE=1` ile açılır, üretim derlemesinde yoktur. Ayrıntı: [PANEL-CONTRACT.md §3](./PANEL-CONTRACT.md).
+- Vercel: Root Directory `kaptan-panel`; `KAPTAN_API_ORIGIN` boşsa derleme yalnızca tanıtım sitesini verir ("/" tanıtım,
+  diğer yollar "KAPtan senin bilgisayarında çalışır" sayfası).

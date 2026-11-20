@@ -1,12 +1,13 @@
 import type { OrderTicket, TicketEntryStatus, TicketMarkInput } from "@/lib/domain";
 import { fmtDateTime, fmtDuration, fmtInt, fmtPct, fmtPrice, fmtTime } from "@/lib/format";
+import { parseMoney } from "@/lib/solo/money-input";
 import { istanbulIso, istanbulMinutes, ISTANBUL_OFFSET_H } from "@/lib/time";
 import { ablative, dative, locative } from "@/components/story/turkish";
 
 /**
  * Pure logic behind the order to enter at the bank (12 §2, SPEC §2.2): its validity window, what
  * the person is told, the key-field text you copy into your broker app, and the "girildi / dolmadı /
- * iptal" form with the same rules the API enforces (over_qty, over_limit, after_ttl). No React here.
+ * iptal" form with the same rules the API enforces (over_qty, over_limit); a fill after the window is accepted, it is the real one. No React here.
  */
 export const TICKET_TTL_MS = 30 * 60_000;
 
@@ -87,7 +88,7 @@ const OPENS_SOON_MS = 2 * 60_000;
 export function validityWords(t: Pick<OrderTicket, "created_at" | "valid_until">, nowMs: number): string {
   const phase = ticketPhase(t, nowMs);
   const until = fmtTime(t.valid_until);
-  if (phase === "expired") return "Süresi doldu, artık girme. Girdiysen yine de işaretle.";
+  if (phase === "expired") return "Süresi doldu, yeni girme. Bankanda gerçekleştiyse aşağıdan yine de işaretle; Param bankandakiyle aynı kalmalı.";
   // The ticket is stamped a few seconds after the approval: "opens in 20 seconds" helps nobody.
   if (phase === "upcoming" && Date.parse(validFrom(t)) - nowMs > OPENS_SOON_MS) return `${locative(fmtTime(validFrom(t)))} açılır, ${dative(until)} kadar girebilirsin.`;
   return `${fmtDuration(Date.parse(t.valid_until) - nowMs)} içinde gir. ${ablative(until)} sonra geçmez.`;
@@ -129,6 +130,8 @@ export interface MarkDraft {
   kind: MarkKind;
   qty: string;
   price: string;
+  /** What the bank charged in total; empty = the book estimates it and says so. */
+  commission: string;
   time: string;
   note: string;
 }
@@ -136,6 +139,7 @@ export interface MarkDraft {
 export interface MarkErrors {
   qty: string | null;
   price: string | null;
+  commission: string | null;
   time: string | null;
   note: string | null;
 }
@@ -186,6 +190,7 @@ export function initialDraft(kind: MarkKind, t: OrderTicket, nowMs: number): Mar
     kind,
     qty: String(t.qty),
     price: fmtPrice(t.limit_price).replace(/\s?TL$/, ""),
+    commission: "",
     time: defaultFillClock(t, nowMs),
     note: "",
   };
@@ -197,7 +202,7 @@ export function markErrors(
   t: Pick<OrderTicket, "qty" | "limit_price" | "created_at" | "valid_until"> & Partial<Pick<OrderTicket, "side">>,
 ): MarkErrors {
   const note = d.note.trim().length > NOTE_MAX ? `Not en çok ${NOTE_MAX} karakter.` : null;
-  if (d.kind !== "entered") return { qty: null, price: null, time: null, note };
+  if (d.kind !== "entered") return { qty: null, price: null, commission: null, time: null, note };
   const qty = parseQty(d.qty);
   const price = parsePrice(d.price);
   const clock = parseClock(d.time);
@@ -213,28 +218,31 @@ export function markErrors(
           : price > t.limit_price
             ? `En fazla fiyatı (${fmtPrice(t.limit_price)}) aşamaz.`
             : null,
-    time:
-      clock === null
-        ? "Saati SS:DD olarak yaz (ör. 13:52)."
-        : Date.parse(fillIso(t, clock)) > Date.parse(t.valid_until)
-          ? `Geçerlilik ${fmtTime(t.valid_until)}'de bitti; sonrası sayılmaz.`
-          : null,
+    commission: d.commission.trim() && parseMoney(d.commission) === null ? "Komisyonu rakamla yaz ya da boş bırak." : null,
+    time: clock === null ? "Saati SS:DD olarak yaz (ör. 13:52)." : null,
     note,
   };
 }
 
 export function hasMarkErrors(e: MarkErrors): boolean {
-  return Boolean(e.qty || e.price || e.time || e.note);
+  return Boolean(e.qty || e.price || e.commission || e.time || e.note);
 }
 
-export function buildMarkInput(d: MarkDraft, t: Pick<OrderTicket, "created_at" | "valid_until">): TicketMarkInput {
+/**
+ * The POST body. A fill written after the window is still the real fill (the book must match the
+ * bank), so it is stamped with the moment it is written, not squeezed into the old window.
+ */
+export function buildMarkInput(d: MarkDraft, t: Pick<OrderTicket, "created_at" | "valid_until">, nowMs: number | null = null): TicketMarkInput {
   const note = d.note.trim() || undefined;
   if (d.kind !== "entered") return { mark: d.kind, note };
+  const late = nowMs !== null && nowMs >= Date.parse(t.valid_until);
+  const commission = d.commission.trim() ? parseMoney(d.commission) : null;
   return {
     mark: "entered",
     filled_qty: parseQty(d.qty) ?? 0,
     avg_price: parsePrice(d.price) ?? 0,
-    filled_at: fillIso(t, parseClock(d.time) ?? 0),
+    filled_at: late ? new Date(nowMs).toISOString() : fillIso(t, parseClock(d.time) ?? 0),
+    ...(commission === null ? {} : { commission_try: commission }),
     note,
   };
 }

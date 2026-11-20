@@ -2,6 +2,8 @@ import type { ApprovalCard, LimitVersion, LiveArmState, Note, Order, ProposalNot
 import type { ChainFields } from "@/lib/audit-chain";
 import { SEED_LIMIT_VERSIONS, SEED_LIVE_ARM, SEED_RESTRICTED, SEED_WATCHLIST } from "@/mocks/governance";
 import { liveEquity } from "@/mocks/pnl";
+import { initialBook, type MockBook } from "./ledger";
+import { initialStatus, type MockStatus } from "./status";
 
 /** Live strategy's P&L at 13:40 on the fixture day. */
 const OPENING_DAILY_PNL = 0.0021;
@@ -12,7 +14,7 @@ const OPENING_DAILY_PNL = 0.0021;
  * reload keeps the story. Tests clear it with `db.reset()`.
  */
 export const STORAGE_KEY = "kaptan-mock-state";
-export const STATE_VERSION = 8;
+export const STATE_VERSION = 9;
 
 export type ApprovalPatch = Pick<
   ApprovalCard,
@@ -55,9 +57,14 @@ export interface MockState {
   proposalNotes: ProposalNote[];
   /** Tests of the chain walk: one audit record changed behind the chain's back. */
   tamperOn: boolean;
+  /** The person's own book: money moved by hand and shares added by hand (ledger.ts). */
+  book: MockBook;
+  /** What the system says about itself: problems, disclosures waiting for a turn, alert channels (status.ts). */
+  status: MockStatus;
 }
 
-export function initialState(nowReal: number): MockState {
+/** `fresh`: a new install with no starting money yet (the home asks for it); default is the seeded book. */
+export function initialState(nowReal: number, fresh = false): MockState {
   return {
     v: STATE_VERSION,
     startedAtReal: nowReal,
@@ -86,20 +93,22 @@ export function initialState(nowReal: number): MockState {
     ticketMarks: {},
     proposalNotes: [],
     tamperOn: false,
+    book: initialBook(fresh),
+    status: initialStatus(),
   };
 }
 
 /** Read persisted state; anything missing, stale or malformed starts fresh. */
-export function loadState(storage: Pick<Storage, "getItem"> | null, nowReal: number): MockState {
-  if (!storage) return initialState(nowReal);
+export function loadState(storage: Pick<Storage, "getItem"> | null, nowReal: number, fresh = false): MockState {
+  if (!storage) return initialState(nowReal, fresh);
   try {
     const raw = storage.getItem(STORAGE_KEY);
-    if (!raw) return initialState(nowReal);
+    if (!raw) return initialState(nowReal, fresh);
     const parsed = JSON.parse(raw) as Partial<MockState>;
-    if (parsed.v !== STATE_VERSION || typeof parsed.startedAtReal !== "number") return initialState(nowReal);
-    return { ...initialState(nowReal), ...parsed } as MockState;
+    if (parsed.v !== STATE_VERSION || typeof parsed.startedAtReal !== "number") return initialState(nowReal, fresh);
+    return { ...initialState(nowReal, fresh), ...parsed } as MockState;
   } catch {
-    return initialState(nowReal);
+    return initialState(nowReal, fresh);
   }
 }
 

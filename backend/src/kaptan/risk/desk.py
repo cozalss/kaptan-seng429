@@ -2,13 +2,13 @@
 
 For real runs (LLM_MODE=live, see agents/feed_run.py). What it fills in:
 
-- equity, free cash, daily P&L and drawdown: the paper book marked to market (risk/book.py);
+- equity, free cash, daily P&L and drawdown: the person's own book marked to market (risk/book.py);
 - R04 `restrictions_age_h`: now − the last restriction refresh (core.restriction_refresh); no refresh
   recorded = unknown = stale (06 R04: no buy while the restrictions are unknown);
 - R11 `kap_delay_s`: how late we saw the disclosure (available_at − published_at);
 - R09 `last_price` / `price_age_s`: the latest raw level (today's intraday bar, else the daily mark);
   its age counts only while the session is open (06 R09);
-- P7 `daily_entries`: today's (Istanbul) SimBIST buy orders that were not cancelled or rejected;
+- P7 `daily_entries`: today's (Istanbul) buy tickets that were not cancelled or marked unfilled;
 - P3/P4 `sector_exposure_pct` / `group_exposure_pct`: open positions + reserved orders of the same
   sector / group over equity; an unknown group counts the whole sector (conservative), an unknown
   sector the whole book.
@@ -26,7 +26,7 @@ from psycopg import AsyncConnection
 
 from kaptan.prices.calendar import IST, SESSION_OPEN, CalendarRangeError, is_trading_day, session_close
 from kaptan.prices.reads import latest_mark
-from kaptan.risk.book import BookSnapshot, Exposure, effective_drawdown, paper_book
+from kaptan.risk.book import BookSnapshot, Exposure, effective_drawdown, own_book
 
 UNKNOWN_AGE: Final = math.inf
 
@@ -36,8 +36,8 @@ INSERT INTO core.restriction_refresh (source, refreshed_at, n_rows) VALUES (%s, 
 ON CONFLICT (source) DO UPDATE SET refreshed_at = EXCLUDED.refreshed_at, n_rows = EXCLUDED.n_rows
 """
 ENTRIES_SQL: Final = """
-SELECT count(*) AS n FROM trading.orders
- WHERE broker = 'simbist' AND side = 'buy' AND status NOT IN ('canceled', 'rejected')
+SELECT count(*) AS n FROM trading.order_tickets
+ WHERE coalesce(doc->>'side', 'buy') = 'buy' AND entry_status NOT IN ('canceled', 'unfilled')
    AND created_at >= %s AND created_at < %s
 """
 INTRADAY_SQL: Final = """
@@ -155,9 +155,8 @@ async def live_desk(
     *,
     published_at: datetime,
     available_at: datetime,
-    capital: Decimal | float,
 ) -> LiveDesk:
-    book = await paper_book(conn, now, capital=capital)
+    book = await own_book(conn, now)
     reset = await _one(conn, RESET_SQL) or {"reset_at": None, "reset_equity": None}
     reset_equity = None if reset["reset_equity"] is None else Decimal(str(reset["reset_equity"]))
     drawdown = effective_drawdown(book, reset_equity, reset_active=reset["reset_at"] is not None)

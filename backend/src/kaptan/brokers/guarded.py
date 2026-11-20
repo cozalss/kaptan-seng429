@@ -5,8 +5,8 @@
 - P8 cooldown after a stop → no buy in that symbol;
 - hard cap: a buy's notional ≤ min(trading.yaml hard_cap_try, max_position_pct × equity);
 - a LIVE inner adapter needs all three keys and a real broker (`LiveNotArmed`).
-`route()` picks the adapter mode for a send: paper, unless live is asked for and every key is there;
-a refused live request falls back to paper and the fallback is audited (`broker.live_fallback`).
+`route()` picks the adapter mode for a send: manual (paper), unless live is asked for and every key is there;
+a refused live request falls back to it and the fallback is audited (`broker.live_fallback`).
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from kaptan.brokers import live_arm
 from kaptan.brokers.base import Broker, BrokerMode, LiveNotArmed, OrderAck, OrderIntent, OrderRefused
 from kaptan.brokers.config import ExecConfig
 from kaptan.brokers.ledger import run_audit
-from kaptan.portfolio.pnl import last_live_point
+from kaptan.risk.book import own_book
 from kaptan.risk.cooldown import COOLDOWN_TR, cooldown_active
 
 #: Canonical P2 position cap when the limits table has no max_position_pct.
@@ -35,15 +35,13 @@ WHERE v.status = 'active' AND l.key = 'max_position_pct' ORDER BY v.version DESC
 """
 
 
-async def hard_cap(conn: AsyncConnection[Any], cfg: ExecConfig) -> Decimal:
-    """min(trading.yaml hard_cap_try, active max_position_pct × the desk's last equity)."""
+async def hard_cap(conn: AsyncConnection[Any], cfg: ExecConfig, now: datetime) -> Decimal:
+    """min(trading.yaml hard_cap_try, active max_position_pct × the person's book equity now)."""
     async with conn.cursor() as cur:
         await cur.execute(LIMIT_SQL)
         row = await cur.fetchone()
     pct = Decimal(str(row["value"])) if row else DEFAULT_POSITION_PCT
-    last = await last_live_point(conn)
-    equity = Decimal(str(last[0])) if last is not None else cfg.paper_capital_try
-    cap = pct * equity
+    cap = pct * (await own_book(conn, now)).equity
     return cap if cfg.trading.hard_cap_try is None else min(cap, cfg.trading.hard_cap_try)
 
 
@@ -70,7 +68,7 @@ class GuardedBroker:
                 raise OrderRefused("halted", "Günlük −%1 durdurması: bugün yeni emir verilemez.")
             if await cooldown_active(self._conn, intent.ticker, self._now):
                 raise OrderRefused("cooldown", COOLDOWN_TR)
-            cap = await hard_cap(self._conn, self._cfg)
+            cap = await hard_cap(self._conn, self._cfg, self._now)
             if intent.notional > cap:
                 raise OrderRefused("hard_cap", "Emir tutarı emir başına sert tavanı aşıyor: gönderilmedi.")
         if self.mode == BrokerMode.LIVE:

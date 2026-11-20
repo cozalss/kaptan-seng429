@@ -13,7 +13,7 @@ import { activeNavHref, HOME, NAV_ITEMS, ROUTES, type NavKey } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { DropdownMenu as M } from "radix-ui";
 import { Wordmark } from "@/components/brand/marks";
-import { RiskBanner } from "@/components/shell/banners";
+import { ShellBanner } from "@/components/shell/banners";
 import { DeskStateProvider, ResetBoundary, useDesk } from "@/components/shell/desk-state";
 import { logout } from "@/components/shell/session-actions";
 import { UnreachableScreen } from "@/components/shell/unreachable";
@@ -114,7 +114,7 @@ export function SoloShell({ user, children }: { user: SessionUser; children: Rea
             <main id="icerik" tabIndex={-1} className="flex-1 pb-[calc(var(--tab-h)+env(safe-area-inset-bottom))] outline-none sm:pb-0">
               <div className="u-page">
                 {/* Home and Param carry the stop state themselves, with the way back. */}
-                <RiskBanner showStopped={pathname !== HOME && pathname !== ROUTES.portfoy} />
+                <ShellBanner showStopped={pathname !== HOME && pathname !== ROUTES.portfoy} />
               </div>
               <ResetBoundary>
                 <div key={pathname} className={isHome ? undefined : "u-page pt-4 pb-16 sm:pt-8 sm:pb-24"}>

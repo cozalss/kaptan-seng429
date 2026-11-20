@@ -75,11 +75,6 @@ def _entered(qty: int, **over: Any) -> dict[str, Any]:
     [
         ({"filled_qty": None}, "over_qty", "Gerçekleşen adet, işlemdeki adetten büyük olamaz."),
         ({"avg_price": 48.41}, "over_limit", "Ortalama fiyat, yazdığın en yüksek fiyatı aşamaz."),
-        (
-            {"filled_at": "2027-01-11T11:16:21.000Z"},
-            "after_ttl",
-            "Süresi dolduktan sonra girilen işlem sayılmaz.",
-        ),
     ],
 )
 async def test_entered_mark_refusals(
@@ -120,5 +115,35 @@ async def test_entered_mark_opens_a_personal_position(api: httpx.AsyncClient, mi
     ticket_order = explain["orders"][-1]
     assert (ticket_order["broker"], ticket_order["status"]) == ("order_ticket", "filled")
     assert ticket_order["fills"][0]["source"] == "manual"
+    assert entry["commission_estimated"] is True and entry["commission_try"] > 0 and entry["late"] is False
     audit = await sql(migrated, "SELECT action, payload FROM audit.audit_log WHERE action = 'ticket.entered'")
-    assert audit[0]["payload"] == {"qty": qty, "price": 48.32}
+    assert audit[0]["payload"] == {
+        "qty": qty,
+        "price": 48.32,
+        "commission_try": entry["commission_try"],
+        "commission_estimated": True,
+        "late": False,
+    }
+
+
+async def test_a_fill_after_the_ticket_expired_is_still_your_real_fill(
+    api: httpx.AsyncClient, migrated: Settings
+) -> None:
+    await _approve_demo_e3(api, migrated)
+    qty = await _ticket_qty(api)
+    body = _entered(qty, filled_at="2027-01-11T11:16:21.000Z", commission_try=12.5)
+    res = await call(api, "POST", f"/tickets/{DEMO_TICKET}/mark", body)
+    assert res.status_code == 200, res.text
+    entry = res.json()["entry"]
+    assert (entry["status"], entry["late"], entry["commission_try"], entry["commission_estimated"]) == (
+        "entered",
+        True,
+        12.5,
+        False,
+    )
+    held = await sql(
+        migrated, "SELECT qty FROM trading.positions WHERE book = 'personal' AND run_id = %s", (DEMO_E3_RUN,)
+    )
+    assert held == [{"qty": qty}]
+    audit = await sql(migrated, "SELECT payload FROM audit.audit_log WHERE action = 'ticket.entered'")
+    assert audit[0]["payload"]["late"] is True

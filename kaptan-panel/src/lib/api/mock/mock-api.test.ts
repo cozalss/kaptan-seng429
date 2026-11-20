@@ -124,12 +124,15 @@ describe("mock API · order tickets", () => {
     expect(await errorOf(api.markTicket(t.ticket_no, { mark: "entered", filled_qty: 1, avg_price: t.limit_price + 1, filled_at: inTime }))).toMatchObject({
       code: "over_limit",
     });
-    const late = new Date(Date.parse(t.valid_until) + 1_000).toISOString();
-    expect(await errorOf(api.markTicket(t.ticket_no, { mark: "entered", filled_qty: 1, avg_price: t.limit_price, filled_at: late }))).toMatchObject({
-      status: 422,
-      code: "after_ttl",
-    });
     expect((await api.markTicket(t.ticket_no, { mark: "unfilled" })).entry.status).toBe("unfilled");
+  });
+  it("accepts a fill after the ticket's time: it is the real fill, flagged late, commission estimated", async () => {
+    const { api } = setup();
+    const t = await approvedTicket(api);
+    const late = new Date(Date.parse(t.valid_until) + 1_000).toISOString();
+    const r = await api.markTicket(t.ticket_no, { mark: "entered", filled_qty: 1, avg_price: t.limit_price, filled_at: late });
+    expect(r.entry).toMatchObject({ status: "entered", late: true, commission_estimated: true });
+    expect(r.entry.commission_try).toBeGreaterThan(0);
   });
   it("404s an unknown ticket", async () => {
     const { api } = setup();

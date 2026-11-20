@@ -1,11 +1,13 @@
 import { ApprovalDecision, TicketMarkInput, type Me, type TicketEntry } from "@/lib/domain";
 import { MOCK_USER } from "@/lib/auth/mock-user";
-import { paperPnl } from "@/mocks/pnl";
 import { ApiError, type KaptanApi } from "../types";
 import { getMockDb, type Actor, type MockDb } from "./db";
 import { createEnterprise } from "./enterprise";
 import { createCtx, parse, userActor } from "./guard";
+import { estimateCommission } from "./ledger";
+import { createMoney } from "./money";
 import { createSolo } from "./solo";
+import { createStatus } from "./status";
 import { engageKillSwitch, executeApproved, startLiveTicker } from "./scenarios";
 import * as sel from "./selectors";
 
@@ -32,6 +34,8 @@ export function createMockApi(opts: MockApiOptions = {}): KaptanApi {
     mode: "mock",
     ...createEnterprise(ctx),
     ...createSolo(ctx),
+    ...createMoney(ctx),
+    ...createStatus(ctx),
 
     async me(): Promise<Me> {
       const a = me();
@@ -109,10 +113,10 @@ export function createMockApi(opts: MockApiOptions = {}): KaptanApi {
         if (ticket.side === "sell") {
           if (m.avg_price < ticket.limit_price) throw new ApiError(422, "under_limit", "Satış fiyatı, en az istediğin fiyatın altında olamaz.");
         } else if (m.avg_price > ticket.limit_price) throw new ApiError(422, "over_limit", "Alış fiyatı, en fazla ödeyeceğin fiyatı aşamaz.");
-        if (Date.parse(m.filled_at) > Date.parse(ticket.valid_until)) {
-          throw new ApiError(422, "after_ttl", "Son geçerlilik saatinden sonra girilen işlem sayılmaz.");
-        }
       }
+      // A fill recorded after the order's time is still the person's real fill: the book must match
+      // the bank, so it is kept and flagged `late`. Left empty, the commission is estimated and says so.
+      const filled = m.mark === "entered";
       const entry: TicketEntry = {
         status: m.mark,
         filled_qty: m.mark === "entered" ? m.filled_qty : null,
@@ -120,9 +124,12 @@ export function createMockApi(opts: MockApiOptions = {}): KaptanApi {
         filled_at: m.mark === "entered" ? m.filled_at : null,
         note: m.note?.trim() || null,
         marked_at: now(),
+        commission_try: filled ? (m.commission_try ?? estimateCommission(m.filled_qty, m.avg_price)) : 0,
+        commission_estimated: filled && m.commission_try === undefined,
+        late: filled && Date.parse(m.filled_at) > Date.parse(ticket.valid_until),
       };
       db.update((s) => ({ ...s, ticketMarks: { ...s.ticketMarks, [ticketNo]: entry } }));
-      db.audit(userActor(a), `ticket.${m.mark}`, "order_ticket", ticketNo, m.mark === "entered" ? { qty: m.filled_qty, price: m.avg_price } : {}, ticket.run_id);
+      db.audit(userActor(a), `ticket.${m.mark}`, "order_ticket", ticketNo, m.mark === "entered" ? { qty: m.filled_qty, price: m.avg_price, commission_try: entry.commission_try, late: entry.late } : {}, ticket.run_id);
       const updated = { ...ticket, entry };
       db.bus.emit("desk", "ticket", updated);
       return ok(updated);
@@ -135,7 +142,7 @@ export function createMockApi(opts: MockApiOptions = {}): KaptanApi {
 
     async pnl(from, to) {
       me();
-      return ok(paperPnl().filter((p) => (!from || p.d >= from) && (!to || p.d <= to)));
+      return ok(sel.bookPnl(db.snapshot).filter((p) => (!from || p.d >= from) && (!to || p.d <= to)));
     },
 
     async riskStatus() {

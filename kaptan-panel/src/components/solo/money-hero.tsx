@@ -13,6 +13,7 @@ import { isTradingDay } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { Figure } from "@/components/ui/figure";
 import { HeroPlot } from "./hero-plot";
+import { PriceAge } from "./price-age";
 import { daySentence, differenceWords, moneyMarks, type DaySentence } from "./horizon";
 
 /** Few days, or the money has not moved yet: a short plot and a promise instead of a flat box. */
@@ -72,6 +73,12 @@ export function MoneyHero({ overview, todayPct, positions, name }: { overview: O
                   <span className="solo-figure text-[20px] text-ink-soft sm:text-[26px]">,{cents}</span>
                   <span className="solo-figure ml-1.5 text-[24px] text-ink-soft sm:text-[32px]">₺</span>
                 </p>
+                <PriceAge asOf={overview.prices_as_of} className="mt-1" />
+                {overview.allocations.length === 0 ? (
+                  <p className="mt-2 max-w-[44ch] text-ui text-ink-soft" data-testid="bos-not">
+                    Elinde hisse yok; paranın hepsi nakit. KAPtan KAP duyurularını okuyor, söyleyecek bir şeyi olunca burada konuşur.
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>
@@ -94,7 +101,7 @@ export function MoneyHero({ overview, todayPct, positions, name }: { overview: O
             </div>
             {tableOpen ? <SeriesTable points={points} capitalStart={overview.capital_start} marks={marks} /> : null}
             <dl className="hz-facts">
-              <Fact label="Başladığından beri" meaning="İlk paranla bugünkü paran arasındaki fark.">
+              <Fact label="Başladığından beri" meaning="Koyduğun paranın üstüne ne kazandın ya da kaybettin. Para eklemek ya da çekmek bunu değiştirmez.">
                 {Math.round(overview.pnl_abs) === 0 ? (
                   <span>Henüz değişim yok</span>
                 ) : (

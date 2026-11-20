@@ -1,30 +1,53 @@
-"""OrderTicket, the personal-mode adapter (04 §8.2, FR-27, 12 §2): it sends nothing, it writes an emir fişi.
+"""OrderTicket, the manual-entry adapter (04 §8.2, FR-27, 12 §2): it sends nothing, it writes an emir fişi.
 
-`submit_order()` takes the approved card in `intent.context` and stores the ticket (30-minute TTL,
-limit price, the account it sizes for); you key it into your own broker app and mark it later
-(POST /tickets/{no}/mark). A buy ticket is sized from the approved notional; a SELL ticket (an exit)
-sells what your personal book holds (`intent.context["personal_qty"]`, no short selling).
+`submit_order()` takes the approved card in `intent.context` and stores the ticket (30-minute TTL, limit
+price); you key it into your own broker app and record the fill later (POST /tickets/{no}/mark). A buy ticket
+is sized from the approved notional and the free cash of the person's own book (`kaptan.risk.book`); a SELL
+ticket (an exit) sells what the book holds of the position (`intent.context["personal_qty"]`, no short selling).
+Market, price band, planned exit dates and stage are the real ones at issue time.
 """
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Any, Final
 
 from psycopg import AsyncConnection
 from psycopg.types.json import Jsonb
 
 from kaptan.approvals.reads import ticket_from_row, ticket_rows
-from kaptan.approvals.ticket_doc import TICKET_SEQ_BASE, build_ticket, parse_iso
+from kaptan.approvals.ticket_doc import (
+    TICKET_CREATED_AFTER,
+    TICKET_SEQ_BASE,
+    TicketContext,
+    build_ticket,
+    entry_day,
+    parse_iso,
+)
 from kaptan.brokers.base import BrokerMode, OrderAck, OrderIntent
 from kaptan.brokers.config import ExecConfig
-from kaptan.portfolio.pnl import last_live_point
+from kaptan.evalreports.stage import current_stage
+from kaptan.market.segment import limit_pct_of, market_of
+from kaptan.market.ticks import price_limits
+from kaptan.portfolio.marks import add_sessions
+from kaptan.risk.at_send import price_band
+from kaptan.risk.book import own_book
+from kaptan.text.turkish import IST
 
 INSERT_SQL: Final = """
 INSERT INTO trading.order_tickets (ticket_no, order_id, proposal_id, run_id, doc, created_at, valid_until)
 VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING
 """
 KEYS_SQL: Final = "SELECT config_live, env_enabled, ui_key FROM trading.live_arm WHERE id = 1"
+MARKET_LABELS: Final = {
+    "yildiz": "Yıldız Pazar",
+    "ana": "Ana Pazar",
+    "alt": "Alt Pazar",
+    "yip": "Yakın İzleme Pazarı",
+    "poip": "PÖİP",
+}
+UNKNOWN_MARKET: Final = "Pazar bilinmiyor"
 
 
 async def ticket_seq(conn: AsyncConnection[Any]) -> int:
@@ -35,21 +58,42 @@ async def ticket_seq(conn: AsyncConnection[Any]) -> int:
     return TICKET_SEQ_BASE + int(row["n"] if row else 0)
 
 
-async def _live_sizing(conn: AsyncConnection[Any], cfg: ExecConfig) -> dict[str, Any]:
-    """The configured account, the desk's last equity and the live_arm keys."""
-    last = await last_live_point(conn)
+async def _mode_keys(conn: AsyncConnection[Any]) -> dict[str, bool]:
     async with conn.cursor() as cur:
         await cur.execute(KEYS_SQL)
         keys = await cur.fetchone()
     return {
-        "account_equity_try": float(cfg.personal_account_try),
-        "paper_equity_try": last[0] if last is not None else float(cfg.paper_capital_try),
-        "mode_keys": {
-            "config": bool(keys and keys["config_live"]),
-            "env": bool(keys and keys["env_enabled"]),
-            "ui": bool(keys and keys["ui_key"]),
-        },
+        "config": bool(keys and keys["config_live"]),
+        "env": bool(keys and keys["env_enabled"]),
+        "ui": bool(keys and keys["ui_key"]),
     }
+
+
+async def _upper_limit(conn: AsyncConnection[Any], card: dict[str, Any], now: datetime) -> float:
+    """Tavan: the previous close plus the market's band; without a stored close, the limit price's own band."""
+    _lower, upper = await price_band(conn, str(card["ticker"]), now)
+    if upper is None:
+        pct = await limit_pct_of(conn, str(card["ticker"]), now)
+        upper = price_limits(Decimal(str(card["limit_price"])), pct)[1]
+    return float(upper)
+
+
+async def ticket_context(conn: AsyncConnection[Any], card: dict[str, Any], now: datetime) -> TicketContext:
+    """The person's book and the market's facts for a ticket issued now."""
+    book = await own_book(conn, now)
+    market = await market_of(conn, str(card["ticker"]), now)
+    created = parse_iso(card["decided_at"]) + TICKET_CREATED_AFTER
+    first: date = entry_day(created)
+    lo, hi = card["holding_days"]
+    return TicketContext(
+        equity_try=float(book.equity),
+        free_cash_try=float(book.free_cash),
+        market_label=MARKET_LABELS.get(market or "", UNKNOWN_MARKET),
+        upper_limit=await _upper_limit(conn, card, now),
+        stage=current_stage(now.astimezone(IST).date()),
+        exit_min=add_sessions(first, int(lo)),
+        exit_max=add_sessions(first, int(hi)),
+    )
 
 
 class OrderTicketBroker:
@@ -70,8 +114,9 @@ class OrderTicketBroker:
             run = await cur.fetchone()
         explain = run["explain"] if run else {}
         seq = await ticket_seq(self._conn)
-        extra = await _live_sizing(self._conn, self._cfg)
-        doc = build_ticket(card, explain, seq=seq, decided_at=decided_at, qty=qty, **extra)
+        context = await ticket_context(self._conn, card, self._now)
+        keys = await _mode_keys(self._conn)
+        doc = build_ticket(card, explain, seq=seq, decided_at=decided_at, context=context, mode_keys=keys, qty=qty)
         return {k: v for k, v in doc.items() if k != "entry"}
 
     async def submit_order(self, intent: OrderIntent) -> OrderAck:

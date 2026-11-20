@@ -86,10 +86,9 @@ describe("Ana sayfa", () => {
     expect(slip).toHaveTextContent("KAPtan senin yerine işlem yapmaz.");
     expect(slip).toHaveTextContent("uygulamasına sen gir. Sen girmedikçe hiçbir şey olmaz.");
     // What to enter: how many, at most what price, in total; how long it stays valid.
-    expect(plain(slip)).toMatch(/Adet\s*509/);
+    expect(plain(slip)).toMatch(/Adet\s*1\.480/);
     expect(plain(slip)).toMatch(/Tanesi en fazla\s*34,15 ₺/);
-    expect(plain(slip)).toMatch(/Toplam yaklaşık\s*17\.382 ₺/);
-    expect(plain(slip)).toContain("Öneride 1.480 adet yazıyordu.");
+    expect(plain(slip)).toMatch(/Toplam yaklaşık\s*50\.542 ₺/);
     expect(plain(slip)).toMatch(/içinde gir\. \d\d:\d\d’(d|t)[ae]n sonra geçmez\./);
     expect(within(slip).getByRole("button", { name: "Kopyala" })).toBeEnabled();
     expect(within(slip).getByRole("button", { name: "Girdim" })).toBeEnabled();
@@ -103,7 +102,7 @@ describe("Ana sayfa", () => {
 
     // Copy, then Girdim with what was seen; the step closes and says so.
     await u.click(within(slip).getByRole("button", { name: "Girdim" }));
-    await u.click(within(slip).getByRole("button", { name: "Kaydet" }));
+    await u.click(within(slip).getByRole("button", { name: "Girdiğimi kaydet" }));
     expect(await within(slip).findByRole("heading", { name: "Girdin. Param’a yazıldı." })).toBeInTheDocument();
     expect(within(slip).getByRole("link", { name: "Param’da gör →" })).toHaveAttribute("href", "/portfoy");
     expect(screen.getByRole("heading", { level: 2, name: "Bugün 5 kararın var." })).toBeInTheDocument();
