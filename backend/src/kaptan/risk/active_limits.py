@@ -5,8 +5,8 @@ Every run and every at-send check reads the version that is `active` *now*, so a
 gate does not know (e.g. `leak_ret5d_threshold`, read by the rule engine) is ignored, a field without
 a row keeps its canonical default. Documented extra keys that the panel's v1 set does not carry:
 
-- `risk_tolerance` (default 1.05): R07's lot-rounding band on the per-trade risk budget
-  (risk budget × tolerance / (price × stop) is the risk cap in lots).
+- There is no risk tolerance band: R07 caps the risk at exactly `risk_per_trade_pct` (floor of
+  risk budget / (price × stop) lots); a stored `risk_tolerance` key is ignored.
 - `max_daily_entries` (3), `max_price_age_s` (1200), `max_kap_delay_s` (300), `max_restriction_age_h` (24),
   `near_limit_up_pct` (0.01), `amount_tolerance` (0.005), `min_evidence_n` (5).
 """

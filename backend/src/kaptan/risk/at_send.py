@@ -21,6 +21,7 @@ from kaptan.prices.reads import close_on
 from kaptan.risk.active_limits import active_limits
 from kaptan.risk.desk import live_desk
 from kaptan.risk.gate import AT_SEND_RULES, CHECKS, GateContext, GateOrder, RiskResult, evaluate_at_send
+from kaptan.risk.watch import is_watched
 
 ISSUER_SQL: Final = "SELECT in_universe, price, adv20_try FROM core.issuers WHERE ticker = %s"
 RESTRICTIONS_SQL: Final = "SELECT kind FROM core.restricted_securities WHERE ticker = %s ORDER BY added_at, id"
@@ -97,6 +98,7 @@ async def check_at_send(conn: AsyncConnection[Any], card: dict[str, Any], now: d
         upper_limit=upper,
         lower_limit=lower,
         in_universe=bool(issuer["in_universe"]) if issuer else False,
+        watched=await is_watched(conn, ticker),
         restrictions=kinds,
         restrictions_age_h=desk.restrictions_age_h,
         team_blocklisted="team_insider" in kinds,

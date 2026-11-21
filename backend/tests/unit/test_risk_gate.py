@@ -17,7 +17,7 @@ IDS = tuple(f"evt:{i}" for i in range(23))
 ORDER = GateOrder(
     ticker="ORNEK",
     event_type="E3",
-    qty=1240,
+    qty=1002,
     limit_price=Decimal("48.35"),
     stop_pct=Decimal("0.087"),
     reader_amount=Decimal(432_000_000),
@@ -40,7 +40,7 @@ def test_demo_e3_gate_matches_the_fixture_risk_checks() -> None:
     run = next(r for r in FX.runs if r["explain"]["run"]["run_id"] == "run-demo-e3-ornek")
     verdict = evaluate(ORDER, CTX)
     assert verdict.verdict == "pass"
-    assert verdict.final_qty == 1240
+    assert verdict.final_qty == 1002
     assert verdict.level == "normal"
     assert [r.as_document() for r in verdict.results] == run["explain"]["risk_checks"]
     assert [r.rule_code for r in verdict.results] == list(RISK_GATE_ORDER)
@@ -95,7 +95,7 @@ def test_resizes_only_shrink_and_escalate_the_card() -> None:
     assert "RESIZED" in small_adv.escalation_reasons
     assert small_adv.level == "escalate"
     crisis = evaluate(replace(ORDER, event_type="E1"), replace(CTX, regime="crisis"))
-    assert crisis.final_qty == 620
+    assert crisis.final_qty == 501
     sector = evaluate(ORDER, replace(CTX, sector_exposure_pct=Decimal("0.22")))
     assert sector.final_qty < ORDER.qty
     for v in (small_adv, crisis, sector):
@@ -148,10 +148,10 @@ def test_r16_at_send() -> None:
 @pytest.mark.parametrize(
     ("regime", "event_type", "regime_applied", "outcome", "qty"),
     [
-        ("normal", "E3", False, "pass", 1240),  # 06 R10 table #1
+        ("normal", "E3", False, "pass", 1002),  # 06 R10 table #1
         ("crisis", "E3", False, "reject", 0),  # #2
-        ("crisis", "E1", False, "resize", 620),  # #3: ×0,5
-        ("crisis", "E1", True, "pass", 1240),  # #4: the rule engine already applied m_regime, no double shrink
+        ("crisis", "E1", False, "resize", 501),  # #3: ×0,5
+        ("crisis", "E1", True, "pass", 1002),  # #4: the rule engine already applied m_regime, no double shrink
     ],
 )
 def test_r10_spec_table(regime: str, event_type: str, regime_applied: bool, outcome: str, qty: int) -> None:

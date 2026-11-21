@@ -41,7 +41,7 @@ async def test_a_signed_change_reaches_the_next_run(pg: DictConn) -> None:
     after, _d, _t = await build_context(pg, run, NOW, provider=ReplayProvider(), tools=ReplayToolbox())
     assert after.limits_version == version
     assert after.limits.max_position_pct == Decimal("0.08")
-    assert after.limits.risk_tolerance == Decimal("1.05")  # not in the panel's set: the documented default
+    assert after.limits.risk_per_trade_pct == Decimal("0.005")
 
 
 async def test_no_active_version_falls_back_to_the_defaults(pg: DictConn) -> None:

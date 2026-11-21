@@ -35,8 +35,6 @@ class GateLimits:
     """
 
     risk_per_trade_pct: Decimal = Decimal("0.005")
-    #: Limit key `risk_tolerance` (default 1.05): R07's lot-rounding band on the per-trade risk budget.
-    risk_tolerance: Decimal = Decimal("1.05")
     max_position_pct: Decimal = Decimal("0.10")
     max_concurrent_positions: int = 10
     target_concurrent_positions: int = 8
@@ -106,6 +104,9 @@ class GateContext:
     #: 06 R09 note: a SELL only has to satisfy limit ≥ taban (exit priority).
     lower_limit: Decimal | None = None
     in_universe: bool = True
+    #: On the person's watchlist (and not excluded by them): R03 does not veto a stock outside the universe.
+    #: Every other rule, the ADV and position caps among them, still applies.
+    watched: bool = False
     restrictions: tuple[str, ...] = ()
     restrictions_age_h: float = 0.0
     team_blocklisted: bool = False
@@ -190,7 +191,11 @@ def _f(x: Decimal) -> float:
 
 
 def r03(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
-    return _ok("R03", ph) if c.in_universe else _no("R03", ph, "reject", "Hisse evren dışında.")
+    if c.in_universe:
+        return _ok("R03", ph)
+    if c.watched:
+        return _ok("R03", ph, "İzleme listesinde: evren kuralı atlandı.")
+    return _no("R03", ph, "reject", "Hisse evren dışında.")
 
 
 def r04(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
@@ -281,11 +286,12 @@ def _floor_qty(x: Decimal) -> int:
 def r07(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
     if o.side != "buy":  # sizing caps entries; an exit sells what is held (R12)
         return _ok("R07", ph)
+    if c.adv20_try <= 0:  # no known daily turnover: the size cannot be capped, so there is no order (never a guess)
+        return _no("R07", ph, "reject", "Günlük işlem hacmi bilinmiyor; boyut güvenle sınırlanamıyor: ret.")
     price = o.limit_price
     caps = {
-        "risk": _floor_qty(c.equity_try * lim.risk_per_trade_pct * lim.risk_tolerance / (price * o.stop_pct))
-        if o.stop_pct > 0
-        else o.qty,
+        # The person's per-trade limit is a hard ceiling: lots are rounded DOWN, never up into a band.
+        "risk": _floor_qty(c.equity_try * lim.risk_per_trade_pct / (price * o.stop_pct)) if o.stop_pct > 0 else o.qty,
         "position": _floor_qty(c.equity_try * lim.max_position_pct / price),
         "adv": _floor_qty(c.adv20_try * lim.max_adv_share / price),
         "cash": _floor_qty(c.cash_free_try / (price * (1 + o.cost_side))),
