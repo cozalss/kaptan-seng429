@@ -64,7 +64,7 @@
    },
    "proposal": {
     "refPrice": 33.48,
-    "qty": 1480,
+    "qty": 1419,
     "stopPct": 0.087,
     "holding": [
      20,
@@ -1873,8 +1873,8 @@
      "rule_code": "R07",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "İşlem riski %0,5; pozisyon %5; hacmin %0'i.",
-     "observed": "%5",
+     "detail_tr": "İşlem riski %0,5; pozisyon %4,8; hacmin %0'i.",
+     "observed": "%4,8",
      "limit": "%10"
     },
     {
@@ -1928,7 +1928,7 @@
     "ref_price": 33.48,
     "ref_price_at": "2027-01-11T04:13:10.471Z",
     "requested_notional_try": 50500,
-    "requested_qty": 1480,
+    "requested_qty": 1419,
     "stop_price": 30.57,
     "holding_days_min": 20,
     "holding_days_max": 40,
@@ -2096,10 +2096,10 @@
     "headline_tr": "Son 10 borsa gününde sermayenin %0,31'i oranında geri alım",
     "disclosure_index": 1651207,
     "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651207",
-    "final_notional_try": 50542,
+    "final_notional_try": 48459,
     "requested_notional_try": 50500,
     "limit_price": 34.15,
-    "qty": 1480,
+    "qty": 1419,
     "entry": "next_open_auction",
     "holding_days": [
      20,
@@ -2118,6 +2118,7 @@
     "skeptic_flags": [],
     "skeptic_note_tr": "Program 3. ayında; ana ortak satışı yok; geri alım dalgası alt grubunda izlenmeli.",
     "size_multiplier": 1,
+    "outside_list_note_tr": null,
     "compliance_summary_tr": "Tedbir yok, injection yok.",
     "rule_trace_summary": [
      {
@@ -2431,7 +2432,7 @@
    },
    "proposal": {
     "refPrice": 112.3,
-    "qty": 420,
+    "qty": 411,
     "stopPct": 0.09,
     "holding": [
      20,
@@ -3587,8 +3588,8 @@
      "rule_code": "R07",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "İşlem riski %0,5; pozisyon %4,7; hacmin %0,1'i.",
-     "observed": "%4,7",
+     "detail_tr": "İşlem riski %0,5; pozisyon %4,6; hacmin %0'i.",
+     "observed": "%4,6",
      "limit": "%10"
     },
     {
@@ -3642,7 +3643,7 @@
     "ref_price": 112.3,
     "ref_price_at": "2027-01-11T04:35:45.566Z",
     "requested_notional_try": 64000,
-    "requested_qty": 420,
+    "requested_qty": 411,
     "stop_price": 102.19,
     "holding_days_min": 20,
     "holding_days_max": 60,
@@ -3744,10 +3745,10 @@
     "headline_tr": "Yönetim kurulu üyesinden borsada 2,4 milyon TL'lik alım",
     "disclosure_index": 1651219,
     "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651219",
-    "final_notional_try": 48111,
+    "final_notional_try": 47080,
     "requested_notional_try": 64000,
     "limit_price": 114.55,
-    "qty": 420,
+    "qty": 411,
     "entry": "next_open_auction",
     "holding_days": [
      20,
@@ -3774,6 +3775,7 @@
     ],
     "skeptic_note_tr": "Tek yöneticinin tek alımı; kümelenme yok. Büyüklük ×0,75.",
     "size_multiplier": 0.75,
+    "outside_list_note_tr": null,
     "compliance_summary_tr": "Tedbir yok, injection yok.",
     "rule_trace_summary": [
      {
@@ -4168,7 +4170,7 @@
    ],
    "disclosure_index": 1651233,
    "publishedAtIso": "2027-01-11T05:02:06.509Z",
-   "headline_tr": "2026 yıllık sonuçları: beklenti üstü kâr (SUE 1,4)",
+   "headline_tr": "2026 yıllık sonuçları: kâr beklenenden yüksek",
    "text_tr": "TOROS PERAKENDE A.Ş. — Finansal Rapor\n\nŞirketimizin 2026 yılı konsolide finansal tabloları bağımsız denetimden geçmiş olarak yayımlanmıştır. Net dönem kârı bir önceki yıla göre reel olarak artmıştır.\n\nBu metin KAPtan fikstürüdür; gerçek bir şirkete veya bildirime ait değildir.",
    "text_en": "TOROS PERAKENDE A.Ş. — illustrative English version of the disclosure.\n\n(Fixture text; not a real company.)",
    "strategy_version": "v1.1-fwd",
@@ -4207,7 +4209,7 @@
     "disclosure_class": "FR",
     "disclosure_type": "Finansal Rapor",
     "subject": "Finansal Rapor",
-    "summary": "2026 yıllık sonuçları: beklenti üstü kâr (SUE 1,4)",
+    "summary": "2026 yıllık sonuçları: kâr beklenenden yüksek",
     "reason": "NEW",
     "related_index": null,
     "is_late": false,
@@ -5016,7 +5018,7 @@
     "side": "buy",
     "event_type": "E4",
     "sub_type_tr": "Finansal sonuç",
-    "headline_tr": "2026 yıllık sonuçları: beklenti üstü kâr (SUE 1,4)",
+    "headline_tr": "2026 yıllık sonuçları: kâr beklenenden yüksek",
     "disclosure_index": 1651233,
     "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651233",
     "final_notional_try": 43495,
@@ -5049,6 +5051,7 @@
     ],
     "skeptic_note_tr": "Kârın bir bölümü tek seferlik; çekirdek iyileşme daha zayıf.",
     "size_multiplier": 0.75,
+    "outside_list_note_tr": null,
     "compliance_summary_tr": "Tedbir yok; bir kontrol insan incelemesi istiyor.",
     "rule_trace_summary": [
      {
@@ -10530,6 +10533,7 @@
     "skeptic_flags": [],
     "skeptic_note_tr": "Ek risk bulunmadı.",
     "size_multiplier": 1,
+    "outside_list_note_tr": null,
     "compliance_summary_tr": "Tedbir yok, injection yok.",
     "rule_trace_summary": [
      {
@@ -11776,6 +11780,7 @@
     ],
     "skeptic_note_tr": "Alım öncesi olağan dışı hacim; ×0,5.",
     "size_multiplier": 0.5,
+    "outside_list_note_tr": null,
     "compliance_summary_tr": "Tedbir yok, injection yok.",
     "rule_trace_summary": [
      {
@@ -13859,6 +13864,7 @@
     "skeptic_flags": [],
     "skeptic_note_tr": "Ek risk bulunmadı.",
     "size_multiplier": 1,
+    "outside_list_note_tr": null,
     "compliance_summary_tr": "Tedbir yok, injection yok.",
     "rule_trace_summary": [
      {
@@ -15738,6 +15744,7 @@
     "skeptic_flags": [],
     "skeptic_note_tr": "Ek risk bulunmadı.",
     "size_multiplier": 1,
+    "outside_list_note_tr": null,
     "compliance_summary_tr": "Tedbir yok, injection yok.",
     "rule_trace_summary": [
      {
@@ -17649,6 +17656,7 @@
     "skeptic_flags": [],
     "skeptic_note_tr": "Ek risk bulunmadı.",
     "size_multiplier": 1,
+    "outside_list_note_tr": null,
     "compliance_summary_tr": "Tedbir yok, injection yok.",
     "rule_trace_summary": [
      {
@@ -19528,6 +19536,7 @@
     "skeptic_flags": [],
     "skeptic_note_tr": "Ek risk bulunmadı.",
     "size_multiplier": 1,
+    "outside_list_note_tr": null,
     "compliance_summary_tr": "Tedbir yok, injection yok.",
     "rule_trace_summary": [
      {
@@ -21413,6 +21422,7 @@
     "skeptic_flags": [],
     "skeptic_note_tr": "Ek risk bulunmadı.",
     "size_multiplier": 1,
+    "outside_list_note_tr": null,
     "compliance_summary_tr": "Tedbir yok, injection yok.",
     "rule_trace_summary": [
      {
@@ -23326,6 +23336,7 @@
     "skeptic_flags": [],
     "skeptic_note_tr": "Ek risk bulunmadı.",
     "size_multiplier": 1,
+    "outside_list_note_tr": null,
     "compliance_summary_tr": "Tedbir yok, injection yok.",
     "rule_trace_summary": [
      {
@@ -25201,6 +25212,7 @@
     "skeptic_flags": [],
     "skeptic_note_tr": "Ek risk bulunmadı.",
     "size_multiplier": 1,
+    "outside_list_note_tr": null,
     "compliance_summary_tr": "Tedbir yok, injection yok.",
     "rule_trace_summary": [
      {
@@ -25635,7 +25647,7 @@
    "guardScore": 0.02,
    "proposal": {
     "refPrice": 47.4,
-    "qty": 1240,
+    "qty": 1002,
     "stopPct": 0.087,
     "holding": [
      5,
@@ -25643,7 +25655,7 @@
     ],
     "edgeBps": 70,
     "costBps": 33,
-    "requestedNotional": 119908,
+    "requestedNotional": 96900,
     "entry": "intraday_limit"
    },
    "decision": {
@@ -26679,8 +26691,8 @@
      "rule_code": "R07",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "İşlem riski %0,5; pozisyon %5,9; hacmin %0,3'i.",
-     "observed": "%5,9",
+     "detail_tr": "İşlem riski %0,5; pozisyon %4,8; hacmin %0,2'i.",
+     "observed": "%4,8",
      "limit": "%10"
     },
     {
@@ -26736,8 +26748,8 @@
     "limit_price": 48.35,
     "ref_price": 47.4,
     "ref_price_at": "2027-01-11T10:41:00.000Z",
-    "requested_notional_try": 119908,
-    "requested_qty": 1240,
+    "requested_notional_try": 96900,
+    "requested_qty": 1002,
     "stop_price": 43.28,
     "holding_days_min": 5,
     "holding_days_max": 5,
@@ -26823,10 +26835,10 @@
     "headline_tr": "Yıllık gelirin %18'i tutarında bağlayıcı sözleşme",
     "disclosure_index": 1651901,
     "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651901",
-    "final_notional_try": 59954,
-    "requested_notional_try": 119908,
+    "final_notional_try": 48447,
+    "requested_notional_try": 96900,
     "limit_price": 48.35,
-    "qty": 1240,
+    "qty": 1002,
     "entry": "intraday_limit",
     "holding_days": [
      5,
@@ -26851,6 +26863,7 @@
     ],
     "skeptic_note_tr": "Bildirimden önceki 2 borsa gününde +%3,6 anormal hareket var, bilgi kısmen fiyatlanmış olabilir. Öneri: pozisyon %50 küçültülsün.",
     "size_multiplier": 0.5,
+    "outside_list_note_tr": null,
     "compliance_summary_tr": "Tedbir yok, injection yok.",
     "rule_trace_summary": [
      {

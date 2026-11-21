@@ -24,8 +24,8 @@ describe("ledger sentences for your own money", () => {
   const NB = " ";
   it("says what you put in", () => {
     expect(auditSentence(entry({ action: "money.started", payload: { amount_try: 50000 } }))).toBe(`Başlangıç paranı girdin: 50.000${NB}₺.`);
-    expect(auditSentence(entry({ action: "money.deposited", payload: { amount_try: 1250.5 } }))).toBe(`Kasana para ekledin: 1.250,50${NB}₺.`);
-    expect(auditSentence(entry({ action: "money.withdrawn", payload: { amount_try: 2000 } }))).toBe(`Kasandan para çektin: 2.000${NB}₺.`);
+    expect(auditSentence(entry({ action: "money.deposited", payload: { amount_try: 1250.5 } }))).toBe(`Param’a para ekledin: 1.250,50${NB}₺.`);
+    expect(auditSentence(entry({ action: "money.withdrawn", payload: { amount_try: 2000 } }))).toBe(`Param’dan para çektin: 2.000${NB}₺.`);
   });
 
   it("drops the amount instead of printing a blank when the record has none", () => {

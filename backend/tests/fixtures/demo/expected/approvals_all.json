@@ -39,6 +39,7 @@
   ],
   "skeptic_note_tr": "Alım öncesi olağan dışı hacim; ×0,5.",
   "size_multiplier": 0.5,
+  "outside_list_note_tr": null,
   "compliance_summary_tr": "Tedbir yok, injection yok.",
   "rule_trace_summary": [
    {
@@ -90,7 +91,7 @@
   "side": "buy",
   "event_type": "E4",
   "sub_type_tr": "Finansal sonuç",
-  "headline_tr": "2026 yıllık sonuçları: beklenti üstü kâr (SUE 1,4)",
+  "headline_tr": "2026 yıllık sonuçları: kâr beklenenden yüksek",
   "disclosure_index": 1651233,
   "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651233",
   "final_notional_try": 43495,
@@ -123,6 +124,7 @@
   ],
   "skeptic_note_tr": "Kârın bir bölümü tek seferlik; çekirdek iyileşme daha zayıf.",
   "size_multiplier": 0.75,
+  "outside_list_note_tr": null,
   "compliance_summary_tr": "Tedbir yok; bir kontrol insan incelemesi istiyor.",
   "rule_trace_summary": [
    {
@@ -213,6 +215,7 @@
   "skeptic_flags": [],
   "skeptic_note_tr": "Ek risk bulunmadı.",
   "size_multiplier": 1,
+  "outside_list_note_tr": null,
   "compliance_summary_tr": "Tedbir yok, injection yok.",
   "rule_trace_summary": [
    {
@@ -274,10 +277,10 @@
   "headline_tr": "Yönetim kurulu üyesinden borsada 2,4 milyon TL'lik alım",
   "disclosure_index": 1651219,
   "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651219",
-  "final_notional_try": 48111,
+  "final_notional_try": 47080,
   "requested_notional_try": 64000,
   "limit_price": 114.55,
-  "qty": 420,
+  "qty": 411,
   "entry": "next_open_auction",
   "holding_days": [
    20,
@@ -304,6 +307,7 @@
   ],
   "skeptic_note_tr": "Tek yöneticinin tek alımı; kümelenme yok. Büyüklük ×0,75.",
   "size_multiplier": 0.75,
+  "outside_list_note_tr": null,
   "compliance_summary_tr": "Tedbir yok, injection yok.",
   "rule_trace_summary": [
    {
@@ -365,10 +369,10 @@
   "headline_tr": "Son 10 borsa gününde sermayenin %0,31'i oranında geri alım",
   "disclosure_index": 1651207,
   "disclosure_url": "https://www.kap.org.tr/tr/Bildirim/1651207",
-  "final_notional_try": 50542,
+  "final_notional_try": 48459,
   "requested_notional_try": 50500,
   "limit_price": 34.15,
-  "qty": 1480,
+  "qty": 1419,
   "entry": "next_open_auction",
   "holding_days": [
    20,
@@ -387,6 +391,7 @@
   "skeptic_flags": [],
   "skeptic_note_tr": "Program 3. ayında; ana ortak satışı yok; geri alım dalgası alt grubunda izlenmeli.",
   "size_multiplier": 1,
+  "outside_list_note_tr": null,
   "compliance_summary_tr": "Tedbir yok, injection yok.",
   "rule_trace_summary": [
    {

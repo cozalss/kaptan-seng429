@@ -152,8 +152,8 @@ def test_the_own_book_sentences() -> None:
     by_pos = {e["chain_pos"]: audit_sentence(e, iss) for e in SYNTHETIC if e["chain_pos"] >= 32}
     assert by_pos[32] == "Başlangıç paranı girdin: 50.000 ₺."
     assert by_pos[33] == "Başlangıç paranı girdin."
-    assert by_pos[34] == "Kasana para ekledin: 12.500,50 ₺."
-    assert by_pos[35] == "Kasandan para çektin: 1.234.567 ₺."
+    assert by_pos[34] == "Param’a para ekledin: 12.500,50 ₺."
+    assert by_pos[35] == "Param’dan para çektin: 1.234.567 ₺."
     assert by_pos[36] == "Elindeki Örnek Enerji hissesini ekledin: 100 adet, tanesi 31,25 ₺."
     assert by_pos[37].endswith("100 adet, tanesi 40 ₺.")
     assert by_pos[38] == "Elindeki İzmir Enerji hissesini ekledin."

@@ -31,7 +31,7 @@ Event = tuple[str, dict[str, Any]]
 
 __all__ = ["RUN_STRATEGY_VERSION", "execute_approved", "run_audit", "ticket_seq"]
 
-NO_CASH: Final = "Kasanda bu öneriyi alacak kadar para yok."
+NO_CASH: Final = "Elindeki nakit bu öneriyi almaya yetmiyor."
 NOT_ARMED: Final = "Bu emir şu an gönderilemez."
 
 HELD_SQL: Final = """
