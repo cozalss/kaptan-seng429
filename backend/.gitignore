@@ -10,5 +10,5 @@ coverage.xml
 htmlcov/
 *.env
 !.env.example
-backups/
-reports/
+/backups/
+/reports/
