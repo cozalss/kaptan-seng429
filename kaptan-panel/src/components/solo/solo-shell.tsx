@@ -112,7 +112,7 @@ export function SoloShell({ user, children }: { user: SessionUser; children: Rea
       <ApiProvider>
         <DeskStateProvider>
           <div data-solo className="flex min-h-dvh flex-col text-ink">
-            <a href="#icerik" className="sr-only-focusable fixed top-2 left-2 z-[70] border-2 border-ink bg-panel px-3 py-2 text-ui font-medium">
+            <a href="#icerik" className="sr-only-focusable fixed top-2 left-2 z-[70] inline-flex min-h-11 items-center border-2 border-ink bg-panel px-3 py-2 text-ui font-medium">
               İçeriğe geç
             </a>
             <SoloHeader pathname={pathname} />
@@ -162,7 +162,7 @@ function SoloHeader({ pathname }: { pathname: string }) {
             <Wordmark className="solo-wordmark h-9 w-auto sm:h-10" title="KAPtan" />
           </Link>
           <MainNav pathname={pathname} />
-          <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <div className="ml-auto flex min-w-0 shrink items-center gap-1 sm:gap-2">
             <SearchBox />
             <WatchAlerts />
             <PriceAlertWatch />
@@ -230,7 +230,7 @@ function AccountMenu() {
             <path d="M5 20c.8-3.9 3.5-6 7-6s6.2 2.1 7 6" />
           </svg>
         </span>
-        <span className="hidden text-[15px] leading-tight font-medium text-ink md:block">Hesabım</span>
+        <span className="hidden text-[15px] leading-tight font-medium text-ink lg:block">Hesabım</span>
         <svg aria-hidden viewBox="0 0 10 10" className="size-2.5 text-ink transition-transform duration-[var(--dur-quick)] group-data-[state=open]:rotate-180" fill="none" stroke="currentColor" strokeWidth={1.75}>
           <path d="M2 4l3 3 3-3" />
         </svg>

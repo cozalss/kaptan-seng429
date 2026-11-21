@@ -5,7 +5,7 @@ import "@/components/portfolio/own-money.css";
 import "./insights.css";
 
 import type { ReturnStats, Versus } from "@/lib/domain/insights";
-import { fmtPct, fmtSignedPct } from "@/lib/format";
+import { fmtFigurePct, fmtSignedFigurePct } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { dateWords } from "@/components/portfolio/param-words";
 import { signTone } from "@/components/story/sign-tone";
@@ -17,12 +17,13 @@ function groupByReason(items: ReadonlyArray<{ label: string; hidden_reason_tr: s
   return [...out.entries()];
 }
 
-const pct = (n: number, digits = 2) => fmtSignedPct(n / 100, digits);
+/** The figures here sit side by side and many are under one percent: all of them carry two decimals. */
+const pct = (n: number) => fmtSignedFigurePct(n / 100, 2);
 
 function title(s: ReturnStats): string {
   const move = s.twr_pct ?? 0;
   const verb = move > 0 ? "arttı" : move < 0 ? "azaldı" : "değişmedi";
-  return `Para eklemeyi ve çekmeyi çıkarınca paran ${move === 0 ? "" : `${fmtPct(Math.abs(move) / 100, 2)} `}${verb}.`;
+  return `Para eklemeyi ve çekmeyi çıkarınca paran ${move === 0 ? "" : `${fmtFigurePct(Math.abs(move) / 100)} `}${verb}.`;
 }
 
 /**

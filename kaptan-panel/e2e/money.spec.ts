@@ -98,7 +98,7 @@ test.describe("Param: your money", () => {
     const field = section.getByRole("textbox", { name: "Ne kadar çekiyorsun?" });
     await field.fill("99999999");
     await section.getByRole("button", { name: "Parayı çek" }).click();
-    await expect(section.getByRole("alert").filter({ hasText: "Kasandaki paradan fazlasını çekemezsin." })).toBeVisible();
+    await expect(section.getByRole("alert").filter({ hasText: "Elindeki nakitten fazlasını çekemezsin." })).toBeVisible();
 
     await field.fill("200");
     await section.getByRole("button", { name: "Parayı çek" }).click();

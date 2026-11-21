@@ -92,7 +92,7 @@ export function Suggestions({ suggestions, names, figures, held, today = null, d
         </div>
       ) : (
         <>
-          <h2 className="u-chapter oneri-section-head">{sectionSentence({ decisions: open.length, steps: waitingAtBank })}</h2>
+          <h2 className="u-chapter oneri-section-head">{sectionSentence({ decisions: open.length, steps: waitingAtBank, holds: open.filter((s) => s.action === "tut").length })}</h2>
           {answered.length ? (
             <div className="oneri-steps">
               {answered.map((id) => (

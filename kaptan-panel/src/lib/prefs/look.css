@@ -52,12 +52,12 @@
 }
 
 :root[data-theme="dark"] {
-  --solo-c1: #3d7ad6;
-  --solo-c2: #d4642a;
-  --solo-c3: #1a9a72;
-  --solo-c4: #c08800;
-  --solo-c5: #cf5a93;
-  --solo-c6: #8a7ae6;
+  --solo-c1: #5b86d6;
+  --solo-c2: #d2754a;
+  --solo-c3: #3aa98c;
+  --solo-c4: #a8862a;
+  --solo-c5: #d06aa6;
+  --solo-c6: #8378e0;
   --solo-other: #8d8a84;
   --solo-cash: #4a4e5a;
 }
@@ -104,7 +104,7 @@
 /* The largest text on a phone: the bar's three parts must still fit in one row (checked at 360 px in e2e/comfort.spec.ts). */
 @media (max-width: 479px) {
   :root[data-text="xlarge"] .bar__row {
-    gap: 0.25rem;
+    gap: var(--space-1);
   }
   :root[data-text="xlarge"] .solo-wordmark {
     height: 1.5rem;

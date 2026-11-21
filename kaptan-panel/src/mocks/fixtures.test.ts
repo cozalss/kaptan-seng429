@@ -75,11 +75,22 @@ describe("run specs → Explain", () => {
     expect(e.evidence_card?.stats.mean_car_5d).toBe(0.014);
     expect(e.evidence_card?.stats.hit_rate_5d).toBe(0.61);
     expect(e.skeptic?.size_multiplier).toBe(0.5);
-    expect(e.proposal?.requested_qty).toBe(1240);
+    expect(e.proposal?.requested_qty).toBe(1002);
     expect(e.approval?.status).toBe("pending");
     const parallel = e.trace.nodes.filter((n) => n.parallel_group === "fanout-1");
     expect(parallel.map((n) => n.node)).toEqual(["reader", "materiality", "evidence"]);
     expect(new Set(parallel.map((n) => n.started_at)).size).toBe(1);
   });
 
+});
+
+describe("suggestions respect the per-trade limit", () => {
+  it("never plan a loss above 0,5 % of the paper money (limit minus stop, times qty)", () => {
+    for (const s of [...DAY_SPECS, ...DEMO_SPECS]) {
+      if (s.kind !== "propose" || !s.proposal || s.decision?.status !== "pending") continue;
+      const e = buildExplain(s).proposal;
+      if (!e) continue;
+      expect(e.requested_qty * (e.limit_price - (e.stop_price ?? 0))).toBeLessThanOrEqual(1_016_480 * 0.005);
+    }
+  });
 });

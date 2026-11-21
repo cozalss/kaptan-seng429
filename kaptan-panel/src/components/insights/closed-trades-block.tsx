@@ -6,7 +6,7 @@ import "./insights.css";
 
 import { useState } from "react";
 import type { ClosedTrades } from "@/lib/domain/insights";
-import { fmtSignedPct } from "@/lib/format";
+import { fmtSignedFigurePct } from "@/lib/format";
 import { fmtSignedLira } from "@/lib/solo/words";
 import { cn } from "@/lib/utils";
 import { dateWords } from "@/components/portfolio/param-words";
@@ -53,7 +53,7 @@ export function ClosedTradesBlock({ data }: { data: ClosedTrades | undefined }) 
             </span>
             <span className={cn("ins-num font-semibold", signTone(t.gain_try))}>
               {fmtSignedLira(t.gain_try)}
-              {t.gain_pct !== null ? ` · ${fmtSignedPct(t.gain_pct / 100, 1)}` : ""}
+              {t.gain_pct !== null ? ` · ${fmtSignedFigurePct(t.gain_pct / 100)}` : ""}
             </span>
             <span className="ins-sub">
               {dateWords(t.sold_at.slice(0, 10))}: {t.qty} adet sattın{t.days_held !== null ? `, ${t.days_held} gün tuttun` : ""}

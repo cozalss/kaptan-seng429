@@ -1,6 +1,6 @@
 import { isValidElement, type ReactElement } from "react";
 import { render } from "@testing-library/react";
-import { Num, withNums } from "./num";
+import { Num, keepFigures, withNums } from "./num";
 
 type NumElement = ReactElement<{ children: string }>;
 const asText = (piece: unknown) => (isValidElement(piece) ? `Num(${(piece as NumElement).props.children})` : piece);
@@ -39,5 +39,23 @@ describe("withNums", () => {
     const { container } = render(<p>{withNums("Kayıt 3.907’de")}</p>);
     expect(container.querySelector(".num")).toHaveTextContent("3.907");
     expect(container).toHaveTextContent("Kayıt 3.907’de");
+  });
+});
+
+describe("keepFigures", () => {
+  const pieces = (t: string) => keepFigures(t).map((p) => (isValidElement(p) ? `[${(p as NumElement).props.children}]` : p));
+
+  it("keeps a signed percent in one unbreakable piece", () => {
+    expect(pieces("bir önceki güne göre −%1,92.")).toEqual(["bir önceki güne göre ", "[−%1,92]", "."]);
+  });
+
+  it("keeps the lira sign with its figure, and leaves the words alone", () => {
+    expect(pieces("paran 18.615 ₺ arttı")).toEqual(["paran ", "[18.615 ₺]", " arttı"]);
+    expect(pieces("Son kapanış 47,40 ₺, dün")).toEqual(["Son kapanış ", "[47,40 ₺]", ", dün"]);
+  });
+
+  it("does not change the text", () => {
+    const { container } = render(<p>{keepFigures("22 Aralık – 11 Ocak arasında paran %1,7 arttı.")}</p>);
+    expect(container.textContent).toBe("22 Aralık – 11 Ocak arasında paran %1,7 arttı.");
   });
 });

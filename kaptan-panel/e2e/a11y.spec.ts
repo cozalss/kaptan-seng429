@@ -44,8 +44,8 @@ for (const width of [320, 390, 1440]) {
 /** Param's insight blocks in their busiest state: the limit tightened (warning sentence) and a note editor open. */
 async function openInsights(page: Page) {
   const where = page.getByRole("region", { name: /Paranın en büyük parçası|tek hissede/ });
-  await where.getByLabel("Tek hissede en çok kaç yüzde tutmak istersin?").fill("5");
-  await where.getByRole("button", { name: "Sınırı kaydet" }).click();
+  await where.getByLabel("Uyarı çizgisi: tek hissede paranın yüzde kaçı olunca sana söyleyeyim?").fill("5");
+  await where.getByRole("button", { name: "Uyarı çizgisini kaydet" }).click();
   await expect(where.getByRole("status")).toHaveText("Sınırın %5 oldu.");
   const notes = page.getByRole("region", { name: /not yazabilirsin|not yazmışsın/ });
   await notes.getByRole("button", { name: /için not yaz/ }).first().click();
@@ -66,6 +66,7 @@ const STATES: ReadonlyArray<{ name: string; path: string; seed: MockSeed; ready:
   { name: "set up, nothing owned: home", path: "/benim", seed: { fresh: true }, ready: setUpNothingOwned },
   { name: "Param, money in", path: "/portfoy", seed: {}, ready: openDeposit },
   { name: "Param, a sale with errors", path: "/portfoy", seed: {}, ready: openSaleWithError },
+  { name: "Önemli duyurular, the day", path: "/onemli", seed: {}, ready: (p) => expect(p.getByRole("heading", { level: 1 })).toContainText("Önemli duyurular") },
   { name: "Takvim, the dates ahead", path: "/takvim", seed: {}, ready: (p) => expect(p.getByRole("heading", { level: 1 })).toContainText("Takvim") },
   { name: "Karne, the month", path: "/gecmis/karne", seed: {}, ready: (p) => expect(p.getByTestId("track-summary")).toBeVisible() },
   { name: "Karne, the year", path: "/gecmis/karne", seed: {}, ready: karneYear },
@@ -201,8 +202,8 @@ for (const width of [360, 1440]) {
     const tags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
     let result = await new AxeBuilder({ page }).include("[aria-labelledby=dokum]").withTags(tags).analyze();
     expect(result.violations.map((v) => `${v.id}: ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);
-    await s.getByRole("button", { name: "Eşleştirmeyi onayla, satırlara bak" }).click();
-    await expect(s.getByRole("group", { name: "Satırlara bak" })).toBeVisible();
+    await s.getByRole("button", { name: "Eşleştirmeyi onayla, işlemlere bak" }).click();
+    await expect(s.getByRole("group", { name: "İşlemlere bak" })).toBeVisible();
     result = await new AxeBuilder({ page }).include("[aria-labelledby=dokum]").withTags(tags).analyze();
     expect(result.violations.map((v) => `${v.id}: ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);
   });

@@ -118,6 +118,8 @@ describe("the section's sentence", () => {
   it("says what to do now, the bank first because it has a clock", () => {
     expect(sectionSentence({ decisions: 3, steps: 0 })).toBe("Bugün 3 kararın var.");
     expect(sectionSentence({ decisions: 1, steps: 0 })).toBe("Bugün 1 kararın var.");
+    expect(sectionSentence({ decisions: 6, steps: 0, holds: 2 })).toBe("Bugün 6 kararın var: 4 öneri, 2 “tut” sorusu.");
+    expect(sectionSentence({ decisions: 2, steps: 0, holds: 2 })).toBe("Bugün 2 kararın var.");
     expect(sectionSentence({ decisions: 2, steps: 1 })).toBe("Önce bu işlemi bankana gir, sonra 2 kararın var.");
     expect(sectionSentence({ decisions: 2, steps: 3 })).toBe("Önce bu 3 işlemi bankana gir, sonra 2 kararın var.");
     expect(sectionSentence({ decisions: 0, steps: 2 })).toBe("Bankana girmen gereken 2 işlem var.");

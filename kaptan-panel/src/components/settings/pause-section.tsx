@@ -19,7 +19,7 @@ type Start = { days: number } | { until: string };
 
 /**
  * Tatil modu: ask KAPtan for no suggestions for a few days or until a date. It still reads and keeps every
- * notice, spends no quota and makes no suggestion; the stops keep working. Shows the end and the way back.
+ * notice, spends no quota and makes no suggestion. Shows the end and the way back.
  */
 export function PauseSection() {
   const q = useApiQuery((api) => api.preferences(), []);

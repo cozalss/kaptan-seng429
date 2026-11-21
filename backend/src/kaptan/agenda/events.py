@@ -133,6 +133,14 @@ def _notice_events(row: dict[str, Any], scope: Scope, start: date, end: date) ->
     return out
 
 
+SATURDAY: Final = 5
+
+
+def _weekday_on_or_after(day: date) -> date:
+    """A weekend day moves to the Monday after it: an estimated report day is never shown on a closed day."""
+    return day + timedelta(days=7 - day.weekday()) if day.weekday() >= SATURDAY else day
+
+
 def _report_events(rows: list[dict[str, Any]], scope: Scope, start: date, end: date) -> list[dict[str, Any]]:
     out = []
     for r in rows:
@@ -141,6 +149,7 @@ def _report_events(rows: list[dict[str, Any]], scope: Scope, start: date, end: d
             day = last.replace(year=last.year + 1)
         except ValueError:  # 29 February
             day = last.replace(year=last.year + 1, day=28)
+        day = _weekday_on_or_after(day)
         if start <= day <= end:
             ticker = r["ticker"]
             out.append(

@@ -1,9 +1,9 @@
 /* Ayarlar, wave 5: price alerts, alert history, muted companies, backups. Same rhythm as comfort.css. */
 
 .pa-form {
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
   display: grid;
-  gap: 1rem;
+  gap: var(--space-4);
   max-width: 40rem;
 }
 .pa-modes {
@@ -15,15 +15,15 @@
 .pa-mode-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: 0 1.25rem;
-  margin-top: 0.25rem;
+  gap: 0 var(--space-5);
+  margin-top: var(--space-1);
 }
 .pa-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.25rem 1.5rem;
+  gap: var(--space-1) var(--space-6);
   align-items: center;
-  padding-block: 1rem;
+  padding-block: var(--space-4);
   border-bottom: 1px solid var(--hairline);
 }
 .pa-row[data-done="true"] .ay-channel-state {
@@ -47,8 +47,8 @@
 .pa-hist {
   display: grid;
   grid-template-columns: 11rem 7rem minmax(0, 1fr);
-  gap: 0.25rem 1rem;
-  padding-block: 0.75rem;
+  gap: var(--space-1) var(--space-4);
+  padding-block: var(--space-3);
   border-bottom: 1px solid var(--hairline);
   font-size: 1rem;
   color: var(--ink);
@@ -71,38 +71,38 @@
 .pa-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
   padding: 0;
   list-style: none;
 }
 .pa-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   min-height: 2.75rem;
-  padding-inline: 0.75rem 0.25rem;
+  padding-inline: var(--space-3) var(--space-1);
   border: 2px solid var(--rule-ui);
   color: var(--ink);
   font-weight: 600;
 }
 .pa-warn {
-  margin-top: 1rem;
-  padding: 0.75rem 1rem;
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   border-left: 4px solid var(--north);
   color: var(--ink);
   font-weight: 600;
 }
 .pa-files {
-  margin: 1rem 0 0;
+  margin: var(--space-4) 0 0;
   padding: 0;
   list-style: none;
 }
 .pa-file {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 0.25rem 1.25rem;
-  padding-block: 0.625rem;
+  gap: var(--space-1) var(--space-5);
+  padding-block: var(--space-2_5);
   border-bottom: 1px solid var(--hairline);
   font-variant-numeric: tabular-nums;
 }
@@ -114,10 +114,10 @@
   color: var(--ink-soft);
 }
 .pa-steps {
-  margin: 0.75rem 0 0;
-  padding-left: 1.25rem;
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-5);
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-2);
   color: var(--ink);
 }
 .pa-code {

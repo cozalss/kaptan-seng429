@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Position } from "@/lib/domain";
-import { fmtInt, fmtPct, fmtSignedPct, NBSP } from "@/lib/format";
+import { fmtFigurePct, fmtInt, fmtSignedFigurePct, NBSP } from "@/lib/format";
 import { useNow } from "@/lib/clock";
 import { dayLabel as longDay, istanbulDay } from "@/lib/session-day";
 import { greeting, marketOpen } from "@/lib/solo/greeting";
@@ -106,7 +106,7 @@ export function MoneyHero({ overview, todayPct, positions, name }: { overview: O
                   <span>Henüz değişim yok</span>
                 ) : (
                   <>
-                    {fmtSignedLira(overview.pnl_abs)} <span className="text-[17px] font-medium text-on-sea-soft">{fmtSignedPct(overview.pnl_pct, 1)}</span>
+                    {fmtSignedLira(overview.pnl_abs)} <span className="text-[17px] font-medium text-on-sea-soft">{fmtSignedFigurePct(overview.pnl_pct)}</span>
                   </>
                 )}
               </Fact>
@@ -114,7 +114,7 @@ export function MoneyHero({ overview, todayPct, positions, name }: { overview: O
                 {fmtLira(overview.cash)}
               </Fact>
               <Fact label="Yatırımda" meaning="Şu an hisse senetlerinde duran para.">
-                {fmtLira(invested)} {overview.equity_now > 0 ? <span className="text-[17px] font-medium text-on-sea-soft">{fmtPct(invested / overview.equity_now, 0)}</span> : null}
+                {fmtLira(invested)} {overview.equity_now > 0 ? <span className="text-[17px] font-medium text-on-sea-soft">{fmtFigurePct(invested / overview.equity_now)}</span> : null}
               </Fact>
             </dl>
           </div>

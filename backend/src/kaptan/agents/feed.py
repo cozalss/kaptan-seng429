@@ -54,6 +54,7 @@ from kaptan.ingest.subject_routes import DETAIL_ROUTES
 from kaptan.llm.budget import DayUsage
 from kaptan.ops.pause import PAUSED, paused_until
 from kaptan.portfolio.ledger import started as book_started
+from kaptan.risk.watch import is_watched
 from kaptan.text.turkish import IST
 
 log = logging.getLogger("kaptan.agents.feed")
@@ -78,7 +79,8 @@ SELECT d.origin, d.ingest_source, d.subject_route, d.primary_ticker, d.reason, d
 FEED_ROW_SQL: Final = "SELECT status, attempts, reason FROM ops.agent_feed WHERE disclosure_index = %s"
 WAITING_SQL: Final = """
 SELECT f.disclosure_index, f.status, f.reason, d.subject_route, d.published_at,
-       coalesce(i.in_universe, false) AS in_universe,
+       (coalesce(i.in_universe, false)
+        OR EXISTS (SELECT 1 FROM core.watchlist w WHERE w.ticker = d.primary_ticker)) AS in_universe,
        EXISTS (SELECT 1 FROM core.disclosure_texts t WHERE t.disclosure_index = d.disclosure_index
                 AND t.lang = 'tr' AND length(t.body) > 0)
        AND NOT EXISTS (SELECT 1 FROM ops.attachment_fetch_queue a WHERE a.disclosure_index = d.disclosure_index
@@ -230,7 +232,7 @@ async def _pre_gate_vetoes(conn: Any, ticker: str) -> bool:
     except LookupError:
         in_universe = False
     restrictions = tuple(Restriction(r["kind"], r["source_ref"]) for r in await q.restrictions(conn, ticker))
-    return _veto_reasons(restrictions, in_universe) is not None
+    return _veto_reasons(restrictions, in_universe, await is_watched(conn, ticker)) is not None
 
 
 class AgentFeed:

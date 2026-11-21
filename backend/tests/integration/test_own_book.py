@@ -66,7 +66,7 @@ async def test_money_errors_and_audit(desk: DictConn) -> None:
     assert (over.value.status, over.value.code, over.value.detail) == (
         422,
         "over_cash",
-        "Kasandaki paradan fazlasını çekemezsin.",
+        "Elindeki nakitten fazlasını çekemezsin.",
     )
     outcome = await money.add_money(desk, MoneyInput(kind="withdrawal", amount_try=100_000), RISK_OFFICER, now=NOW)
     body = outcome.body or {}

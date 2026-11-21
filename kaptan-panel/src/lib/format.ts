@@ -50,6 +50,29 @@ export function fmtSignedPct(ratio: number, digits = 1): string {
   return fmtPct(ratio, digits);
 }
 
+/**
+ * THE rule for a percent that is a figure (a return, a day's change, a share of the money), on every screen:
+ * one decimal, always printed ("%5,0" next to "%5,1", never "%5"), and two under one percent so a small move
+ * does not read as nothing ("%0,84", "%0,31"). Zero is "%0". Limits and settings keep `fmtPct`.
+ */
+export function fmtFigurePct(ratio: number, fixed?: 1 | 2): string {
+  const v = Math.abs(ratio * 100);
+  const digits = fixed ?? (v < 1 ? 2 : 1);
+  const rounded = Math.round(v * 10 ** digits) / 10 ** digits;
+  if (rounded === 0) return "%0";
+  const body = new Intl.NumberFormat("tr-TR", { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(rounded);
+  return `${ratio < 0 ? "−" : ""}%${body}`;
+}
+
+/**
+ * The figure rule with its sign: "+%1,9" / "−%1,9" / "+%0,84" / "%0". A row of small moves read side by side
+ * (daily returns) passes `fixed = 2` so every figure in the row has the same decimals ("+%0,85" next to "−%1,04").
+ */
+export function fmtSignedFigurePct(ratio: number, fixed?: 1 | 2): string {
+  const s = fmtFigurePct(ratio, fixed);
+  return ratio > 0 && s !== "%0" ? `+${s}` : s;
+}
+
 /** Basis points → "38 bp". */
 export function fmtBps(bps: number): string {
   return `${intFmt.format(Math.round(bps))} bp`;
@@ -57,7 +80,8 @@ export function fmtBps(bps: number): string {
 
 const timeFmt = new Intl.DateTimeFormat("tr-TR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
 const timeSecFmt = new Intl.DateTimeFormat("tr-TR", { timeZone: TZ, hour: "2-digit", minute: "2-digit", second: "2-digit" });
-const dateFmt = new Intl.DateTimeFormat("tr-TR", { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric" });
+// One date style on every screen: "11 Ocak 2027" (and "11 Oca" on chart axes), never "11.01.2027".
+const dateFmt = new Intl.DateTimeFormat("tr-TR", { timeZone: TZ, day: "numeric", month: "long", year: "numeric" });
 const dateLongFmt = new Intl.DateTimeFormat("tr-TR", { timeZone: TZ, day: "numeric", month: "long", year: "numeric", weekday: "long" });
 const shortDateFmt = new Intl.DateTimeFormat("tr-TR", { timeZone: TZ, day: "numeric", month: "short" });
 
@@ -81,6 +105,24 @@ export function fmtDateLong(iso: string): string {
 export function fmtShortDate(isoOrDate: string): string {
   const iso = isoOrDate.length === 10 ? `${isoOrDate}T09:00:00Z` : isoOrDate;
   return shortDateFmt.format(new Date(iso));
+}
+
+const yearOf = (isoOrDate: string) => isoOrDate.slice(0, 4);
+
+/** "11 Oca" or, with `withYear`, "11 Oca 2027": a chart's day. Accepts YYYY-MM-DD too. */
+export function fmtChartDay(isoOrDate: string, withYear: boolean): string {
+  return withYear ? `${fmtShortDate(isoOrDate)} ${yearOf(isoOrDate)}` : fmtShortDate(isoOrDate);
+}
+
+/** True when a chart's days run across a new year: then every day it prints carries its year. */
+export function crossesYear(first: string, last: string): boolean {
+  return yearOf(first) !== yearOf(last);
+}
+
+/** The two ends of a chart's time axis: "15 Eki" / "11 Oca", with the year when the span crosses one. */
+export function axisEnds(first: string, last: string): [string, string] {
+  const y = crossesYear(first, last);
+  return [fmtChartDay(first, y), fmtChartDay(last, y)];
 }
 
 /** "2 sa 14 dk" / "14 dk 05 sn" / "süresi doldu". */

@@ -1,0 +1,4 @@
+/* The "outside the list" note on a suggestion: a solid ochre rule on the left (projector rule: no dashes)
+   and a plain head, readable without colour. */
+.oneri-outside { display: grid; gap: var(--space-1); max-width: 60ch; margin-block: var(--space-4); padding: var(--space-3) var(--space-4); border-left: 3px solid var(--ochre); background: var(--ochre-tint); color: var(--ink); font-size: 0.9375rem; }
+.oneri-outside-head { font-weight: 700; }

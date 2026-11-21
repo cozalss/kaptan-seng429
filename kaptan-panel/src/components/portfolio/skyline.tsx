@@ -3,27 +3,23 @@
 import { useState } from "react";
 import type { Position } from "@/lib/domain";
 import { fmtLira } from "@/lib/solo/words";
-import { fmtPct, fmtSignedPct } from "@/lib/format";
+import { fmtFigurePct, fmtSignedFigurePct } from "@/lib/format";
 import { shortName } from "@/components/story/plain";
 import { Term } from "@/components/story/term";
 import { possessive, titleTr } from "@/components/story/turkish";
 import { Boat } from "@/components/ufuk/boat";
+import { signTone } from "@/components/story/sign-tone";
 import { cn } from "@/lib/utils";
 import { skyline, type SkylineColumn } from "./param-words";
 
 /** Tallest column above the water, in px of the plot (the same under it). */
 const PLOT_H = 220;
-/** A label needs this share of the row to sit above its column at desktop widths. */
-const LABEL_SHARE = 0.03;
-
 const name = (c: SkylineColumn) => titleTr(shortName(c.name));
-/** Over a narrow column the company goes by its first word: a person knows "Misal", not "MSLCM". */
-const firstWord = (c: SkylineColumn) => name(c).split(/\s+/)[0] ?? c.ticker;
 
 /** What the line under the picture says about one column. */
 function columnLine(c: SkylineColumn): string {
   const delta = c.gain >= 0 ? `${fmtLira(c.gain)} kazandırıyor` : `${fmtLira(-c.gain)} kaybettiriyor`;
-  return `${name(c)}: ${fmtLira(c.paid)} ödedin, şimdi ${fmtLira(c.value)} ediyor. ${delta} (${fmtSignedPct(c.ratio)}).`;
+  return `${name(c)}: ${fmtLira(c.paid)} ödedin, şimdi ${fmtLira(c.value)} ediyor. ${delta} (${fmtSignedFigurePct(c.ratio)}).`;
 }
 
 /**
@@ -65,12 +61,11 @@ export function Skyline({ positions, cash }: { positions: readonly Position[]; c
           >
             <div className="pm-col-up">
               <span className="pm-col-bar u-hatch" />
-              {c.share >= LABEL_SHARE ? (
-                <span className="pm-col-label">
-                  <b>{firstWord(c)}</b>
-                  <span>{fmtSignedPct(c.ratio)}</span>
-                </span>
-              ) : null}
+              {/* The code, never a cut name: two companies can share a first word. Shown only where the column is wide enough (CSS). */}
+              <span aria-hidden className="pm-col-label">
+                <b>{c.ticker}</b>
+                <span>{fmtSignedFigurePct(c.ratio)}</span>
+              </span>
             </div>
             <div className="pm-col-under">
               <span className="pm-col-bar u-hatch" />
@@ -90,6 +85,17 @@ export function Skyline({ positions, cash }: { positions: readonly Position[]; c
         ) : null}
       </div>
       <div aria-hidden className="pf-water" />
+      {empty ? null : (
+        <ul className="pm-sky-legend" aria-label="Sütunlar, soldan sağa">
+          {s.columns.map((c, i) => (
+            <li key={c.ticker + i}>
+              <button type="button" aria-pressed={active === c.ticker} onClick={() => setActive(active === c.ticker ? null : c.ticker)} title={name(c)}>
+                <b>{c.ticker}</b> <span className={signTone(c.ratio)}>{fmtSignedFigurePct(c.ratio)}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       <p aria-live="off" className="pm-sky-read">
         {hit ? columnLine(hit) : summary}
       </p>
@@ -99,7 +105,7 @@ export function Skyline({ positions, cash }: { positions: readonly Position[]; c
           {s.cashShare > 0 ? (
             <>
               {" "}
-              Düz su <Term word="nakit">nakit</Term>, paranın {possessive(fmtPct(s.cashShare, 0))}.
+              Düz su <Term word="nakit">nakit</Term>, paranın {possessive(fmtFigurePct(s.cashShare))}.
             </>
           ) : null}
         </p>

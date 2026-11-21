@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * The app's buttons, the landing's ink button grown up: one primary (indigo fill), one secondary
  * (a sheet with an ink border), one destructive (north red, reserved for Durdur and rejections).
  * Square with a hard offset shadow; a press prints the button flat onto the page. A closed button
- * drops its fill and gets a dashed rule (it reads as "not now", not as faded ink); a pending one
+ * drops its fill and its shadow and keeps only a faint solid edge (it reads as "not now", not as faded ink); a pending one
  * says it is busy.
  */
 export const buttonVariants = cva(
@@ -17,7 +17,7 @@ export const buttonVariants = cva(
     "transition-[translate,background-color,color,border-color,box-shadow] duration-[var(--dur-quick)] ease-[var(--ease-out-expo)] active:duration-[var(--dur-instant)]",
     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
     // Written out in full (no template strings) so Tailwind sees every class. Not while pending.
-    "[&:disabled:not([data-pending=true])]:shadow-none [&:disabled:not([data-pending=true])]:bg-transparent [&:disabled:not([data-pending=true])]:border-dashed [&:disabled:not([data-pending=true])]:border-rule-ui [&:disabled:not([data-pending=true])]:text-muted disabled:cursor-not-allowed",
+    "[&:disabled:not([data-pending=true])]:shadow-none [&:disabled:not([data-pending=true])]:bg-transparent [&:disabled:not([data-pending=true])]:border-hairline [&:disabled:not([data-pending=true])]:text-muted disabled:cursor-not-allowed",
     "data-[pending=true]:opacity-80 data-[pending=true]:cursor-progress",
     "[&_svg]:size-4 [&_svg]:shrink-0",
   ],
@@ -40,7 +40,7 @@ export const buttonVariants = cva(
         icon: "size-9 p-0 max-sm:size-11",
       },
     },
-    // A closed text button stays a text button: no dashed box around the words.
+    // A closed text button stays a text button: no box around the words.
     compoundVariants: [{ variant: "link", class: "h-auto px-0 [&:disabled:not([data-pending=true])]:border-transparent" }],
     defaultVariants: { variant: "secondary", size: "md" },
   },

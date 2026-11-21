@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import httpx
 import pytest
 
 from kaptan.companies.market import event_counts, price_stats
 from kaptan.db import DictConn
+from kaptan.reading.marks import read_all, reading_state, restore_through
 from tests.conftest import bearer, login
 
 pytestmark = pytest.mark.integration
@@ -110,6 +111,34 @@ async def test_unread_save_and_read_all(client: httpx.AsyncClient, data: None) -
     # only if it was already older; here the API clock is earlier, so the state is unchanged.
     done = await client.post("/api/v1/me/reading/read-all", headers=h)
     assert done.status_code == 200 and done.json()["read_through"] >= "2030-01-01"
+
+
+async def test_read_all_can_be_undone(client: httpx.AsyncClient, data: None, owner_pg: DictConn) -> None:
+    h = await _auth(client)
+    await client.put(f"/api/v1/watchlist/{T1}", headers=h)
+    await client.put(f"/api/v1/me/reading/read/{IDX}", headers=h)
+    later = datetime(2030, 4, 10, tzinfo=UTC)
+    await read_all(owner_pg, now=later)
+    assert (await reading_state(owner_pg, later))["unread"] == 0
+    # "Geri al": the mark goes back; the one already opened stays read.
+    await restore_through(owner_pg, datetime(2030, 1, 1, tzinfo=UTC), now=later)
+    back = await reading_state(owner_pg, later)
+    assert back["unread_indexes"] == [IDX + 1]
+    await owner_pg.commit()
+
+    # Over HTTP: only backwards, never past now.
+    moved = await client.put(
+        "/api/v1/me/reading/read-through", headers=h, json={"read_through": "2026-01-01T00:00:00.000Z"}
+    )
+    assert moved.status_code == 200 and moved.json()["read_through"].startswith("2026-01-01")
+    kept = await client.put(
+        "/api/v1/me/reading/read-through", headers=h, json={"read_through": "2026-02-01T00:00:00.000Z"}
+    )
+    assert kept.json()["read_through"].startswith("2026-01-01")
+    future = await client.put(
+        "/api/v1/me/reading/read-through", headers=h, json={"read_through": "2999-01-01T00:00:00.000Z"}
+    )
+    assert future.status_code == 422
 
 
 async def test_company_page_stats_benchmark_and_insiders(client: httpx.AsyncClient, data: None) -> None:

@@ -56,11 +56,6 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
     text: "Şirketin kendi hissesini piyasadan satın alması. Geçmişte bu çoğu zaman fiyatı destekledi; garanti değildir.",
   },
   {
-    id: "gunluk-sinir",
-    term: "Günlük sınır (%1)",
-    text: "Paran bir günde %1’den fazla düşerse KAPtan o gün yeni öneri çıkarmaz. Ertesi gün kendiliğinden kalkar.",
-  },
-  {
     id: "guven",
     term: "Güven",
     text: "KAPtan’ın bir öneriye ne kadar güvendiği. Yüksek olması kazanacağın anlamına gelmez; yalnızca kanıtın daha güçlü olduğunu söyler.",
@@ -68,7 +63,7 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
   {
     id: "izleme-listesi",
     term: "İzleme listesi",
-    text: "Haber almak istediğin şirketlerin listesi. Bunlar bildirim yapınca sana söylenir; öneri çıkması gerekmez.",
+    text: "Haber almak istediğin şirketlerin listesi. Bunlar bildirim yapınca sana söylenir. KAPtan bu şirketleri, normalde baktığı hisse listesinin dışında olsalar bile inceler; işlem hacmi düşükse tutarı küçük tutar ve öneri kartında bunu açıkça yazar.",
   },
   {
     id: "kap",

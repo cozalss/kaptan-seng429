@@ -3,13 +3,13 @@
    the sentences of every movement, and the small notes on a share added by hand.
    ────────────────────────────────────────────────────────────────────────── */
 .om {
-  margin-top: clamp(2.5rem, 2rem + 3vw, 5rem);
-  padding-top: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  margin-top: clamp(2.5rem, var(--space-8) + 3vw, var(--space-20));
+  padding-top: clamp(1.5rem, var(--space-4) + 2vw, var(--space-10));
   border-top: 2px solid var(--ink);
 }
 .om-head {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--space-3);
   max-width: 58rem;
 }
 .om-lead {
@@ -21,8 +21,8 @@
 .om-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
 }
 @media (max-width: 479px) {
   .om-actions > * {
@@ -31,18 +31,24 @@
 }
 .om-status {
   min-height: 1.5rem;
-  margin-top: 0.875rem;
+  margin-top: var(--space-3_5);
   font-size: 1rem;
   font-weight: 600;
   color: var(--gain);
+}
+/* A saved movement is said in a marked line, not only as a quiet word: a solid rule at its left. */
+.om-status:not(:empty) {
+  padding: var(--space-2) var(--space-3);
+  border-left: 4px solid var(--gain);
+  background: var(--panel);
 }
 .om-status:empty {
   min-height: 0;
   margin-top: 0;
 }
 .om-panel {
-  margin-top: 1rem;
-  padding: clamp(1rem, 0.75rem + 1.5vw, 1.75rem);
+  margin-top: var(--space-4);
+  padding: clamp(1rem, var(--space-3) + 1.5vw, var(--space-7));
   border-left: 3px solid var(--ink);
   background: var(--sunk);
 }
@@ -52,23 +58,23 @@
   color: var(--ink);
 }
 .om-panel-lead {
-  margin: 0.375rem 0 1.25rem;
+  margin: var(--space-1_5) 0 var(--space-5);
   max-width: 60ch;
   font-size: 1rem;
   line-height: 1.5;
   color: var(--ink-soft);
 }
 .om-log {
-  margin-top: 2rem;
+  margin-top: var(--space-8);
 }
 .om-list {
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
   padding: 0;
   list-style: none;
   font-variant-numeric: tabular-nums;
 }
 .om-list li {
-  padding-block: 0.625rem;
+  padding-block: var(--space-2_5);
   border-bottom: 1px solid var(--hairline);
   font-size: 1.0625rem;
   line-height: 1.45;
@@ -79,7 +85,7 @@
 .pm-row-extra {
   grid-column: 1 / -1;
   display: grid;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 .pm-row-note {
   font-size: 0.9375rem;
@@ -101,7 +107,7 @@
 /* One movement with its two corrections; a fixed or undone row stays and says so. */
 .om-list li.om-item {
   display: grid;
-  gap: 0.25rem;
+  gap: var(--space-1);
 }
 .om-item-note {
   font-size: 0.9375rem;
@@ -115,12 +121,12 @@
 .om-item-text--undone .om-item-note {
   text-decoration: none;
   display: inline-block;
-  margin-left: 0.375rem;
+  margin-left: var(--space-1_5);
 }
 .om-item-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 1.5rem;
+  gap: var(--space-1) var(--space-6);
 }
 .om-item-actions .om-item-actions-btn,
 .om-item-actions button {
@@ -129,14 +135,14 @@
 
 /* Record tools: the export and "Baştan başla". */
 .bt-block {
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
   max-width: 58rem;
 }
 .bt-list {
   display: grid;
-  gap: 0.5rem;
-  margin: 0.75rem 0 1.25rem;
-  padding-left: 1.25rem;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 var(--space-5);
+  padding-left: var(--space-5);
   font-size: 1rem;
   line-height: 1.5;
   color: var(--ink);
@@ -147,12 +153,12 @@
 .pb {
   width: min(100% - 2rem, 72rem);
   margin-inline: auto;
-  margin-bottom: 4rem;
+  margin-bottom: var(--space-16);
 }
 .pb-book {
-  margin-top: 1rem;
+  margin-top: var(--space-4);
   border-bottom: 1px solid var(--hairline);
-  padding-bottom: 1rem;
+  padding-bottom: var(--space-4);
 }
 .pb-summary {
   min-height: 2.75rem;
@@ -165,8 +171,8 @@
 .pb-facts {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.5rem 3rem;
-  margin: 1rem 0;
+  gap: var(--space-6) var(--space-12);
+  margin: var(--space-4) 0;
   font-variant-numeric: tabular-nums;
   font-size: 1.125rem;
 }

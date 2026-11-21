@@ -60,6 +60,6 @@ describe("how old the prices are", () => {
   });
 
   it("gives the exact time for a hover or a focus", () => {
-    expect(exactPriceTime("2026-11-19T11:05:00.000Z")).toBe("Tam zamanı: 19.11.2026 14:05");
+    expect(exactPriceTime("2026-11-19T11:05:00.000Z")).toBe("Tam zamanı: 19 Kasım 2026 14:05");
   });
 });

@@ -22,7 +22,7 @@ export function initialReading(): MockReading {
 
 const MAX_UNREAD = 500;
 
-export function createReading(ctx: MockCtx): Pick<KaptanApi, "readingState" | "readAll" | "markRead" | "setSaved" | "savedDisclosures"> {
+export function createReading(ctx: MockCtx): Pick<KaptanApi, "readingState" | "readAll" | "restoreReadThrough" | "markRead" | "setSaved" | "savedDisclosures"> {
   const { db, me, ok } = ctx;
   const mark = (): MockReading => db.snapshot.reading ?? initialReading();
   const write = (next: MockReading) => db.update((s) => ({ ...s, reading: next }));
@@ -46,8 +46,21 @@ export function createReading(ctx: MockCtx): Pick<KaptanApi, "readingState" | "r
     },
     async readAll() {
       me();
-      write({ ...mark(), readThrough: ctx.now(), opened: [] });
+      // Like the API: opened marks under the previous mark are no longer needed; the newer ones stay, so an
+      // undo never brings back what was already opened.
+      const m = mark();
+      const before = state().read_through;
+      const published = new Map(sel.visibleDisclosures(db.snapshot).map((d) => [d.disclosure_index, d.published_at]));
+      const opened = m.opened.filter((i) => (published.get(i) ?? "") > before);
+      write({ ...m, readThrough: ctx.now(), opened });
       return ok(state(), 60);
+    },
+    async restoreReadThrough(through) {
+      me();
+      if (through > ctx.now()) throw new ApiError(422, "validation", "Bu an henüz gelmedi.");
+      const current = state().read_through;
+      write({ ...mark(), readThrough: through < current ? through : current });
+      return ok(state(), 40);
     },
     async markRead(index) {
       me();

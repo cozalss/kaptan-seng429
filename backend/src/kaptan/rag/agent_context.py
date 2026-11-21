@@ -37,7 +37,7 @@ def pregate_vetoes(ctx: RunContext) -> bool:
     """True when the run's pre-gate (R03 universe, R04 hard measures, R13 insider list) will veto it."""
     from kaptan.agents.nodes.screen import _veto_reasons  # lazy: the agents package imports this module
 
-    return _veto_reasons(ctx.desk.restrictions, ctx.desk.in_universe) is not None
+    return _veto_reasons(ctx.desk.restrictions, ctx.desk.in_universe, ctx.desk.watched) is not None
 
 
 async def attach_similar(

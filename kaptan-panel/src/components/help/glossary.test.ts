@@ -39,11 +39,14 @@ describe("the glossary", () => {
       "bedelsiz",
       "bedelli",
       "zirve",
-      "gunluk-sinir",
       "yedek",
       "oneri",
     ])
       expect(GLOSSARY.some((e) => e.id === id)).toBe(true);
+  });
+
+  it("never promises a stop or a brake (there is none: 2026-11-21)", () => {
+    for (const e of GLOSSARY) expect(`${e.term} ${e.text}`).not.toMatch(/günlük sınır|kendiliğinden (durur|durdurur|kalkar)|yeni öneri çıkarmaz/i);
   });
 
   it("is sorted the Turkish way and searchable regardless of case", () => {

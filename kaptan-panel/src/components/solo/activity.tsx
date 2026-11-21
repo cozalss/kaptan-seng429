@@ -22,7 +22,7 @@ export function Activity({ items }: { items: readonly ActivityItem[] }) {
   return (
     <section aria-labelledby="son-islemler" className="grid min-w-0 gap-x-12 gap-y-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
       <header>
-        <h2 id="son-islemler" className="u-sentence text-ink">
+        <h2 id="son-islemler" className="u-chapter text-ink">
           Son işlemler
         </h2>
         <Link href={ROUTES.gecmis} className="mt-3 inline-flex min-h-11 items-center gap-2 text-ui font-semibold text-ink underline decoration-rule-ui underline-offset-4 hover:decoration-ink">

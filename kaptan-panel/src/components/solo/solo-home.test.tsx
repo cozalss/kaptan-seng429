@@ -56,7 +56,7 @@ describe("Ana sayfa", () => {
     expect(within(where).getByText("Nakit")).toBeInTheDocument();
     expect(within(where).getByRole("link", { name: /Farazi Enerji Dağıtım A\.Ş\./ })).toHaveAttribute("href", "/portfoy");
     const list = screen.getByRole("region", { name: "Öneriler" });
-    expect(within(list).getByRole("heading", { level: 2, name: "Bugün 6 kararın var." })).toBeInTheDocument();
+    expect(within(list).getByRole("heading", { level: 2, name: /^Bugün 6 kararın var(\.|: \d+ öneri, \d+ “tut” sorusu\.)$/ })).toBeInTheDocument();
     // One first decision, with how much, how sure and by when; the rest wait in order.
     const first = within(list).getByRole("article", { name: /^AL Koru Çelik hissesi/ });
     expect(plain(first)).toMatch(/\d adet, tanesi en fazla [\d.,]+ ₺/);
@@ -86,9 +86,9 @@ describe("Ana sayfa", () => {
     expect(slip).toHaveTextContent("KAPtan senin yerine işlem yapmaz.");
     expect(slip).toHaveTextContent("uygulamasına sen gir. Sen girmedikçe hiçbir şey olmaz.");
     // What to enter: how many, at most what price, in total; how long it stays valid.
-    expect(plain(slip)).toMatch(/Adet\s*1\.480/);
+    expect(plain(slip)).toMatch(/Adet\s*1\.419/);
     expect(plain(slip)).toMatch(/Tanesi en fazla\s*34,15 ₺/);
-    expect(plain(slip)).toMatch(/Toplam yaklaşık\s*50\.542 ₺/);
+    expect(plain(slip)).toMatch(/Toplam yaklaşık\s*48\.459 ₺/);
     expect(plain(slip)).toMatch(/içinde gir\. \d\d:\d\d’(d|t)[ae]n sonra geçmez\./);
     expect(within(slip).getByRole("button", { name: "Kopyala" })).toBeEnabled();
     expect(within(slip).getByRole("button", { name: "Girdim" })).toBeEnabled();
@@ -105,7 +105,7 @@ describe("Ana sayfa", () => {
     await u.click(within(slip).getByRole("button", { name: "Girdiğimi kaydet" }));
     expect(await within(slip).findByRole("heading", { name: "Girdin. Param’a yazıldı." })).toBeInTheDocument();
     expect(within(slip).getByRole("link", { name: "Param’da gör →" })).toHaveAttribute("href", "/portfoy");
-    expect(screen.getByRole("heading", { level: 2, name: "Bugün 5 kararın var." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: /^Bugün 5 kararın var(\.|: \d+ öneri, \d+ “tut” sorusu\.)$/ })).toBeInTheDocument();
   });
 
   it("keeps a waiting order findable on the next visit", async () => {

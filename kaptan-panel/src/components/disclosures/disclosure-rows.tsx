@@ -8,20 +8,10 @@ import { NewMark, SaveStar } from "@/components/reading/save-star";
 import { plainEvent, shortName } from "@/components/story/plain";
 import { titleTr } from "@/components/story/turkish";
 import { fateOf, groupByHour, tickerOf } from "./disclosure-logic";
-import { kapUrl, plainSaid, whatKaptanDid } from "./reading-words";
+import { KapLink } from "./kap-link";
+import { plainSaid, whatKaptanDid } from "./reading-words";
 
 type Cards = ReadonlyMap<number, ApprovalCard>;
-
-/** A link to the disclosure's own page at KAP, the official source. */
-function KapLink({ d }: { d: DisclosureListItem }) {
-  const url = kapUrl(d);
-  if (!url) return null;
-  return (
-    <a href={url} target="_blank" rel="noopener noreferrer" aria-label={`${titleTr(shortName(d.company_name))} duyurusunu KAP’ta aç (yeni sekmede)`} className="ok-kap">
-      KAP’ta aç <span aria-hidden>↗</span>
-    </a>
-  );
-}
 
 /**
  * What might matter to you today, each as a large object: the company, what it said, what KAPtan

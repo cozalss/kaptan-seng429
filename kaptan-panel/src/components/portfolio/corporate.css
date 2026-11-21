@@ -1,8 +1,8 @@
 /* Company actions: the KAP prompt and Param's dividend section. Ink on paper, hairlines, no cards. */
 .cp {
   display: grid;
-  gap: 1.5rem;
-  margin: 2rem 0;
+  gap: var(--space-6);
+  margin: var(--space-8) 0;
   max-width: 58rem;
 }
 .cp-status {
@@ -15,9 +15,9 @@
 }
 .cp-item {
   border-top: 1px solid var(--rule-ui);
-  padding-top: 1rem;
+  padding-top: var(--space-4);
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 .cp-headline {
   font-size: 1.1875rem;
@@ -34,8 +34,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem 1.25rem;
-  margin-top: 0.5rem;
+  gap: var(--space-3) var(--space-5);
+  margin-top: var(--space-2);
 }
 .cp-link {
   min-height: 2.75rem;
@@ -49,8 +49,8 @@
 
 .cs-per {
   display: grid;
-  gap: 0.25rem;
-  margin: 1rem 0 0;
+  gap: var(--space-1);
+  margin: var(--space-4) 0 0;
   padding: 0;
   list-style: none;
 }

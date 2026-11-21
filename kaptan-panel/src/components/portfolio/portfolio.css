@@ -6,14 +6,14 @@
 .pm-figures {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1rem 2.5rem;
+  gap: var(--space-4) var(--space-10);
   align-items: end;
-  padding-block: 1.25rem;
+  padding-block: var(--space-5);
   border-top: 2px solid var(--ink);
   border-bottom: 1px solid var(--hairline);
 }
 .pm-figures dd {
-  margin-top: 0.25rem;
+  margin-top: var(--space-1);
   font-variant-numeric: tabular-nums;
 }
 .pm-total {
@@ -46,17 +46,17 @@
 }
 
 .pm-slips {
-  margin-top: clamp(2rem, 1.5rem + 2vw, 3.5rem);
-  padding-block: clamp(2rem, 1.5rem + 2vw, 3.5rem);
+  margin-top: clamp(2rem, var(--space-6) + 2vw, var(--space-14));
+  padding-block: clamp(2rem, var(--space-6) + 2vw, var(--space-14));
 }
 
 /* ── The money at sea. ── */
 .pm-sky {
-  margin-top: clamp(2.5rem, 2rem + 3vw, 5rem);
+  margin-top: clamp(2.5rem, var(--space-8) + 3vw, var(--space-20));
 }
 .pm-sky-plot {
   display: flex;
-  gap: 2px;
+  gap: var(--space-0_5);
   height: calc(var(--pm-up) + var(--pm-down));
   touch-action: pan-y;
 }
@@ -65,6 +65,7 @@
   flex-basis: 0;
   min-width: 2px;
   height: 100%;
+  container-type: inline-size;
 }
 .pm-col-up,
 .pm-col-under {
@@ -127,11 +128,35 @@
 .pm-col-down .pm-col-label {
   bottom: 8px;
 }
-/* A phone's columns are too narrow to name: the line under the picture does it, on a tap. */
-@media (max-width: 719px) {
+/* A column names itself only when its code fits over it; the row under the picture names every one. */
+.pm-col-label {
+  display: none;
+}
+@container (min-width: 64px) {
   .pm-col-label {
-    display: none;
+    display: grid;
   }
+}
+.pm-sky-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin-top: var(--space-3);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+.pm-sky-legend button {
+  min-height: 2.75rem;
+  padding-inline: var(--space-1);
+  color: var(--ink);
+  border-bottom: 2px solid transparent;
+}
+.pm-sky-legend button[aria-pressed="true"] {
+  border-bottom-color: var(--ink);
+}
+.pm-sky-legend button:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
 }
 @keyframes pm-rise {
   from {
@@ -157,13 +182,13 @@
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
-  gap: 1rem;
-  padding-inline-start: 1rem;
+  gap: var(--space-4);
+  padding-inline-start: var(--space-4);
 }
 .pm-boat {
   width: clamp(64px, 40px + 7vw, 148px);
   height: clamp(64px, 40px + 7vw, 148px);
-  margin-bottom: -8px;
+  margin-bottom: calc(-1 * var(--space-2));
   order: 2;
   animation: pm-float 5s var(--ease-ink) infinite alternate;
   transform-origin: 50% 90%;
@@ -178,7 +203,7 @@
 }
 .pm-cash-label {
   display: grid;
-  margin-bottom: 0.625rem;
+  margin-bottom: var(--space-2_5);
   margin-inline-end: auto;
   font-size: 0.9375rem;
   line-height: 1.3;
@@ -190,7 +215,7 @@
   font-weight: 700;
 }
 .pm-sky-read {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
   min-height: 3.2em;
   max-width: 70ch;
   font-size: 1.125rem;
@@ -208,23 +233,23 @@
 
 /* ── The ledger. ── */
 .pm-ledger {
-  margin-top: clamp(3rem, 2rem + 4vw, 6rem);
+  margin-top: clamp(3rem, var(--space-8) + 4vw, var(--space-24));
 }
 .pm-ledger-head {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.5rem 2rem;
-  padding-bottom: 1rem;
+  gap: var(--space-2) var(--space-8);
+  padding-bottom: var(--space-4);
   border-bottom: 2px solid var(--ink);
 }
 .pm-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(190px, auto);
-  gap: 0.5rem clamp(1.5rem, 1rem + 2vw, 3rem);
+  gap: var(--space-2) clamp(1.5rem, var(--space-4) + 2vw, var(--space-12));
   align-items: end;
-  padding-block: clamp(1.25rem, 1rem + 1vw, 2rem);
+  padding-block: clamp(1.25rem, var(--space-4) + 1vw, var(--space-8));
   border-bottom: 1px solid var(--hairline);
   scroll-margin-top: 5rem;
 }
@@ -246,14 +271,15 @@
   min-height: 1.5rem;
   min-width: 2.75rem;
 }
+/* A holding's name is a row title, not a chapter: Inter 600 at title size, so seven holdings read as
+   one ledger under the "Elindekiler" chapter instead of seven competing headlines. */
 .pm-row-name {
-  margin-top: 0.125rem;
-  font-family: var(--font-display);
+  margin-top: var(--space-0_5);
+  font-family: var(--font-sans);
   font-weight: 600;
-  -webkit-text-stroke: 0.25px currentColor;
-  font-size: clamp(2rem, 1.75rem + 1vw, 2.75rem);
-  line-height: 1.08;
-  letter-spacing: -0.012em;
+  font-size: clamp(1.25rem, 1.125rem + 0.4vw, 1.5rem);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
   color: var(--ink);
 }
 .pm-row-link {
@@ -272,7 +298,7 @@
   outline-offset: 3px;
 }
 .pm-row-line {
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
   font-size: 1rem;
   line-height: 1.5;
   font-variant-numeric: tabular-nums;
@@ -291,7 +317,7 @@
   color: var(--ink);
 }
 .pm-row-gain {
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
   font-size: 1rem;
   line-height: 1.4;
   font-weight: 700;
@@ -309,10 +335,10 @@
 }
 .pm-voyage-track {
   display: grid;
-  grid-template-columns: auto minmax(60px, 260px) auto;
+  grid-template-columns: 4.25rem minmax(60px, 260px) 4.25rem; /* fixed date columns: every track starts and ends at the same x */
   align-items: center;
-  gap: 0.625rem;
-  margin-top: 0.875rem;
+  gap: var(--space-2_5);
+  margin-top: var(--space-3_5);
   width: fit-content;
   max-width: 100%;
   font-size: 0.8125rem;
@@ -351,7 +377,7 @@
   position: relative;
   display: flex;
   align-items: flex-end;
-  gap: 0.75rem;
+  gap: var(--space-3);
   height: 44px;
   border-bottom: 3px solid var(--ink);
 }
@@ -362,7 +388,7 @@
   flex: none;
 }
 .pm-waterline-text {
-  padding-bottom: 0.375rem;
+  padding-bottom: var(--space-1_5);
   font-size: 0.875rem;
   line-height: 1.25rem;
   font-weight: 600;
@@ -387,27 +413,27 @@
     display: grid;
     grid-template-columns: auto 1fr;
     align-items: baseline;
-    column-gap: 0.625rem;
+    column-gap: var(--space-2_5);
     text-align: left;
     grid-row: 3;
-    margin-top: 0.25rem;
+    margin-top: var(--space-1);
   }
   .pm-row-gain {
     grid-column: 1 / -1;
-    margin-top: 0.125rem;
+    margin-top: var(--space-0_5);
   }
 }
 
 /* ── The market's mood. ── */
 .pm-protect {
-  margin-top: clamp(3rem, 2rem + 4vw, 6rem);
-  padding-block: clamp(2.5rem, 2rem + 2vw, 4rem);
+  margin-top: clamp(3rem, var(--space-8) + 4vw, var(--space-24));
+  padding-block: clamp(2.5rem, var(--space-8) + 2vw, var(--space-16));
 }
 .pm-regime {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
-  margin-top: 2rem;
+  gap: var(--space-2);
+  margin-top: var(--space-8);
   font-size: 1rem;
   line-height: 1.5;
   color: var(--ink);
@@ -437,4 +463,8 @@
     forced-color-adjust: none;
     background-color: CanvasText;
   }
+}
+/* The start date sits against the track, like the end date does. */
+.pm-voyage-from {
+  text-align: right;
 }

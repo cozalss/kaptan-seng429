@@ -48,6 +48,7 @@ from kaptan.ingest.attachments import StoredAttachment, with_attachment_text
 from kaptan.llm.provider import LLMProvider
 from kaptan.llm.usage import sync_usage
 from kaptan.risk.cooldown import cooldown_active
+from kaptan.risk.watch import is_watched
 
 log = logging.getLogger("kaptan.agents.feed_run")
 
@@ -143,6 +144,7 @@ async def desk_for(
         free_float=float(issuer["free_float"]),
         equity_try=REPLAY_EQUITY_TRY,
         restrictions=tuple(Restriction(r["kind"], r["source_ref"]) for r in await q.restrictions(conn, ticker)),
+        watched=await is_watched(conn, ticker),
         regime=str(risk["regime"]),
         n_open_positions=int(book["n_open"]),
         holds_ticker=bool(book["holds_ticker"]),

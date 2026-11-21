@@ -14,12 +14,12 @@ test.describe("Param: insights", () => {
     await expect(where.getByRole("list", { name: "Hisse başına pay" })).toContainText("Nakit");
     await expect(where.getByRole("list", { name: "Sektör başına pay" })).toBeVisible();
 
-    await where.getByLabel("Tek hissede en çok kaç yüzde tutmak istersin?").fill("3");
-    await where.getByRole("button", { name: "Sınırı kaydet" }).click();
+    await where.getByLabel("Uyarı çizgisi: tek hissede paranın yüzde kaçı olunca sana söyleyeyim?").fill("3");
+    await where.getByRole("button", { name: "Uyarı çizgisini kaydet" }).click();
     await expect(where.getByRole("status")).toHaveText("Sınır 5 ile 100 arasında bir tam sayı olsun.");
 
-    await where.getByLabel("Tek hissede en çok kaç yüzde tutmak istersin?").fill("5");
-    await where.getByRole("button", { name: "Sınırı kaydet" }).click();
+    await where.getByLabel("Uyarı çizgisi: tek hissede paranın yüzde kaçı olunca sana söyleyeyim?").fill("5");
+    await where.getByRole("button", { name: "Uyarı çizgisini kaydet" }).click();
     await expect(where.getByRole("status")).toHaveText("Sınırın %5 oldu.");
     await expect(where.getByRole("heading", { level: 2 })).toContainText("tek hissede");
     await expect(where.getByRole("heading", { level: 2 })).toContainText("Sınırın %5.");

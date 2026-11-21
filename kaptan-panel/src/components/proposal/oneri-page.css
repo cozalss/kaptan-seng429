@@ -2,14 +2,14 @@
 
 .oneri-page {
   display: grid;
-  gap: clamp(2rem, 5vw, 3.5rem);
+  gap: clamp(2rem, 5vw, var(--space-14));
   min-width: 0;
   animation: fade-in 180ms var(--ease-out-expo) both;
 }
 .oneri-hero {
   display: grid;
-  gap: clamp(1rem, 2.5vw, 1.75rem);
-  padding-bottom: clamp(1.5rem, 4vw, 2.5rem);
+  gap: clamp(1rem, 2.5vw, var(--space-7));
+  padding-bottom: clamp(1.5rem, 4vw, var(--space-10));
   border-bottom: 2px solid var(--ink);
 }
 .oneri-hero[data-action="al"] {
@@ -23,12 +23,12 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.25rem 1.5rem;
+  gap: var(--space-1) var(--space-6);
 }
 .oneri-hero-back {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: var(--space-1_5);
   min-height: 2.75rem;
   color: var(--ink);
   font-size: 0.9375rem;
@@ -45,7 +45,7 @@
 }
 .oneri-hero-title {
   display: grid;
-  gap: clamp(0.75rem, 2vw, 1.25rem);
+  gap: clamp(0.75rem, 2vw, var(--space-5));
   color: var(--ink);
   outline: none;
 }
@@ -58,7 +58,7 @@
 .oneri-hero-jump {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: var(--space-1_5);
   width: fit-content;
   min-height: 2.75rem;
   color: var(--ink);
@@ -74,7 +74,7 @@
 }
 .oneri-columns {
   display: grid;
-  gap: clamp(2.5rem, 5vw, 4rem);
+  gap: clamp(2.5rem, 5vw, var(--space-16));
   min-width: 0;
 }
 @media (min-width: 1100px) {
@@ -101,8 +101,8 @@
 }
 .oneri-chapter {
   display: grid;
-  gap: 0.75rem 2rem;
-  padding-block: clamp(1.75rem, 4vw, 2.75rem);
+  gap: var(--space-3) var(--space-8);
+  padding-block: clamp(1.75rem, 4vw, var(--space-11));
   border-bottom: 1px solid var(--rule-soft);
   min-width: 0;
 }
@@ -124,7 +124,7 @@
 }
 .oneri-chapter-body {
   display: grid;
-  gap: 0.875rem;
+  gap: var(--space-3_5);
   min-width: 0;
 }
 .oneri-chapter-title {
@@ -145,7 +145,7 @@
 }
 .oneri-quote {
   max-width: 58ch;
-  padding-left: 1rem;
+  padding-left: var(--space-4);
   border-left: 3px solid var(--ink);
   color: var(--ink-soft);
   font-size: 1.0625rem;
@@ -166,7 +166,7 @@
 /* Past cases on the waterline: above it the stock beat the market, below it not. */
 .oneri-past {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-2);
   max-width: 44rem;
 }
 .oneri-past-plot {
@@ -179,7 +179,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.25rem 1rem;
+  gap: var(--space-1) var(--space-4);
   color: var(--ink-soft);
   font-size: 0.875rem;
 }
@@ -187,7 +187,7 @@
 /* The share of the money: the whole bar is everything you have. */
 .oneri-share {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-2);
   max-width: 44rem;
 }
 .oneri-share-bar {
@@ -206,7 +206,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.25rem 1rem;
+  gap: var(--space-1) var(--space-4);
   color: var(--ink);
   font-size: 0.9375rem;
   font-weight: 600;
@@ -222,8 +222,8 @@
 }
 .oneri-looks li {
   display: grid;
-  gap: 0.125rem 1.5rem;
-  padding-block: 0.75rem;
+  gap: var(--space-0_5) var(--space-6);
+  padding-block: var(--space-3);
   border-bottom: 1px solid var(--rule-soft);
 }
 .oneri-looks li:last-child {
@@ -253,13 +253,13 @@
 /* The decision beside the story. */
 .oneri-decide {
   display: grid;
-  gap: 1.25rem;
+  gap: var(--space-5);
   min-width: 0;
 }
 .oneri-decide-sheet {
   display: grid;
-  gap: 1.125rem;
-  padding: clamp(1.25rem, 2.4vw, 1.75rem);
+  gap: var(--space-5);
+  padding: clamp(1.25rem, 2.4vw, var(--space-7));
   overflow: clip;
 }
 .oneri-decide-sheet[data-state="sealing"] > :not(.oneri-seal) {
@@ -289,11 +289,11 @@
 .oneri-decide-buttons {
   display: grid;
   grid-template-columns: 1.6fr 1fr;
-  gap: 0.625rem;
+  gap: var(--space-2_5);
 }
 .oneri-outcome {
   display: grid;
-  gap: 0.375rem;
+  gap: var(--space-1_5);
 }
 .oneri-outcome-head {
   color: var(--ink);

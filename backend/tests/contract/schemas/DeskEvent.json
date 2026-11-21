@@ -221,6 +221,12 @@
       "size_multiplier": {
        "type": "number"
       },
+      "outside_list_note_tr": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
       "compliance_summary_tr": {
        "type": "string"
       },
@@ -347,6 +353,7 @@
       "skeptic_flags",
       "skeptic_note_tr",
       "size_multiplier",
+      "outside_list_note_tr",
       "compliance_summary_tr",
       "rule_trace_summary",
       "degraded",
@@ -589,6 +596,12 @@
       "size_multiplier": {
        "type": "number"
       },
+      "outside_list_note_tr": {
+       "type": [
+        "string",
+        "null"
+       ]
+      },
       "compliance_summary_tr": {
        "type": "string"
       },
@@ -715,6 +728,7 @@
       "skeptic_flags",
       "skeptic_note_tr",
       "size_multiplier",
+      "outside_list_note_tr",
       "compliance_summary_tr",
       "rule_trace_summary",
       "degraded",

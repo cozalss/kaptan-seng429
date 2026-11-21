@@ -9,7 +9,7 @@ import type { Position } from "@/lib/domain";
 import type { Allocation, Overview, Suggestion } from "@/lib/solo/overview";
 import { nav } from "../nav.test-utils";
 import { Activity } from "./activity";
-import { AllocationPanel, allocationRows, foldSmall } from "./allocation";
+import { AllocationPanel, allocationRows, detailFits, foldSmall } from "./allocation";
 import { isFlat, MoneyHero } from "./money-hero";
 import { SoloHome } from "./solo-home";
 import { afterLogin, SoloLoginForm, SoloLoginScreen } from "./solo-login";
@@ -54,7 +54,7 @@ describe("Param nerede?", () => {
   it("names every tile with amount, share and gain, links it to Param; says so when everything is cash", () => {
     const { rerender } = render(<AllocationPanel allocations={[alloc("FRZEN", 50_000, 0.05)]} cash={950_000} total={1_000_000} />);
     const tile = screen.getByRole("link", { name: /^FRZEN/ });
-    expect(plain(tile.getAttribute("aria-label"))).toContain("50.000 ₺, paranın %5'i. Alıştan beri +%5.");
+    expect(plain(tile.getAttribute("aria-label"))).toContain("50.000 ₺, paranın %5,0 kadarı. Alıştan beri +%5,0.");
     expect(tile).toHaveAttribute("href", "/portfoy");
     expect(plain(screen.getByRole("link", { name: /^Nakit/ }).textContent)).toContain("950.000 ₺");
     expect(screen.getByText(/Paran 2 yerde duruyor/)).toBeInTheDocument();
@@ -316,5 +316,13 @@ describe("frame", () => {
     await u.click(screen.getByRole("button", { name: "Hesabım" }));
     await u.click(await screen.findByRole("menuitem", { name: "Çıkış" }));
     await waitFor(() => expect(nav.replace).toHaveBeenCalledWith("/login"));
+  });
+});
+
+describe("treemap names", () => {
+  it("shows a whole name only when it fits, never a cut one", () => {
+    expect(detailFits("Misal Tekstil", { w: 170, h: 128 })).toBe(true);
+    expect(detailFits("Misal Tekstil Sanayi ve Ticaret Anonim Şirketi", { w: 170, h: 128 })).toBe(false);
+    expect(detailFits("Misal Tekstil Sanayi ve Ticaret Anonim Şirketi", { w: 320, h: 220 })).toBe(true);
   });
 });

@@ -1,10 +1,10 @@
 .sr-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   min-height: 2.75rem;
   min-width: 2.75rem;
-  padding: 0 0.5rem;
+  padding: 0 var(--space-2);
   color: var(--ink);
   background: transparent;
 }
@@ -23,11 +23,12 @@
 .sr-kbd {
   display: none;
   border: 1px solid var(--rule-ui);
-  padding: 0 0.375rem;
+  padding: 0 var(--space-1_5);
   font-size: 0.8125rem;
   color: var(--muted);
 }
-@media (min-width: 768px) {
+/* The words come in from 1024px: at tablet width the bar holds the logo, four tabs and icons only. */
+@media (min-width: 1024px) {
   .sr-trigger-text,
   .sr-kbd {
     display: inline;
@@ -38,7 +39,7 @@
   width: min(40rem, calc(100vw - 2rem));
   max-height: 80vh;
   overflow: auto;
-  padding: 1rem;
+  padding: var(--space-4);
   border: 2px solid var(--ink);
   background: var(--panel);
   color: var(--ink);
@@ -50,7 +51,7 @@
 .sr-input {
   width: 100%;
   min-height: 3rem;
-  padding: 0 0.75rem;
+  padding: 0 var(--space-3);
   border: 1.5px solid var(--rule-ui);
   background: var(--panel);
   color: var(--ink);
@@ -61,7 +62,7 @@
   outline-offset: 1px;
 }
 .sr-status {
-  margin: 0.5rem 0;
+  margin: var(--space-2) 0;
   min-height: 1.5rem;
   font-size: 0.9375rem;
   color: var(--muted);
@@ -72,9 +73,9 @@
 .sr-row {
   display: grid;
   grid-template-columns: 4.5rem minmax(0, 1fr);
-  gap: 0.125rem 0.75rem;
+  gap: var(--space-0_5) var(--space-3);
   min-height: 2.75rem;
-  padding: 0.5rem 0.25rem;
+  padding: var(--space-2) var(--space-1);
   border-top: 1px solid var(--hairline);
   color: var(--ink);
   text-decoration: none;
@@ -101,7 +102,7 @@
   color: var(--ink-soft);
 }
 .sr-close {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
   min-height: 2.75rem;
   color: var(--ink);
   text-decoration: underline;

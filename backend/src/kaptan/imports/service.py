@@ -55,7 +55,7 @@ BEFORE_START: Final = (
 )
 FUTURE: Final = "Bu tarih bugünden sonra."
 UNKNOWN_TICKER: Final = "Bu hisse kodunu tanımıyorum."
-OVER_CASH: Final = "Kasanda bunun için yeterli nakit görünmüyor. Önce para eklediğini kaydet."
+OVER_CASH: Final = "Bunun için yeterli nakit paran görünmüyor. Önce para eklediğini kaydet."
 NOT_HELD: Final = "Elinde bu kadar yok. Önce aldığını kaydet ya da elindeki hisseyi elle ekle."
 USE_TICKET: Final = "Bu hisse KAPtan'ın önerisinden. Satışı işlem fişinden kaydet."
 NEVER_HELD: Final = "Bu hisse defterinde hiç yok."

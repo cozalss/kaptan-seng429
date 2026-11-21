@@ -12,6 +12,7 @@ import { useEventStream } from "@/lib/sse/use-event-stream";
 import { realName, useSession } from "@/lib/auth/session-context";
 import { ErrorState, Skeleton } from "@/components/ui/primitives";
 import { useDecisions } from "@/components/proposal/use-decisions";
+import { splitDecisions } from "@/components/proposal/decide-logic";
 import { Activity } from "./activity";
 import { CorporatePrompt } from "./corporate-prompt";
 import { AllocationPanel } from "./allocation";
@@ -25,6 +26,7 @@ import { WhyQuiet } from "./why-quiet";
 import { WatchStrip } from "@/components/watchlist/watch-strip";
 import { MarketStrip } from "@/components/agenda/market-strip";
 import { UpcomingCard } from "@/components/agenda/upcoming-card";
+import { DigestCard } from "@/components/digest/digest-card";
 
 /**
  * The home, one calm scene for one person, in reading order on every screen: the money and how it
@@ -87,6 +89,10 @@ export function SoloHome() {
   if (!data || !overview) return <ErrorState message={q.error ?? "Bilgiler alınamadı."} onRetry={() => void q.refetch()} />;
   // A new install: one question first, then everything below.
   if (data.overview.needs_setup) return <FirstRun onDone={() => void q.refetch()} />;
+  // Buy and sell proposals still open now (a "tut" is a question about a holding, not a proposal): the morning
+  // brief's count is a picture of 08:45, this is the live one under it.
+  const { front, queue } = splitDecisions(suggestions, decisions.state);
+  const proposalsNow = [front, ...queue].filter((s) => s !== null && s.action !== "tut").length;
 
   return (
     <>
@@ -101,7 +107,7 @@ export function SoloHome() {
       <PauseNotice />
       <MoneyHero overview={overview} todayPct={data.risk.daily_pnl_pct} positions={data.positions} name={realName(session.name)} />
       <div className="pb-12 empty:hidden">
-        <MorningBrief />
+        <MorningBrief proposalsNow={proposalsNow} />
         <BenchmarkLine className="u-page pt-4" />
       </div>
       <div className="home-sheet u-page">
@@ -120,6 +126,7 @@ export function SoloHome() {
         <AllocationPanel allocations={data.overview.allocations} cash={data.overview.cash} total={data.overview.equity_now} />
       </div>
       <div className="home-band u-page !pt-0">
+        <DigestCard />
         <UpcomingCard />
         <WatchStrip />
         <Activity items={activity} />

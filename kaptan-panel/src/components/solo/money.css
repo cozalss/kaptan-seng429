@@ -7,7 +7,7 @@
 .mf {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: var(--space-1_5);
   min-width: 0;
 }
 .mf-label {
@@ -39,7 +39,7 @@
   min-width: 0;
   height: 100%;
   min-height: inherit;
-  padding: 0 0.25rem 0 0.75rem;
+  padding: 0 var(--space-1) 0 var(--space-3);
   border: 0;
   background: transparent;
   color: var(--ink);
@@ -49,7 +49,7 @@
   outline: none;
 }
 .mf-unit {
-  padding-right: 0.875rem;
+  padding-right: var(--space-3_5);
   font-size: 1.125rem;
   font-weight: 500;
   color: var(--ink-soft);
@@ -70,7 +70,7 @@
   color: var(--north-deep);
 }
 .mf-error--form {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
 }
 .mf-words,
 .mf-hint {
@@ -81,7 +81,7 @@
 
 /* The one amount on the first-run screen: the biggest type outside the sentence, a big target. */
 .mf--large {
-  gap: 0.875rem;
+  gap: var(--space-3_5);
 }
 .mf--large .mf-label {
   font-size: 1rem;
@@ -109,7 +109,7 @@
 }
 .mf--large .mf-unit {
   padding-right: 0;
-  padding-left: 0.5rem;
+  padding-left: var(--space-2);
   font-size: clamp(1.75rem, 1.3rem + 2vw, 2.75rem);
   font-weight: 500;
 }
@@ -118,13 +118,13 @@
 .mf-form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--space-5);
   max-width: 44rem;
 }
 .mf-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.25rem 1.5rem;
+  gap: var(--space-5) var(--space-6);
 }
 @media (max-width: 639px) {
   .mf-grid {
@@ -134,7 +134,7 @@
 .mf-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 @media (max-width: 479px) {
   .mf-actions > * {
@@ -151,21 +151,21 @@
 }
 .fr-stage {
   flex: 1;
-  padding-block: clamp(2rem, 1rem + 5vw, 5rem) clamp(2.5rem, 2rem + 4vw, 5rem);
+  padding-block: clamp(2rem, var(--space-4) + 5vw, var(--space-20)) clamp(2.5rem, var(--space-8) + 4vw, var(--space-20));
 }
 .fr-eyebrow {
   color: var(--ink-soft);
 }
 .fr-sentence {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
   max-width: 14ch;
 }
 .fr-form {
-  margin-top: clamp(1.75rem, 1rem + 3vw, 3rem);
+  margin-top: clamp(1.75rem, var(--space-4) + 3vw, var(--space-12));
   max-width: 40rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--space-5);
 }
 .fr-plain {
   max-width: 54ch;
@@ -176,7 +176,7 @@
 .fr-go {
   align-self: flex-start;
   min-height: 3.25rem;
-  padding-inline: 1.75rem;
+  padding-inline: var(--space-7);
 }
 @media (max-width: 479px) {
   .fr-go {
@@ -186,11 +186,11 @@
 .fr-added {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--space-1);
   font-size: 1.0625rem;
   color: var(--ink);
   border-left: 3px solid var(--gain);
-  padding-left: 0.875rem;
+  padding-left: var(--space-3_5);
 }
 .fr-sea {
   position: relative;
@@ -202,9 +202,9 @@
   position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: clamp(1rem, 0.5rem + 3vw, 3rem);
+  gap: clamp(1rem, var(--space-2) + 3vw, var(--space-12));
   align-items: center;
-  padding-block: clamp(2rem, 1.25rem + 3vw, 3.5rem);
+  padding-block: clamp(2rem, var(--space-5) + 3vw, var(--space-14));
 }
 .fr-boat {
   width: clamp(5rem, 3rem + 8vw, 9rem);
@@ -226,9 +226,9 @@
   color: var(--on-sea-soft);
 }
 .fr-steps {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
   display: grid;
-  gap: 0.625rem;
+  gap: var(--space-2_5);
   max-width: 60ch;
   padding: 0;
   list-style: none;
@@ -236,7 +236,7 @@
 }
 .fr-steps li {
   position: relative;
-  padding-left: 2rem;
+  padding-left: var(--space-8);
   font-size: 1.0625rem;
   line-height: 1.5;
   color: var(--on-sea);
@@ -289,6 +289,7 @@
 .pa {
   position: relative;
   display: inline-block;
+  min-height: 24px;
   font-size: 0.9375rem;
   line-height: 1.4;
   color: var(--ink-soft);
@@ -312,7 +313,7 @@
   z-index: 5;
   width: max-content;
   max-width: min(18rem, 80vw);
-  padding: 0.375rem 0.625rem;
+  padding: var(--space-1_5) var(--space-2_5);
   border: 1.5px solid var(--ink);
   border-radius: 0.375rem;
   background: var(--panel);
@@ -333,4 +334,41 @@
   .pa--timed::after {
     transition: none;
   }
+}
+
+/* Close codes under the holding form when the typed one is not known. */
+.mf-suggest {
+  margin-top: var(--space-3);
+}
+.mf-suggest-lead {
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+.mf-suggest ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  list-style: none;
+  padding: 0;
+}
+.mf-suggest button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1_5);
+  min-height: 2.75rem;
+  padding: 0 var(--space-3);
+  border: 1.5px solid var(--rule-ui);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.9375rem;
+}
+@media (hover: hover) and (pointer: fine) {
+  .mf-suggest button:hover {
+    background: var(--wash-tint);
+  }
+}
+.mf-suggest button:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
 }

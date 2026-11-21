@@ -27,16 +27,16 @@
 
 .oneri-section {
   display: grid;
-  gap: clamp(1.25rem, 3vw, 2rem);
+  gap: clamp(1.25rem, 3vw, var(--space-8));
   min-width: 0;
 }
 .oneri-section-head {
-  padding-top: 0.5rem;
+  padding-top: var(--space-2);
   color: var(--ink);
 }
 .oneri-closed {
   max-width: 62ch;
-  padding: 0.75rem 1rem;
+  padding: var(--space-3) var(--space-4);
   border-left: 4px solid var(--north);
   background: var(--north-tint);
   color: var(--ink);
@@ -45,7 +45,7 @@
 }
 .oneri-steps {
   display: grid;
-  gap: clamp(1.5rem, 3vw, 2.5rem);
+  gap: clamp(1.5rem, 3vw, var(--space-10));
   min-width: 0;
 }
 
@@ -69,8 +69,8 @@
 /* ── the suggestion ── */
 .oneri-object {
   display: grid;
-  padding: clamp(1.25rem, 2.6vw, 2.25rem);
-  gap: clamp(1rem, 2.2vw, 1.5rem);
+  padding: clamp(1.25rem, 2.6vw, var(--space-9));
+  gap: clamp(1rem, 2.2vw, var(--space-6));
   min-width: 0;
   overflow: clip;
 }
@@ -78,8 +78,8 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.25rem 1.5rem;
-  padding-bottom: 0.625rem;
+  gap: var(--space-1) var(--space-6);
+  padding-bottom: var(--space-2_5);
   border-bottom: 1px solid var(--rule-soft);
 }
 .oneri-object-lead {
@@ -95,18 +95,18 @@
 }
 .oneri-object-body {
   display: grid;
-  gap: 0.875rem 2.5rem;
+  gap: var(--space-3_5) var(--space-10);
 }
 .oneri-object-head {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--space-3);
   outline: none;
 }
 .oneri-object-who {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.125rem 0.75rem;
+  gap: var(--space-0_5) var(--space-3);
 }
 .oneri-object-company {
   color: var(--ink);
@@ -130,13 +130,13 @@
 }
 .oneri-object-facts {
   display: grid;
-  gap: 1rem 2.5rem;
-  padding-top: 1rem;
+  gap: var(--space-4) var(--space-10);
+  padding-top: var(--space-4);
   border-top: 1px solid var(--rule-soft);
 }
 .oneri-object-fact {
   display: grid;
-  gap: 0.25rem;
+  gap: var(--space-1);
   align-content: start;
 }
 .oneri-object-amount {
@@ -155,7 +155,7 @@
 .oneri-object-sure {
   display: flex;
   align-items: baseline;
-  gap: 0.625rem;
+  gap: var(--space-2_5);
   color: var(--ink);
   font-size: 1.0625rem;
   font-weight: 550;
@@ -179,12 +179,12 @@
 }
 .oneri-object-end {
   display: grid;
-  gap: 0.875rem 2.5rem;
+  gap: var(--space-3_5) var(--space-10);
 }
 .oneri-object-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.625rem;
+  gap: var(--space-2_5);
   align-items: center;
 }
 .oneri-object-approve,
@@ -217,7 +217,7 @@
   line-height: 1.45;
 }
 .oneri-object-error {
-  padding: 0.625rem 0.875rem;
+  padding: var(--space-2_5) var(--space-3_5);
   border-left: 4px solid var(--north);
   background: var(--north-tint);
   color: var(--ink);
@@ -266,8 +266,8 @@
     min-width: 5.5rem;
   }
   .oneri-object-whylink {
-    margin-left: 0.5rem;
-    padding-inline: 0.25rem;
+    margin-left: var(--space-2);
+    padding-inline: var(--space-1);
   }
 }
 
@@ -290,10 +290,10 @@
 }
 .oneri-stack[data-behind="1"],
 .oneri-stack[data-behind="2"] {
-  padding-bottom: 12px;
+  padding-bottom: var(--space-3);
 }
 .oneri-stack[data-behind="2"] {
-  padding-bottom: 24px;
+  padding-bottom: var(--space-6);
 }
 .oneri-stack::before,
 .oneri-stack::after {
@@ -335,8 +335,8 @@
 
 .oneri-queue {
   display: grid;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
 }
 .oneri-queue ol {
   border-top: 2px solid var(--ink);
@@ -345,10 +345,10 @@
   display: grid;
   grid-template-columns: 2.75rem minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   width: 100%;
   min-height: 3.25rem;
-  padding: 0.5rem 0.5rem;
+  padding: var(--space-2) var(--space-2);
   border-bottom: 1px solid var(--rule-soft);
   color: var(--ink);
   text-align: left;
@@ -408,9 +408,9 @@
   z-index: 3;
   display: flex;
   align-items: flex-end;
-  gap: 1.25rem;
+  gap: var(--space-5);
   height: min(100%, 22rem);
-  padding: clamp(1.25rem, 2.6vw, 2.25rem);
+  padding: clamp(1.25rem, 2.6vw, var(--space-9));
   pointer-events: none;
   animation: oneri-leave 200ms var(--ease-ink) both;
 }
@@ -513,8 +513,8 @@
 .oneri-empty {
   position: relative;
   display: grid;
-  gap: 0.875rem;
-  padding: 1.5rem 0 clamp(1.5rem, 3.5vw, 3rem);
+  gap: var(--space-3_5);
+  padding: var(--space-6) 0 clamp(1.5rem, 3.5vw, var(--space-12));
   background: var(--paper);
   border-bottom: 2px solid var(--ink);
   overflow: clip;
@@ -522,7 +522,7 @@
 .oneri-empty-sea {
   position: relative;
   height: clamp(116px, 14vw, 168px);
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--space-1);
   border-bottom: 2px solid var(--ink);
 }
 /* A clear sky: the sun in the landing's engraving, never a colour of its own. */
@@ -555,7 +555,7 @@
   aspect-ratio: 1;
 }
 .oneri-empty-head {
-  margin-top: 1.25rem;
+  margin-top: var(--space-5);
   color: var(--ink);
 }
 .oneri-empty-body {

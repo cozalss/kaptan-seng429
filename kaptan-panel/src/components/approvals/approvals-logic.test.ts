@@ -27,6 +27,7 @@ function card(over: Partial<ApprovalCard> & { proposal_id: string }): ApprovalCa
     skeptic_flags: [],
     skeptic_note_tr: "",
     size_multiplier: 0.5,
+    outside_list_note_tr: null,
     compliance_summary_tr: "Tedbir yok",
     rule_trace_summary: [
       { rule: "E3.materiality", passed: true, observed: "%18", threshold: "≥ %10", detail_tr: "" },

@@ -31,7 +31,7 @@ export function SettingsScreen() {
   const count = active ? PLAIN_LIMITS.filter((k) => valueOf(active, k) !== null).length : null;
   return (
     <div className="ay-screen">
-      <PageHeader name="Ayarlar" title={settingsSentence(count)} lead="KAPtan bu sınırların dışına çıkamaz. Değiştirince hemen geçerli olur ve Geçmiş’e yazılır." />
+      <PageHeader name="Ayarlar" title={settingsSentence(count)} lead="KAPtan bu sınırların dışına çıkmaz; tek işlemdeki kayıp da senin koyduğun sınırı aşmaz, adet aşağı yuvarlanır. Değiştirince hemen geçerli olur ve Geçmiş’e yazılır." />
       <LimitsSection view={q.data ?? null} error={q.error} onRetry={q.refetch} onChanged={() => void q.refetch()} />
       <PauseSection />
       <FeeSection />

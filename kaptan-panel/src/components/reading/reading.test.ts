@@ -81,6 +81,19 @@ describe("the double's reading marks", () => {
     expect((await a.readAll()).unread).toBe(0);
   });
 
+  it("undoes read-all: the mark goes back, an opened one stays read", async () => {
+    const a = api();
+    const before = await a.readingState();
+    const [one] = before.unread_indexes;
+    if (one !== undefined) await a.markRead(one);
+    await a.readAll();
+    const back = await a.restoreReadThrough(before.read_through);
+    expect(back.read_through).toBe(before.read_through);
+    expect(back.unread).toBe(Math.max(0, before.unread - (one === undefined ? 0 : 1)));
+    if (one !== undefined) expect(back.unread_indexes).not.toContain(one);
+    await expect(a.restoreReadThrough("2999-01-01T00:00:00.000Z")).rejects.toMatchObject({ status: 422 });
+  });
+
   it("compares two companies and refuses the same one twice", async () => {
     const a = api();
     await expect(a.compare("ORNEK", "ORNEK")).rejects.toMatchObject({ status: 422 });

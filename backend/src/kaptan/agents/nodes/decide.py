@@ -6,6 +6,7 @@ effects' data (the card); approval is pure up to `interrupt()` (it re-runs on re
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Final
@@ -23,6 +24,7 @@ from kaptan.domain.schemas._base import iso_ms
 from kaptan.domain.schemas.trading import ApprovalDecision, TradeProposal
 from kaptan.evidence.toolbox import live_tools
 from kaptan.risk.gate import GateContext, GateOrder, evaluate, evaluate_at_send
+from kaptan.risk.watch import OUTSIDE_LIST_NOTE
 from kaptan.rules import RuleInput, SizingInput, decide, size
 from kaptan.rules.calendar import approval_expiry
 from kaptan.sizing.plan import at_limit
@@ -210,6 +212,19 @@ def live_gate_fields(p: dict[str, Any], desk: DeskState) -> dict[str, Any]:
     }
 
 
+def _loss_fraction(p: Mapping[str, Any], sizing: Mapping[str, Any]) -> Decimal:
+    """The loss per share at the stop as a fraction of the limit price: (limit - stop) / limit.
+
+    R07 sizes with it, so qty x (limit - stop) -- the loss the card shows -- stays within the person's
+    per-trade limit (the limit sits above the reference price, the stop is a share of the reference).
+    Without a stop price (no stop) the sizer's stop_pct stands.
+    """
+    limit, stop = _dec(p["limit_price"]), p.get("stop_price")
+    if stop is None or limit <= 0 or _dec(stop) >= limit:
+        return _dec(sizing.get("stop_pct", 0))
+    return (limit - _dec(stop)) / limit
+
+
 def gate_inputs(state: KaptanState, ctx: RunContext, qty: int | None = None) -> tuple[GateOrder, GateContext]:
     p, m, desk = state["proposal"] or {}, state.get("merged") or {}, ctx.desk
     sizing = ctx.tools.sizing(ctx.disclosure.fingerprint) or {}
@@ -218,7 +233,7 @@ def gate_inputs(state: KaptanState, ctx: RunContext, qty: int | None = None) -> 
         event_type=p["event_type"],
         qty=qty if qty is not None else p["requested_qty"],
         limit_price=_dec(p["limit_price"]),
-        stop_pct=_dec(sizing.get("stop_pct", 0)),
+        stop_pct=_loss_fraction(p, sizing),
         reader_amount=_dec(m["reader_amount"]) if m.get("reader_amount") is not None else None,
         regex_amounts=tuple(_dec(a) for a in m.get("regex_amounts", [])),
         evidence_ids=tuple(p["evidence_ids"]),
@@ -239,6 +254,7 @@ def gate_inputs(state: KaptanState, ctx: RunContext, qty: int | None = None) -> 
         upper_limit=_dec(m["upper_limit"]) if m.get("upper_limit") else None,
         lower_limit=_dec(m["lower_limit"]) if m.get("lower_limit") else None,
         in_universe=desk.in_universe,
+        watched=desk.watched,
         restrictions=tuple(r.kind for r in desk.restrictions),
         team_blocklisted=any(r.kind == "team_insider" for r in desk.restrictions),
         quota_ok=desk.quota_ok,
@@ -311,6 +327,7 @@ def approval_card(state: KaptanState, ctx: RunContext, created_at: Any) -> dict[
         "skeptic_flags": [{k: v for k, v in f.items() if k != "supporting_ref"} for f in (sk or {}).get("flags", [])],
         "skeptic_note_tr": (sk or {}).get("strongest_counterargument_tr") or NO_SKEPTIC_NOTE,
         "size_multiplier": (sk or {}).get("size_multiplier", 1),
+        "outside_list_note_tr": OUTSIDE_LIST_NOTE if ctx.desk.watched and not ctx.desk.in_universe else None,
         "compliance_summary_tr": "Tedbir yok; bir kontrol insan incelemesi istiyor."
         if compliance == "escalate"
         else "Tedbir yok, injection yok.",

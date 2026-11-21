@@ -3,7 +3,8 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import type { EquityPoint } from "@/lib/solo/overview";
 import { nearestPoint } from "@/lib/solo/period";
-import { dayLabel, fmtLira } from "@/lib/solo/words";
+import { fmtLira } from "@/lib/solo/words";
+import { axisEnds, crossesYear, fmtChartDay } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Boat } from "@/components/ufuk/boat";
 import { moneyHatch, seaStrokes, seaSurface } from "@/components/ufuk/engrave";
@@ -263,12 +264,20 @@ export function HeroPlot({ points, capitalStart, marks, flat }: HeroPlotProps) {
             data-testid="grafik-okuma"
             data-open={active !== null}
             className="hz-read"
-            style={{ left: readLeft ? here.x - boat * 0.62 : here.x + boat * 0.62, top: Math.max(8, Math.min(box.plot - 130, here.y - boatH - 8)), translate: readLeft ? "-100% 0" : "0 0" }}
+            style={
+              {
+                left: readLeft ? here.x - boat * 0.62 : here.x + boat * 0.62,
+                top: Math.max(8, Math.min(box.plot - 130, here.y - boatH - 8)),
+                translate: readLeft ? "-100% 0" : "0 0",
+                // Phones: the reading's foot, just over the dates (solo.css).
+                "--hz-foot": `${box.plot - 34}px`,
+              } as React.CSSProperties
+            }
           >
             <span className="sr-only">{active === null ? `Bugün: ${fmtLira(point?.equity ?? 0)}` : reading}</span>
             {point ? (
               <>
-                <span className="block text-meta font-semibold text-muted tabular-nums">{active === lastIndex || active === null ? "Bugün" : dayLabel(point.date)}</span>
+                <span className="block text-meta font-semibold text-muted tabular-nums">{active === lastIndex || active === null ? "Bugün" : fmtChartDay(point.date, crossesYear(points[0]?.date ?? point.date, points[lastIndex]?.date ?? point.date))}</span>
                 <span className="block text-[20px] leading-7 font-semibold tracking-[-0.01em] text-ink tabular-nums">{fmtLira(point.equity)}</span>
                 <span className="block text-dense text-ink-soft">{differenceWords(point.equity, capitalStart)}</span>
                 {markHere ? <span className="mt-1 block border-t-2 border-ink pt-1 text-dense font-semibold text-ink tabular-nums">{markHere.sentence}</span> : null}
@@ -294,8 +303,9 @@ export function HeroPlot({ points, capitalStart, marks, flat }: HeroPlotProps) {
             className="hz-hit"
           />
           <p aria-hidden className="hz-dates" style={{ top: box.plot - 26, width: geo.xy[lastIndex]?.x }}>
-            <span>{dayLabel(points[0]?.date ?? "")}</span>
-            <span>{dayLabel(points[lastIndex]?.date ?? "")}</span>
+            {axisEnds(points[0]?.date ?? "", points[lastIndex]?.date ?? "").map((d, i) => (
+              <span key={i}>{d}</span>
+            ))}
           </p>
         </>
       ) : null}

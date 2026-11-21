@@ -18,6 +18,7 @@ import { Details, detailsMeta } from "./details";
 import { Disclosure } from "./disclosure";
 import { Notes } from "./notes";
 import { ProposalHeader } from "./proposal-header";
+import { OutsideListNote } from "./outside-list-note";
 import { Story } from "./story";
 import { routeArrived } from "./view-transition";
 import "./oneri.css";
@@ -84,6 +85,7 @@ export function ProposalScreen({ proposalId }: { proposalId: string }) {
   return (
     <article aria-labelledby="oneri-baslik" className="oneri-page">
       <ProposalHeader card={card} status={status} />
+      {card.outside_list_note_tr ? <OutsideListNote text={card.outside_list_note_tr} /> : null}
       <div className="oneri-columns">
         <Story card={card} explain={explain} equity={equity} perTrade={perTrade} />
         <Decision

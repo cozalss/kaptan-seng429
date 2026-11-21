@@ -76,9 +76,11 @@ export function stepFor<T>(flight: Pick<Flight, "action" | "answer" | "phase">, 
 }
 
 /** The sentence over the decisions: what to do now. The bank goes first because it has a clock. */
-export function sectionSentence({ decisions, steps }: { decisions: number; steps: number }): string {
+export function sectionSentence({ decisions, steps, holds = 0 }: { decisions: number; steps: number; holds?: number }): string {
   if (steps > 0 && decisions > 0) return `Önce ${steps > 1 ? `bu ${fmtInt(steps)} işlemi` : "bu işlemi"} bankana gir, sonra ${fmtInt(decisions)} kararın var.`;
   if (steps > 0) return steps > 1 ? `Bankana girmen gereken ${fmtInt(steps)} işlem var.` : "Bankana girmen gereken bir işlem var.";
+  // Split when both kinds are there, so the count meets the morning brief's "N öneri" (a "tut" is not a proposal).
+  if (decisions > 0 && holds > 0 && holds < decisions) return `Bugün ${fmtInt(decisions)} kararın var: ${fmtInt(decisions - holds)} öneri, ${fmtInt(holds)} “tut” sorusu.`;
   if (decisions > 0) return `Bugün ${fmtInt(decisions)} kararın var.`;
   return "Bugün karar vermen gereken bir şey yok.";
 }

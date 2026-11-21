@@ -25,7 +25,7 @@ export function ImportMappingStep({ table, mapping, onChange, onNext, onCancel, 
       <h3 className="om-panel-title">Sütunları eşleştir</h3>
       <p className="om-panel-lead">
         {remembered ? "Bu kaynağı daha önce eşleştirmiştin; aynı eşleştirmeyi getirdim. Yine de bir göz at." : "Dosyanın ilk satırlarına bak ve hangi sütunun ne olduğunu seç. Bunu bir kez yaparsın; hatırlarım."}
-        {table.file_kind === "pdf" ? " PDF'ten okunan tablo her zaman düzgün çıkmaz; satırlar yanlışsa CSV ya da Excel indirmeyi dene." : ""}
+        {table.file_kind === "pdf" ? " PDF'ten okunan tablo her zaman düzgün çıkmaz; işlemler yanlış çıkarsa CSV ya da Excel indirmeyi dene." : ""}
       </p>
       <div className="im-peek" tabIndex={0} role="region" aria-label="Dosyadan ilk satırlar">
         <table>
@@ -72,7 +72,7 @@ export function ImportMappingStep({ table, mapping, onChange, onNext, onCancel, 
       {problem ? <p className="im-problem">{problem}</p> : null}
       <div className="om-actions">
         <Button variant="primary" size="lg" disabled={problem !== null} data-pending={busy || undefined} onClick={onNext}>
-          {busy ? "Bakıyorum…" : "Eşleştirmeyi onayla, satırlara bak"}
+          {busy ? "Bakıyorum…" : "Eşleştirmeyi onayla, işlemlere bak"}
         </Button>
         <Button variant="secondary" size="lg" onClick={onCancel}>Vazgeç</Button>
       </div>

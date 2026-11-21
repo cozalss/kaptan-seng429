@@ -52,12 +52,14 @@ const group = (digits: string) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
  * that means "kuruş" is turned into a comma by the field before this runs.
  */
 export function formatMoneyDraft(raw: string, maxDecimals = 2): string {
+  // A leading minus is kept (as "−") so the field can refuse it with words instead of silently dropping it.
+  const sign = /^\s*[-−]/.test(raw) ? "−" : "";
   const kept = raw.replace(/[^\d,]/g, "");
   const at = kept.indexOf(",");
   const whole = (at < 0 ? kept : kept.slice(0, at)).replace(/^0+(?=\d)/, "");
-  if (at < 0) return group(whole);
+  if (at < 0) return `${sign}${group(whole)}`;
   const frac = kept.slice(at + 1).replace(/,/g, "").slice(0, maxDecimals);
-  return `${group(whole || "0")},${frac}`;
+  return `${sign}${group(whole || "0")},${frac}`;
 }
 
 /** A number as the field writes it: "1.250,50", "5.000" (no kuruş when there is none). */
@@ -84,9 +86,13 @@ export function caretAfterFormat(before: string, caret: number, after: string): 
 const lira0 = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0 });
 
 /** The field's own error, in plain words; null when the text is a usable amount. */
+/** A typed minus: refused with words, never silently dropped (a "−5" must not become "5 ₺ ekledin"). */
+export const NEGATIVE_MONEY = "Tutarı eksi işareti olmadan yaz.";
+
 export function moneyError(raw: string, opts: { max?: number; maxDecimals?: number } = {}): string | null {
   const max = opts.max ?? MAX_MONEY_TRY;
   if (!raw.trim()) return "Bir tutar yaz.";
+  if (/^\s*[-−]/.test(raw)) return NEGATIVE_MONEY;
   const n = parseMoney(raw, opts.maxDecimals ?? 2);
   if (n === null) return "Tutarı rakamla yaz. Örneğin 1.250,50";
   if (n <= 0) return "Tutar sıfırdan büyük olmalı.";

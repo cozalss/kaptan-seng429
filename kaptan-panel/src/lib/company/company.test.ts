@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import { filtersToQuery, isNarrowed, NO_FILTERS, parseFilters, toQuery } from "@/components/disclosures/filters";
 import { disclosureTarget, opensSearch, rowsOf } from "@/components/search/search-logic";
 import { ageWords, isFresh } from "@/components/watchlist/watch-logic";
-import { followingSentence, lineSummary, priceHeadline } from "@/components/company/company-words";
+import { closeAgeSentence, followingSentence, lineSummary, priceHeadline } from "@/components/company/company-words";
 import { MockDb } from "@/lib/api/mock/db";
 import { createMockApi } from "@/lib/api/mock/mock-api";
 import { MOCK_USER } from "@/lib/auth/mock-user";
 import { foldTr, rankCompany } from "./fold";
+import { periodFromParam } from "./company";
 
 describe("Turkish folding", () => {
   it("lets İ, i, I and ı meet and drops accents", () => {
@@ -79,6 +80,8 @@ describe("watchlist words", () => {
 describe("company words", () => {
   it("says honestly why KAPtan does not follow a company", () => {
     expect(followingSentence({ in_universe: true, known: true, reasons_tr: [] })).toContain("izliyor");
+    expect(followingSentence({ in_universe: true, known: true, reasons_tr: [] }, true)).toContain("izliyor");
+    expect(followingSentence({ in_universe: true, known: true, reasons_tr: [] }, false)).toMatch(/^Bu şirket izleme listende değil\./);
     expect(followingSentence({ in_universe: false, known: true, reasons_tr: ["Halka açık pay oranı çok düşük."] })).toContain("çok düşük");
     expect(followingSentence({ in_universe: false, known: false, reasons_tr: [] })).toContain("tanımıyor");
   });
@@ -118,5 +121,25 @@ describe("the test double", () => {
     const mine = await a.disclosures({ scope: "watchlist" });
     expect(mine.length).toBeLessThanOrEqual(all.length);
     expect(mine.every((d) => d.stock_codes.some((c) => ["ORNEK", "KRGCL", "ORNCM"].includes(c)))).toBe(true);
+  });
+});
+
+describe("period from a link", () => {
+  it("takes the key or the button's label, in any case", () => {
+    expect(periodFromParam("3m")).toBe("3m");
+    expect(periodFromParam("3a")).toBe("3m");
+    expect(periodFromParam("1Y")).toBe("1y");
+    expect(periodFromParam("Tümü")).toBe("all");
+    expect(periodFromParam("tumu")).toBe("all");
+    expect(periodFromParam("5y")).toBeNull();
+    expect(periodFromParam(null)).toBeNull();
+  });
+});
+
+describe("closeAgeSentence", () => {
+  it("names the close day and never a clock time, so it cannot disagree with Param's live price time", () => {
+    expect(closeAgeSentence("2027-01-11", "2027-01-11")).toBe("Fiyatlar bugünün kapanışından. Param, gün içinde daha yeni bir fiyat gösterebilir.");
+    expect(closeAgeSentence("2027-01-10", "2027-01-11")).toMatch(/^Fiyatlar dünün kapanışından\./);
+    expect(closeAgeSentence("2027-01-08", "2027-01-11")).toMatch(/^Fiyatlar 8 Ocak Cuma kapanışından\./);
   });
 });

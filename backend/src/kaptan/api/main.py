@@ -28,6 +28,7 @@ from kaptan.api.routers import (
     brief,
     companies,
     corporate,
+    digest,
     disclosures,
     eval,
     imports,
@@ -76,6 +77,7 @@ ROUTERS: Final = (
     preferences.router,  # /me/preferences, /me/pause, /me/backup (COMFORT)
     price_alerts.router,  # /me/price-alerts, /me/alerts/history, /me/backup/list, /me/weekly (wave 5 ALERTS)
     companies.router,  # /companies/{ticker}, /search, /watchlist
+    digest.router,  # /me/digest (agent INFO)
     agenda.router,  # /me/calendar, /market/strip (wave 5 HOME)
     reading.router,  # /me/reading, /compare (wave 5 READ)
     insights.router,  # /me/insights/*, /me/notes (wave 5 PARAM)

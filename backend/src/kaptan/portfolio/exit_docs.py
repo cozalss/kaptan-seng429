@@ -141,6 +141,7 @@ def card_doc(x: ExitInput, proposal: dict[str, Any]) -> dict[str, Any]:
         "skeptic_flags": [],
         "skeptic_note_tr": "Çıkış kuralı: şüpheci değerlendirmesi gerekmez.",
         "size_multiplier": 1,
+        "outside_list_note_tr": None,
         "compliance_summary_tr": "Satış eldeki pozisyondan: açığa satış yok.",
         "rule_trace_summary": [
             {

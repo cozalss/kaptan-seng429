@@ -3,6 +3,7 @@ import { fmtInt, fmtPct, fmtSignedPct } from "@/lib/format";
 import { addDays, isTradingDay } from "@/lib/time";
 import type { KaptanApi } from "../types";
 import type { MockCtx } from "./guard";
+import { periodMoney } from "./period-money";
 import * as sel from "./selectors";
 
 /**
@@ -131,6 +132,8 @@ const NO_INDEX = (reason: string): Benchmark => ({ start: null, end: null, avail
 
 export function createReports(ctx: MockCtx): Reports {
   const { db, ok, now } = ctx;
+  // Today's morning brief once built (see briefToday).
+  let morning: MorningBrief | null = null;
 
   const items = (): TrackItem[] => {
     const today = istDay(now());
@@ -205,13 +208,7 @@ export function createReports(ctx: MockCtx): Reports {
           end,
           is_current: current,
           started: book.started,
-          put_in_net: current ? book.put_in : 0,
-          value_start: current ? 0 : null,
-          value_end: current ? book.equity : null,
-          gain_try: current ? book.equity - book.put_in : null,
-          realized_try: 0,
-          unrealized_try: current ? book.positions.reduce((s, p) => s + (p.last_price - p.avg_cost) * p.qty, 0) : null,
-          commissions_try: 0,
+          ...periodMoney(db.snapshot, start, end, current),
           dividends_try: null,
           suggestions: { made: all.length, took: count("took"), skipped: count("skipped"), declined: count("declined"), expired: count("expired"), waiting: count("waiting", "approved_open") },
           decisions: count("took", "approved_open", "not_bought", "declined", "skipped"),
@@ -241,20 +238,26 @@ export function createReports(ctx: MockCtx): Reports {
       ctx.me();
       const book = sel.bookOf(db.snapshot);
       if (!book.started) return ok(null, 60);
-      const pending = sel.approvalCards(db.snapshot).filter((c) => c.status === "pending" && !c.run_id.startsWith("run-hist")).length;
+      // Like the server, the brief is built once in the morning (08:45) and then kept: answering a proposal later
+      // does not rewrite it. The home says what changed since, under it.
+      const day = istDay(now());
+      if (morning?.date === day) return ok(morning, 60);
+      const cards = sel.approvalCards(db.snapshot).filter((c) => c.status === "pending" && !c.run_id.startsWith("run-hist"));
+      const builtAt = `${day}T05:45:00.000Z`;
       const brief: MorningBrief = {
-        date: istDay(now()),
-        generated_at: now(),
+        date: day,
+        generated_at: Date.parse(builtAt) < Date.parse(now()) ? builtAt : now(),
         important_disclosures: [],
         orders_for_open: [],
-        pending_approvals: [],
+        pending_approvals: cards,
         open_positions: [],
         expiring_today: [],
         risk_warnings: [],
         restriction_changes: [],
-        summary_tr: `${pending > 0 ? `Onayını bekleyen ${fmtInt(pending)} öneri var.` : "Onayını bekleyen öneri yok."} ${book.positions.length ? `Elinde ${fmtInt(book.positions.length)} hisse var.` : "Elinde KAPtan'ın bildiği hisse yok."}`,
+        summary_tr: `${cards.length > 0 ? `Onayını bekleyen ${fmtInt(cards.length)} öneri var.` : "Onayını bekleyen öneri yok."} ${book.positions.length ? `Elinde ${fmtInt(book.positions.length)} hisse var.` : "Elinde KAPtan'ın bildiği hisse yok."}`,
         is_sample: false,
       };
+      morning = brief;
       return ok(brief, 60);
     },
   };

@@ -12,6 +12,7 @@ import type { MockDb } from "./db";
 import { userActor, type MockCtx } from "./guard";
 import * as sel from "./selectors";
 import type { MockState } from "./state";
+import { periodMoney, type PeriodMoney } from "./period-money";
 
 /**
  * The test double of price alerts, the alert history, the backup list and the weekly summary (backend
@@ -161,6 +162,14 @@ const shift = (day: string, n: number) =>
   new Date(Date.parse(`${day}T00:00:00Z`) + n * DAY_MS)
     .toISOString()
     .slice(0, 10);
+
+/** The four money figures a week carries (no sales or commission rows on Haftalık). */
+const weekMoney = ({
+  put_in_net,
+  value_start,
+  value_end,
+  gain_try,
+}: PeriodMoney) => ({ put_in_net, value_start, value_end, gain_try });
 
 /** Monday to Sunday around `day`, labelled like the backend ("16–22 Kasım 2026"). */
 export function weekOf(day: string): {
@@ -372,10 +381,7 @@ export function createAlertsMore(ctx: MockCtx): AlertsMoreApi {
           label_tr: w.label,
           is_current: current,
           started: book.started,
-          put_in_net: current ? book.put_in : 0,
-          value_start: current ? 0 : null,
-          value_end: current ? book.equity : null,
-          gain_try: current ? book.equity - book.put_in : null,
+          ...weekMoney(periodMoney(db.snapshot, w.start, w.end, current)),
           dividends_try: null,
           read: current ? sel.counters(db.snapshot).total : 0,
           suggestions: {

@@ -50,7 +50,7 @@ describe("MoneySection", () => {
     await u.click(screen.getByRole("button", { name: "Para çek" }));
     await u.type(screen.getByRole("textbox", { name: "Ne kadar çekiyorsun?" }), "99999");
     await u.click(screen.getByRole("button", { name: "Parayı çek" }));
-    expect(await screen.findByText("Kasandaki paradan fazlasını çekemezsin.")).toBeInTheDocument();
+    expect(await screen.findByText("Elindeki nakitten fazlasını çekemezsin.")).toBeInTheDocument();
     expect(onChanged).not.toHaveBeenCalled();
     expect((await api.money()).cash).toBe(10_000);
   });

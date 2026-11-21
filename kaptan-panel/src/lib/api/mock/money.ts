@@ -42,7 +42,7 @@ export function createMoney(ctx: MockCtx): Money {
       const started = hasStarted(book);
       if (m.kind === "start" && started) throw new ApiError(409, "already_started", "Başlangıç paranı zaten girdin. Para eklemek için 'Para ekle'yi kullan.");
       if (m.kind !== "start" && !started) throw new ApiError(409, "not_started", MSG_NOT_STARTED);
-      if (m.kind === "withdrawal" && m.amount_try > sel.bookOf(db.snapshot).cash) throw new ApiError(422, "over_cash", "Kasandaki paradan fazlasını çekemezsin.");
+      if (m.kind === "withdrawal" && m.amount_try > sel.bookOf(db.snapshot).cash) throw new ApiError(422, "over_cash", "Elindeki nakitten fazlasını çekemezsin.");
       const movement: StoredMovement = { id: nextId("mv", book.movements), kind: m.kind, amount_try: m.amount_try, occurred_at: now(), note: m.note ?? "" };
       db.update((s) => withBook(s, { ...s.book, movements: [...s.book.movements, movement] }));
       db.audit(userActor(a), AUDIT_ACTION[m.kind], "money", movement.id, { amount_try: m.amount_try });

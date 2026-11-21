@@ -16,7 +16,7 @@ type Imports = Pick<KaptanApi, "importRead" | "importPreview" | "importApply" | 
 
 const MSG_NOT_STARTED = "Önce başlangıç paranı gir; sonra dökümü yükleyebilirsin.";
 const MSG_BEFORE_START = "Bu, KAPtan'a başladığın günden önce. O günlerden önceki hisselerini “Elimdeki hisse” olarak elle ekle.";
-const MSG_OVER_CASH = "Kasanda bunun için yeterli nakit görünmüyor. Önce para eklediğini kaydet.";
+const MSG_OVER_CASH = "Bunun için yeterli nakit paran görünmüyor. Önce para eklediğini kaydet.";
 const MSG_NOT_HELD = "Elinde bu kadar yok. Önce aldığını kaydet ya da elindeki hisseyi elle ekle.";
 const MSG_USE_TICKET = "Bu hisse KAPtan'ın önerisinden. Satışı işlem fişinden kaydet.";
 const MSG_NEVER_HELD = "Bu hisse defterinde hiç yok.";

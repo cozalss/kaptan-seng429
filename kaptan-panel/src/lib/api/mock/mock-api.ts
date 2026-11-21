@@ -3,6 +3,7 @@ import { MOCK_USER } from "@/lib/auth/mock-user";
 import { ApiError, type KaptanApi } from "../types";
 import { getMockDb, type Actor, type MockDb } from "./db";
 import { createAgenda } from "./agenda";
+import { createDigest } from "./digest";
 import { createAlertsMore } from "./alerts-more";
 import { createComfort } from "./comfort";
 import { createEnterprise } from "./enterprise";
@@ -54,6 +55,7 @@ export function createMockApi(opts: MockApiOptions = {}): KaptanApi {
     ...createInsight(ctx),
     ...createReading(ctx),
     ...createAgenda(ctx),
+    ...createDigest(ctx),
 
     async me(): Promise<Me> {
       const a = me();

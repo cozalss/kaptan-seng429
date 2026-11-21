@@ -2,7 +2,7 @@ import { screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { KaptanApi } from "@/lib/api/types";
 import { BenchmarkLine } from "./benchmark-line";
-import { MorningBrief } from "./morning-brief";
+import { MorningBrief, sinceMorningSentence } from "./morning-brief";
 import { mockApi, renderWithApi } from "./money.test-utils";
 import { WhyQuiet } from "./why-quiet";
 
@@ -40,5 +40,14 @@ describe("home notes", () => {
     renderWithApi(<BenchmarkLine />, mockApi({ fresh: true }));
     await new Promise((r) => setTimeout(r, 20));
     expect(screen.queryByTestId("benchmark-line")).toBeNull();
+  });
+});
+
+describe("sinceMorningSentence", () => {
+  it("says what is left after the 08:45 picture, and nothing while nothing changed", () => {
+    expect(sinceMorningSentence(4, 4)).toBeNull();
+    expect(sinceMorningSentence(0, 0)).toBeNull();
+    expect(sinceMorningSentence(4, 3)).toBe("Sabahtan bu yana 1 öneriye cevap verdin; 3 öneri hâlâ bekliyor.");
+    expect(sinceMorningSentence(4, 0)).toBe("Sabahtan bu yana 4 öneriye cevap verdin; bekleyen öneri kalmadı.");
   });
 });

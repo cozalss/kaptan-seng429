@@ -14,11 +14,11 @@ describe("KAPtan nasıl çalışır", () => {
   it("shows itself on the first visit, steps through three steps, and is remembered", async () => {
     const u = user();
     const { unmount } = render(<HowItWorks />);
-    const dialog = await screen.findByRole("dialog", { name: "KAPtan okur." });
+    const dialog = await screen.findByRole("dialog", { name: "KAPtan nasıl çalışır KAPtan okur." });
     await u.click(within(dialog).getByRole("button", { name: "Devam" }));
-    expect(await screen.findByRole("dialog", { name: "Kurallar süzer." })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "KAPtan nasıl çalışır Kurallar süzer." })).toBeInTheDocument();
     await u.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Devam" }));
-    const last = await screen.findByRole("dialog", { name: "Sen karar verirsin." });
+    const last = await screen.findByRole("dialog", { name: "KAPtan nasıl çalışır Sen karar verirsin." });
     expect(last).toHaveTextContent("KAPtan kendi başına asla alıp satmaz.");
     await u.click(within(last).getByRole("button", { name: "Anladım" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -38,7 +38,7 @@ describe("KAPtan nasıl çalışır", () => {
     expect(window.localStorage.getItem(HOWTO_KEY)).toBe("1");
 
     act(() => openHowItWorks());
-    expect(await screen.findByRole("dialog", { name: "KAPtan okur." })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "KAPtan nasıl çalışır KAPtan okur." })).toBeInTheDocument();
     await u.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
@@ -51,11 +51,11 @@ describe("KAPtan nasıl çalışır", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
 
     act(() => openHowItWorks());
-    await screen.findByRole("dialog", { name: "KAPtan okur." });
+    await screen.findByRole("dialog", { name: "KAPtan nasıl çalışır KAPtan okur." });
     await u.keyboard("{ArrowRight}");
-    expect(await screen.findByRole("dialog", { name: "Kurallar süzer." })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "KAPtan nasıl çalışır Kurallar süzer." })).toBeInTheDocument();
     await u.keyboard("{ArrowLeft}");
-    expect(await screen.findByRole("dialog", { name: "KAPtan okur." })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "KAPtan nasıl çalışır KAPtan okur." })).toBeInTheDocument();
   });
 
   it("puts focus on the step's sentence, inside the dialog", async () => {
@@ -75,13 +75,13 @@ describe("KAPtan nasıl çalışır", () => {
     const api = mockApi({ fresh: true });
     await api.moveMoney({ kind: "start", amount_try: 5_000 });
     renderWithApi(<HowItWorks />, api);
-    expect(await screen.findByRole("dialog", { name: "KAPtan okur." })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "KAPtan nasıl çalışır KAPtan okur." })).toBeInTheDocument();
   });
 
   it("can still be opened by hand on a new install", async () => {
     renderWithApi(<HowItWorks />, mockApi({ fresh: true }));
     await act(() => new Promise((r) => setTimeout(r, 50)));
     act(() => openHowItWorks());
-    expect(await screen.findByRole("dialog", { name: "KAPtan okur." })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "KAPtan nasıl çalışır KAPtan okur." })).toBeInTheDocument();
   });
 });

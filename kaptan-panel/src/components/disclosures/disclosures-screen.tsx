@@ -144,7 +144,7 @@ function DisclosuresBody() {
         title={sentence}
         lead={
           <p>
-            Bildirim ya da duyuru, borsadaki bir şirketin yasa gereği herkese açıkladığı haberdir; <Term word="KAP">KAP</Term> adlı resmî sitede yayımlanır. KAPtan hepsini senin yerine okur. <Link href="/takvim" className="underline underline-offset-4">Yaklaşan tarihler için takvime bak.</Link>
+            Bildirim ya da duyuru, borsadaki bir şirketin yasa gereği herkese açıkladığı haberdir; <Term word="KAP">KAP</Term> adlı resmî sitede yayımlanır. KAPtan hepsini senin yerine okur. <Link href="/onemli" className="underline underline-offset-4">Günün önemli duyurularına bak.</Link> <Link href="/takvim" className="underline underline-offset-4">Yaklaşan tarihler için takvime bak.</Link>
           </p>
         }
       />

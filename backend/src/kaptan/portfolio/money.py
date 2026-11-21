@@ -37,7 +37,7 @@ from kaptan.risk.book import own_book
 
 ALREADY_STARTED: Final = "Başlangıç paranı zaten girdin. Para eklemek için 'Para ekle'yi kullan."
 NOT_STARTED: Final = "Önce başlangıç paranı gir."
-OVER_CASH: Final = "Kasandaki paradan fazlasını çekemezsin."
+OVER_CASH: Final = "Elindeki nakitten fazlasını çekemezsin."
 UNKNOWN_TICKER: Final = "Bu hisse kodunu tanımıyorum."
 FUTURE_DAY: Final = "Gelecekteki bir tarihi giremezsin."
 FUTURE_TIME: Final = "Gelecekteki bir zamanı giremezsin."

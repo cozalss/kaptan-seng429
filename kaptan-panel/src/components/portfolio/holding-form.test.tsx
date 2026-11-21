@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ApiProvider } from "@/lib/api/react";
 import { ApiError, type KaptanApi } from "@/lib/api/types";
@@ -17,13 +17,21 @@ async function fill(u: ReturnType<typeof user>, ticker: string, qty: string, cos
   await u.type(screen.getByLabelText("Hisse kodu"), ticker);
   await u.type(screen.getByLabelText("Kaç adet?"), qty);
   await u.type(screen.getByLabelText("Tanesini kaç liradan aldın?"), cost);
-  if (day) await u.type(screen.getByLabelText("Ne zaman aldın?"), day);
+  if (day) {
+    await u.clear(screen.getByLabelText("Ne zaman aldın?"));
+    await u.type(screen.getByLabelText("Ne zaman aldın?"), day);
+  }
 }
 
 describe("HoldingForm", () => {
   it("puts the cursor on the first question", async () => {
     renderWithApi(<HoldingForm onAdded={() => undefined} />, await started());
     expect(screen.getByLabelText("Hisse kodu")).toHaveFocus();
+  });
+
+  it("starts the day at today", async () => {
+    renderWithApi(<HoldingForm onAdded={() => undefined} />, await started());
+    expect((screen.getByLabelText("Ne zaman aldın?") as HTMLInputElement).value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   it("says under each field what is missing once you press the button, and sends nothing", async () => {
@@ -35,7 +43,7 @@ describe("HoldingForm", () => {
     expect(screen.getByText(/Hisse kodunu yaz; 3 ile 6 harf/)).toBeInTheDocument();
     expect(screen.getByText("Kaç adet olduğunu yaz.")).toBeInTheDocument();
     expect(screen.getByText("Tanesini kaç liradan aldığını yaz.")).toBeInTheDocument();
-    expect(screen.getByText("Aldığın günün tarihini seç.")).toBeInTheDocument();
+    expect(screen.queryByText("Aldığın günün tarihini seç.")).not.toBeInTheDocument(); // the day starts as today
     expect(spy).not.toHaveBeenCalled();
     expect(onAdded).not.toHaveBeenCalled();
   });
@@ -60,6 +68,18 @@ describe("HoldingForm", () => {
     await fill(u, "ZZZZZ", "1", "5");
     await u.click(screen.getByRole("button", { name: "Hisseyi ekle" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Bu hisse kodunu tanımıyorum.");
+  });
+
+  it("offers close codes for a code it does not know, and a pick puts it in the field", async () => {
+    const u = user();
+    renderWithApi(<HoldingForm onAdded={() => undefined} />, await started());
+    await fill(u, "KRGCX", "1", "5");
+    await u.click(screen.getByRole("button", { name: "Hisseyi ekle" }));
+    const list = await screen.findByRole("list", { name: "Benzer hisse kodları" });
+    const pick = within(list).getByRole("button", { name: /KRGCL/ });
+    await u.click(pick);
+    expect(screen.getByLabelText("Hisse kodu")).toHaveValue("KRGCL");
+    expect(screen.queryByRole("list", { name: "Benzer hisse kodları" })).not.toBeInTheDocument();
   });
 
   it("refuses a day in the future before asking the server", async () => {

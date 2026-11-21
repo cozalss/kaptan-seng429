@@ -14,12 +14,25 @@ const NOTE_NO_INFLATION = "Enflasyon açıklama günlerini göstermiyorum: resmi
 
 const ymd = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 const istanbulWeekday = (ms: number) => new Date(ms + 3 * 3_600_000).getUTCDay();
+/** A day `n` days on, moved off a weekend to the Monday after (the server does the same with its estimates). */
+const weekdayAfter = (nowMs: number, n: number) => {
+  const at = nowMs + n * DAY_MS;
+  const wd = istanbulWeekday(at);
+  return ymd(at + (wd === 6 ? 2 : wd === 0 ? 1 : 0) * DAY_MS);
+};
 
 function istanbulOpen(nowMs: number): boolean {
   const local = new Date(nowMs + 3 * 3_600_000);
   const minutes = local.getUTCHours() * 60 + local.getUTCMinutes();
   return ![0, 6].includes(local.getUTCDay()) && minutes >= 600 && minutes < 1090;
 }
+
+/** The last trading day before now (a Monday's is the Friday before): the index and the dollar close on those days. */
+const lastWeekdayBefore = (nowMs: number) => {
+  let at = nowMs - DAY_MS;
+  while ([0, 6].includes(istanbulWeekday(at))) at -= DAY_MS;
+  return at;
+};
 
 export function createAgenda(ctx: MockCtx): Pick<KaptanApi, "calendar" | "marketStrip"> {
   const { db, me, ok } = ctx;
@@ -34,13 +47,13 @@ export function createAgenda(ctx: MockCtx): Pick<KaptanApi, "calendar" | "market
       const why = (t: string): "held" | "watched" => (held.includes(t) ? "held" : "watched");
       const events: CalendarEvent[] = [];
       [...new Set([...held, ...db.snapshot.watchlist])].slice(0, 6).forEach((t, i) => {
-        const day = ymd(now + (4 + i * 3) * DAY_MS);
+        const day = weekdayAfter(now, 4 + i * 3);
         if (day > to) return;
         events.push({ id: `fr-${t}-${day}`, day, kind: "report_window", ticker: t, why: why(t), title: `${t}: finansal rapor bu günlerde beklenir`, detail: "Geçen yıl bu rapor aşağı yukarı bu günlerde açıklandı. Bu yıl da yakın bir günde gelebilir; kesin gün değil.", source_url: null, approximate: true });
       });
       const first = held[0];
       if (first) {
-        const day = ymd(now + 9 * DAY_MS);
+        const day = weekdayAfter(now, 9);
         if (day <= to) events.push({ id: `kp-${first}-${day}`, day, kind: "dividend_pay", ticker: first, why: "held", title: `${first}: kâr payı ödeme günü`, detail: "Şirketin bildirimine göre kâr payı bu gün ödenir.", source_url: "https://www.kap.org.tr/tr/Bildirim/1", approximate: false });
       }
       for (const day of PPK_2026.filter((d) => d >= from && d <= to)) {
@@ -63,8 +76,8 @@ export function createAgenda(ctx: MockCtx): Pick<KaptanApi, "calendar" | "market
         {
           as_of: ctx.now(),
           market: { open, label: open ? "Borsa açık" : "Borsa kapalı", next_open_day: open ? null : ymd(next + 3 * 3_600_000) },
-          index: { level: 10842.5, change_pct: 0.84, day: ymd(now - DAY_MS) },
-          usd_try: { rate: 34.2118, day: ymd(now - DAY_MS), published_at: new Date(now - DAY_MS).toISOString() },
+          index: { level: 10842.5, change_pct: 0.84, day: ymd(lastWeekdayBefore(now)) },
+          usd_try: { rate: 34.2118, day: ymd(lastWeekdayBefore(now)), published_at: new Date(lastWeekdayBefore(now)).toISOString() },
         },
         60,
       );

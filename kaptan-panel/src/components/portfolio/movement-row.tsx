@@ -29,14 +29,30 @@ const FIX_WORDS = {
  * to it, and the cash and the money put in move by the difference, never as a gain or a loss.
  * The starting money can be changed but not taken back (that is "Baştan başla").
  */
-export function MovementRow({ m, now, onChanged }: { m: MoneyMovement; now: number | null; onChanged: (message: string) => void }) {
-  const [mode, setMode] = useState<Mode>("view");
+export function MovementRow({
+  m,
+  now,
+  onChanged,
+  active = true,
+  onActivate,
+}: {
+  m: MoneyMovement;
+  now: number | null;
+  onChanged: (message: string) => void;
+  /** False once another form on Param is opened: one form at a time, so this row falls back to its sentence. */
+  active?: boolean;
+  /** Called when this row opens a form (the parent closes the others). */
+  onActivate?: () => void;
+}) {
+  const [own, setMode] = useState<Mode>("view");
+  const mode: Mode = active ? own : "view";
   const opener = useRef<HTMLButtonElement | null>(null);
   const settled = m.status === "undone";
   const words = FIX_WORDS[m.kind];
 
   const open = (next: Mode, from: HTMLButtonElement) => {
     opener.current = from;
+    onActivate?.();
     setMode(next);
   };
   const close = (message: string | null) => {
@@ -47,7 +63,18 @@ export function MovementRow({ m, now, onChanged }: { m: MoneyMovement; now: numb
   const note = movementStatusNote(m);
 
   return (
-    <li data-movement={m.id} data-status={m.status} className="om-item">
+    <li
+      data-movement={m.id}
+      data-status={m.status}
+      className="om-item"
+      onKeyDown={(e) => {
+        // Esc = Vazgeç, as in a dialog.
+        if (e.key === "Escape" && mode !== "view") {
+          e.stopPropagation();
+          close(null);
+        }
+      }}
+    >
       <p className={settled ? "om-item-text om-item-text--undone" : "om-item-text"}>
         {movementSentence(m, now)}
         {note ? <span className="om-item-note"> {note}</span> : null}

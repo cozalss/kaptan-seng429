@@ -408,6 +408,7 @@ function approvalOf(spec: RunSpec, proposal: TradeProposal, card: EvidenceCard |
     skeptic_flags: spec.skeptic?.flags ?? [],
     skeptic_note_tr: spec.skeptic?.counter_tr ?? "Şüpheci ek bir risk bulmadı.",
     size_multiplier: spec.skeptic?.multiplier ?? 1,
+    outside_list_note_tr: null,
     compliance_summary_tr: spec.compliance === "escalate" ? "Tedbir yok; bir kontrol insan incelemesi istiyor." : "Tedbir yok, injection yok.",
     rule_trace_summary: spec.ruleTrace,
     degraded: false,

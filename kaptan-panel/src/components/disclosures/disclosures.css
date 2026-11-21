@@ -11,13 +11,13 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0;
-  padding-bottom: 1.25rem;
+  padding-bottom: var(--space-5);
 }
 .ok-stage {
   display: grid;
   align-content: end;
-  gap: 0.125rem;
-  padding-inline-end: 0.5rem;
+  gap: var(--space-0_5);
+  padding-inline-end: var(--space-2);
 }
 .ok-stage-n {
   font-family: var(--font-display);
@@ -66,15 +66,15 @@
 .ok-filters {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
   border-bottom: 1px solid var(--hairline);
 }
 .ok-filter {
   display: grid;
   align-content: start;
-  gap: 0.25rem;
+  gap: var(--space-1);
   min-height: 44px;
-  padding: 0.75rem 0.875rem 0.875rem 0;
+  padding: var(--space-3) var(--space-3_5) var(--space-3_5) 0;
   text-align: left;
   color: var(--ink-soft);
   border-top: 3px solid transparent;
@@ -109,12 +109,12 @@
 @media (max-width: 859px) {
   .ok-filters {
     grid-template-columns: minmax(0, 1fr);
-    margin-top: 1rem;
+    margin-top: var(--space-4);
     border-bottom: 0;
   }
   .ok-filter {
     grid-template-columns: minmax(0, 1fr);
-    padding: 0.625rem 0.75rem;
+    padding: var(--space-2_5) var(--space-3);
     border-top: 0;
     border-left: 3px solid transparent;
     border-bottom: 1px solid var(--hairline);
@@ -131,15 +131,15 @@
 /* What was read but got no turn: plain sentences under the day's numbers, an ink rule on the left. */
 .ok-waiting {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-2);
   max-width: 62ch;
-  margin-top: 1rem;
+  margin-top: var(--space-4);
 }
 .ok-waiting:empty {
   display: none;
 }
 .ok-waiting > p {
-  padding-inline-start: 0.75rem;
+  padding-inline-start: var(--space-3);
   border-inline-start: 3px solid var(--ink);
   font-size: 1rem;
   line-height: 1.5;
@@ -164,16 +164,16 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0 1.5rem;
-  margin-top: 0.25rem;
+  gap: 0 var(--space-6);
+  margin-top: var(--space-1);
 }
 
 /* ── The day's few big things. ── */
 .ok-worth {
-  margin-top: clamp(3rem, 2rem + 4vw, 6rem);
+  margin-top: clamp(3rem, var(--space-8) + 4vw, var(--space-24));
 }
 .ok-worth-head {
-  padding-bottom: 0.75rem;
+  padding-bottom: var(--space-3);
   border-bottom: 2px solid var(--ink);
   font-size: 0.9375rem;
   color: var(--ink);
@@ -181,10 +181,10 @@
 .ok-worth-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: clamp(2rem, 1rem + 4vw, 5rem);
+  column-gap: clamp(2rem, var(--space-4) + 4vw, var(--space-20));
 }
 .ok-worth-row {
-  padding-block: clamp(1.25rem, 1rem + 1vw, 2rem);
+  padding-block: clamp(1.25rem, var(--space-4) + 1vw, var(--space-8));
   border-bottom: 1px solid var(--hairline);
 }
 .ok-worth-ticker {
@@ -196,7 +196,7 @@
   color: var(--muted);
 }
 .ok-worth-name {
-  margin-top: 0.125rem;
+  margin-top: var(--space-0_5);
   font-family: var(--font-display);
   font-weight: 600;
   -webkit-text-stroke: 0.25px currentColor;
@@ -206,13 +206,13 @@
   color: var(--ink);
 }
 .ok-worth-said {
-  margin-top: 0.625rem;
+  margin-top: var(--space-2_5);
   font-size: 1.0625rem;
   line-height: 1.5;
   color: var(--ink);
 }
 .ok-worth-did {
-  margin-top: 0.25rem;
+  margin-top: var(--space-1);
   font-size: 1rem;
   line-height: 1.5;
   font-weight: 600;
@@ -222,8 +222,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0 1.5rem;
-  margin-top: 0.375rem;
+  gap: 0 var(--space-6);
+  margin-top: var(--space-1_5);
 }
 @media (max-width: 859px) {
   .ok-worth-list {
@@ -255,30 +255,30 @@
   outline-offset: 2px;
 }
 .ok-kap {
-  gap: 0.25rem;
+  gap: var(--space-1);
   font-weight: 500;
   white-space: nowrap;
 }
 
 /* ── Everything read. ── */
 .ok-all {
-  margin-top: clamp(3rem, 2rem + 4vw, 6rem);
+  margin-top: clamp(3rem, var(--space-8) + 4vw, var(--space-24));
 }
 .ok-all-head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 0.75rem 2rem;
-  padding-bottom: 1rem;
+  gap: var(--space-3) var(--space-8);
+  padding-bottom: var(--space-4);
   border-bottom: 2px solid var(--ink);
 }
 .ok-hour-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 1.5rem 0 0.5rem;
+  gap: var(--space-4);
+  padding: var(--space-6) 0 var(--space-2);
   border-bottom: 1px solid var(--rule-soft);
   font-size: 0.9375rem;
   line-height: 1.3;
@@ -289,9 +289,9 @@
 .ok-row {
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr) auto;
-  gap: 0.25rem 1.5rem;
+  gap: var(--space-1) var(--space-6);
   align-items: baseline;
-  padding-block: 0.75rem;
+  padding-block: var(--space-3);
   border-bottom: 1px solid var(--hairline);
 }
 .ok-row-time {
@@ -304,7 +304,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0 0.5rem;
+  gap: 0 var(--space-2);
 }
 .ok-row-name {
   font-size: 1rem;
@@ -327,7 +327,7 @@
 .ok-row-did {
   display: grid;
   grid-template-columns: 0.75rem minmax(0, 1fr);
-  gap: 0.5rem;
+  gap: var(--space-2);
   font-size: 0.9375rem;
   line-height: 1.45;
   color: var(--ink-soft);
@@ -346,14 +346,14 @@
   display: block;
   width: 0.625rem;
   height: 0.625rem;
-  margin-top: 0.3125rem;
+  margin-top: var(--space-1);
   border-radius: 9999px;
   border: 1.5px solid var(--rule-soft);
 }
 .ok-row[data-fate="noise"] .ok-mark {
   width: 0.625rem;
   height: 2px;
-  margin-top: 0.625rem;
+  margin-top: var(--space-2_5);
   border: 0;
   border-radius: 0;
   background: var(--rule-soft);
@@ -374,7 +374,7 @@
 @media (max-width: 859px) {
   .ok-row {
     grid-template-columns: 48px minmax(0, 1fr);
-    padding-block: 0.875rem;
+    padding-block: var(--space-3_5);
   }
   .ok-row-did,
   .ok-row .ok-kap {
@@ -390,8 +390,8 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding-block: 1.25rem;
+  gap: var(--space-3);
+  padding-block: var(--space-5);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -411,19 +411,26 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 0.75rem 1.25rem;
-  padding: 0.75rem 0 1.25rem;
+  gap: var(--space-3) var(--space-5);
+  padding: var(--space-3) 0 var(--space-5);
 }
 .ok-field {
   display: grid;
-  gap: 0.25rem;
-  min-width: 10rem;
+  /* A select is as wide as its longest option: let it shrink to the screen (320px with wider text spacing). */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+  min-width: min(10rem, 100%);
+  max-width: 100%;
+  overflow-wrap: anywhere;
   font-size: 0.875rem;
   color: var(--ink-soft);
 }
 .ok-select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 2.75rem;
-  padding: 0 0.5rem;
+  padding: 0 var(--space-2);
   border: 1.5px solid var(--rule-ui);
   background: var(--panel);
   color: var(--ink);
@@ -432,14 +439,14 @@
 .ok-check {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   min-height: 2.75rem;
   font-size: 1rem;
   color: var(--ink);
 }
 .ok-check input {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
 }
 .ok-open {
   min-height: 2.75rem;
@@ -454,7 +461,7 @@
   height: 100dvh;
   max-height: 100dvh;
   width: min(34rem, 100vw);
-  padding: 1.5rem;
+  padding: var(--space-6);
   overflow: auto;
   border: 0;
   border-left: 2px solid var(--ink);
@@ -465,24 +472,24 @@
   background: var(--scrim);
 }
 .ok-drawer-said {
-  margin: 0.5rem 0 1rem;
+  margin: var(--space-2) 0 var(--space-4);
   font-size: 1.125rem;
   line-height: 1.45;
 }
 .ok-drawer-facts {
   display: grid;
-  gap: 0.25rem 0;
+  gap: var(--space-1) 0;
 }
 .ok-drawer-facts dt {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--muted);
 }
 .ok-drawer-text {
-  margin-top: 1rem;
+  margin-top: var(--space-4);
   border-top: 1px solid var(--hairline);
-  padding-top: 0.5rem;
+  padding-top: var(--space-2);
 }
 .ok-drawer-text summary {
   min-height: 2.75rem;

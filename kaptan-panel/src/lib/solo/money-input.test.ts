@@ -66,7 +66,8 @@ describe("formatMoneyDraft", () => {
     expect(formatMoneyDraft("12a5")).toBe("125");
     expect(formatMoneyDraft("1,2,3")).toBe("1,23");
     expect(formatMoneyDraft("1250,505")).toBe("1.250,50");
-    expect(formatMoneyDraft("-5")).toBe("5");
+    expect(formatMoneyDraft("-5")).toBe("−5");
+    expect(formatMoneyDraft("−1250")).toBe("−1.250");
     expect(formatMoneyDraft("")).toBe("");
   });
 
@@ -111,6 +112,8 @@ describe("moneyError", () => {
     expect(moneyError("")).toBe("Bir tutar yaz.");
     expect(moneyError("abc")).toBe("Tutarı rakamla yaz. Örneğin 1.250,50");
     expect(moneyError("0")).toBe("Tutar sıfırdan büyük olmalı.");
+    expect(moneyError("−5")).toBe("Tutarı eksi işareti olmadan yaz.");
+    expect(moneyError("-5")).toBe("Tutarı eksi işareti olmadan yaz.");
     expect(moneyError("0,00")).toBe("Tutar sıfırdan büyük olmalı.");
     expect(moneyError("20.000.000.000")).toBe("Bu kadar büyük bir tutar girilemiyor. En çok 10.000.000.000 ₺ yazabilirsin.");
     expect(moneyError("1.250,50")).toBeNull();

@@ -12,13 +12,14 @@ import { href, ROUTES } from "@/lib/nav";
 import { fmtLira, fmtSignedLira } from "@/lib/solo/words";
 import { cn } from "@/lib/utils";
 import { PageHeader, ScreenState } from "@/components/shell/page-frame";
-import { PriceAge } from "@/components/solo/price-age";
+import { useNow } from "@/lib/clock";
+import { istanbulDay } from "@/lib/session-day";
 import { signTone } from "@/components/story/sign-tone";
 import { Button } from "@/components/ui/button";
 import { kapUrl, plainSaid, whatKaptanDid } from "@/components/disclosures/reading-words";
 import { PriceAlertButton } from "@/components/settings/price-alert-button";
 import { StarButton } from "@/components/watchlist/star-button";
-import { companyName, DECISION_LABEL, followingSentence, priceHeadline } from "./company-words";
+import { closeAgeSentence, companyName, DECISION_LABEL, followingSentence, priceHeadline } from "./company-words";
 import { PriceLine } from "./price-line";
 import { MyNote } from "./my-note";
 import { InsiderStrip } from "./insider-strip";
@@ -26,6 +27,7 @@ import { StatsStrip } from "./stats-strip";
 import { TwoLines } from "./two-lines";
 import { ReadingMarksProvider } from "@/components/reading/marks";
 import { SaveStar } from "@/components/reading/save-star";
+import { keepFigures } from "@/components/story/num";
 
 /**
  * /hisse/[ticker]: one company. A plain sentence first, then the price line, what you hold of it, what it
@@ -60,8 +62,8 @@ export function CompanyScreen({ ticker }: { ticker: string }) {
       <PageHeader
         name={c.ticker}
         title={`${companyName(c.name)}${c.sector ? `, ${c.sector} alanında bir şirket.` : "."}`}
-        lead={<p>{followingSentence(c.following)}</p>}
-        actions={<><StarButton ticker={c.ticker} watched={starred ?? c.watched} onChanged={setStarred} /><PriceAlertButton ticker={c.ticker} name={c.name} /></>}
+        lead={<p>{followingSentence(c.following, starred ?? c.watched)}</p>}
+        actions={<><StarButton ticker={c.ticker} watched={starred ?? c.watched} onChanged={setStarred} /><PriceAlertButton ticker={c.ticker} name={c.name} /><Button variant="ghost" asChild><Link href={`${ROUTES.ayarlar}?sustur=${c.ticker}#sirket-sustur`}>Bildirimlerini sustur</Link></Button></>}
       />
       <PriceSection c={c} period={period} onPeriod={setPeriod} busy={q.refreshing} />
       {c.position ? <PositionSection p={c.position} ticker={c.ticker} /> : null}
@@ -75,13 +77,15 @@ export function CompanyScreen({ ticker }: { ticker: string }) {
 }
 
 function PriceSection({ c, period, onPeriod, busy }: { c: Company; period: Period; onPeriod: (p: Period) => void; busy: boolean }) {
+  const now = useNow(60_000);
+  const today = now === null ? null : istanbulDay(now);
   const [vsIndex, setVsIndex] = useState(false);
   return (
     <section aria-labelledby="co-fiyat" className="co-sec" aria-busy={busy}>
       <h2 id="co-fiyat" className="u-chapter text-ink">
         Fiyat
       </h2>
-      <p className="co-lead">{priceHeadline(c.price)}</p>
+      <p className="co-lead">{keepFigures(priceHeadline(c.price))}</p>
       <div role="group" aria-label="Dönem" className="co-periods">
         {PERIODS.map((p) => (
           <button key={p} type="button" aria-pressed={p === period} className="co-period" onClick={() => onPeriod(p)}>
@@ -105,7 +109,7 @@ function PriceSection({ c, period, onPeriod, busy }: { c: Company; period: Perio
       )}
       {vsIndex && c.benchmark ? <TwoLines a={c.price.points} b={c.benchmark.points} labelA={c.ticker} labelB={c.benchmark.name} /> : <PriceLine points={c.price.points} />}
       {c.stats ? <StatsStrip stats={c.stats} /> : <p className="co-empty">Bu şirketin kayıtlı fiyatı yok; aralık ve hacim hesaplayamadım.</p>}
-      <PriceAge asOf={c.price.last_day ? `${c.price.last_day}T15:30:00.000Z` : null} />
+      {c.price.last_day && today ? <p className="pa">{closeAgeSentence(c.price.last_day, today)}</p> : null}
     </section>
   );
 }

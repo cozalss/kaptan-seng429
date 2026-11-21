@@ -96,6 +96,7 @@ export function HowItWorks() {
         <D.Overlay className="hw-overlay" />
         <D.Content
           className="hw-sheet"
+          aria-labelledby="hw-name hw-title"
           aria-describedby="hw-text"
           onKeyDown={onKey}
           onOpenAutoFocus={(e) => {
@@ -104,7 +105,7 @@ export function HowItWorks() {
           }}
         >
           <div className="hw-top">
-            <p className="hw-name">KAPtan nasıl çalışır</p>
+            <p id="hw-name" className="hw-name">KAPtan nasıl çalışır</p>
             <Button variant="ghost" onClick={close}>
               Geç
             </Button>
@@ -118,7 +119,7 @@ export function HowItWorks() {
               {step + 1}. adım, {STEPS.length} adımdan
             </p>
             <D.Title asChild>
-              <h2 ref={heading} tabIndex={-1} className="u-sentence hw-title">
+              <h2 id="hw-title" ref={heading} tabIndex={-1} className="u-sentence hw-title">
                 {current.title}
               </h2>
             </D.Title>

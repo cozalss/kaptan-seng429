@@ -16,7 +16,7 @@ import { signTone } from "@/components/story/sign-tone";
 import { Button } from "@/components/ui/button";
 import { OrderSlip } from "@/components/proposal/order-slip";
 import { slipsToEnter } from "@/components/tickets/ticket-logic";
-import { fmtSignedPct } from "@/lib/format";
+import { fmtSignedFigurePct } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CorporateSection } from "./corporate-section";
 import { RegimeLine } from "./guards";
@@ -144,14 +144,14 @@ function Figures({ equity, today, todayPct, since, sincePct }: { equity: number;
       <div>
         <dt className="u-caption">Bugün</dt>
         <dd className={cn("pm-figure", signTone(today))}>
-          {fmtSignedLira(today)} <span className="pm-figure-pct">{fmtSignedPct(todayPct, 2)}</span>
+          {fmtSignedLira(today)} <span className="pm-figure-pct">{fmtSignedFigurePct(todayPct)}</span>
         </dd>
       </div>
       {since !== null && sincePct !== null ? (
         <div>
           <dt className="u-caption">Başladığından beri</dt>
           <dd className={cn("pm-figure", signTone(since))}>
-            {fmtSignedLira(since)} <span className="pm-figure-pct">{fmtSignedPct(sincePct)}</span>
+            {fmtSignedLira(since)} <span className="pm-figure-pct">{fmtSignedFigurePct(sincePct)}</span>
           </dd>
         </div>
       ) : null}

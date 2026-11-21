@@ -63,7 +63,7 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
 | 1d | GET | `/search?q=` | — | `SearchResult` (Türkçe harfler katlanır; 2 harften azı boş) |
 | 1e | GET/PUT/DELETE | `/watchlist`, `/watchlist/{ticker}` | — | `WatchItem[]` (en çok 50, 409 `watchlist_full`; `watchlist.added/removed` denetlenir) |
 | 1f | GET | `/me/reading` | — | `ReadingState` (okunmamış sayısı: izlenen/elindeki şirketler, gürültü hariç; `unread_indexes` ≤ 500, `saved_indexes`) |
-| 1g | POST/PUT | `/me/reading/read-all`, `/me/reading/read/{index}` | — | `ReadingState` ("Hepsini okundu say", tek duyuru açıldı; 404) |
+| 1g | POST/PUT | `/me/reading/read-all`, `/me/reading/read/{index}`, `/me/reading/read-through` | `{read_through}` (yalnızca read-through) | `ReadingState` ("Hepsini okundu say", tek duyuru açıldı; 404; "Geri al": işaret yalnızca geri gider, gelecek an 422) |
 | 1h | GET/PUT/DELETE | `/me/reading/saved`, `/me/reading/saved/{index}` | — | `DisclosureListItem[]` / `ReadingState` (sonra oku; denetim kaydı yok, para değil) |
 | 1i | GET | `/compare?a=&b=&period=` | — | `Compare` (iki şirket: fiyat çizgisi, istatistik, 90 günlük KAP sayıları; 404, 422 aynı kod) |
 | 2 | GET | `/approvals?status=pending\|all` | — | `ApprovalCard[]` |
@@ -259,6 +259,7 @@ Panelin "KAPtan gerçekten çalışıyor mu?" sorusu. Şemalar `src/lib/domain/s
 | GET | `/reports/benchmark?from=&to=` | `Benchmark` (paran ve BIST 100, aynı günlerde) |
 | GET | `/reports/karne?period=month\|year&at=2026-11\|2026` | `Karne` (varsayılan: bu ay; `422` bozuk dönem) |
 | GET | `/reports/quiet?day=` | `QuietDay` ("neden öneri yok?" için günün gerçek sayıları) |
+| GET | `/me/digest?day=` | `Digest` (günün önemli KAP duyuruları, TÜM şirketlerden; bilgi, öneri değil: geri alım, yönetici/ana ortak alımı-satımı, yeni iş/ihale, finansal sonuç, kâr payı, sermaye, birleşme/bölünme, SPK tedbiri; KAP konu adına göre seçilir, model yok; sınıflanamayan yok. Varsayılan gün bugün, borsa kapalıysa son işlem günü ve `note`; elindeki, sonra izlediğin şirketler önde; evren dışı şirkette `outside_note`; `day` bozuksa `422`) |
 | GET | `/me/calendar?days=` | `Calendar` (elindeki ve izlediğin hisselerin yaklaşan günleri: KAP bildiriminden kâr payı ödeme/hak günü ve genel kurul, geçen yılın rapor günü `approximate`, Merkez Bankası faiz kararı günleri; `notes` neyi göstermediğini söyler; `days` 1-120, varsayılan 60, dışı `422`) |
 | GET | `/market/strip` | `MarketStrip` (BIST 100 son kayıtlı kapanış ve günlük değişim, borsa açık/kapalı ve sonraki açılış günü, Merkez Bankası dolar kuru; kayıtlı olmayan değer `null`) |
 

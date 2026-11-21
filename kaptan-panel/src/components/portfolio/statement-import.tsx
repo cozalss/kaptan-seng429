@@ -27,7 +27,7 @@ const DEFAULT_SOURCE = "Midas ekstresi";
 export function StatementImport({ onChanged }: { onChanged: () => void }) {
   const api = useApi();
   const [open, setOpen] = useState(false);
-  const [source, setSource] = useState(DEFAULT_SOURCE);
+  const [source, setSource] = useState("");
   const [step, setStep] = useState<Step>({ name: "start" });
   const [mapping, setMapping] = useState<ImportMapping | null>(null);
   const [preview, setPreview] = useState<ImportPreview | null>(null);
@@ -59,7 +59,7 @@ export function StatementImport({ onChanged }: { onChanged: () => void }) {
       setBusy(false);
     }
   };
-  const request = (table: ImportTable, m: ImportMapping) => ({ source: source.trim(), mapping: m, number_style: table.number_style, rows: table.rows });
+  const request = (table: ImportTable, m: ImportMapping) => ({ source: source.trim() || DEFAULT_SOURCE, mapping: m, number_style: table.number_style, rows: table.rows });
   const look = (table: ImportTable, m: ImportMapping) =>
     guard(async () => {
       const p = await api.importPreview(request(table, m));
@@ -72,8 +72,10 @@ export function StatementImport({ onChanged }: { onChanged: () => void }) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    const name = source.trim();
-    const problem = fileProblem(file) ?? (name ? null : "Dökümün nereden geldiğini yaz.");
+    // Left empty, the file's own name stands in, so nobody has to invent one to go on.
+    const name = source.trim() || file.name.replace(/\.[^.]+$/, "").slice(0, IMPORT_MAX_SOURCE) || DEFAULT_SOURCE;
+    if (!source.trim()) setSource(name);
+    const problem = fileProblem(file);
     if (problem) return setError(problem);
     setStatus(null);
     void guard(async () => {
@@ -101,7 +103,7 @@ export function StatementImport({ onChanged }: { onChanged: () => void }) {
       const result = await api.importApply({ ...request(table, mapping), selected: [...ticked] });
       setFailed(result.failed);
       onChanged();
-      reset(result.written > 0 ? `${fmtInt(result.written)} satır deftere yazıldı.${result.failed.length ? ` ${fmtInt(result.failed.length)} satır yazılamadı.` : ""}` : "Hiçbir satır yazılmadı.");
+      reset(result.written > 0 ? `${fmtInt(result.written)} işlem Param’a eklendi.${result.failed.length ? ` ${fmtInt(result.failed.length)} işlem eklenemedi.` : ""}` : "Hiçbir işlem eklenmedi.");
     });
   };
 
@@ -110,7 +112,7 @@ export function StatementImport({ onChanged }: { onChanged: () => void }) {
       <div className="om-head">
         <h2 id="dokum" className="u-chapter text-ink">Dökümünü yükle</h2>
         <p className="om-lead">
-          Bankandan ya da aracı kurumundan indirdiğin döküm dosyasını (CSV, Excel ya da yazısı seçilebilen PDF; en çok 5 MB) yükle. Ben okurum, sen sütunları onaylarsın, deftere yalnız seçtiğin satırlar yazılır. Dosya saklanmaz. Aynı dosyayı iki kez yüklersen ikinci kez bir şey eklenmez.
+          Bankandan ya da aracı kurumundan indirdiğin döküm dosyasını (CSV, Excel ya da içindeki yazıyı fareyle seçebildiğin PDF; en çok 5 MB) yükle. Ben okurum, sen sütunları onaylarsın, Param’a yalnız seçtiğin işlemler eklenir. Dosya saklanmaz. Aynı dosyayı iki kez yüklersen ikinci kez bir şey eklenmez.
         </p>
       </div>
       {!open ? (
@@ -122,15 +124,15 @@ export function StatementImport({ onChanged }: { onChanged: () => void }) {
       ) : null}
       <p role="status" className="om-status">{status}</p>
       {failed.length ? (
-        <ul className="im-rows" aria-label="Yazılamayan satırlar">
+        <ul className="im-rows" aria-label="Eklenemeyen işlemler">
           {failed.map((r) => <li key={r.index}>{rowSentence(r)} <strong className="im-why">{r.reason}</strong></li>)}
         </ul>
       ) : null}
       {open && step.name === "start" ? (
         <div className="om-panel im-step" role="group" aria-label="Dosyayı seç">
           <h3 className="om-panel-title">1. Dosyayı seç</h3>
-          <ImportField name="Dökümün adı" hint="Aynı yerden gelen dosyaların eşleştirmesini bu adla hatırlarım. Örneğin “Midas ekstresi”.">
-            {(a11y) => <input {...a11y} type="text" value={source} maxLength={IMPORT_MAX_SOURCE} autoComplete="off" onChange={(e) => setSource(e.target.value)} />}
+          <ImportField name="Dökümün adı" hint="İstersen yaz; aynı yerden gelen dosyaların eşleştirmesini bu adla hatırlarım. Boş bırakırsan dosyanın adını kullanırım.">
+            {(a11y) => <input {...a11y} type="text" value={source} maxLength={IMPORT_MAX_SOURCE} autoComplete="off" placeholder="Örneğin: Midas ekstresi" onChange={(e) => setSource(e.target.value)} />}
           </ImportField>
           <label className="im-file">
             <input type="file" accept=".csv,.tsv,.txt,.xlsx,.pdf" onChange={onFile} disabled={busy} />

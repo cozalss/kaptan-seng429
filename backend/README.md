@@ -382,7 +382,7 @@ The gate reads the desk as it is.
 
 - **Limits (FR-33).** Every run (`agents.context.with_active_limits`) and every at-send check reads the
   `active` limit version (`risk/active_limits.py`); a two-signature change applies to the next run. Keys are
-  `GateLimits` field names; `risk_tolerance` (R07 lot-rounding band, default 1.05) and the other gate-only
+  `GateLimits` field names; the gate-only
   keys keep their documented defaults when the version has no row. Live audit outcomes carry `limits_version`.
 - **Live desk (`risk/desk.py`, `risk/book.py`; real runs = `LLM_MODE=live`, or `LiveDeps(live_desk=True)`).**
   Equity = the person's cash (`trading.book_ledger`) + positions × point-in-time raw marks (a share with no

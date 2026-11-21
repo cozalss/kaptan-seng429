@@ -18,11 +18,11 @@ export function ImportPreviewStep({ preview, ticked, onTick, onType, types, onWr
   };
   const all = fresh.length > 0 && fresh.every((r) => ticked.has(r.index));
   return (
-    <div className="om-panel im-step" role="group" aria-label="Satırlara bak">
+    <div className="om-panel im-step" role="group" aria-label="İşlemlere bak">
       <h3 className="om-panel-title">
-        {preview.rows.length === 0 ? "Dosyada işlem satırı yok." : `${fmtInt(preview.new)} yeni, ${fmtInt(preview.recorded)} zaten kayıtlı, ${fmtInt(preview.conflict + preview.invalid)} sorunlu satır.`}
+        {preview.rows.length === 0 ? "Dosyada işlem bulamadım." : `${fmtInt(preview.new)} yeni, ${fmtInt(preview.recorded)} zaten kayıtlı, ${fmtInt(preview.conflict + preview.invalid)} sorunlu işlem.`}
       </h3>
-      {!preview.started ? <p className="im-problem">Önce başlangıç paranı gir; ondan önce hiçbir satır yazılamaz.</p> : null}
+      {!preview.started ? <p className="im-problem">Önce başlangıç paranı gir; ondan önce hiçbir işlem eklenemez.</p> : null}
       {preview.unknown_types.length ? (
         <div className="im-unknown">
           <p className="om-panel-lead">Dosyadaki şu işlem adlarını tanımıyorum. Ne olduklarını sen söyle, tahmin etmem.</p>
@@ -44,7 +44,7 @@ export function ImportPreviewStep({ preview, ticked, onTick, onType, types, onWr
       ) : null}
       {fresh.length ? (
         <fieldset className="im-new">
-          <legend className="u-caption">Deftere yazılacaklar</legend>
+          <legend className="u-caption">Param’a eklenecekler</legend>
           <label className="im-check">
             <input type="checkbox" checked={all} onChange={() => onTick(all ? new Set() : new Set(fresh.map((r) => r.index)))} /> Hepsini seç
           </label>
@@ -61,11 +61,11 @@ export function ImportPreviewStep({ preview, ticked, onTick, onType, types, onWr
       ) : null}
       {rest.length ? (
         <details className="im-rest" open={preview.new === 0}>
-          <summary>Yazılmayacak satırlar ({rest.length})</summary>
+          <summary>Eklenmeyecek işlemler ({rest.length}): her birinin yanında nedeni yazıyor</summary>
           <ul className="im-rows">
             {rest.map((r) => (
               <li key={r.index} data-status={r.status}>
-                <span>{rowSentence(r)}</span> <strong className="im-why">{r.status === "recorded" ? "Zaten kayıtlı. " : r.status === "skipped" ? "Almadım. " : "Yazamam: "}{r.status === "recorded" || r.status === "skipped" ? "" : r.reason}</strong>
+                <span>{rowSentence(r)}</span> <strong className="im-why">{r.status === "recorded" ? "Zaten kayıtlı. " : r.status === "skipped" ? "Almadım: işlem değil (başlık, toplam ya da boş). " : "Yazamam: "}{r.status === "recorded" || r.status === "skipped" ? "" : r.reason}</strong>
               </li>
             ))}
           </ul>
@@ -73,11 +73,11 @@ export function ImportPreviewStep({ preview, ticked, onTick, onType, types, onWr
       ) : null}
       <div className="om-actions">
         <Button variant="primary" size="lg" disabled={ticked.size === 0} data-pending={busy || undefined} onClick={onWrite}>
-          {busy ? "Yazıyorum…" : `Seçtiğim ${fmtInt(ticked.size)} satırı deftere yaz`}
+          {busy ? "Ekliyorum…" : `Seçtiğim ${fmtInt(ticked.size)} işlemi Param’a ekle`}
         </Button>
         <Button variant="secondary" size="lg" onClick={onBack}>Eşleştirmeye dön</Button>
       </div>
-      <p className="im-note">Yazdıkların Geçmiş&apos;te kayıtlı kalır. Para hareketleri ve kâr payları kendi bölümlerinden geri alınır; alış ve satış satırlarını yazmadan önce iyi kontrol et. KAPtan para göndermez ve almaz.</p>
+      <p className="im-note">Eklediklerin Geçmiş&apos;te kayıtlı kalır. Para hareketleri ve kâr payları kendi bölümlerinden geri alınır; alışları ve satışları eklemeden önce iyi kontrol et. KAPtan para göndermez ve almaz.</p>
     </div>
   );
 }

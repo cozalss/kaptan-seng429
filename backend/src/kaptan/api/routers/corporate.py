@@ -11,7 +11,7 @@ POST /me/corporate/notices/{id}/dismiss    -> NoticeAnswer
 Errors are `{detail, code}` (Turkish detail): 409 not_started "Önce başlangıç paranı gir." · 409 not_held "Bu hisse şu
 an elinde görünmüyor." (bonus, rights) · 422 never_held "Bu hisse defterinde hiç yok." (dividend) · 422 future_date
 "Gelecekteki bir tarihi giremezsin." · 422 not_more "Yeni adet, şimdiki adetten büyük olmalı." · 422 over_cash
-"Kasandaki paradan fazlasını ödeyemezsin." (rights) · 409 already_undone / is_undo / changed · 404 not_found.
+"Elindeki nakitten fazlasını ödeyemezsin." (rights) · 409 already_undone / is_undo / changed · 404 not_found.
 Audit `dividend.recorded` {ticker, company, net_try, received_on}, `bonus.recorded` {ticker, company, qty_before,
 qty_after, ex_date}, `rights.recorded` {ticker, company, qty, price, paid_try}, `<kind>.corrected` {ticker, company,
 corrects}, `corporate.dismissed`. A dividend is income: cash and "since the start" rise by it and it is no outside

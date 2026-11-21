@@ -1,5 +1,6 @@
 import type { SearchResult } from "@/lib/company/company";
-import { href } from "@/lib/nav";
+import { foldTr } from "@/lib/company/fold";
+import { href, ROUTES } from "@/lib/nav";
 import { istanbulDay } from "@/lib/session-day";
 
 /** One line of the results, in the order shown: companies first, then disclosures. */
@@ -8,7 +9,34 @@ export interface SearchRow {
   to: string;
   title: string;
   sub: string;
-  kind: "company" | "disclosure";
+  kind: "page" | "company" | "disclosure";
+}
+
+/** The screens, so a word like "önemli", "takvim" or "yardım" finds a page too. Shown before companies. */
+const PAGES: readonly { to: string; title: string; sub: string; words: string }[] = [
+  { to: ROUTES.benim, title: "Ana sayfa", sub: "Bugünkü kararların ve paran", words: "ana sayfa bugün öneri karar" },
+  { to: ROUTES.portfoy, title: "Param", sub: "Elindekiler, nakit, para ekle ve çek", words: "param portföy elindekiler nakit para ekle çek döküm" },
+  { to: ROUTES.bildirimler, title: "Okunanlar", sub: "Şirketlerinin KAP duyuruları", words: "okunanlar bildirim duyuru kap okunmamış" },
+  { to: ROUTES.onemli, title: "Önemli duyurular", sub: "Günün açık ve önemli KAP duyuruları", words: "önemli duyurular günün kap özet" },
+  { to: ROUTES.takvim, title: "Takvim", sub: "Bilanço ve genel kurul günleri", words: "takvim bilanço genel kurul temettü tarih" },
+  { to: ROUTES.gecmis, title: "Geçmiş", sub: "Verdiğin kararlar", words: "geçmiş karar onay geç kayıt" },
+  { to: ROUTES.karne, title: "Aylık karne", sub: "Ayın parası ve kararları", words: "karne aylık ay sonuç" },
+  { to: ROUTES.hafta, title: "Haftalık özet", sub: "Bu haftanın parası", words: "haftalık hafta özet" },
+  { to: ROUTES.ayarlar, title: "Ayarlar", sub: "Sınırlar, bildirimler, görünüm", words: "ayarlar sınır limit bildirim sustur görünüm tema" },
+  { to: ROUTES.yardim, title: "Yardım", sub: "Sözlük, sık sorulanlar, kısayollar", words: "yardım sözlük soru kısayol nasıl" },
+];
+
+/** The screens whose name or words start with the query (any word). Pure. */
+export function pageRows(query: string): SearchRow[] {
+  const q = foldTr(query.trim());
+  if (q.length < MIN_QUERY) return [];
+  return PAGES.filter((p) => foldTr(`${p.title} ${p.words}`).split(/\s+/).some((w) => w.startsWith(q)) || foldTr(p.title).startsWith(q)).map((p) => ({
+    key: `p-${p.to}`,
+    to: p.to,
+    title: p.title,
+    sub: p.sub,
+    kind: "page",
+  }));
 }
 
 export const MIN_QUERY = 2;

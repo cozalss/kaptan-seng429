@@ -26,6 +26,16 @@ def test_report_window_is_last_years_day_and_marked_approximate() -> None:
     assert events._report_events(rows, scope, date(2027, 4, 1), date(2027, 4, 30)) == []
 
 
+def test_estimated_report_day_on_a_weekend_moves_to_monday() -> None:
+    scope = events.Scope(frozenset({"AAAA"}), frozenset())
+    # 2026-01-24 was a Saturday; a year on, 2027-01-24 is a Sunday: both weekend days land on Monday 25 January.
+    rows = [{"ticker": "AAAA", "disclosure_index": 7, "day": date(2026, 1, 24)}]
+    out = events._report_events(rows, scope, date(2027, 1, 1), date(2027, 1, 31))
+    assert [e["day"] for e in out] == [date(2027, 1, 25)]
+    assert events._weekday_on_or_after(date(2027, 1, 30)) == date(2027, 2, 1)  # Saturday
+    assert events._weekday_on_or_after(date(2027, 1, 29)) == date(2027, 1, 29)  # Friday stays
+
+
 def test_rate_days_come_from_the_published_table_only() -> None:
     out = events._rate_events(date(2026, 11, 21), date(2026, 12, 31))
     assert [e["day"] for e in out] == [date(2026, 12, 10)]

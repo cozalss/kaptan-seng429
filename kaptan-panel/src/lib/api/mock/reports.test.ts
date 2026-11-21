@@ -55,3 +55,26 @@ describe("mock · reports (the backend's shapes and honesty)", () => {
     await expect(api.karne()).rejects.toMatchObject({ status: 401 });
   });
 });
+
+describe("mock · one story for the money of a period", () => {
+  it("Karne counts only this month: its own money, the close before it, the sales in it, the open gain Param shows", async () => {
+    const { api } = setup();
+    const k = await api.karne();
+    const book = await api.positions();
+    expect(k.put_in_net).toBe(0);
+    expect(k.value_start).toBeGreaterThan(0);
+    expect(k.gain_try).toBeCloseTo((k.value_end ?? 0) - (k.value_start ?? 0) - k.put_in_net, 2);
+    expect(k.realized_try).toBe(116);
+    expect(k.commissions_try).toBeGreaterThan(0);
+    const open = book.reduce((s, p) => s + p.unrealized_pnl, 0);
+    expect(k.unrealized_try).toBeCloseTo(open, 2);
+  });
+
+  it("Haftalık shows the week's change, never the opening money as this week's", async () => {
+    const { api } = setup();
+    const w = await api.weekly();
+    expect(w.put_in_net).toBe(0);
+    expect(w.value_start).toBeGreaterThan(0);
+    expect(w.gain_try).toBeCloseTo((w.value_end ?? 0) - (w.value_start ?? 0), 2);
+  });
+});

@@ -13,6 +13,17 @@ export type Period = z.infer<typeof Period>;
 
 export const PERIOD_LABEL: Readonly<Record<Period, string>> = { "1m": "1A", "3m": "3A", "1y": "1Y", all: "Tümü" };
 
+/**
+ * A period from a link: the key ("3m") or the label the person sees on the button ("3A", "tümü"), any case.
+ * Anything else gives null, and the screen falls back to its default.
+ */
+export function periodFromParam(raw: string | null): Period | null {
+  if (!raw) return null;
+  const v = raw.trim().toLocaleLowerCase("tr-TR");
+  const hit = PERIODS.find((p) => p === v || PERIOD_LABEL[p].toLocaleLowerCase("tr-TR") === v || (p === "all" && v === "tumu"));
+  return hit ?? null;
+}
+
 export const Following = z.object({ in_universe: z.boolean(), known: z.boolean(), reasons_tr: z.array(z.string()) });
 export type Following = z.infer<typeof Following>;
 

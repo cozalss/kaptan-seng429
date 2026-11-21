@@ -17,6 +17,7 @@ export * from "./preferences";
 export * from "./corporate";
 export * from "./company";
 export * from "./agenda";
+export * from "./digest";
 export * from "./insights";
 export * from "./price-alerts";
 export * from "./restore";

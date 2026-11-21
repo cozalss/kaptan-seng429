@@ -111,6 +111,8 @@ class ApprovalCard(KModel):
     skeptic_flags: list[CardSkepticFlag]
     skeptic_note_tr: str
     size_multiplier: float
+    #: Set when the stock is outside KAPtan's list and was analysed only because you watch it (thin trading).
+    outside_list_note_tr: str | None
     compliance_summary_tr: str
     rule_trace_summary: list[RuleTraceEntry]
     degraded: bool

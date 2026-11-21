@@ -17,7 +17,7 @@ GET /me/export.csv                    -> text/csv (UTF-8 BOM, ";" and decimal co
 Errors are `{detail, code}` (Turkish detail):
 - POST /me/money: 409 already_started "Başlangıç paranı zaten girdin. Para eklemek için 'Para ekle'yi kullan." ·
   409 not_started "Önce başlangıç paranı gir." (deposit / withdrawal first) · 422 over_cash
-  "Kasandaki paradan fazlasını çekemezsin." (withdrawal above the free cash: cash minus buy tickets waiting to be
+  "Elindeki nakitten fazlasını çekemezsin." (withdrawal above the free cash: cash minus buy tickets waiting to be
   entered) · 422 validation (amount_try must be > 0 and <= 1e10, note <= 200 characters).
   Audit `money.started` / `money.deposited` / `money.withdrawn` {amount_try}. A deposit or withdrawal is not a gain
   or a loss: the day's P&L, the peak and both stops do not move because of it (`kaptan.risk.book`).

@@ -1,5 +1,5 @@
 import type { PriceStats } from "@/lib/company/company";
-import { fmtDate, fmtInt } from "@/lib/format";
+import { fmtDate, fmtFigurePct, fmtInt } from "@/lib/format";
 import { fmtLira } from "@/lib/solo/words";
 
 /** A year of trading days is about 250; fewer than this and the "yıllık" range is really shorter. */
@@ -45,7 +45,7 @@ export function StatsStrip({ stats }: { stats: PriceStats }) {
         </div>
         <div>
           <dt>Yılın en yükseğine uzaklık</dt>
-          <dd className="tabular-nums">{stats.from_high_pct === null ? "Hesaplanamadı" : `%${stats.from_high_pct.toLocaleString("tr-TR", { maximumFractionDigits: 2 })}`}</dd>
+          <dd className="tabular-nums">{stats.from_high_pct === null ? "Hesaplanamadı" : fmtFigurePct(stats.from_high_pct / 100)}</dd>
         </div>
       </dl>
       {notes.map((n) => (

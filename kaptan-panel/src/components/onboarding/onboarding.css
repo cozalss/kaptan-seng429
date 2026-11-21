@@ -39,8 +39,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem clamp(1.25rem, 1rem + 2vw, 3rem) 0;
+  gap: var(--space-4);
+  padding: var(--space-3) clamp(1.25rem, var(--space-4) + 2vw, var(--space-12)) 0;
 }
 .hw-name {
   font-size: 0.9375rem;
@@ -51,7 +51,7 @@
   position: relative;
   flex: 1 1 200px;
   min-height: 180px;
-  margin-inline: clamp(1.25rem, 1rem + 2vw, 3rem);
+  margin-inline: clamp(1.25rem, var(--space-4) + 2vw, var(--space-12));
 }
 .hw-water {
   flex: none;
@@ -59,7 +59,7 @@
   background-image: repeating-linear-gradient(180deg, var(--ink) 0 2px, transparent 2px 7px, var(--hairline) 7px 8px, transparent 8px 14px, var(--hairline) 14px 15px, transparent 15px 22px);
 }
 .hw-body {
-  padding: 1rem clamp(1.25rem, 1rem + 2vw, 3rem) clamp(1.25rem, 1rem + 2vw, 2.5rem);
+  padding: var(--space-4) clamp(1.25rem, var(--space-4) + 2vw, var(--space-12)) clamp(1.25rem, var(--space-4) + 2vw, var(--space-10));
 }
 .hw-count {
   font-size: 0.9375rem;
@@ -68,12 +68,12 @@
   color: var(--muted);
 }
 .hw-title {
-  margin-top: 0.25rem;
+  margin-top: var(--space-1);
   outline: none;
   color: var(--ink);
 }
 .hw-text {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
   max-width: 58ch;
   font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
   line-height: 1.5;
@@ -84,12 +84,12 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  margin-top: clamp(1.25rem, 1rem + 1vw, 2rem);
+  gap: var(--space-4);
+  margin-top: clamp(1.25rem, var(--space-4) + 1vw, var(--space-8));
 }
 .hw-pips {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 .hw-pip {
   width: 28px;
@@ -116,10 +116,10 @@
   position: absolute;
   display: grid;
   align-content: start;
-  gap: 4px;
+  gap: var(--space-1);
   width: clamp(44px, 30px + 3vw, 72px);
   aspect-ratio: 3 / 4;
-  padding: 8px 7px;
+  padding: var(--space-2) 7px;
   background: var(--panel);
   box-shadow: 0 0 0 1.5px var(--ink);
   transform: rotate(var(--hw-r));
@@ -162,12 +162,12 @@
 .hw-decide {
   display: flex;
   align-items: flex-end;
-  gap: clamp(1rem, 0.5rem + 3vw, 3rem);
+  gap: clamp(1rem, var(--space-2) + 3vw, var(--space-12));
 }
 .hw-verbs {
   display: flex;
-  gap: clamp(0.75rem, 0.25rem + 2vw, 2rem);
-  padding-bottom: 0.25rem;
+  gap: clamp(0.75rem, var(--space-1) + 2vw, var(--space-8));
+  padding-bottom: var(--space-1);
   font-family: var(--font-display);
   font-weight: 500;
   font-size: clamp(3rem, 1.5rem + 6vw, 7rem);

@@ -5,11 +5,12 @@ import "./company-read.css";
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
-import { PERIODS, PERIOD_LABEL, type Period } from "@/lib/company/company";
+import { useMemo, useState } from "react";
+import { PERIODS, PERIOD_LABEL, periodFromParam, type Period } from "@/lib/company/company";
+import { CompareFinder } from "./compare-finder";
 import type { CompareSide } from "@/lib/domain/reading";
 import { useApiQuery } from "@/lib/api/react";
-import { fmtInt } from "@/lib/format";
+import { fmtInt, fmtSignedFigurePct } from "@/lib/format";
 import { href, ROUTES } from "@/lib/nav";
 import { fmtLira } from "@/lib/solo/words";
 import { PageHeader, ScreenState } from "@/components/shell/page-frame";
@@ -32,7 +33,8 @@ export function periodChange(side: Pick<CompareSide, "price">): number | null {
   return Math.round((last / first - 1) * 10_000) / 100;
 }
 
-const pct = (n: number | null) => (n === null ? "Hesaplanamadı" : `%${n > 0 ? "+" : ""}${n.toLocaleString("tr-TR", { maximumFractionDigits: 2 })}`);
+/** "+%2,8" / "−%13,16": the app's Turkish percent, sign in front. */
+const pct = (n: number | null) => (n === null ? "Hesaplanamadı" : fmtSignedFigurePct(n / 100));
 const lira = (n: number | null) => (n === null ? "Kayıtlı değil" : fmtLira(n, true));
 
 function rowsOf(s: CompareSide): Array<[string, string]> {
@@ -60,16 +62,19 @@ export function CompareScreen() {
   const pathname = usePathname();
   const a = readCode(params.get("a"));
   const b = readCode(params.get("b"));
-  const period = (PERIODS as readonly string[]).includes(params.get("donem") ?? "") ? (params.get("donem") as Period) : "1y";
+  const period: Period = periodFromParam(params.get("donem")) ?? "1y";
   const watch = useApiQuery((api) => api.watchlist(), []);
   const q = useApiQuery((api) => (a && b && a !== b ? api.compare(a, b, period) : Promise.resolve(null)), [a, b, period]);
 
+  // Companies found through "Başka bir şirket bul" join the lists for this visit.
+  const [found, setFound] = useState<ReadonlyArray<readonly [string, string]>>([]);
   const options = useMemo(() => {
     const seen = new Map<string, string>();
     for (const w of watch.data ?? []) seen.set(w.ticker, w.name);
+    for (const [code, name] of found) if (!seen.has(code)) seen.set(code, name);
     for (const c of [a, b]) if (c && !seen.has(c)) seen.set(c, c);
     return [...seen.entries()];
-  }, [watch.data, a, b]);
+  }, [watch.data, found, a, b]);
 
   const go = (next: { a?: string | null; b?: string | null; donem?: Period }) => {
     const p = new URLSearchParams();
@@ -99,7 +104,7 @@ export function CompareScreen() {
               <select value={value ?? ""} onChange={(e) => go({ [side]: e.target.value || null })}>
                 <option value="">Seç…</option>
                 {options.map(([code, name]) => (
-                  <option key={code} value={code}>
+                  <option key={code} value={code} disabled={code === (side === "a" ? b : a)}>
                     {code === name ? code : `${code} · ${name}`}
                   </option>
                 ))}
@@ -107,8 +112,20 @@ export function CompareScreen() {
             </label>
           );
         })}
+        <CompareFinder
+          side={a ? "b" : "a"}
+          onPick={(h) => {
+            setFound((f) => [...f.filter(([c]) => c !== h.ticker), [h.ticker, h.name] as const]);
+            if (!a) go({ a: h.ticker });
+            else if (h.ticker !== a) go({ b: h.ticker });
+          }}
+        />
       </div>
-      {a && b && a === b ? <p className="co-empty">İki farklı şirket seç.</p> : null}
+      {a && b && a === b ? (
+        <p role="status" className="co-same">
+          İki tarafta da {a} var. Karşılaştırmak için ikinci şirketi değiştir.
+        </p>
+      ) : null}
       {options.length < 2 && !a && !b && watch.data ? (
         <ScreenState kind="empty" title="Karşılaştıracak şirketin yok." action={<Button asChild variant="secondary"><Link href={ROUTES.bildirimler}>Okunanlar’a git</Link></Button>}>
           Bir şirketin sayfasında yıldıza basıp izlemeye alırsan burada seçebilirsin; ya da şirketin sayfasındaki “Başka bir hisseyle karşılaştır” bağlantısıyla gel.

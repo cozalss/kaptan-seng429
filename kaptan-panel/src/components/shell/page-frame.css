@@ -4,11 +4,11 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 .pf-header {
-  padding-block: clamp(1rem, 0.5rem + 2vw, 2.5rem) clamp(1.5rem, 1rem + 2vw, 3rem);
+  padding-block: clamp(1rem, var(--space-2) + 2vw, var(--space-10)) clamp(1.5rem, var(--space-4) + 2vw, var(--space-12));
 }
 .pf-name {
   display: block;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
   font-size: 0.875rem;
   line-height: 1.25rem;
   font-weight: 600;
@@ -19,8 +19,8 @@
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 0.75rem 2rem;
-  margin-top: clamp(1rem, 0.75rem + 1vw, 1.5rem);
+  gap: var(--space-3) var(--space-8);
+  margin-top: clamp(1rem, var(--space-3) + 1vw, var(--space-6));
 }
 .pf-lead {
   max-width: 60ch;
@@ -45,14 +45,14 @@
 .pf-state {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 1rem 1.75rem;
+  gap: var(--space-4) var(--space-7);
   align-items: start;
-  padding-block: clamp(1.5rem, 1rem + 2vw, 3rem);
+  padding-block: clamp(1.5rem, var(--space-4) + 2vw, var(--space-12));
 }
 .pf-state-boat {
   position: relative;
   width: 72px;
-  padding-bottom: 8px;
+  padding-bottom: var(--space-2);
   border-bottom: 2px solid var(--ink);
   display: grid;
   justify-items: center;

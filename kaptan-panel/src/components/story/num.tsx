@@ -26,3 +26,17 @@ export function withNums(text: string): ReactNode[] {
     .map((piece, i) => (i % 2 === 1 ? <Num key={i}>{piece}</Num> : piece))
     .filter((piece) => piece !== "");
 }
+
+/** A figure with what belongs to it: its sign, its "%", and a following "₺" or "TL" (after a plain or no-break space). */
+const FIGURE_RUN = /((?:[+−-]?%|[+−-])?\d(?:[.,:]?\d)*(?:\s?%)?(?:[\s ](?:₺|TL)(?![\p{L}]))?)/u;
+
+/**
+ * Splits a sentence so no figure is broken across lines: "−%1,92" or "18.615 ₺" stays on one line
+ * (a browser may otherwise break right after the minus sign). The text is unchanged; only spans are added.
+ */
+export function keepFigures(text: string): ReactNode[] {
+  return text
+    .split(FIGURE_RUN)
+    .map((piece, i) => (i % 2 === 1 ? <span key={i} className="whitespace-nowrap">{piece}</span> : piece))
+    .filter((piece) => piece !== "");
+}

@@ -58,6 +58,8 @@ class DeskState:
     free_float: float
     equity_try: Decimal
     restrictions: tuple[Restriction, ...] = ()
+    #: On the person's watchlist: R03 does not veto a stock outside the universe (kaptan.risk.watch).
+    watched: bool = False
     regime: str = "normal"
     n_open_positions: int = 0
     holds_ticker: bool = False

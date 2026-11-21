@@ -160,8 +160,8 @@ function ShortcutsSection() {
         {SHORTCUTS.map((s) => (
           <li key={s.label} className="yd-shortcut">
             <span className="yd-keys">
-              {s.keys.map((k) => (
-                <kbd key={k} className="yd-key">
+              {s.keys.map((k, i) => (
+                <kbd key={`${i}-${k}`} className="yd-key">
                   {k}
                 </kbd>
               ))}

@@ -9,6 +9,7 @@ import { rememberAlertPrefs } from "@/lib/prefs/desktop-gate";
 import { Button } from "@/components/ui/button";
 import { PlainField } from "@/components/solo/plain-field";
 import "./price-alerts.css";
+import { useSearchParams } from "next/navigation";
 
 const MAX_MUTED = 50;
 const CODE = /^[A-Z0-9]{3,6}$/;
@@ -35,7 +36,9 @@ export function MutedSection() {
   const q = useApiQuery((a) => a.preferences(), []);
   const watch = useApiQuery((a) => a.watchlist(), []);
   const [prefs, setPrefs] = useState<AlertPrefs | null>(null);
-  const [code, setCode] = useState("");
+  // Arriving from a company page ("Bildirimlerini sustur"): its code is already written in the field.
+  const params = useSearchParams();
+  const [code, setCode] = useState(() => (params?.get("sustur") ?? "").toLocaleUpperCase("tr-TR").replace(/[^A-Z0-9]/g, "").slice(0, 6));
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);

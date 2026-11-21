@@ -1,11 +1,12 @@
 import type { ApprovalCard, EvidenceStrength, Position } from "@/lib/domain";
 import { HoldInput, type Allocation, type Overview, type Suggestion } from "@/lib/solo/overview";
 import { addDays, tradingDaysBetween } from "@/lib/time";
+import { istanbulDay } from "@/lib/session-day";
 import { LIVE_STRATEGY, paperPnl } from "@/mocks/pnl";
 import { round } from "@/mocks/rng";
 import { ApiError, type KaptanApi } from "../types";
 import { parse, userActor, type MockCtx } from "./guard";
-import { SEED_START_TRY } from "./ledger";
+import { SEED_START_TRY, SEED_STARTED_AT } from "./ledger";
 import type { MockState } from "./state";
 import * as sel from "./selectors";
 
@@ -97,7 +98,9 @@ export function overviewFor(state: MockState, realNow: number = Date.now()): Ove
         .filter((p) => p.strategy === LIVE_STRATEGY && p.d < today)
         .map((p) => ({ date: p.d, equity: p.equity }))
     : [];
-  const equity_series = history.length ? [{ date: addDays(history[0]?.date ?? today, -1), equity: SEED_START_TRY }, ...history] : [];
+  // The line starts on the day the money was put in (the one start day Param names), not on the eve of the first close.
+  const startDay = istanbulDay(Date.parse(SEED_STARTED_AT));
+  const equity_series = history.length ? [{ date: startDay < (history[0]?.date ?? today) ? startDay : addDays(history[0]?.date ?? today, -1), equity: SEED_START_TRY }, ...history] : [];
 
   return {
     needs_setup: false,

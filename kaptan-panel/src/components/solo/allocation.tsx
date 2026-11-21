@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { fmtPct, fmtSignedPct } from "@/lib/format";
+import { fmtFigurePct, fmtSignedFigurePct } from "@/lib/format";
 import { ROUTES } from "@/lib/nav";
 import type { Allocation } from "@/lib/solo/overview";
 import { fmtLira, titleTr } from "@/lib/solo/words";
@@ -88,9 +88,21 @@ function tileInk(r: AllocationRow): string | undefined {
 }
 
 function tileWords(r: AllocationRow): string {
-  const gain = r.pnlPct === null ? "" : ` Alıştan beri ${fmtSignedPct(r.pnlPct, 1)}.`;
+  const gain = r.pnlPct === null ? "" : ` Alıştan beri ${fmtSignedFigurePct(r.pnlPct)}.`;
   const who = r.detail ? `, ${r.detail}` : "";
-  return `${r.label}${who}: ${fmtLira(r.amount)}, paranın ${fmtPct(r.share, 1)}'i.${gain} Param'da gör.`;
+  return `${r.label}${who}: ${fmtLira(r.amount)}, paranın ${fmtFigurePct(r.share)} kadarı.${gain} Param'da gör.`;
+}
+
+/** Rough width of one 13px character, and how many lines a name may take before the tile runs out of height. */
+const CHAR_PX = 7.2;
+const DETAIL_LINE_PX = 18;
+const LABEL_REST_PX = 96;
+
+/** The whole name, wrapped, or none at all: a tile never shows a cut name ("Misal Te…"). */
+export function detailFits(detail: string, rect: Pick<TreemapRect, "w" | "h">): boolean {
+  const perLine = Math.max(1, Math.floor(Math.min(rect.w - 40, 26 * CHAR_PX) / CHAR_PX));
+  const lines = Math.ceil(detail.length / perLine);
+  return LABEL_REST_PX + lines * DETAIL_LINE_PX <= rect.h - 12;
 }
 
 /** How much a tile can say, by its size in pixels. */
@@ -102,11 +114,19 @@ function Label({ row, rect }: { row: AllocationRow; rect: TreemapRect }) {
   return (
     <span className="map-tile__label">
       <span className={cn("block leading-tight font-semibold", big ? "text-[20px]" : "text-[15px]")}>{row.label}</span>
-      {roomy && row.detail ? <span className="block max-w-[26ch] truncate text-dense text-ink-soft">{row.detail}</span> : null}
+      {roomy && row.detail && detailFits(row.detail, rect) ? <span className="block max-w-[26ch] text-dense text-ink-soft [overflow-wrap:anywhere]">{row.detail}</span> : null}
       {fits ? <span className={cn("block font-semibold tracking-[-0.02em]", big ? "mt-1 text-[34px] leading-10" : "text-[15px] leading-5")}>{fmtLira(row.amount)}</span> : null}
       <span className="block text-dense text-ink-soft">
-        {fmtPct(row.share, row.share < 0.1 ? 1 : 0)}
-        {roomy && row.pnlPct !== null ? <span className={cn("ml-2 font-semibold", signTone(row.pnlPct))}>{fmtSignedPct(row.pnlPct, 1)}</span> : null}
+        {fmtFigurePct(row.share)}
+        {roomy && row.pnlPct !== null ? (
+          <>
+            {/* the share and the change are two figures: a spaced dot keeps them apart in text and to the eye */}
+            <span aria-hidden className="mx-1.5">
+              ·
+            </span>
+            <span className={cn("font-semibold", signTone(row.pnlPct))}>{fmtSignedFigurePct(row.pnlPct)}</span>
+          </>
+        ) : null}
       </span>
     </span>
   );
@@ -152,7 +172,7 @@ export function AllocationPanel({ allocations, cash, total }: { allocations: rea
   return (
     <section aria-labelledby="param-nerede" className="min-w-0">
       <header className="flex flex-wrap items-end justify-between gap-x-10 gap-y-2">
-        <h2 id="param-nerede" className="u-sentence text-ink">
+        <h2 id="param-nerede" className="u-chapter text-ink">
           Param nerede?
         </h2>
         <p className="max-w-[46ch] pb-1 text-body text-ink-soft tabular-nums">
@@ -165,7 +185,7 @@ export function AllocationPanel({ allocations, cash, total }: { allocations: rea
             <Link
               href={ROUTES.portfoy}
               aria-label={tileWords(row)}
-              title={`${row.label}: ${fmtLira(row.amount)} · ${fmtPct(row.share, 1)}`}
+              title={`${row.label}: ${fmtLira(row.amount)} · ${fmtFigurePct(row.share)}`}
               className="map-tile"
               style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h }}
             >

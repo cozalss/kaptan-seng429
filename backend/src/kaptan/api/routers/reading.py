@@ -4,6 +4,8 @@
                                           since "hepsini okundu say" and not opened), the newest unread indexes
                                           (<= 500) and the saved indexes
     POST   /me/reading/read-all        -> ReadingState  everything up to now counts as read
+    PUT    /me/reading/read-through    -> ReadingState  "Geri al": the mark goes back to `read_through` (only
+                                          backwards; 422 `validation` for a time after now)
     PUT    /me/reading/read/{index}    -> ReadingState  one disclosure was opened (404 `not_found`)
     GET    /me/reading/saved           -> DisclosureListItem[]  saved ("sonra oku"), newest save first (<= 200)
     PUT    /me/reading/saved/{index}   -> ReadingState  save one (404 `not_found` "Bu bildirimi bulamadım.")
@@ -27,8 +29,9 @@ from kaptan.companies.compare import compare as compare_companies
 from kaptan.companies.profile import Period
 from kaptan.db import Conn
 from kaptan.domain.schemas import DisclosureListItem
+from kaptan.domain.schemas._base import IsoDateTime, KModel
 from kaptan.domain.schemas.reading import Compare, ReadingState
-from kaptan.reading.marks import mark_read, read_all, reading_state, saved_disclosures, set_saved
+from kaptan.reading.marks import mark_read, read_all, reading_state, restore_through, saved_disclosures, set_saved
 
 router = APIRouter(tags=["reading"])
 Code = Annotated[str, Query(pattern=r"^[A-Za-z0-9]{3,6}$")]
@@ -42,6 +45,16 @@ async def state(user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
 @router.post("/me/reading/read-all", response_model=ReadingState)
 async def everything_read(user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
     await read_all(conn, now=clock.now())
+    return await reading_state(conn, clock.now())
+
+
+class ThroughBody(KModel):
+    read_through: IsoDateTime
+
+
+@router.put("/me/reading/read-through", response_model=ReadingState)
+async def undo_read_all(body: ThroughBody, user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
+    await restore_through(conn, body.read_through, now=clock.now())
     return await reading_state(conn, clock.now())
 
 

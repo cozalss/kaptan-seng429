@@ -275,7 +275,10 @@ export function riskSentence(risk: RiskView, limit: { pct: number; equity: numbe
   const first = `Fiyat ${fmtLira(risk.stopPrice, true)}’ya düşerse satman gerekir; o noktada kaybın yaklaşık ${fmtLira(risk.maxLoss)} olur. Fiyat bir anda sert düşerse kayıp bundan büyük olabilir.`;
   if (!limit || limit.pct <= 0 || limit.equity <= 0) return first;
   const cap = limit.equity * limit.pct;
-  return `${first} Bu tutar, tek işlemde kabul ettiğin kayıp sınırının (yaklaşık ${fmtLira(cap)}) ${risk.maxLoss <= cap ? "altında" : "üstünde"}.`;
+  if (risk.maxLoss <= cap) return `${first} Bu tutar, tek işlemde kabul ettiğin kayıp sınırının (yaklaşık ${fmtLira(cap)}) altında.`;
+  // Backend R07 rounds the share count down, so a card never goes over the limit. If one does (the limit was
+  // tightened after the card was made), say so plainly with the amount and what Geç means.
+  return `${first} Bu, tek işlemde kabul ettiğin kayıp sınırını (yaklaşık ${fmtLira(cap)}) yaklaşık ${fmtLira(risk.maxLoss - cap)} aşıyor; sınırı sonradan düşürdüğün için olabilir. KAPtan yeni önerilerde bu sınırı aşmaz; bunu istemiyorsan Geç, hiçbir şey olmaz.`;
 }
 
 /**

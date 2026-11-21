@@ -1,6 +1,6 @@
 import type { ImportKind, ImportMapping, ImportRow, TypeChoice } from "@/lib/domain/imports";
 import { IMPORT_MAX_BYTES } from "@/lib/domain/imports";
-import { fmtInt } from "@/lib/format";
+import { fmtDate, fmtInt } from "@/lib/format";
 import { fmtLira } from "@/lib/solo/words";
 
 /** Plain words for the statement import: what a row is, what a column holds, what a file may be. */
@@ -28,7 +28,7 @@ export const CHOICES: ReadonlyArray<{ value: TypeChoice; label: string }> = [
   { value: "deposit", label: "Para yatırma" },
   { value: "withdrawal", label: "Para çekme" },
   { value: "dividend", label: "Kâr payı" },
-  { value: "skip", label: "Bu satırları alma" },
+  { value: "skip", label: "Bunları alma (işlem değil)" },
 ];
 
 export const ALLOWED_EXTENSIONS = ["csv", "tsv", "txt", "xlsx", "pdf"] as const;
@@ -60,7 +60,7 @@ export function mappingProblem(m: ImportMapping): string | null {
 }
 
 export function rowSentence(r: ImportRow): string {
-  const day = r.date ? r.date.split("-").reverse().join(".") : "Tarih yok";
+  const day = r.date && /^\d{4}-\d{2}-\d{2}$/.test(r.date) ? fmtDate(`${r.date}T12:00:00+03:00`) : "Tarih yok";
   const who = r.ticker ?? "";
   if (r.kind === "buy" || r.kind === "sell") return `${day}: ${who} ${fmtInt(r.qty ?? 0)} adet ${r.kind === "buy" ? "aldın" : "sattın"}, tanesi ${fmtLira(r.price ?? 0, true)}.`;
   if (r.kind === "dividend") return `${day}: ${who} kâr payı ${fmtLira(r.amount_try ?? 0, true)}.`;

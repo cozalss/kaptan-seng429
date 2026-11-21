@@ -26,6 +26,7 @@ import type {
   TrackRecord,
 } from "@/lib/domain";
 import type { Calendar, MarketStrip } from "@/lib/domain/agenda";
+import type { Digest } from "@/lib/domain/digest";
 import type { AlertSettings, SystemStatus } from "@/lib/domain/system";
 import type { BonusInput, CorporateBook, DividendInput, NoticeAnswer, RightsInput } from "@/lib/domain/corporate";
 import type { ImportApplyRequest, ImportPreview, ImportRequest, ImportResult, ImportSources, ImportTable } from "@/lib/domain/imports";
@@ -77,6 +78,8 @@ export interface KaptanApi {
   readingState(): Promise<ReadingState>;
   /** POST /me/reading/read-all: "Hepsini okundu say". */
   readAll(): Promise<ReadingState>;
+  /** PUT /me/reading/read-through: the "Geri al" of "Hepsini okundu say"; the mark goes back (never forward). */
+  restoreReadThrough(readThrough: string): Promise<ReadingState>;
   /** PUT /me/reading/read/{index}: one disclosure was opened. */
   markRead(index: number): Promise<ReadingState>;
   /** PUT / DELETE /me/reading/saved/{index}: save for later, or take it off the saved list. */
@@ -190,6 +193,8 @@ export interface KaptanApi {
 
   /** GET /me/calendar?days=: dates ahead for the shares you hold and watch, read from real sources only (1 to 120 days, default 60). */
   calendar(days?: number): Promise<Calendar>;
+  /** GET /me/digest?day=: the day's important KAP disclosures of every company (default today; a closed market shows the last trading day). */
+  digest(day?: string): Promise<Digest>;
   /** GET /market/strip: BIST 100 (last stored close), open or closed, USD/TRY; missing values are null. */
   marketStrip(): Promise<MarketStrip>;
 

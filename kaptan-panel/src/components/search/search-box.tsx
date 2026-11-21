@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { SearchResult } from "@/lib/company/company";
 import { useApi } from "@/lib/api/react";
 import { errorMessage } from "@/lib/api/types";
-import { MIN_QUERY, opensSearch, rowsOf, TYPING_PAUSE_MS } from "./search-logic";
+import { MIN_QUERY, opensSearch, pageRows, rowsOf, TYPING_PAUSE_MS } from "./search-logic";
 
 /**
  * One search for the whole app: a company by ticker or name (Turkish letters meet: "turk hava", "ISIK"), a
@@ -64,7 +64,7 @@ export function SearchBox() {
   }, [q, api]);
 
   const typed = q.trim().length >= MIN_QUERY;
-  const rows = typed ? rowsOf(result) : [];
+  const rows = typed ? [...pageRows(q), ...rowsOf(result)] : [];
   const go = (to: string) => {
     close();
     router.push(to);
@@ -126,7 +126,7 @@ export function SearchBox() {
                     go(r.to);
                   }}
                 >
-                  <span className="sr-kind">{r.kind === "company" ? "Şirket" : "Duyuru"}</span>
+                  <span className="sr-kind">{r.kind === "page" ? "Sayfa" : r.kind === "company" ? "Şirket" : "Duyuru"}</span>
                   <span className="sr-title">{r.title}</span>
                   <span className="sr-sub">{r.sub}</span>
                 </a>

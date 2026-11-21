@@ -26,20 +26,20 @@ test.describe("Param: statement import", () => {
     await upload(page, "ekstre.csv", CSV);
     await expect(s.getByRole("group", { name: "Sütunları eşleştir" })).toBeVisible();
     await expect(s.getByLabel("Tarih", { exact: true })).toHaveValue("0");
-    await s.getByRole("button", { name: "Eşleştirmeyi onayla, satırlara bak" }).click();
+    await s.getByRole("button", { name: "Eşleştirmeyi onayla, işlemlere bak" }).click();
 
-    const check = s.getByRole("group", { name: "Satırlara bak" });
+    const check = s.getByRole("group", { name: "İşlemlere bak" });
     await expect(check.getByRole("heading")).toContainText("2 yeni");
     await expect(check.getByLabel("“virman”")).toBeVisible();
     await check.getByLabel("“virman”").selectOption("skip");
-    await expect(check.getByText("11.01.2027: KRGCL 100 adet aldın, tanesi 30,00 ₺.")).toBeVisible();
-    await check.getByRole("button", { name: /satırı deftere yaz/ }).click();
-    await expect(s.getByRole("status")).toContainText("2 satır deftere yazıldı.");
+    await expect(check.getByText("11 Ocak 2027: KRGCL 100 adet aldın, tanesi 30,00 ₺.")).toBeVisible();
+    await check.getByRole("button", { name: /işlemi Param’a ekle/ }).click();
+    await expect(s.getByRole("status")).toContainText("2 işlem Param’a eklendi.");
 
     await upload(page, "ekstre.csv", CSV);
     await expect(s.getByText("Bu kaynağı daha önce eşleştirmiştin")).toBeVisible();
-    await s.getByRole("button", { name: "Eşleştirmeyi onayla, satırlara bak" }).click();
-    await expect(s.getByRole("group", { name: "Satırlara bak" }).getByRole("heading")).toContainText("0 yeni, 2 zaten kayıtlı");
+    await s.getByRole("button", { name: "Eşleştirmeyi onayla, işlemlere bak" }).click();
+    await expect(s.getByRole("group", { name: "İşlemlere bak" }).getByRole("heading")).toContainText("0 yeni, 2 zaten kayıtlı");
     expect(errors).toEqual([]);
   });
 

@@ -3,13 +3,14 @@
 import { useRef, useState, type FormEvent } from "react";
 import type { Position } from "@/lib/domain";
 import { useApi } from "@/lib/api/react";
-import { errorMessage } from "@/lib/api/types";
+import { ApiError, errorMessage } from "@/lib/api/types";
 import { currentTimeMs } from "@/lib/clock";
 import { istanbulDay } from "@/lib/session-day";
 import { checkHoldingDraft, PRICE_DECIMALS, tickerFromTyping, type HoldingDraft, type HoldingErrors } from "@/lib/solo/holding-draft";
 import { Button } from "@/components/ui/button";
 import { MoneyField } from "@/components/solo/money-field";
 import { PlainField } from "@/components/solo/plain-field";
+import { TickerSuggest } from "./ticker-suggest";
 
 const EMPTY: HoldingDraft = { ticker: "", qty: "", cost: "", boughtOn: "" };
 const NO_ERRORS: HoldingErrors = { ticker: null, qty: null, cost: null, boughtOn: null };
@@ -33,11 +34,14 @@ export function HoldingForm({
   autoFocus?: boolean;
 }) {
   const api = useApi();
-  const [draft, setDraft] = useState<HoldingDraft>(EMPTY);
+  // The day starts as today (most holdings are added the day they are bought); any past day can be picked.
+  const [draft, setDraft] = useState<HoldingDraft>(() => ({ ...EMPTY, boughtOn: istanbulDay(currentTimeMs()) }));
   const [shown, setShown] = useState<HoldingErrors>(NO_ERRORS);
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  // The code the server did not know, so close codes can be offered under the form.
+  const [unknownCode, setUnknownCode] = useState<string | null>(null);
   const first = useRef<HTMLInputElement>(null);
   const today = istanbulDay(currentTimeMs());
 
@@ -45,6 +49,7 @@ export function HoldingForm({
     const next = { ...draft, ...patch };
     setDraft(next);
     setFailure(null);
+    if (patch.ticker !== undefined) setUnknownCode(null);
     if (tried) setShown(checkHoldingDraft(next, today).errors);
   };
 
@@ -69,6 +74,7 @@ export function HoldingForm({
       onAdded(added);
     } catch (err) {
       setFailure(errorMessage(err));
+      if (err instanceof ApiError && err.code === "unknown_ticker") setUnknownCode(check.input.ticker);
     } finally {
       setBusy(false);
     }
@@ -99,6 +105,15 @@ export function HoldingForm({
         <p role="alert" className="mf-error mf-error--form">
           {failure}
         </p>
+      ) : null}
+      {unknownCode ? (
+        <TickerSuggest
+          code={unknownCode}
+          onPick={(ticker) => {
+            edit({ ticker });
+            first.current?.focus();
+          }}
+        />
       ) : null}
       <div className="mf-actions">
         <Button type="submit" variant="primary" size="lg" disabled={busy} pending={busy}>

@@ -77,8 +77,8 @@ async def test_e3_contract_writes_run_card_counters_and_ledger(pg: DictConn, mig
             pg, "SELECT status, card, expires_at FROM trading.approvals WHERE proposal_id = 'prop-demo-e3-ornek'"
         )
         assert card["status"] == "pending"
-        assert card["card"]["qty"] == 1240
-        assert card["card"]["final_notional_try"] == 59954
+        assert card["card"]["qty"] == 1002
+        assert card["card"]["final_notional_try"] == 48447
         assert iso_ms(card["expires_at"]) == "2027-01-12T06:50:00.000Z"
         last = await _one(
             pg, "SELECT actor, action, entity_id, run_id, payload FROM audit.audit_log ORDER BY chain_pos DESC LIMIT 1"
@@ -88,7 +88,7 @@ async def test_e3_contract_writes_run_card_counters_and_ledger(pg: DictConn, mig
             "proposal.created",
             "prop-demo-e3-ornek",
         )
-        assert last["payload"] == {"ticker": "ORNEK", "company": "ÖRNEK ENERJİ A.Ş.", "qty": 1240}
+        assert last["payload"] == {"ticker": "ORNEK", "company": "ÖRNEK ENERJİ A.Ş.", "qty": 1002}
         after = await _one(pg, "SELECT llm_calls, llm_tokens FROM core.day_counters WHERE d = '2027-01-11'")
         assert after["llm_calls"] == before["llm_calls"] + 6
         assert after["llm_tokens"] == before["llm_tokens"] + 16_400 + 2_510

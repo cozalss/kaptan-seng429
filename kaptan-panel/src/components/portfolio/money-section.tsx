@@ -10,7 +10,7 @@ import { errorMessage } from "@/lib/api/types";
 import { useNow } from "@/lib/clock";
 import { fmtInt } from "@/lib/format";
 import type { MoneyBook } from "@/lib/solo/money";
-import { moneyError, parseMoney } from "@/lib/solo/money-input";
+import { moneyError, NEGATIVE_MONEY, parseMoney } from "@/lib/solo/money-input";
 import { fmtMoney } from "@/lib/solo/money-words";
 import { Button } from "@/components/ui/button";
 import { MoneyField } from "@/components/solo/money-field";
@@ -40,9 +40,12 @@ export function MoneySection({ book, onChanged }: { book: MoneyBook | null; onCh
   const now = useNow(60_000);
   const opener = useRef<HTMLButtonElement | null>(null);
 
+  // One form at a time on this part of Param: a movement row's form or one of the three above.
+  const [activeRow, setActiveRow] = useState<string | null>(null);
   const open = (next: Exclude<Panel, null>, from: HTMLButtonElement) => {
     opener.current = from;
     setStatus(null);
+    setActiveRow(null);
     setPanel(next);
   };
   const close = (message: string | null) => {
@@ -56,7 +59,17 @@ export function MoneySection({ book, onChanged }: { book: MoneyBook | null; onCh
   const list = all ? movements : movements.slice(0, SHOWN);
 
   return (
-    <section aria-labelledby="koydugun-para" className="om">
+    <section
+      aria-labelledby="koydugun-para"
+      className="om"
+      onKeyDown={(e) => {
+        // Esc = Vazgeç for the open form (a row's own form handles its Esc first).
+        if (e.key === "Escape" && panel) {
+          e.stopPropagation();
+          close(null);
+        }
+      }}
+    >
       <div className="om-head">
         <h2 id="koydugun-para" className="u-chapter text-ink">
           {book ? `Şimdiye kadar ${fmtMoney(book.put_in)} koydun.` : "Koyduğun parayı getiriyorum…"}
@@ -78,6 +91,10 @@ export function MoneySection({ book, onChanged }: { book: MoneyBook | null; onCh
         <Button variant="outline" size="lg" aria-expanded={panel === "holding"} onClick={(e) => open("holding", e.currentTarget)} disabled={!book}>
           Elindeki bir hisseyi ekle
         </Button>
+        {/* The statement importer lives far below; it is one of the ways money comes in, so it is named here too. */}
+        <Button variant="outline" size="lg" asChild>
+          <a href="#dokum">Dökümünü yükle</a>
+        </Button>
       </div>
 
       <p role="status" className="om-status">
@@ -98,7 +115,20 @@ export function MoneySection({ book, onChanged }: { book: MoneyBook | null; onCh
           <h3 className="u-caption">Paranın hareketleri</h3>
           <ol className="om-list">
             {list.map((m) => (
-              <MovementRow key={m.id} m={m} now={now} onChanged={(message) => close(message)} />
+              <MovementRow
+                key={m.id}
+                m={m}
+                now={now}
+                active={activeRow === m.id}
+                onActivate={() => {
+                  setPanel(null);
+                  setActiveRow(m.id);
+                }}
+                onChanged={(message) => {
+                  setActiveRow(null);
+                  close(message);
+                }}
+              />
             ))}
           </ol>
           {movements.length > SHOWN ? (
@@ -119,7 +149,9 @@ function MoneyForm({ kind, onDone }: { kind: "deposit" | "withdrawal"; onDone: (
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
-  const error = tried ? moneyError(draft) : null;
+  const raw = tried ? moneyError(draft) : null;
+  // A minus in "Para ekle" means money went out: point to the right button.
+  const error = raw === NEGATIVE_MONEY && kind === "deposit" ? `${NEGATIVE_MONEY} Para çıktıysa “Para çek”i kullan.` : raw;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -132,7 +164,7 @@ function MoneyForm({ kind, onDone }: { kind: "deposit" | "withdrawal"; onDone: (
       await api.moveMoney({ kind, amount_try: amount });
       onDone(words.done(fmtMoney(amount)));
     } catch (err) {
-      // The server's own sentence ("Kasandaki paradan fazlasını çekemezsin.") as it comes.
+      // The server's own sentence ("Elindeki nakitten fazlasını çekemezsin.") as it comes.
       setFailure(errorMessage(err));
       setBusy(false);
     }

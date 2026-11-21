@@ -5,6 +5,8 @@ import { findIssuer } from "@/mocks/issuers";
 import { ApiError, type KaptanApi } from "../types";
 import { liveRows } from "./corporate-ledger";
 import { parse, userActor, type MockCtx } from "./guard";
+import { estimateCommission } from "./ledger";
+import type { MockState } from "./state";
 import * as sel from "./selectors";
 
 /**
@@ -25,6 +27,25 @@ const SEED_TRADES: readonly ClosedTrade[] = [
   { id: "satis-seed-1", ticker: "TMSLJ", company: "TOROS LOJİSTİK A.Ş.", sold_at: "2027-01-07T11:20:00.000Z", qty: 800, cost_try: 7_760, proceeds_try: 8_432, gain_try: 672, gain_pct: 8.66, days_held: 6 },
   { id: "satis-seed-2", ticker: "DMOKM", company: "DOĞU KİMYA A.Ş.", sold_at: "2027-01-05T12:05:00.000Z", qty: 200, cost_try: 10_480, proceeds_try: 9_924, gain_try: -556, gain_pct: -5.31, days_held: 9 },
 ];
+
+/** Every finished sale of the book, newest first: the seeded book's two and the sales of hand-entered holdings. Karne reads the same list. */
+export function closedTradesOf(book: MockState["book"]): ClosedTrade[] {
+  const hand = book.holdings.flatMap((h) =>
+    h.sales.map((s, i): ClosedTrade => {
+      const cost = r2(s.qty * h.avg_cost);
+      const proceeds = r2(s.qty * s.price - s.commission);
+      return { id: `satis-${h.id}-${i + 1}`, ticker: h.ticker, company: h.company_name, sold_at: s.at, qty: s.qty, cost_try: cost, proceeds_try: proceeds, gain_try: r2(proceeds - cost), gain_pct: cost > 0 ? r2(((proceeds - cost) / cost) * 100) : null, days_held: null };
+    }),
+  );
+  return [...(book.seeded ? SEED_TRADES : []), ...hand].sort((a, b) => Date.parse(b.sold_at) - Date.parse(a.sold_at));
+}
+
+/** What a sale paid the bank: the typed commission of a hand sale, the usual rate on the seeded book's own sales. */
+export function saleCommissionsOf(book: MockState["book"]): Array<{ at: string; commission: number }> {
+  const seeded = book.seeded ? SEED_TRADES.map((t) => ({ at: t.sold_at, commission: estimateCommission(t.qty, t.proceeds_try / t.qty) })) : [];
+  const hand = book.holdings.flatMap((h) => h.sales.map((s) => ({ at: s.at, commission: s.commission })));
+  return [...seeded, ...hand];
+}
 
 export function createInsights(ctx: MockCtx): Insights {
   const { db, ok, now } = ctx;
@@ -59,17 +80,8 @@ export function createInsights(ctx: MockCtx): Insights {
     };
   };
 
-  const handTrades = (): ClosedTrade[] =>
-    db.snapshot.book.holdings.flatMap((h) =>
-      h.sales.map((s, i): ClosedTrade => {
-        const cost = r2(s.qty * h.avg_cost);
-        const proceeds = r2(s.qty * s.price - s.commission);
-        return { id: `satis-${h.id}-${i + 1}`, ticker: h.ticker, company: h.company_name, sold_at: s.at, qty: s.qty, cost_try: cost, proceeds_try: proceeds, gain_try: r2(proceeds - cost), gain_pct: cost > 0 ? r2(((proceeds - cost) / cost) * 100) : null, days_held: null };
-      }),
-    );
-
   const closed = (): ClosedTrades => {
-    const trades = [...(db.snapshot.book.seeded ? SEED_TRADES : []), ...handTrades()].sort((a, b) => Date.parse(b.sold_at) - Date.parse(a.sold_at));
+    const trades = closedTradesOf(db.snapshot.book);
     const wins = trades.filter((t) => t.gain_try > 0).length;
     const days = trades.flatMap((t) => (t.days_held === null ? [] : [t.days_held]));
     const notes = [trades.some((t) => t.days_held === null) ? MSG_HAND_DAYS : "", trades.length > 0 && trades.length < FEW_SALES ? MSG_FEW_SALES : ""].filter(Boolean);

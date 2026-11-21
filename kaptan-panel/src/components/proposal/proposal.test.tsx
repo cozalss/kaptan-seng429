@@ -86,7 +86,7 @@ describe("Neden?", () => {
     // It opens once, only because it was approved here.
     expect(slip).toHaveClass("oneri-reveal");
     // Sized from the real book, the ticket now matches the suggestion: no "Öneride … yazıyordu" note.
-    expect(slip).toHaveTextContent("1.480");
+    expect(slip).toHaveTextContent("1.419");
     expect(within(slip).getByRole("button", { name: "Kopyala" })).toBeEnabled();
     await u.click(within(slip).getByRole("button", { name: "Girdim" }));
     await u.click(within(slip).getByRole("button", { name: "Girdiğimi kaydet" }));

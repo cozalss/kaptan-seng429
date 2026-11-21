@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import type { DividendTotal, Position } from "@/lib/domain";
-import { fmtInt, fmtSignedPct } from "@/lib/format";
+import { fmtInt, fmtSignedFigurePct } from "@/lib/format";
 import { href, ROUTES } from "@/lib/nav";
 import { fmtLira, fmtSignedLira } from "@/lib/solo/words";
 import { cn } from "@/lib/utils";
@@ -96,7 +96,7 @@ function Holding({ p, today, onChanged, received }: { p: Position; today: string
         <p className="pm-row-worth">{fmtLira(worth)}</p>
         <p className="u-caption">şimdi ediyor</p>
         <p className={cn("pm-row-gain", signTone(r))}>
-          <span aria-hidden>{r >= 0 ? "▲" : "▼"}</span> {fmtSignedLira(p.unrealized_pnl)} <span className="font-medium">{fmtSignedPct(r)}</span>
+          <span aria-hidden>{r >= 0 ? "▲" : "▼"}</span> {fmtSignedLira(p.unrealized_pnl)} <span className="font-medium">{fmtSignedFigurePct(r)}</span>
         </p>
       </div>
       <div className="pm-row-extra">

@@ -12,9 +12,9 @@
 .ay-row {
   display: grid;
   grid-template-columns: clamp(92px, 60px + 10vw, 200px) minmax(0, 1fr) auto;
-  gap: 0.5rem clamp(1rem, 0.5rem + 2vw, 2.5rem);
+  gap: var(--space-2) clamp(1rem, var(--space-2) + 2vw, var(--space-10));
   align-items: center;
-  padding-block: clamp(1rem, 0.75rem + 1vw, 1.75rem);
+  padding-block: clamp(1rem, var(--space-3) + 1vw, var(--space-7));
   border-bottom: 1px solid var(--hairline);
 }
 .ay-value {
@@ -33,14 +33,14 @@
   color: var(--muted);
 }
 .ay-sentence {
-  margin-top: 0.125rem;
+  margin-top: var(--space-0_5);
   font-size: 1.125rem;
   line-height: 1.45;
   font-weight: 500;
   color: var(--ink);
 }
 .ay-you {
-  margin-top: 0.25rem;
+  margin-top: var(--space-1);
   font-size: 1rem;
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
@@ -52,13 +52,13 @@
 .ay-form {
   grid-column: 2 / -1;
   max-width: 640px;
-  margin-top: 0.75rem;
-  padding: 1.25rem 0 0.25rem 1.25rem;
+  margin-top: var(--space-3);
+  padding: var(--space-5) 0 var(--space-1) var(--space-5);
   border-inline-start: 3px solid var(--ink);
   animation: ay-open var(--dur-base) var(--ease-out-expo) both;
 }
 .ay-form-new {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
   font-size: 1.0625rem;
   line-height: 1.45;
   font-weight: 600;
@@ -120,7 +120,7 @@
   outline-offset: 2px;
 }
 .ay-more {
-  padding-block: 0.5rem;
+  padding-block: var(--space-2);
   border-bottom: 1px solid var(--hairline);
 }
 .ay-more[open] {
@@ -128,27 +128,27 @@
 }
 .ay-more[open] .ay-rows {
   border-top: 1px solid var(--hairline);
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
 }
 .ay-history {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
 }
 .ay-history-list {
-  margin-top: 0.25rem;
+  margin-top: var(--space-1);
 }
 .ay-history-row {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0 1rem;
-  padding-block: 0.5rem;
+  gap: 0 var(--space-4);
+  padding-block: var(--space-2);
   border-bottom: 1px solid var(--hairline);
   font-size: 0.9375rem;
   color: var(--ink-soft);
 }
 .ay-pending {
-  padding-block: 1.25rem;
-  margin-bottom: 1.25rem;
+  padding-block: var(--space-5);
+  margin-bottom: var(--space-5);
   border-top: 3px solid var(--north);
   border-bottom: 1px solid var(--hairline);
 }
@@ -160,26 +160,26 @@
 }
 .ay-block-lead {
   max-width: 58ch;
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
   font-size: 1rem;
   line-height: 1.5;
   color: var(--ink-soft);
 }
 .ay-channels {
   list-style: none;
-  margin-top: 1.25rem;
+  margin-top: var(--space-5);
   border-top: 2px solid var(--ink);
 }
 .ay-channel {
   display: grid;
   grid-template-columns: 7rem minmax(0, 1fr) auto;
-  gap: 0.25rem 1.25rem;
+  gap: var(--space-1) var(--space-5);
   align-items: start;
-  padding-block: 1rem;
+  padding-block: var(--space-4);
   border-bottom: 1px solid var(--hairline);
 }
 .ay-channel > .ay-title {
-  padding-top: 0.1875rem;
+  padding-top: var(--space-1);
 }
 .ay-channel-state {
   font-size: 1.0625rem;
@@ -189,7 +189,7 @@
 }
 .ay-channel-detail {
   max-width: 58ch;
-  margin-top: 0.125rem;
+  margin-top: var(--space-0_5);
   font-size: 1rem;
   line-height: 1.5;
   color: var(--ink-soft);
@@ -198,8 +198,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem 1rem;
-  margin-top: 1.25rem;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-5);
 }
 .ay-test-note {
   font-size: 0.9375rem;
@@ -207,7 +207,7 @@
   color: var(--muted);
 }
 .ay-result {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
   font-size: 1rem;
   line-height: 1.5;
   font-weight: 500;
@@ -218,11 +218,11 @@
   display: none;
 }
 .ay-result[data-ok="false"] {
-  padding-inline-start: 0.75rem;
+  padding-inline-start: var(--space-3);
   border-inline-start: 3px solid var(--north);
 }
 .ay-setup {
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
 }
 .ay-setup-head {
   font-size: 1.0625rem;
@@ -232,13 +232,13 @@
 }
 .ay-steps {
   list-style: none;
-  margin-block: 0.25rem 0.5rem;
+  margin-block: var(--space-1) var(--space-2);
 }
 .ay-step {
   display: grid;
   grid-template-columns: 2.25rem minmax(0, 1fr);
   align-items: baseline;
-  padding-block: 0.5rem;
+  padding-block: var(--space-2);
   font-size: 1rem;
   line-height: 1.5;
   color: var(--ink);
@@ -252,11 +252,11 @@
 }
 .ay-problems {
   list-style: none;
-  margin-top: 1.25rem;
+  margin-top: var(--space-5);
   border-top: 2px solid var(--ink);
 }
 .ay-problem {
-  padding-block: 1rem;
+  padding-block: var(--space-4);
   border-bottom: 1px solid var(--hairline);
 }
 @media (max-width: 639px) {
@@ -275,13 +275,13 @@
 .ay-pair {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 2.5rem clamp(2rem, 1rem + 4vw, 5rem);
-  margin-top: clamp(3rem, 2rem + 4vw, 6rem);
+  gap: var(--space-10) clamp(2rem, var(--space-4) + 4vw, var(--space-20));
+  margin-top: clamp(3rem, var(--space-8) + 4vw, var(--space-24));
 }
 .ay-how {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 1.25rem;
+  gap: var(--space-5);
   align-items: start;
 }
 .ay-how-boat {

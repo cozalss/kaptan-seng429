@@ -87,6 +87,8 @@ export const ApprovalCard = z.object({
   skeptic_flags: z.array(z.object({ code: FlagCode, severity: z.enum(["info", "reduce", "veto"]), detail_tr: z.string() })),
   skeptic_note_tr: z.string(),
   size_multiplier: z.number(),
+  /** Set when the stock is outside KAPtan's list and was analysed only because you watch it (thin trading). */
+  outside_list_note_tr: z.string().nullable(),
   compliance_summary_tr: z.string(),
   rule_trace_summary: z.array(RuleTraceEntry),
   degraded: z.boolean(),

@@ -2,18 +2,18 @@
    The app's frame and home: the bar, the horizon, the map of the money, the log.
    Tokens live in globals.css; this file adds the allocation palette: six categorical inks in a
    fixed order, validated for colour-vision deficiency on both surfaces (light: worst adjacent CVD
-   ΔE 10.4; dark on #0b0f1d: 8.8), plus cash and "Diğer" in neutral inks. Colour follows the
+   ΔE 9.8, normal-vision 17.2; dark on #0b0f1d: 9.2 / 15.2; dataviz validate_palette.js, 2026-11-21), plus cash and "Diğer" in neutral inks. Colour follows the
    holding, never its rank on screen. Words never sit on these inks directly: each tile carries a
    paper label (≥ 7:1 whatever the ink).
    ────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  --solo-c1: #2f5aa8;
-  --solo-c2: #d06a2a;
-  --solo-c3: #14a07a;
-  --solo-c4: #d89a00;
-  --solo-c5: #c85a9a;
-  --solo-c6: #6a50c8;
+  --solo-c1: #2f5296;
+  --solo-c2: #b85a2e;
+  --solo-c3: #1f8a72;
+  --solo-c4: #b88a1c;
+  --solo-c5: #b04a86;
+  --solo-c6: #5a52b8;
   --solo-other: #6e6a62;
   --solo-cash: #c9c3b6;
   --bar-h: 72px;
@@ -22,12 +22,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --solo-c1: #3d7ad6;
-    --solo-c2: #d4642a;
-    --solo-c3: #1a9a72;
-    --solo-c4: #c08800;
-    --solo-c5: #cf5a93;
-    --solo-c6: #8a7ae6;
+    --solo-c1: #5b86d6;
+    --solo-c2: #d2754a;
+    --solo-c3: #3aa98c;
+    --solo-c4: #a8862a;
+    --solo-c5: #d06aa6;
+    --solo-c6: #8378e0;
     --solo-other: #8d8a84;
     --solo-cash: #4a4e5a;
   }
@@ -96,8 +96,9 @@
 .bar__row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   height: var(--bar-h);
+  min-width: 0;
 }
 
 .nav-link {
@@ -105,7 +106,7 @@
   display: inline-flex;
   height: 44px;
   align-items: center;
-  padding-inline: 0.75rem;
+  padding-inline: var(--space-3);
   font-size: 15px;
   font-weight: 500;
   color: var(--ink-soft);
@@ -208,6 +209,16 @@
     left: calc(50% + 1px);
     top: 5px;
   }
+  /* The unread count sits on the icon's corner, so "Okunanlar" stays on the same line as the other labels. */
+  .nav-link {
+    position: relative;
+  }
+  .nav-link .rd-badge {
+    position: absolute;
+    top: 4px;
+    left: calc(50% + 6px);
+    margin-left: 0;
+  }
 }
 
 /* ── The horizon ──────────────────────────────────────────────────────────── */
@@ -232,7 +243,7 @@
 .hz-head {
   position: relative;
   z-index: 5;
-  padding-top: 0.25rem;
+  padding-top: var(--space-1);
   padding-bottom: var(--hz-band);
   pointer-events: none;
 }
@@ -274,7 +285,7 @@
   z-index: 6;
   width: max-content;
   max-width: min(300px, 86vw);
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-2) var(--space-3);
   background: var(--panel);
   border: 2px solid var(--ink);
   box-shadow: var(--shadow-ink);
@@ -289,8 +300,8 @@
   position: absolute;
   z-index: 1;
   left: max(1rem, calc((100% - 1240px) / 2 + 2rem));
-  padding: 0.125rem 0.5rem;
-  margin-left: -0.5rem;
+  padding: var(--space-0_5) var(--space-2);
+  margin-left: calc(-1 * var(--space-2));
   background: var(--sea);
   color: var(--on-sea);
   font-size: 14px;
@@ -302,7 +313,7 @@
   position: absolute;
   z-index: 1;
   translate: -50% calc(-100% - var(--pin-rise));
-  padding: 0 0.25rem;
+  padding: 0 var(--space-1);
   background: var(--paper);
   color: var(--ink);
   font-size: 13px;
@@ -336,7 +347,7 @@
   left: 0;
   display: flex;
   justify-content: space-between;
-  padding-inline: max(1rem, calc((100vw - 1240px) / 2 + 2rem)) 0;
+  padding-inline: max(1rem, calc((100vw - 1240px) / 2 + var(--space-8))) 0;
   color: var(--on-sea-soft);
   font-size: 14px;
   font-weight: 500;
@@ -345,7 +356,7 @@
 }
 .hz-sea {
   position: relative;
-  padding-bottom: 1.25rem;
+  padding-bottom: var(--space-5);
   background: transparent;
   color: var(--on-sea);
 }
@@ -353,7 +364,7 @@
   display: inline-flex;
   min-height: 44px;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   font-size: 14px;
   font-weight: 600;
   color: var(--on-sea);
@@ -371,7 +382,7 @@
 .hz-period {
   min-width: 56px;
   min-height: 44px;
-  padding-inline: 0.75rem;
+  padding-inline: var(--space-3);
   font-size: 15px;
   font-weight: 500;
   color: var(--on-sea-soft);
@@ -401,15 +412,15 @@
 .hz-facts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-top: 0.25rem;
+  margin-top: var(--space-1);
   border-top: 2px solid var(--sea-rule);
 }
 .hz-fact {
   min-width: 0;
-  padding: 0.75rem 1.5rem 0.25rem 0;
+  padding: var(--space-3) var(--space-6) var(--space-1) 0;
 }
 .hz-fact + .hz-fact {
-  padding-left: 1.5rem;
+  padding-left: var(--space-6);
   border-left: 2px solid var(--sea-rule);
 }
 /* A phone: three short ledger lines, so the decisions are not pushed away from the money. */
@@ -421,8 +432,8 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: baseline;
-    column-gap: 0.75rem;
-    padding: 0.5rem 0;
+    column-gap: var(--space-3);
+    padding: var(--space-2) 0;
   }
   .hz-fact dd:first-of-type {
     margin-top: 0;
@@ -440,18 +451,20 @@
   }
 }
 @media (max-width: 639px) {
+  /* No room beside the words on a phone, so the line gets only this band: tall enough to read. */
   .hz-top {
-    --hz-band: clamp(200px, 32vh, 300px);
+    --hz-band: clamp(260px, 40vh, 360px);
   }
-  /* A finger hides what is beside it: on a phone the reading stays at the top of the plot. */
+  /* A finger hides what is beside it, and the top of the plot is under the headline figure: on a phone the
+     reading sits at the foot of the plot, just over the dates, so the day's money never covers today's. */
   .hz-read {
-    top: 0 !important;
+    top: var(--hz-foot) !important;
+    translate: 0 -100% !important;
     left: 0.75rem !important;
     right: 0.75rem;
-    translate: none !important;
     width: auto;
     max-width: none;
-    padding-block: 0.25rem;
+    padding-block: var(--space-1);
   }
 }
 
@@ -464,8 +477,9 @@
   z-index: 3;
 }
 .home-sheet .oneri-section-head {
-  padding-bottom: 4.5rem;
-  margin-bottom: -2.75rem;
+  /* Just enough sea under the sentence for the card to rise from: no empty band (review: dead space). */
+  padding-bottom: var(--space-14);
+  margin-bottom: calc(-1 * var(--space-11));
   background: var(--sea);
   color: var(--on-sea);
   box-shadow: 0 0 0 100vmax var(--sea);
@@ -479,7 +493,7 @@
   z-index: 1;
 }
 .home-band {
-  padding-block: clamp(3rem, 7vw, 6rem);
+  padding-block: clamp(3rem, 7vw, var(--space-24));
 }
 /* ── Param nerede? A map where area is money ──────────────────────────────── */
 .map {
@@ -525,7 +539,7 @@
   top: 9px;
   left: 9px;
   max-width: calc(100% - 18px);
-  padding: 0.375rem 0.625rem 0.4375rem;
+  padding: var(--space-1_5) var(--space-2_5) var(--space-1_5);
   background: var(--panel);
   font-variant-numeric: tabular-nums;
   transition: padding-right var(--dur-base) var(--ease-out-expo);
@@ -534,7 +548,7 @@
   position: absolute;
   right: 0.625rem;
   bottom: 0.5rem;
-  padding: 0 0.375rem;
+  padding: 0 var(--space-1_5);
   background: var(--panel);
   font-size: 14px;
   font-weight: 600;
@@ -559,7 +573,7 @@
   display: grid;
   grid-template-columns: 4.25rem 3.25rem 1.5rem minmax(0, 1fr) auto 1.25rem;
   align-items: baseline;
-  column-gap: 0.5rem;
+  column-gap: var(--space-2);
   padding-block: 0.8125rem;
   font-variant-numeric: tabular-nums;
   transition: background-color var(--dur-quick) var(--ease-ink);
@@ -583,7 +597,7 @@ a.log-line:hover .log-go {
   .log-line {
     grid-template-columns: 1.5rem minmax(0, 1fr) auto 1rem;
     grid-template-areas: "mark what money go" "mark when when go";
-    row-gap: 0.125rem;
+    row-gap: var(--space-0_5);
   }
   .log-mark {
     grid-area: mark;
@@ -600,7 +614,7 @@ a.log-line:hover .log-go {
   .log-when {
     grid-area: when;
     display: flex;
-    gap: 0.375rem;
+    gap: var(--space-1_5);
   }
 }
 @media (min-width: 520px) {
@@ -663,7 +677,7 @@ a.log-line:hover .log-go {
 @media (min-width: 1024px) {
   .scene-sheet {
     align-self: end;
-    margin-bottom: calc(max(38vh, 220px) - 10rem - 3.5rem);
+    margin-bottom: calc(max(38vh, 220px) - 10rem - var(--space-14));
   }
 }
 .sheet {

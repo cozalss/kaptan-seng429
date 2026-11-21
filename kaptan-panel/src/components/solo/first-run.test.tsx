@@ -57,6 +57,7 @@ describe("FirstRun", () => {
     await u.type(screen.getByLabelText("Hisse kodu"), "krgcl");
     await u.type(screen.getByLabelText("Kaç adet?"), "10");
     await u.type(screen.getByLabelText("Tanesini kaç liradan aldın?"), "30");
+    await u.clear(screen.getByLabelText("Ne zaman aldın?"));
     await u.type(screen.getByLabelText("Ne zaman aldın?"), "2027-01-04");
     await u.click(screen.getByRole("button", { name: "Hisseyi ekle" }));
     expect(await screen.findByText("eklendi: 10 adet.")).toBeInTheDocument();

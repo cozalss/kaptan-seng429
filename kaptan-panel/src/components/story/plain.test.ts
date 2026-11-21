@@ -142,7 +142,9 @@ describe("why and history", () => {
     if (!tmspz) throw new Error("no stop");
     expect(words(riskSentence(tmspz, null))).toBe("Fiyat 70,06 ₺’ya düşerse satman gerekir; o noktada kaybın yaklaşık 4.262 ₺ olur. Fiyat bir anda sert düşerse kayıp bundan büyük olabilir.");
     expect(words(riskSentence(tmspz, { pct: 0.005, equity: 1_018_600 }))).toMatch(/kayıp sınırının \(yaklaşık 5.093 ₺\) altında\.$/);
-    expect(riskSentence(tmspz, { pct: 0.004, equity: 1_000_000 })).toMatch(/\) üstünde\.$/);
+    const over = words(riskSentence(tmspz, { pct: 0.004, equity: 1_000_000 }));
+    expect(over).toMatch(/kayıp sınırını \(yaklaşık 4.000 ₺\) yaklaşık 262 ₺ aşıyor;/);
+    expect(over).toMatch(/istemiyorsan Geç, hiçbir şey olmaz\.$/);
     expect(riskView({ qty: 100, limit_price: 50 }, null)).toBeNull();
     expect(riskView({ qty: 100, limit_price: 50 }, 55)).toBeNull();
   });

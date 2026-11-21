@@ -2,7 +2,9 @@
 
 These are the person's own bookmarks, not money: no audit record is written. A disclosure counts as unread when it
 belongs to a company the person stars or holds, is not noise, was published after `read_through` and was not opened
-since. "Hepsini okundu say" moves `read_through` to now (never backwards).
+since. "Hepsini okundu say" moves `read_through` to now (never backwards); its "Geri al" puts the earlier mark
+back (`restore_through`, only backwards). Single "opened" marks survive "Hepsini okundu say" until a later one makes
+them redundant, so an undo never brings back a disclosure the person had opened.
 """
 
 from __future__ import annotations
@@ -37,6 +39,11 @@ SELECT {LIST_ITEM_COLUMNS} FROM core.disclosures d
 SET_THROUGH_SQL: Final = """
 INSERT INTO core.reading_state (id, read_through) VALUES (1, %s)
 ON CONFLICT (id) DO UPDATE SET read_through = greatest(core.reading_state.read_through, excluded.read_through)
+"""
+
+PRUNE_READ_SQL: Final = """
+DELETE FROM core.disclosure_read r USING core.disclosures d
+ WHERE d.disclosure_index = r.disclosure_index AND d.published_at <= %s
 """
 
 
@@ -95,10 +102,22 @@ async def mark_read(conn: DictConn, index: int, *, now: datetime) -> None:
 
 
 async def read_all(conn: DictConn, *, now: datetime) -> None:
-    """Everything up to now counts as read; the single marks below it are no longer needed."""
+    """Everything up to now counts as read. Single marks under the previous mark are no longer needed by any undo."""
     async with conn.transaction():
+        before = await _through(conn, now)
         await execute(conn, SET_THROUGH_SQL, (now,))
-        await execute(conn, "DELETE FROM core.disclosure_read WHERE read_at <= %s", (now,))
+        await execute(conn, PRUNE_READ_SQL, (before,))
+
+
+async def restore_through(conn: DictConn, through: datetime, *, now: datetime) -> None:
+    """The "Geri al" of "Hepsini okundu say": the mark goes back to `through`. It never moves forward or past now."""
+    if through > now:
+        raise ApiError(422, "validation", "Bu an henüz gelmedi.")
+    async with conn.transaction():
+        await _through(conn, now)
+        await execute(
+            conn, "UPDATE core.reading_state SET read_through = least(read_through, %s) WHERE id = 1", (through,)
+        )
 
 
 async def saved_disclosures(conn: DictConn) -> list[dict[str, Any]]:

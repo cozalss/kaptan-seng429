@@ -17,6 +17,7 @@ from kaptan.agents.nodes._common import ask_or_fail, step
 from kaptan.agents.state import KaptanState
 from kaptan.agents.subject_map import TABLE_VERSION, route_of
 from kaptan.risk.gate import HARD_RESTRICTIONS
+from kaptan.risk.watch import WATCHED_NOTE
 from kaptan.rules.format import fmt_dec
 
 RESTRICTION_LABELS: Final = {
@@ -29,6 +30,8 @@ RESTRICTION_LABELS: Final = {
 }
 NO_LLM: Final = "LLM çağrısı yapılmadı"
 PASS_REASONS: Final = ("R03 evren ✓", "R04 tedbir yok ✓", "R13 engel listesi dışı ✓")
+#: A watched stock outside the universe passes R03 on the person's star; the line says so (audit / explain).
+WATCHED_PASS_REASONS: Final = (f"R03 {WATCHED_NOTE}", "R04 tedbir yok ✓", "R13 engel listesi dışı ✓")
 
 #: Turkish injection patterns (09 §4): name → regex. A hit is quoted verbatim in the guard result.
 INJECTION_PATTERNS: Final = (
@@ -50,8 +53,8 @@ async def route(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, A
     }
 
 
-def _veto_reasons(restrictions: tuple[Restriction, ...], in_universe: bool) -> list[str] | None:
-    if not in_universe:
+def _veto_reasons(restrictions: tuple[Restriction, ...], in_universe: bool, watched: bool = False) -> list[str] | None:
+    if not in_universe and not watched:
         return ["R03_UNIVERSE: hisse evren dışında — sert veto", NO_LLM]
     hard = [r for r in restrictions if r.kind in HARD_RESTRICTIONS]
     if hard:
@@ -68,7 +71,7 @@ def _veto_reasons(restrictions: tuple[Restriction, ...], in_universe: bool) -> l
 
 async def pre_gate(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, Any]:
     ctx = runtime.context
-    vetoed = _veto_reasons(ctx.desk.restrictions, ctx.desk.in_universe)
+    vetoed = _veto_reasons(ctx.desk.restrictions, ctx.desk.in_universe, ctx.desk.watched)
     if vetoed is not None:
         return {
             "pre_gate": {"passed": False, "reasons": vetoed},
@@ -76,7 +79,9 @@ async def pre_gate(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str
             "outcome": "PREGATE_VETO",
             "steps": [step(ctx, "pre_gate", note="Sert veto — LLM çağrısı 0")],
         }
-    return {"pre_gate": {"passed": True, "reasons": list(PASS_REASONS)}, "steps": [step(ctx, "pre_gate")]}
+    outside = ctx.desk.watched and not ctx.desk.in_universe
+    reasons = WATCHED_PASS_REASONS if outside else PASS_REASONS
+    return {"pre_gate": {"passed": True, "reasons": list(reasons)}, "steps": [step(ctx, "pre_gate")]}
 
 
 def regex_hits(text: str) -> list[str]:

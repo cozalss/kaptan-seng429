@@ -4,6 +4,7 @@ import { noteServerTime } from "@/lib/clock";
 import { Company, DisclosureReading, SearchResult, WatchItem } from "@/lib/company/company";
 import { Compare, ReadingState } from "@/lib/domain/reading";
 import { Calendar, MarketStrip } from "@/lib/domain/agenda";
+import { Digest } from "@/lib/domain/digest";
 import { AlertSettings, SystemStatus } from "@/lib/domain/system";
 import { CorporateBook, NoticeAnswer } from "@/lib/domain/corporate";
 import { Allocation, ClosedTrades, DividendIncome, HoldingNotes, ReturnStats, Versus } from "@/lib/domain/insights";
@@ -151,6 +152,7 @@ export function createHttpApi(): KaptanApi {
     unwatch: (ticker) => request(z.array(WatchItem), `/watchlist/${id(ticker)}`, { method: "DELETE" }),
     readingState: () => request(ReadingState, "/me/reading"),
     readAll: () => request(ReadingState, "/me/reading/read-all", post()),
+    restoreReadThrough: (through) => request(ReadingState, "/me/reading/read-through", { method: "PUT", body: JSON.stringify({ read_through: through }) }),
     markRead: (index) => request(ReadingState, `/me/reading/read/${index}`, { method: "PUT" }),
     setSaved: (index, saved) => request(ReadingState, `/me/reading/saved/${index}`, { method: saved ? "PUT" : "DELETE" }),
     savedDisclosures: () => request(z.array(DisclosureListItem), "/me/reading/saved"),
@@ -217,6 +219,7 @@ export function createHttpApi(): KaptanApi {
         throw e;
       }),
     calendar: (days) => request(Calendar, `/me/calendar${qs({ days })}`),
+    digest: (day) => request(Digest, `/me/digest${qs({ day })}`),
     marketStrip: () => request(MarketStrip, "/market/strip"),
     systemStatus: () => request(SystemStatus, "/system/status"),
     alertSettings: () => request(AlertSettings, "/me/alerts"),

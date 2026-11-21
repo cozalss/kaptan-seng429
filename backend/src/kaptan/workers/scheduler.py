@@ -108,8 +108,12 @@ SELECT ticker FROM trading.positions WHERE qty > 0
 UNION SELECT ticker FROM trading.orders WHERE status IN ('pending_open', 'accepted')
 ORDER BY ticker
 """
+#: The person's watchlist is always priced: a watched stock outside the universe is analysed, so its price and
+#: turnover (ADV) must be there for the risk gate to size it.
+WATCHED_SQL: Final = "SELECT ticker FROM core.watchlist ORDER BY ord"
 EOD_TICKERS_SQL: Final = """
 SELECT ticker FROM core.universe_daily WHERE d = %(day)s AND is_eligible
+UNION SELECT ticker FROM core.watchlist
 UNION SELECT ticker FROM trading.positions WHERE qty > 0
 UNION SELECT ticker FROM trading.orders WHERE status IN ('pending_open', 'accepted')
 ORDER BY ticker
@@ -150,8 +154,8 @@ async def job_quotes(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
     from kaptan.alerts.price import open_tickers
     from kaptan.prices.intraday import refresh_quotes
 
-    # the held shares and the ones with a waiting price alert (Ayarlar · Fiyat uyarıları)
-    tickers = sorted({*await _tickers(conn, HELD_SQL), *await open_tickers(conn)})
+    # the held shares, the watched ones and the ones with a waiting price alert (Ayarlar · Fiyat uyarıları)
+    tickers = sorted({*await _tickers(conn, HELD_SQL), *await _tickers(conn, WATCHED_SQL), *await open_tickers(conn)})
     if not tickers:
         return {"tickers": 0}
     return await _polite(ctx, lambda c: refresh_quotes(conn, tickers, now, client=c))

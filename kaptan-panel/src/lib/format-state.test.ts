@@ -35,8 +35,8 @@ describe("format · the rest of the tr-TR helpers", () => {
   it("shows Istanbul wall time and dates", () => {
     expect(fmtTime(iso)).toBe("13:40");
     expect(fmtTime(iso, true)).toBe("13:40:05");
-    expect(fmtDate(iso)).toBe("11.01.2027");
-    expect(fmtDateTime(iso)).toBe("11.01.2027 13:40");
+    expect(fmtDate(iso)).toBe("11 Ocak 2027");
+    expect(fmtDateTime(iso)).toBe("11 Ocak 2027 13:40");
     expect(fmtDateLong(iso)).toMatch(/11 Ocak 2027/);
     expect(fmtShortDate("2027-01-11")).toMatch(/11 Oca/);
     expect(fmtShortDate(iso)).toMatch(/11/);
@@ -131,5 +131,36 @@ describe("EventBus", () => {
     bus.emit("desk", "halt", {});
     bus.emit("feed", "counters", {});
     expect(got).toEqual(["halt"]);
+  });
+});
+
+describe("chart axis days", () => {
+  it("leaves the year out inside one year and prints it on both ends across a new year", async () => {
+    const { axisEnds, crossesYear, fmtChartDay } = await import("./format");
+    expect(axisEnds("2026-10-15", "2026-12-30")).toEqual(["15 Eki", "30 Ara"]);
+    expect(axisEnds("2026-01-23", "2027-01-11")).toEqual(["23 Oca 2026", "11 Oca 2027"]);
+    expect(crossesYear("2026-12-31", "2027-01-02")).toBe(true);
+    expect(fmtChartDay("2027-01-11", true)).toBe("11 Oca 2027");
+  });
+});
+
+describe("the one figure-percent rule", () => {
+  it("prints one decimal always, two under one percent, and a sign when asked", async () => {
+    const { fmtFigurePct, fmtSignedFigurePct } = await import("./format");
+    expect(fmtFigurePct(0.05)).toBe("%5,0");
+    expect(fmtFigurePct(0.051)).toBe("%5,1");
+    expect(fmtFigurePct(0.67)).toBe("%67,0");
+    expect(fmtFigurePct(0.0084)).toBe("%0,84");
+    expect(fmtFigurePct(0)).toBe("%0");
+    expect(fmtSignedFigurePct(0.0192)).toBe("+%1,9");
+    expect(fmtSignedFigurePct(-0.1316)).toBe("−%13,2");
+    expect(fmtSignedFigurePct(-0.003)).toBe("−%0,30");
+  });
+
+  it("gives a row of side-by-side figures the same two decimals when asked", async () => {
+    const { fmtSignedFigurePct } = await import("./format");
+    expect(fmtSignedFigurePct(0.0085, 2)).toBe("+%0,85");
+    expect(fmtSignedFigurePct(-0.0104, 2)).toBe("−%1,04");
+    expect(fmtSignedFigurePct(0.0192, 2)).toBe("+%1,92");
   });
 });

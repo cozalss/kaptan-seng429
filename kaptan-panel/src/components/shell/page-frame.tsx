@@ -6,6 +6,7 @@ import "./page-frame.css";
 import type { ReactNode } from "react";
 import { Boat } from "@/components/ufuk/boat";
 import { Button } from "@/components/ui/button";
+import { keepFigures } from "@/components/story/num";
 import { cn } from "@/lib/utils";
 
 /**
@@ -33,11 +34,11 @@ export function PageHeader({
           {name}
           <span className="sr-only">. </span>
         </span>
-        <span className="u-sentence block text-ink">{title}</span>
+        <span className="u-sentence block text-ink">{typeof title === "string" ? keepFigures(title) : title}</span>
       </h1>
       {lead || actions ? (
         <div className="pf-under">
-          {lead ? <div className="pf-lead">{lead}</div> : <span />}
+          {lead ? <div className="pf-lead">{typeof lead === "string" ? keepFigures(lead) : lead}</div> : <span />}
           {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
         </div>
       ) : null}

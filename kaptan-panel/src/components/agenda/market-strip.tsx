@@ -2,7 +2,7 @@
 
 import "./agenda.css";
 
-import { fmtSignedPct } from "@/lib/format";
+import { fmtSignedFigurePct } from "@/lib/format";
 import { useApiQuery } from "@/lib/api/react";
 import { dayLabel } from "@/lib/agenda/agenda";
 import { useNow } from "@/lib/clock";
@@ -32,7 +32,7 @@ export function MarketStrip({ className }: { className?: string }) {
       {s.index ? (
         <span className="mk-item">
           BIST 100 <strong>{nf2.format(s.index.level)}</strong>
-          {s.index.change_pct !== null ? <span className={cn("tabular-nums", signTone(s.index.change_pct))}>{fmtSignedPct(s.index.change_pct / 100, 2)}</span> : null}
+          {s.index.change_pct !== null ? <span className={cn("tabular-nums", signTone(s.index.change_pct))}>{fmtSignedFigurePct(s.index.change_pct / 100)}</span> : null}
           <span className="mk-age">{dayLabel(s.index.day, today)} kapanışı</span>
         </span>
       ) : null}
