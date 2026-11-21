@@ -13,12 +13,15 @@ export function StarButton({ ticker, watched, onChanged }: { ticker: string; wat
   const api = useApi();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [said, setSaid] = useState<string | null>(null);
   const toggle = async () => {
     setBusy(true);
     setError(null);
     try {
       const list = await (watched ? api.unwatch(ticker) : api.watch(ticker));
-      onChanged(list.some((w) => w.ticker === ticker));
+      const now = list.some((w) => w.ticker === ticker);
+      onChanged(now);
+      setSaid(now ? "İzleme listene ekledin." : "İzlemeyi bıraktın.");
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -35,6 +38,9 @@ export function StarButton({ ticker, watched, onChanged }: { ticker: string; wat
           {error}
         </p>
       ) : null}
+      <span role="status" className="sr-only">
+        {said}
+      </span>
     </>
   );
 }

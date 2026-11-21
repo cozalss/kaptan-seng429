@@ -1,0 +1,40 @@
+/* Important disclosures (home card, /onemli). Colours and spacing come from the shared tokens. */
+.dg-card { display: grid; gap: var(--space-3); border-top: 1px solid var(--hairline); padding: var(--space-5) 0; }
+.dg-list { display: grid; gap: 0; }
+.dg-item { display: grid; grid-template-columns: 4rem 1fr; gap: var(--space-1) var(--space-5); align-items: baseline; padding: var(--space-3) 0; border-bottom: 1px solid var(--hairline); }
+.dg-when { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.dg-title { font-weight: 600; color: var(--ink); }
+.dg-company { font-weight: 400; color: var(--ink-soft); }
+.dg-line { margin-top: var(--space-0_5); color: var(--ink); }
+.dg-headline { margin-top: var(--space-0_5); font-size: 0.9375rem; color: var(--ink-soft); }
+.dg-tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); margin-top: var(--space-1_5); font-size: 0.8125rem; color: var(--ink-soft); }
+/* Tags are labels, not buttons: no outline box, so nothing here looks pressable. The kind reads as small
+   capitals; "Elinde var" / "İzliyorsun" keep the ink fill, told apart by their words, not colour. */
+.dg-tag { display: inline-flex; align-items: center; color: var(--ink); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.dg-tag--mine { padding: 0 var(--space-1_5); background: var(--ink); color: var(--paper); text-transform: none; letter-spacing: 0; }
+/* A company outside the list KAPtan follows: a solid ochre rule at the left (projector rule: no dashes), the
+   same mark as the outside-list note on an öneri. */
+.dg-outside { display: inline-flex; align-items: center; padding-left: var(--space-1_5); border-left: 3px solid var(--ochre); color: var(--ink); }
+.dg-link { font-size: 0.9375rem; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--rule-ui); min-height: 44px; display: inline-flex; align-items: center; }
+.dg-tags .dg-link { margin-block: calc(-1 * var(--space-3)); }
+.dg-link:hover { text-decoration-color: var(--ink); }
+.dg-link:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.dg-group { margin-top: var(--space-8); }
+.dg-count { font-size: 0.9375rem; font-weight: 400; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.dg-note { margin-top: var(--space-6); max-width: 60ch; font-size: 0.9375rem; color: var(--ink-soft); }
+.dg-days { display: inline-flex; align-items: center; gap: var(--space-2); }
+.dg-days button { min-height: 2.75rem; padding: 0 var(--space-4); font-size: 0.9375rem; font-weight: 600; color: var(--ink); background: var(--sunk); border: 1.5px solid var(--rule-soft); transition: background-color var(--dur-quick) var(--ease-ink); }
+@media (hover: hover) and (pointer: fine) { .dg-days button:hover:not(:disabled) { background: var(--wash-tint); } }
+.dg-days button:disabled { color: var(--ink-soft); opacity: 0.6; cursor: not-allowed; }
+.dg-days button:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.dg-day { min-width: 9rem; text-align: center; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px) {
+  .dg-item { grid-template-columns: 1fr; }
+  .dg-days { width: 100%; justify-content: space-between; }
+  .dg-day { min-width: 0; }
+}
+/* A phone shows the first three on the home; the rest are one tap away on /onemli. */
+@media (max-width: 639px) {
+  .dg-card .dg-list > li:nth-child(n + 4) { display: none; }
+}

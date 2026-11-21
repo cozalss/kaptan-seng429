@@ -5,7 +5,7 @@ import "./watchlist.css";
 import Link from "next/link";
 import { useApiQuery } from "@/lib/api/react";
 import { useNow } from "@/lib/clock";
-import { fmtSignedPct } from "@/lib/format";
+import { fmtSignedFigurePct } from "@/lib/format";
 import { ROUTES } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { companyName } from "@/components/company/company-words";
@@ -43,7 +43,7 @@ export function WatchStrip() {
               ) : (
                 <>
                   {w.last_close.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
-                  {w.change_pct !== null ? <span className={cn("wl-change", signTone(w.change_pct))}> {fmtSignedPct(w.change_pct / 100, 2)}</span> : null}
+                  {w.change_pct !== null ? <span className={cn("wl-change", signTone(w.change_pct))}> {fmtSignedFigurePct(w.change_pct / 100)}</span> : null}
                 </>
               )}
             </p>
