@@ -47,7 +47,6 @@ export function AuditScreen() {
   useEventStream("feed", { counters: () => void list.refetch() });
   useEventStream("desk", {
     "approval.decided": () => void list.refetch(),
-    kill_switch: () => void list.refetch(),
     "limits.changed": () => void list.refetch(),
   });
 
@@ -79,7 +78,7 @@ export function AuditScreen() {
   return (
     <div className="gc-screen">
       <PageHeader name="Geçmiş" title={sentence} lead="Olan her şey sırayla buraya yazılır: sen ne yaptın, KAPtan ne yaptı. Bir kayıt sonradan değiştirilirse anlaşılır."
-        actions={<Link href={ROUTES.karne} className="inline-flex min-h-11 items-center text-ui font-semibold text-ink underline decoration-rule-ui underline-offset-4 hover:decoration-ink">Aylık ve yıllık karne →</Link>} />
+        actions={<><Link href={ROUTES.karne} className="inline-flex min-h-11 items-center text-ui font-semibold text-ink underline decoration-rule-ui underline-offset-4 hover:decoration-ink">Aylık ve yıllık karne →</Link><Link href={ROUTES.hafta} className="inline-flex min-h-11 items-center text-ui font-semibold text-ink underline decoration-rule-ui underline-offset-4 hover:decoration-ink">Haftalık özet →</Link></>} />
 
       <VerifyBand walk={walk} onVerify={() => void verify()} onShow={showRecord} />
 

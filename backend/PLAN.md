@@ -10,14 +10,14 @@ in `../kaptan-panel/src/lib/` decide every response shape. The old plan is in gi
 1. **Read.** `workers/ingest_worker` polls KAP and stores disclosures (`ingest/`); `prices/` stores raw daily bars.
 2. **Think.** `workers/agent_worker` consumes the feed (`agents/feed.py`): caps, quota and the starting-money check
    decide whether a disclosure gets a run; the LangGraph pipeline (`agents/`, `rules/`, `llm/`) ends in a proposal.
-3. **Gate.** `risk/gate.py` (R01–R16) judges the proposal against the person's real book (`risk/book.py`, `risk/desk.py`).
+3. **Gate.** `risk/gate.py` (R03–R16; R01 and R02, the old stop rules, are retired) judges the proposal against the person's real book (`risk/book.py`, `risk/desk.py`).
    A card appears in `/approvals`.
 4. **Decide.** The person approves (`approvals/service.py`). That writes a ticket only (`brokers/ticket.py`,
-   `GuardedBroker`: kill switch, day halt, cooldown, hard cap, checked again at send; a refusal is a 409 and the
+   `GuardedBroker`: cooldown and hard cap, checked again at send; a refusal is a 409 and the
    approval is rolled back).
 5. **Record.** The person enters the order at their own bank and marks the ticket entered with the real fill
    (`approvals/service.mark_ticket`): `portfolio/` opens or closes the position and `portfolio/ledger.py` moves cash.
-6. **Watch.** `risk/monitor.py` (every 5 min in session) judges the −1 % day halt and the −5 % stop on real equity;
+6. **Watch.** There is no stop and no automatic brake: a loss never halts anything, the person decides.
    `portfolio/exits.py` (after the 18:30 prices) raises X1–X6 exit suggestions for positions a ticket opened;
    `risk/pnl_eod.py` closes the day. `alerts/` tells the person (no ticker, no amount) and `ops/system_status.py`
    says whether KAPtan is really working.

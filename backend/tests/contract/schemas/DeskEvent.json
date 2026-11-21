@@ -1014,431 +1014,11 @@
    "properties": {
     "event": {
      "type": "string",
-     "const": "kill_switch"
-    },
-    "data": {
-     "type": "object",
-     "properties": {
-      "kill_switch": {
-       "type": "string",
-       "enum": [
-        "off",
-        "on"
-       ]
-      },
-      "kill_reason": {
-       "type": [
-        "string",
-        "null"
-       ]
-      },
-      "kill_at": {
-       "anyOf": [
-        {
-         "type": "string",
-         "format": "date-time",
-         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-        },
-        {
-         "type": "null"
-        }
-       ]
-      },
-      "kill_by": {
-       "type": [
-        "string",
-        "null"
-       ]
-      },
-      "halted_today": {
-       "type": "boolean"
-      },
-      "daily_pnl_pct": {
-       "type": "number"
-      },
-      "drawdown_pct": {
-       "type": "number",
-       "maximum": 0
-      },
-      "peak_equity": {
-       "type": "number",
-       "minimum": 0
-      },
-      "equity": {
-       "type": "number",
-       "minimum": 0
-      },
-      "regime": {
-       "type": "string",
-       "enum": [
-        "normal",
-        "crisis"
-       ]
-      },
-      "live_armed": {
-       "type": "boolean"
-      },
-      "quota": {
-       "type": "array",
-       "items": {
-        "type": "object",
-        "properties": {
-         "provider": {
-          "type": "string"
-         },
-         "used": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991
-         },
-         "limit": {
-          "type": "integer",
-          "exclusiveMinimum": 0,
-          "maximum": 9007199254740991
-         }
-        },
-        "required": [
-         "provider",
-         "used",
-         "limit"
-        ],
-        "additionalProperties": false
-       }
-      },
-      "reset": {
-       "anyOf": [
-        {
-         "type": "object",
-         "properties": {
-          "started": {
-           "anyOf": [
-            {
-             "type": "object",
-             "properties": {
-              "uid": {
-               "type": "string"
-              },
-              "name": {
-               "type": "string"
-              },
-              "at": {
-               "type": "string",
-               "format": "date-time",
-               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-              },
-              "reason": {
-               "type": [
-                "string",
-                "null"
-               ]
-              }
-             },
-             "required": [
-              "uid",
-              "name",
-              "at",
-              "reason"
-             ],
-             "additionalProperties": false
-            },
-            {
-             "type": "null"
-            }
-           ]
-          },
-          "ready_at": {
-           "default": null,
-           "anyOf": [
-            {
-             "type": "string",
-             "format": "date-time",
-             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-            },
-            {
-             "type": "null"
-            }
-           ]
-          }
-         },
-         "required": [
-          "started",
-          "ready_at"
-         ],
-         "additionalProperties": false
-        },
-        {
-         "type": "null"
-        }
-       ]
-      },
-      "as_of": {
-       "type": "string",
-       "format": "date-time",
-       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-      }
-     },
-     "required": [
-      "kill_switch",
-      "kill_reason",
-      "kill_at",
-      "kill_by",
-      "halted_today",
-      "daily_pnl_pct",
-      "drawdown_pct",
-      "peak_equity",
-      "equity",
-      "regime",
-      "live_armed",
-      "quota",
-      "reset",
-      "as_of"
-     ],
-     "additionalProperties": false
-    }
-   },
-   "required": [
-    "event",
-    "data"
-   ],
-   "additionalProperties": false
-  },
-  {
-   "type": "object",
-   "properties": {
-    "event": {
-     "type": "string",
-     "const": "halt"
-    },
-    "data": {
-     "type": "object",
-     "properties": {
-      "kill_switch": {
-       "type": "string",
-       "enum": [
-        "off",
-        "on"
-       ]
-      },
-      "kill_reason": {
-       "type": [
-        "string",
-        "null"
-       ]
-      },
-      "kill_at": {
-       "anyOf": [
-        {
-         "type": "string",
-         "format": "date-time",
-         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-        },
-        {
-         "type": "null"
-        }
-       ]
-      },
-      "kill_by": {
-       "type": [
-        "string",
-        "null"
-       ]
-      },
-      "halted_today": {
-       "type": "boolean"
-      },
-      "daily_pnl_pct": {
-       "type": "number"
-      },
-      "drawdown_pct": {
-       "type": "number",
-       "maximum": 0
-      },
-      "peak_equity": {
-       "type": "number",
-       "minimum": 0
-      },
-      "equity": {
-       "type": "number",
-       "minimum": 0
-      },
-      "regime": {
-       "type": "string",
-       "enum": [
-        "normal",
-        "crisis"
-       ]
-      },
-      "live_armed": {
-       "type": "boolean"
-      },
-      "quota": {
-       "type": "array",
-       "items": {
-        "type": "object",
-        "properties": {
-         "provider": {
-          "type": "string"
-         },
-         "used": {
-          "type": "integer",
-          "minimum": 0,
-          "maximum": 9007199254740991
-         },
-         "limit": {
-          "type": "integer",
-          "exclusiveMinimum": 0,
-          "maximum": 9007199254740991
-         }
-        },
-        "required": [
-         "provider",
-         "used",
-         "limit"
-        ],
-        "additionalProperties": false
-       }
-      },
-      "reset": {
-       "anyOf": [
-        {
-         "type": "object",
-         "properties": {
-          "started": {
-           "anyOf": [
-            {
-             "type": "object",
-             "properties": {
-              "uid": {
-               "type": "string"
-              },
-              "name": {
-               "type": "string"
-              },
-              "at": {
-               "type": "string",
-               "format": "date-time",
-               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-              },
-              "reason": {
-               "type": [
-                "string",
-                "null"
-               ]
-              }
-             },
-             "required": [
-              "uid",
-              "name",
-              "at",
-              "reason"
-             ],
-             "additionalProperties": false
-            },
-            {
-             "type": "null"
-            }
-           ]
-          },
-          "ready_at": {
-           "default": null,
-           "anyOf": [
-            {
-             "type": "string",
-             "format": "date-time",
-             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-            },
-            {
-             "type": "null"
-            }
-           ]
-          }
-         },
-         "required": [
-          "started",
-          "ready_at"
-         ],
-         "additionalProperties": false
-        },
-        {
-         "type": "null"
-        }
-       ]
-      },
-      "as_of": {
-       "type": "string",
-       "format": "date-time",
-       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-      }
-     },
-     "required": [
-      "kill_switch",
-      "kill_reason",
-      "kill_at",
-      "kill_by",
-      "halted_today",
-      "daily_pnl_pct",
-      "drawdown_pct",
-      "peak_equity",
-      "equity",
-      "regime",
-      "live_armed",
-      "quota",
-      "reset",
-      "as_of"
-     ],
-     "additionalProperties": false
-    }
-   },
-   "required": [
-    "event",
-    "data"
-   ],
-   "additionalProperties": false
-  },
-  {
-   "type": "object",
-   "properties": {
-    "event": {
-     "type": "string",
      "const": "regime"
     },
     "data": {
      "type": "object",
      "properties": {
-      "kill_switch": {
-       "type": "string",
-       "enum": [
-        "off",
-        "on"
-       ]
-      },
-      "kill_reason": {
-       "type": [
-        "string",
-        "null"
-       ]
-      },
-      "kill_at": {
-       "anyOf": [
-        {
-         "type": "string",
-         "format": "date-time",
-         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-        },
-        {
-         "type": "null"
-        }
-       ]
-      },
-      "kill_by": {
-       "type": [
-        "string",
-        "null"
-       ]
-      },
-      "halted_today": {
-       "type": "boolean"
-      },
       "daily_pnl_pct": {
        "type": "number"
       },
@@ -1491,72 +1071,6 @@
         "additionalProperties": false
        }
       },
-      "reset": {
-       "anyOf": [
-        {
-         "type": "object",
-         "properties": {
-          "started": {
-           "anyOf": [
-            {
-             "type": "object",
-             "properties": {
-              "uid": {
-               "type": "string"
-              },
-              "name": {
-               "type": "string"
-              },
-              "at": {
-               "type": "string",
-               "format": "date-time",
-               "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-              },
-              "reason": {
-               "type": [
-                "string",
-                "null"
-               ]
-              }
-             },
-             "required": [
-              "uid",
-              "name",
-              "at",
-              "reason"
-             ],
-             "additionalProperties": false
-            },
-            {
-             "type": "null"
-            }
-           ]
-          },
-          "ready_at": {
-           "default": null,
-           "anyOf": [
-            {
-             "type": "string",
-             "format": "date-time",
-             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-            },
-            {
-             "type": "null"
-            }
-           ]
-          }
-         },
-         "required": [
-          "started",
-          "ready_at"
-         ],
-         "additionalProperties": false
-        },
-        {
-         "type": "null"
-        }
-       ]
-      },
       "as_of": {
        "type": "string",
        "format": "date-time",
@@ -1564,11 +1078,6 @@
       }
      },
      "required": [
-      "kill_switch",
-      "kill_reason",
-      "kill_at",
-      "kill_by",
-      "halted_today",
       "daily_pnl_pct",
       "drawdown_pct",
       "peak_equity",
@@ -1576,7 +1085,6 @@
       "regime",
       "live_armed",
       "quota",
-      "reset",
       "as_of"
      ],
      "additionalProperties": false
@@ -1650,8 +1158,6 @@
              "target_concurrent_positions",
              "max_adv_share",
              "price_band_pct",
-             "daily_loss_halt_pct",
-             "kill_drawdown_pct",
              "min_edge_cost_ratio",
              "crisis_exposure_mult",
              "leak_ret5d_threshold",
@@ -1802,8 +1308,6 @@
                "target_concurrent_positions",
                "max_adv_share",
                "price_band_pct",
-               "daily_loss_halt_pct",
-               "kill_drawdown_pct",
                "min_edge_cost_ratio",
                "crisis_exposure_mult",
                "leak_ret5d_threshold",
@@ -1959,8 +1463,6 @@
               "target_concurrent_positions",
               "max_adv_share",
               "price_band_pct",
-              "daily_loss_halt_pct",
-              "kill_drawdown_pct",
               "min_edge_cost_ratio",
               "crisis_exposure_mult",
               "leak_ret5d_threshold",
@@ -2420,6 +1922,62 @@
       "prev_hash",
       "entry",
       "is_fixture"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "event",
+    "data"
+   ],
+   "additionalProperties": false
+  },
+  {
+   "type": "object",
+   "properties": {
+    "event": {
+     "type": "string",
+     "const": "price_alert"
+    },
+    "data": {
+     "type": "object",
+     "properties": {
+      "id": {
+       "type": "string"
+      },
+      "ticker": {
+       "type": "string"
+      },
+      "name": {
+       "type": "string"
+      },
+      "direction": {
+       "type": "string",
+       "enum": [
+        "above",
+        "below"
+       ]
+      },
+      "level": {
+       "type": "number"
+      },
+      "price": {
+       "type": "number"
+      },
+      "at": {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      }
+     },
+     "required": [
+      "id",
+      "ticker",
+      "name",
+      "direction",
+      "level",
+      "price",
+      "at"
      ],
      "additionalProperties": false
     }

@@ -24,7 +24,7 @@ const DECISION_TR: Record<TrackItem["decision"], string> = {
   skipped: "Geçtin",
   expired: "Süresi doldu, karar vermedin",
   waiting: "Kararını bekliyor",
-  cancelled: "KAPtan durdurulduğu için iptal oldu",
+  cancelled: "İptal oldu",
 };
 
 const dayTr = (iso: string) => `${Number(iso.slice(8, 10))} ${MONTHS[Number(iso.slice(5, 7)) - 1]}`;

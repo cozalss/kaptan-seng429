@@ -24,21 +24,22 @@ BANNED = ("acil durdurma", "özsermaye", "emir", "pozisyon", "rejim", "zirve", "
 
 
 def test_warnings_from_the_risk_state_and_yesterday() -> None:
-    risk = {"kill_switch": "on", "kill_reason": "Zirveden %5 düşüş (R01)", "halted_today": True, "regime": "crisis"}
+    risk = {"regime": "crisis"}
     pnl = {"d": date(2026, 10, 19), "equity": 990_000, "daily_return": -0.012, "drawdown": -0.03}
     found = risk_warnings(risk, pnl)
-    assert [w["level"] for w in found] == ["critical", "warn", "warn", "warn"]
-    assert found[0]["text_tr"] == "KAPtan durduruldu: yeni öneri çıkmaz."  # the rule code is not shown
-    assert found[3]["text_tr"] == "Önceki borsa gününde paran %1,2 azaldı."
+    assert [w["level"] for w in found] == ["warn", "info"]
+    assert found[0]["text_tr"] == "Piyasa çok dalgalı: öneriler daha küçük tutulur."
+    assert not any("durdur" in w["text_tr"] or "sınır" in w["text_tr"] for w in found)  # no stop, no limit talk
+    assert found[1]["text_tr"] == "Önceki borsa gününde paran %1,2 azaldı."
     for w in found:
         assert not any(b in w["text_tr"].lower() for b in BANNED)
-    calm = {"kill_switch": "off", "kill_reason": None, "halted_today": False, "regime": "normal"}
+    calm = {"regime": "normal"}
     assert risk_warnings(calm, {**pnl, "daily_return": 0.004}) == []
     assert risk_warnings(None, {**pnl, "drawdown": -0.01})[0]["level"] == "info"
 
 
 def test_summary_text_is_plain_and_stable() -> None:
-    risk = {"kill_switch": "off", "kill_reason": None, "halted_today": False, "regime": "normal"}
+    risk = {"regime": "normal"}
     pnl = {"d": date(2026, 10, 19), "equity": 1_004_200, "daily_return": 0.0042, "drawdown": -0.011}
     text = summary_text(date(2026, 10, 20), _doc(open_positions=3, expiring_today=1, pending_approvals=2), risk, pnl)
     assert text == (
@@ -57,7 +58,8 @@ def test_summary_of_an_empty_install_says_only_what_exists() -> None:
         "20 Ekim 2026 Salı sabah özeti. Onayını bekleyen öneri yok. Elinde KAPtan'ın bildiği hisse yok. "
         "Son kapanıştan bu yana KAPtan'ın önemli bulduğu bildirim gelmedi."
     )
-    stopped = {"kill_switch": "on", "kill_reason": None, "halted_today": True, "regime": "normal"}
-    said = summary_text(date(2026, 10, 20), _doc(restriction_changes=2, important_disclosures=4), stopped, None)
-    assert "KAPtan durduruldu, yeni öneri çıkmaz; günlük zarar sınırına gelindi, bugün yeni öneri çıkmaz." in said
+    said = summary_text(
+        date(2026, 10, 20), _doc(restriction_changes=2, important_disclosures=4), {"regime": "normal"}, None
+    )
+    assert "durdur" not in said
     assert "işlem kısıtı: 2." in said and "4 KAP bildirimi geldi." in said

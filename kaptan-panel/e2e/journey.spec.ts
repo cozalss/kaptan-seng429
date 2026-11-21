@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { resetBackendDemo } from "./backend";
 import { go, login, loginApi, mainNav, PASSPHRASE, skipFirstVisit, trackErrors } from "./helpers";
 
-/** The one person's day: sign in, read the home, approve a suggestion, stop everything, restart. */
+/** The one person's day: sign in, read the home, approve a suggestion, find no stop. */
 test.beforeEach(async ({ context }) => {
   await context.clearCookies();
   await resetBackendDemo();
@@ -104,26 +104,15 @@ test("Giremedim asks what happened and closes the order", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test("stop asks first, closes the suggestions, and one press restarts", async ({ page }) => {
+test("there is no stop anywhere: no button, no band, no restart", async ({ page }) => {
   const errors = trackErrors(page);
   await login(page);
-  await page.getByRole("button", { name: "Tüm işlemleri durdur" }).click();
-  await page.getByRole("dialog", { name: "Tüm işlemler durdurulsun mu?" }).getByRole("button", { name: "Evet, durdur" }).click();
-
-  await expect(page.getByRole("heading", { name: "Tüm işlemler durduruldu" })).toBeVisible();
-  await expect(page.getByTestId("stop-state")).toContainText("Elindeki hisseler yerinde duruyor.");
-  await expect(page.getByRole("region", { name: "Öneriler" }).getByText(/Yeniden başlatana kadar öneri onaylanamaz/)).toBeVisible();
-
-  // Everywhere else the band says so, with the way to Param.
-  await go(page, "Geçmiş", /\/gecmis$/);
-  await expect(page.getByTestId("shell-banner")).toContainText("Durduruldu.");
-  await go(page, "Param", /\/portfoy$/);
-  await expect(page.getByTestId("stop-state")).toBeVisible();
-
-  await page.getByRole("button", { name: "İşlemleri yeniden başlat" }).click();
-  await page.getByRole("dialog", { name: "İşlemler yeniden başlasın mı?" }).getByRole("button", { name: "Evet, yeniden başlat" }).click();
+  await expect(page.getByRole("button", { name: /durdur/i })).toHaveCount(0);
   await expect(page.getByTestId("stop-state")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Tüm işlemleri durdur" })).toBeVisible();
+  await go(page, "Param", /\/portfoy$/);
+  await expect(page.getByRole("button", { name: /durdur/i })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Acil durum" })).toHaveCount(0);
+  await expect(page.getByText("Seni koruyan iki fren")).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

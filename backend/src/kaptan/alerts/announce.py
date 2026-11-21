@@ -23,10 +23,10 @@ from kaptan.domain.schemas._base import iso_ms
 
 log = logging.getLogger("kaptan.alerts")
 
-HELD_KINDS: Final[tuple[AlertKind, ...]] = ("suggestion", "day_halt", "part_down", "watch")
+HELD_KINDS: Final[tuple[AlertKind, ...]] = ("suggestion", "part_down", "watch", "price", "weekly")
 
 
-async def _prefs(pool: Any) -> dict[str, Any]:
+async def read_prefs(pool: Any) -> dict[str, Any]:
     try:
         async with pool.connection() as conn:
             prefs = await load_prefs(conn)
@@ -46,7 +46,7 @@ async def announce(
     now: datetime,
     senders: Mapping[Channel, Sender] | None = None,
 ) -> Outcome:
-    verdict = decide(await _prefs(pool), kind, now)
+    verdict = decide(await read_prefs(pool), kind, now)
     if verdict == "skip":
         return "off"
     if verdict == "hold":
@@ -56,9 +56,9 @@ async def announce(
             await redis.hset(HELD_KEY, kind, iso_ms(now))
         except (RedisError, OSError) as exc:
             log.warning("alert not held (%s); sent now instead", type(exc).__name__)
-            return await notify(redis, cfg, kind, now=now, senders=senders)
+            return await notify(redis, cfg, kind, now=now, senders=senders, pool=pool)
         return "sent"
-    return await notify(redis, cfg, kind, now=now, senders=senders)
+    return await notify(redis, cfg, kind, now=now, senders=senders, pool=pool)
 
 
 async def flush_held(
@@ -71,7 +71,7 @@ async def flush_held(
         return ()
     if not held:
         return ()
-    prefs = await _prefs(pool)
+    prefs = await read_prefs(pool)
     if in_quiet(prefs["quiet"], now):
         return ()
     sent: tuple[AlertKind, ...] = ()
@@ -82,7 +82,7 @@ async def flush_held(
         await redis.hdel(HELD_KEY, kind)
         if _stale(raw, now) or decide(prefs, kind, now) != "send":
             continue
-        await notify(redis, cfg, kind, now=now, senders=senders)
+        await notify(redis, cfg, kind, now=now, senders=senders, pool=pool)
         sent = (*sent, kind)
     return sent
 

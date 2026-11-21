@@ -176,6 +176,5 @@ def test_card_effective_status() -> None:
         "expires_at": datetime(2027, 1, 12, 6, 50, tzinfo=UTC),
     }
     before = datetime(2027, 1, 11, 11, tzinfo=UTC)
-    assert card_from_row(row, kill_on=False, now=before)["status"] == "pending"
-    assert card_from_row(row, kill_on=True, now=before)["status"] == "cancelled"
-    assert card_from_row(row, kill_on=False, now=datetime(2027, 1, 12, 7, tzinfo=UTC))["status"] == "expired"
+    assert card_from_row(row, now=before)["status"] == "pending"
+    assert card_from_row(row, now=datetime(2027, 1, 12, 7, tzinfo=UTC))["status"] == "expired"

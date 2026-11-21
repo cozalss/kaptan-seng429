@@ -1,6 +1,6 @@
 import { DAY_BY_ANCHOR, DAY_TOTAL } from "@/mocks/ids";
 import type { MockDb } from "./db";
-import { approvalCards, counters, explainFor, riskStatus, visibleDisclosures } from "./selectors";
+import { approvalCards, counters, explainFor, visibleDisclosures } from "./selectors";
 
 /**
  * Timed behaviour of the mock: the live ticker and fills after approval. Browser-only; every timer is cleared by `stop()`.
@@ -61,15 +61,3 @@ export function executeApproved(db: MockDb, proposalId: string): void {
   db.bus.emit("desk", "ticket", ticket);
 }
 
-/* ── kill switch & loss simulation (06 §11, 11 Adım 4) ───────────────── */
-export function engageKillSwitch(db: MockDb, by: string, reason: string): void {
-  const open = db.snapshot.orders.filter((o) => o.status === "pending_open" || o.status === "accepted").map((o) => o.id);
-  db.update((s) => ({
-    ...s,
-    risk: { ...s.risk, kill_switch: "on", kill_reason: reason, kill_at: db.nowIso(), kill_by: by, reset_started: null },
-    canceledOrderIds: [...new Set([...s.canceledOrderIds, ...open])],
-    positionsManagedByExit: true,
-  }));
-  db.audit(by, "kill_switch.on", "system_flag", "kill_switch", { reason, canceled_orders: open.length });
-  db.bus.emit("desk", "kill_switch", riskStatus(db.snapshot));
-}

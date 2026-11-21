@@ -1,28 +1,9 @@
 import { ALERT_TEXT, alertFor, shouldNotify, type AlertKind } from "./alerts";
 import { desktopAlertsOn, desktopPermission, raiseDesktopAlert, turnOffDesktopAlerts, turnOnDesktopAlerts } from "./desktop";
 
-const calm = { kill_switch: "off" as const, halted_today: false };
-
 describe("which desk event becomes an alert", () => {
   it("a new suggestion leads to that suggestion", () => {
-    expect(alertFor({ event: "approval.requested", data: { proposal_id: "prop-7" } }, calm)).toEqual({ kind: "suggestion", body: "Yeni bir önerin var.", path: "/oneri/prop-7" });
-  });
-
-  it("the daily stop and the full stop lead home, once, when they begin", () => {
-    expect(alertFor({ event: "halt", data: { kill_switch: "off", halted_today: true } }, calm)).toEqual({ kind: "halt", body: "Günlük zarar sınırına gelindi, yeni öneri durdu.", path: "/benim" });
-    expect(alertFor({ event: "kill_switch", data: { kill_switch: "on", halted_today: false } }, calm)).toEqual({ kind: "stop", body: "KAPtan durduruldu.", path: "/benim" });
-  });
-
-  it("says nothing when the state was already so, or when it ends", () => {
-    expect(alertFor({ event: "halt", data: { kill_switch: "off", halted_today: true } }, { kill_switch: "off", halted_today: true })).toBeNull();
-    expect(alertFor({ event: "halt", data: { kill_switch: "off", halted_today: false } }, { kill_switch: "off", halted_today: true })).toBeNull();
-    expect(alertFor({ event: "kill_switch", data: { kill_switch: "on", halted_today: false } }, { kill_switch: "on", halted_today: false })).toBeNull();
-    expect(alertFor({ event: "kill_switch", data: { kill_switch: "off", halted_today: false } }, { kill_switch: "on", halted_today: false })).toBeNull();
-  });
-
-  it("treats an event that arrives before the first status as news", () => {
-    expect(alertFor({ event: "kill_switch", data: { kill_switch: "on", halted_today: false } }, null)?.kind).toBe("stop");
-    expect(alertFor({ event: "halt", data: { kill_switch: "off", halted_today: true } }, null)?.kind).toBe("halt");
+    expect(alertFor({ event: "approval.requested", data: { proposal_id: "prop-7" } })).toEqual({ kind: "suggestion", body: "Yeni bir önerin var.", path: "/oneri/prop-7" });
   });
 
   it("never carries a share's code, a company, an amount or a direction", () => {
@@ -129,7 +110,7 @@ describe("the browser side", () => {
   });
 
   it("shows nothing while the person is looking at the app, or before they turned it on", async () => {
-    const alert = { kind: "stop" as const, body: ALERT_TEXT.stop, path: "/benim" };
+    const alert = { kind: "suggestion" as const, body: ALERT_TEXT.suggestion, path: "/oneri/prop-7" };
     away();
     expect(raiseDesktopAlert(alert, vi.fn())).toBe(false);
     await turnOnDesktopAlerts();
@@ -150,6 +131,6 @@ describe("the browser side", () => {
         { permission: "granted", requestPermission: async () => "granted" as const },
       ),
     );
-    expect(raiseDesktopAlert({ kind: "halt", body: ALERT_TEXT.halt, path: "/benim" }, vi.fn())).toBe(false);
+    expect(raiseDesktopAlert({ kind: "suggestion", body: ALERT_TEXT.suggestion, path: "/oneri/prop-7" }, vi.fn())).toBe(false);
   });
 });

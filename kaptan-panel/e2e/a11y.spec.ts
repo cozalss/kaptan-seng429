@@ -41,6 +41,17 @@ for (const width of [320, 390, 1440]) {
   });
 }
 
+/** Param's insight blocks in their busiest state: the limit tightened (warning sentence) and a note editor open. */
+async function openInsights(page: Page) {
+  const where = page.getByRole("region", { name: /Paranın en büyük parçası|tek hissede/ });
+  await where.getByLabel("Tek hissede en çok kaç yüzde tutmak istersin?").fill("5");
+  await where.getByRole("button", { name: "Sınırı kaydet" }).click();
+  await expect(where.getByRole("status")).toHaveText("Sınırın %5 oldu.");
+  const notes = page.getByRole("region", { name: /not yazabilirsin|not yazmışsın/ });
+  await notes.getByRole("button", { name: /için not yaz/ }).first().click();
+  await expect(notes.getByLabel("Neden aldın, ne zaman satmayı düşünüyorsun?")).toBeVisible();
+}
+
 /** The honest-state surfaces: a problem line, the Sistem and Bildirimler blocks, what got no turn. */
 const STATES: ReadonlyArray<{ name: string; path: string; seed: MockSeed; ready: (p: Page) => Promise<void> }> = [
   { name: "one problem, line + Sistem", path: "/ayarlar", seed: { problems: ["ingest_stale"] }, ready: (p) => expect(p.getByTestId("system-line")).toBeVisible() },
@@ -55,13 +66,17 @@ const STATES: ReadonlyArray<{ name: string; path: string; seed: MockSeed; ready:
   { name: "set up, nothing owned: home", path: "/benim", seed: { fresh: true }, ready: setUpNothingOwned },
   { name: "Param, money in", path: "/portfoy", seed: {}, ready: openDeposit },
   { name: "Param, a sale with errors", path: "/portfoy", seed: {}, ready: openSaleWithError },
+  { name: "Takvim, the dates ahead", path: "/takvim", seed: {}, ready: (p) => expect(p.getByRole("heading", { level: 1 })).toContainText("Takvim") },
   { name: "Karne, the month", path: "/gecmis/karne", seed: {}, ready: (p) => expect(p.getByTestId("track-summary")).toBeVisible() },
   { name: "Karne, the year", path: "/gecmis/karne", seed: {}, ready: karneYear },
   { name: "the bank step with the commission field", path: "/benim", seed: {}, ready: openBankStep },
   { name: "Param, the starting money row being corrected", path: "/portfoy", seed: {}, ready: openMoneyCorrection },
   { name: "Param, the start-over confirmation", path: "/portfoy", seed: {}, ready: openStartOver },
+  { name: "Param, the one-share limit warning and a note being written", path: "/portfoy", seed: {}, ready: openInsights },
   { name: "Ayarlar, my commission rate", path: "/ayarlar", seed: {}, ready: (p) => expect(p.getByRole("textbox", { name: "Binde kaç?" })).toBeVisible() },
   { name: "the slip with a fill being fixed", path: "/benim", seed: {}, ready: openFillFix },
+  { name: "Ayarlar, price alerts and the backup list", path: "/ayarlar", seed: {}, ready: (p) => expect(p.getByRole("list", { name: "Yedekler" })).toBeVisible() },
+  { name: "the weekly summary", path: "/gecmis/hafta", seed: {}, ready: (p) => expect(p.getByTestId("hafta-kaptan")).toBeVisible() },
 ];
 
 async function karneYear(p: Page) {
@@ -168,6 +183,27 @@ for (const width of [360, 1440]) {
     // Scoped to this section: other screens' own findings (the holding rows' links) are theirs.
     await page.waitForTimeout(700);
     const result = await new AxeBuilder({ page }).include("[aria-labelledby=kar-payi]").withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
+    expect(result.violations.map((v) => `${v.id}: ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);
+  });
+}
+
+/** Statement import (wave 5): the column step and the row step on Param. */
+for (const width of [360, 1440]) {
+  test(`axe statement import @${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
+    await loginApi(page);
+    await page.goto("/portfoy");
+    const s = page.locator("[aria-labelledby=dokum]");
+    await s.getByRole("button", { name: "Dökümünü yükle" }).click();
+    const csv = "Tarih;İşlem;Hisse;Adet;Fiyat;Komisyon;Tutar\n11.01.2027;Alış;KRGCL;100;30,00;6,00;\n11.01.2027;Virman;;;;;10,00";
+    await page.locator("input[type=file]").setInputFiles({ name: "ekstre.csv", mimeType: "text/csv", buffer: Buffer.from(csv, "utf-8") });
+    await expect(s.getByRole("group", { name: "Sütunları eşleştir" })).toBeVisible();
+    const tags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
+    let result = await new AxeBuilder({ page }).include("[aria-labelledby=dokum]").withTags(tags).analyze();
+    expect(result.violations.map((v) => `${v.id}: ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);
+    await s.getByRole("button", { name: "Eşleştirmeyi onayla, satırlara bak" }).click();
+    await expect(s.getByRole("group", { name: "Satırlara bak" })).toBeVisible();
+    result = await new AxeBuilder({ page }).include("[aria-labelledby=dokum]").withTags(tags).analyze();
     expect(result.violations.map((v) => `${v.id}: ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);
   });
 }

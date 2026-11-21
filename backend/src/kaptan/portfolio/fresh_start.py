@@ -4,8 +4,7 @@ One action closes the current book and opens an empty one, so the app is `needs_
 from history: the old book's ledger rows stay (they carry their `book_no`), its open positions, P&L series and
 tickets are copied into `trading.book_archive` before the live tables are emptied, and `GET /me/books` reads them
 back. Untouched: disclosures, KAPtan's reading, the limits, the audit chain, the closed-position history. The risk
-numbers (the day's change, the fall from the peak, a day halt) start from zero with the book; a kill switch that
-is ON stays on, because stopping is a safety rule, not a number of the old book.
+numbers (the day's change, the fall from the peak) are computed from the book, so they start from zero with it.
 """
 
 from __future__ import annotations
@@ -54,10 +53,6 @@ UPDATE trading.book_epochs SET closed_at = %s, cash_at_close = %s, equity_at_clo
  WHERE no = %s
 """
 OPEN_SQL: Final = "INSERT INTO trading.book_epochs (no, opened_at) VALUES (%s, %s)"
-RISK_SQL: Final = """
-UPDATE trading.risk_state SET daily_pnl_pct = 0, drawdown_pct = 0, halted_today = false, updated_at = %s
- WHERE id = 1 RETURNING kill_switch
-"""
 BOOKS_SQL: Final = """
 SELECT no, opened_at, closed_at, cash_at_close, equity_at_close, put_in_at_close FROM trading.book_epochs
  WHERE closed_at IS NOT NULL ORDER BY no DESC
@@ -84,7 +79,7 @@ async def _rows(conn: AsyncConnection[Any], sql: str, params: Any) -> list[dict[
 
 
 async def start_over(conn: AsyncConnection[Any], word: str, actor: Actor, *, now: datetime) -> dict[str, Any]:
-    """POST /me/book/reset {confirm}. 409 not_started, 422 confirm. Returns {closed_book, kill_switch_on}."""
+    """POST /me/book/reset {confirm}. 409 not_started, 422 confirm. Returns {closed_book}."""
     if not confirmed(word):
         raise ApiError(422, "confirm", WRONG_WORD)
     async with conn.transaction():
@@ -104,16 +99,13 @@ async def start_over(conn: AsyncConnection[Any], word: str, actor: Actor, *, now
             await cur.execute(OPEN_SQL, (no + 1, now))
             await cur.execute("DELETE FROM trading.positions")
             await cur.execute("DELETE FROM trading.pnl_daily")
-            await cur.execute(RISK_SQL, (now,))
-            risk = await cur.fetchone()
-        kill_on = risk is not None and risk["kill_switch"] == "on"
         payload = {
             "closed_book": no, "equity": float(book.equity), "cash": float(book.cash), "put_in": float(book.put_in),
-            "positions": positions, "tickets_voided": voided, "kill_switch_stays_on": kill_on,
+            "positions": positions, "tickets_voided": voided,
         }  # fmt: skip
         draft = AuditDraft(actor.audit_actor, "book.reset", "book", f"defter-{no}", payload, occurred_at=now)
         await append(conn, [draft], now=now)
-    return {"closed_book": no, "kill_switch_on": kill_on}
+    return {"closed_book": no}
 
 
 async def previous_books(conn: AsyncConnection[Any]) -> list[dict[str, Any]]:

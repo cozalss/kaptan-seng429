@@ -79,20 +79,19 @@ def _state(ui: bool, expires: datetime | None = None) -> live_arm.LiveState:
 
 def test_missing_keys_in_order_and_real_broker_always_missing() -> None:
     cfg = ExecConfig()
-    assert live_arm.missing_keys(cfg, _state(False), NOW, kill=True) == [
+    assert live_arm.missing_keys(cfg, _state(False), NOW) == [
         "config",
         "env",
         "ui_armed",
-        "kill_switch_off",
         "real_broker",
     ]
     live = ExecConfig(trading=TradingConfig(mode="live"), live_env_enabled=True)
     armed = _state(True, live_arm.arm_expiry(NOW))
-    assert live_arm.missing_keys(live, armed, NOW, kill=False) == ["real_broker"]
+    assert live_arm.missing_keys(live, armed, NOW) == ["real_broker"]
     assert live_arm.arm_expiry(NOW) == datetime(2027, 1, 11, 15, 30, tzinfo=UTC)
     late = datetime(2027, 1, 11, 16, 0, tzinfo=UTC)
     assert not armed.ui_armed(late)  # dropped at 18:30 Istanbul
-    view = live_arm.view(live, armed, NOW, kill=False)
+    view = live_arm.view(live, armed, NOW)
     assert (view["armed"], view["effective_mode"], view["missing"]) == (False, "paper", ["real_broker"])
     assert view["expires_at"] == "2027-01-11T15:30:00.000Z"
 

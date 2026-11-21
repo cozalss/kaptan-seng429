@@ -3,7 +3,7 @@ import { PortfolioScreen } from "@/components/portfolio/portfolio-screen";
 
 export const metadata: Metadata = { title: "Param" };
 
-/** /portfoy — your money, what you hold, waiting fişler, and Durdur. */
+/** /portfoy — your money, what you hold, waiting fişler. */
 export default function Page() {
   return <PortfolioScreen />;
 }

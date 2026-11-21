@@ -98,7 +98,6 @@ class BookResetInput(KModel):
 
 class BookResetOut(KModel):
     closed_book: int
-    kill_switch_on: bool
 
 
 class PreviousBookPosition(KModel):

@@ -1,0 +1,182 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "source": {
+   "type": "string",
+   "minLength": 1,
+   "maxLength": 40,
+   "pattern": "^[0-9A-Za-zÇĞİÖŞÜçğıöşü][0-9A-Za-zÇĞİÖŞÜçğıöşü .-]*$"
+  },
+  "mapping": {
+   "type": "object",
+   "properties": {
+    "has_header": {
+     "type": "boolean"
+    },
+    "date": {
+     "anyOf": [
+      {
+       "type": "integer",
+       "minimum": 0,
+       "exclusiveMaximum": 30
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "type": {
+     "anyOf": [
+      {
+       "type": "integer",
+       "minimum": 0,
+       "exclusiveMaximum": 30
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "fixed_kind": {
+     "anyOf": [
+      {
+       "type": "string",
+       "enum": [
+        "buy",
+        "sell",
+        "deposit",
+        "withdrawal",
+        "dividend"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "ticker": {
+     "anyOf": [
+      {
+       "type": "integer",
+       "minimum": 0,
+       "exclusiveMaximum": 30
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "qty": {
+     "anyOf": [
+      {
+       "type": "integer",
+       "minimum": 0,
+       "exclusiveMaximum": 30
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "price": {
+     "anyOf": [
+      {
+       "type": "integer",
+       "minimum": 0,
+       "exclusiveMaximum": 30
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "commission": {
+     "anyOf": [
+      {
+       "type": "integer",
+       "minimum": 0,
+       "exclusiveMaximum": 30
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "amount": {
+     "anyOf": [
+      {
+       "type": "integer",
+       "minimum": 0,
+       "exclusiveMaximum": 30
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "types": {
+     "default": {},
+     "type": "object",
+     "propertyNames": {
+      "type": "string",
+      "maxLength": 60
+     },
+     "additionalProperties": {
+      "type": "string",
+      "enum": [
+       "buy",
+       "sell",
+       "deposit",
+       "withdrawal",
+       "dividend",
+       "skip"
+      ]
+     }
+    }
+   },
+   "required": [
+    "has_header",
+    "types"
+   ],
+   "additionalProperties": false
+  },
+  "number_style": {
+   "default": "auto",
+   "type": "string",
+   "enum": [
+    "auto",
+    "dot"
+   ]
+  },
+  "rows": {
+   "maxItems": 3001,
+   "type": "array",
+   "items": {
+    "maxItems": 30,
+    "type": "array",
+    "items": {
+     "type": "string",
+     "maxLength": 100
+    }
+   }
+  },
+  "selected": {
+   "maxItems": 3001,
+   "type": "array",
+   "items": {
+    "type": "integer",
+    "minimum": -9007199254740991,
+    "maximum": 9007199254740991
+   }
+  }
+ },
+ "required": [
+  "source",
+  "mapping",
+  "number_style",
+  "rows",
+  "selected"
+ ],
+ "additionalProperties": false
+}

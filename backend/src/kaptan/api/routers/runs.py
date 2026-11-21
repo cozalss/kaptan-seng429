@@ -4,7 +4,7 @@
 
 The stored document is trading.agent_runs.explain (the fixture/pipeline payload). Overlay the live
 parts like the mock's selectors.explainFor(): approval (effective status), orders + fills (session
-orders, kill-switch cancels), the order ticket and its order, run.status (running while an injected
+orders), the order ticket and its order, run.status (running while an injected
 run is in flight; completed once approved), audit_positions (last 8 ledger rows of the run).
 Runs that are not visible (agent_runs.visible = false) are 404.
 """

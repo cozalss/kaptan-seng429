@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { DropdownMenu as M } from "radix-ui";
 import { Wordmark } from "@/components/brand/marks";
 import { ShellBanner } from "@/components/shell/banners";
-import { DeskStateProvider, ResetBoundary, useDesk } from "@/components/shell/desk-state";
+import { DeskStateProvider, ResetBoundary } from "@/components/shell/desk-state";
 import { logout } from "@/components/shell/session-actions";
 import { openShortcuts, Shortcuts } from "@/components/shell/shortcuts";
 import { PrefsSync } from "@/lib/prefs/prefs-sync";
@@ -22,9 +22,10 @@ import { UnreachableScreen } from "@/components/shell/unreachable";
 import { MENU_CONTENT, MENU_ITEM } from "@/components/ui/menu";
 import { SkeletonLines } from "@/components/ui/primitives";
 import { notify, Toaster } from "@/components/ui/toast";
-import { ConfirmAction, useStopRestart } from "./stop-panel";
 import { SearchBox } from "@/components/search/search-box";
+import { PriceAlertWatch } from "@/components/settings/price-alert-watch";
 import { WatchAlerts } from "@/components/watchlist/watch-alerts";
+import { UnreadBadge } from "@/components/reading/unread-badge";
 
 /** A page that has not landed by then simply appears: input is never held longer than this. */
 const TRANSITION_CAP_MS = 240;
@@ -97,7 +98,7 @@ function useScrollbarWidth() {
 }
 
 /**
- * The app's one frame: the wordmark, the four screens, the stop and the account. The home is a
+ * The app's one frame: the wordmark, the four screens and the account. The home is a
  * full-bleed scene; every other screen sits in the page column. `data-solo` marks the frame.
  */
 export function SoloShell({ user, children }: { user: SessionUser; children: ReactNode }) {
@@ -117,8 +118,7 @@ export function SoloShell({ user, children }: { user: SessionUser; children: Rea
             <SoloHeader pathname={pathname} />
             <main id="icerik" tabIndex={-1} className="flex-1 pb-[calc(var(--tab-h)+env(safe-area-inset-bottom))] outline-none sm:pb-0">
               <div className="u-page">
-                {/* Home and Param carry the stop state themselves, with the way back. */}
-                <ShellBanner showStopped={pathname !== HOME && pathname !== ROUTES.portfoy} />
+                <ShellBanner />
               </div>
               <ResetBoundary>
                 <div key={pathname} className={isHome ? undefined : "u-page pt-4 pb-16 sm:pt-8 sm:pb-24"}>
@@ -165,7 +165,7 @@ function SoloHeader({ pathname }: { pathname: string }) {
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <SearchBox />
             <WatchAlerts />
-            <StopControl />
+            <PriceAlertWatch />
             <AccountMenu />
           </div>
         </div>
@@ -195,46 +195,12 @@ function MainNav({ pathname }: { pathname: string }) {
                 {TAB_ICON[item.key]}
               </svg>
               {item.label}
+              {item.key === "bildirimler" ? <UnreadBadge /> : null}
             </Link>
           </li>
         ))}
       </ul>
     </nav>
-  );
-}
-
-/**
- * The stop is reachable from every screen, a quiet red word in the bar; it still asks first. Once
- * stopped it says so and leads home, where the band has the way back.
- */
-function StopControl() {
-  const desk = useDesk();
-  const controls = useStopRestart(() => desk.refresh());
-  if (desk.risk?.kill_switch === "on") {
-    return (
-      <Link href={HOME} className="stop-chip">
-        <span aria-hidden className="stop-chip__mark" />
-        Durduruldu
-      </Link>
-    );
-  }
-  return (
-    <ConfirmAction
-      trigger={
-        <button type="button" className="stop-chip" aria-label="Durdur: tüm işlemler">
-          <span aria-hidden className="stop-chip__mark" />
-          Durdur
-        </button>
-      }
-      title="Tüm işlemler durdurulsun mu?"
-      description="Yeni alım ve satım yapılmaz, bekleyen işlemler iptal edilir. Elindeki hisseler satılmaz."
-      confirm="Evet, durdur"
-      busy="Durduruluyor…"
-      tone="critical"
-      pending={controls.stopPending}
-      error={controls.stopError}
-      onConfirm={controls.onStop}
-    />
   );
 }
 

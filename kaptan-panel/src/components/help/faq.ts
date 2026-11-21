@@ -31,12 +31,11 @@ export const FAQ: readonly Faq[] = [
     ],
   },
   {
-    id: "durdurmalar",
-    question: "Durdurma sınırları ne işe yarar?",
+    id: "fren",
+    question: "Param düşerse KAPtan bir şeyi kendiliğinden durdurur mu?",
     answer: [
-      "Günlük sınır: paran bir günde %1’den fazla düşerse o gün yeni öneri çıkmaz. Ertesi gün kendiliğinden kalkar.",
-      "Büyük sınır: paran zirvesinden %5 düşerse KAPtan her şeyi durdurur. Elindeki hisseleri satmaz; yalnızca yeni öneri çıkarmaz. Yeniden başlatmak için en az 24 saat ve 5 borsa günü beklenir.",
-      "İstediğin an “Durdur”a basarak da her şeyi durdurabilirsin. Bu sınırları yalnızca sıkılaştırabilirsin.",
+      "Hayır. KAPtan paranın bir günde ya da zirveden ne kadar düştüğünü sana gösterir ama hiçbir şeyi kendiliğinden durdurmaz. Öneri çıkmaya devam eder; her öneri senin onayına gelir ve karar senindir.",
+      "Ayarlar’daki sınırlar (işlem başına risk, tek hisse payı, sektör payı gibi) her öneriye uygulanır. Bu sınırları yalnızca sıkılaştırabilirsin. Bir süre öneri istemiyorsan Tatil modu var.",
     ],
   },
   {
@@ -68,7 +67,7 @@ export const FAQ: readonly Faq[] = [
     question: "Bir süre öneri istemiyorum. Ne yapayım?",
     answer: [
       "Ayarlar’daki “Tatil modu”nu aç. KAPtan bildirimleri okumaya ve saklamaya devam eder, ama dönene kadar öneri çıkarmaz ve ücretsiz kotanı harcamaz.",
-      "Bitiş tarihinde ya da “Şimdi devam et”e bastığında yeniden başlar. Durdurma sınırları tatildeyken de çalışır.",
+      "Bitiş tarihinde ya da “Şimdi devam et”e bastığında yeniden başlar. Tatildeyken sınırların yine geçerlidir.",
     ],
   },
   {

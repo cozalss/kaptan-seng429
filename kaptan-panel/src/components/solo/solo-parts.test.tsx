@@ -180,34 +180,28 @@ describe("Öneriler and Son işlemler", () => {
   });
 
   it("makes an empty day a good one, with today's reading to show for it", () => {
-    render(<Suggestions suggestions={[]} names={new Map()} stopped={false} today={{ read: 796, toCrew: 40 }} decisions={decisions()} />);
+    render(<Suggestions suggestions={[]} names={new Map()} today={{ read: 796, toCrew: 40 }} decisions={decisions()} />);
     expect(screen.getByRole("heading", { name: "Bugün karar vermen gereken bir şey yok." })).toBeInTheDocument();
     expect(plain(screen.getByRole("region", { name: "Öneriler" }).textContent)).toContain("KAPtan bugün 796 bildirim okudu, 40 tanesine yakından baktı. Şu an senden bir şey beklemiyor.");
   });
 
-  it("says something true when today's reading could not be read, or everything is stopped", () => {
-    const { rerender } = render(<Suggestions suggestions={[]} names={new Map()} stopped={false} today={null} decisions={decisions()} />);
+  it("says something true when today's reading could not be read", () => {
+    render(<Suggestions suggestions={[]} names={new Map()} today={null} decisions={decisions()} />);
     expect(screen.getByText("KAPtan KAP duyurularını okuyor. Söyleyecek bir şeyi olunca burada konuşur; şu an senden bir şey beklemiyor.")).toBeInTheDocument();
-    rerender(<Suggestions suggestions={[]} names={new Map()} stopped today={null} decisions={decisions()} />);
-    expect(screen.getByRole("heading", { name: "İşlemler durdu; şimdilik karar yok." })).toBeInTheDocument();
   });
 
-  it("shows an answer's own error, how sure KAPtan is, and closes Onayla on a halted day", () => {
+  it("shows an answer's own error, and how sure KAPtan is", () => {
     const failed = { ...EMPTY_DECIDE, errors: { x: "Sunucu cevap vermedi." } };
-    const { rerender } = render(<Suggestions suggestions={[s("x", "al", 0.3)]} names={new Map()} stopped={false} decisions={decisions({ state: failed })} />);
+    render(<Suggestions suggestions={[s("x", "al", 0.3)]} names={new Map()} decisions={decisions({ state: failed })} />);
     expect(screen.getByRole("alert")).toHaveTextContent("Olmadı. Sunucu cevap vermedi.");
     expect(screen.getByText("KAPtan pek emin değil.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Onayla: AL X" })).toBeEnabled();
-    rerender(<Suggestions suggestions={[s("x", "al", 0.3)]} names={new Map()} stopped={false} halted decisions={decisions()} />);
-    expect(screen.getByRole("button", { name: "Onayla: AL X" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Geç: AL X" })).toBeEnabled();
-    expect(screen.getByText(/Yarın kendiliğinden açılır/)).toBeInTheDocument();
   });
 
   it("the keyboard can reach every waiting suggestion", async () => {
     const u = user();
     const onPick = vi.fn();
-    render(<Suggestions suggestions={[s("a", "al", 0.8), s("b", "al", 0.5)]} names={new Map()} stopped={false} decisions={decisions({ onPick })} />);
+    render(<Suggestions suggestions={[s("a", "al", 0.8), s("b", "al", 0.5)]} names={new Map()} decisions={decisions({ onPick })} />);
     screen.getByRole("button", { name: "Öne al: AL B" }).focus();
     await u.keyboard("{Enter}");
     expect(onPick).toHaveBeenCalledWith("b");
@@ -216,7 +210,7 @@ describe("Öneriler and Son işlemler", () => {
   it("a swipe on a touch screen shows the next one and never answers", () => {
     const onPick = vi.fn();
     const onAnswer = vi.fn();
-    render(<Suggestions suggestions={[s("a", "al", 0.8), s("b", "al", 0.5)]} names={new Map()} stopped={false} decisions={decisions({ onPick, onAnswer })} />);
+    render(<Suggestions suggestions={[s("a", "al", 0.8), s("b", "al", 0.5)]} names={new Map()} decisions={decisions({ onPick, onAnswer })} />);
     const stack = screen.getByRole("article").parentElement as HTMLElement;
     fireEvent.pointerDown(stack, { pointerType: "touch", isPrimary: true, pointerId: 1, clientX: 300, clientY: 100 });
     fireEvent.pointerUp(stack, { pointerType: "touch", pointerId: 1, clientX: 180, clientY: 104 });

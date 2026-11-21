@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useApiQuery } from "@/lib/api/react";
 import { raiseDesktopAlert } from "@/lib/alerts/desktop";
 import { WATCH_ALERT } from "@/lib/alerts/alerts";
+import { isMuted } from "@/lib/prefs/desktop-gate";
 import { useEventStream } from "@/lib/sse/use-event-stream";
 
 /**
@@ -17,7 +18,7 @@ export function WatchAlerts() {
   useEventStream("feed", {
     disclosure: (d) => {
       const codes = [d.primary_ticker, ...d.stock_codes];
-      if (codes.some((c) => c !== null && watched.has(c))) {
+      if (codes.some((c) => c !== null && watched.has(c) && !isMuted(c))) {
         raiseDesktopAlert(WATCH_ALERT, (path) => router.push(path));
         void list.refetch();
       }

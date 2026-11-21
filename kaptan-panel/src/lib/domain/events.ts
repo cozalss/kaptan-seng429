@@ -5,6 +5,7 @@ import { LimitsView } from "./governance";
 import { NodeName, RunOutcome, RunStatus } from "./run";
 import { ApprovalCard, Fill, Order, OrderTicket, RiskStatus } from "./trading";
 import { CrewActivity, CrewAgent } from "./crew";
+import { PriceAlertEvent } from "./price-alerts";
 
 /**
  * SSE streams (04 §11). Each event is { stream, event, id, data }.
@@ -32,14 +33,14 @@ export const DeskEvent = z.discriminatedUnion("event", [
   z.object({ event: z.literal("approval.decided"), data: ApprovalCard }),
   z.object({ event: z.literal("order"), data: Order }),
   z.object({ event: z.literal("fill"), data: Fill.extend({ ticker: z.string() }) }),
-  z.object({ event: z.literal("kill_switch"), data: RiskStatus }),
-  z.object({ event: z.literal("halt"), data: RiskStatus }),
   /** The daily market regime changed (06 §9): Normal ↔ Kriz. */
   z.object({ event: z.literal("regime"), data: RiskStatus }),
   /** A limit change was proposed (1/2), approved (2/2) or rejected. */
   z.object({ event: z.literal("limits.changed"), data: LimitsView }),
   /** A ticket was created (after your approval) or marked (girildi / dolmadı / iptal / süresi doldu). */
   z.object({ event: z.literal("ticket"), data: OrderTicket }),
+  /** A price alert fired. Stays on this computer, so it may name the company. */
+  z.object({ event: z.literal("price_alert"), data: PriceAlertEvent }),
   /** A crew member changed what it is doing (Köprü and Tayfa live state). */
   z.object({
     event: z.literal("crew"),

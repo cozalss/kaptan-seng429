@@ -67,7 +67,7 @@ class LiveArmInput(KModel):
 async def _live_view(conn: Any, clock: Any) -> dict[str, Any]:
     now = clock.now()
     state = await live_arm.read_state(conn)
-    return live_arm.view(broker_config.current(), state, now, kill=await live_arm.kill_on(conn))
+    return live_arm.view(broker_config.current(), state, now)
 
 
 @router.get("/admin/live", response_model=LiveView)

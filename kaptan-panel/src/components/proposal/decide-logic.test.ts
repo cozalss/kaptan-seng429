@@ -1,7 +1,6 @@
 import type { Suggestion } from "@/lib/solo/overview";
 import {
   bringToFront,
-  closedFor,
   EMPTY_DECIDE,
   failAnswer,
   holdMs,
@@ -115,41 +114,15 @@ describe("reduced motion", () => {
   });
 });
 
-describe("closed buttons say why", () => {
-  it("closes both while everything is stopped", () => {
-    expect(closedFor({ stopped: true, halted: false })).toEqual({
-      canApprove: false,
-      canSkip: false,
-      reason: "İşlemler durduruldu. Yeniden başlatana kadar öneri onaylanamaz; elindeki hisseler yerinde duruyor.",
-    });
-  });
-
-  it("keeps Geç open on a day the money fell too far", () => {
-    expect(closedFor({ stopped: false, halted: true })).toEqual({
-      canApprove: false,
-      canSkip: true,
-      reason: "Paran bugün %1'den fazla düştüğü için bugün yeni işlem yok. Yarın kendiliğinden açılır; istersen geçebilirsin.",
-    });
-  });
-
-  it("is open otherwise", () => {
-    expect(closedFor({ stopped: false, halted: false })).toEqual({ canApprove: true, canSkip: true, reason: null });
-    expect(closedFor({ stopped: true, halted: true }).canSkip).toBe(false);
-  });
-});
-
 describe("the section's sentence", () => {
   it("says what to do now, the bank first because it has a clock", () => {
-    expect(sectionSentence({ decisions: 3, steps: 0, stopped: false })).toBe("Bugün 3 kararın var.");
-    expect(sectionSentence({ decisions: 1, steps: 0, stopped: false })).toBe("Bugün 1 kararın var.");
-    expect(sectionSentence({ decisions: 2, steps: 1, stopped: false })).toBe("Önce bu işlemi bankana gir, sonra 2 kararın var.");
-    expect(sectionSentence({ decisions: 2, steps: 3, stopped: false })).toBe("Önce bu 3 işlemi bankana gir, sonra 2 kararın var.");
-    expect(sectionSentence({ decisions: 0, steps: 2, stopped: false })).toBe("Bankana girmen gereken 2 işlem var.");
-    expect(sectionSentence({ decisions: 0, steps: 1, stopped: false })).toBe("Bankana girmen gereken bir işlem var.");
-    expect(sectionSentence({ decisions: 0, steps: 0, stopped: false })).toBe("Bugün karar vermen gereken bir şey yok.");
+    expect(sectionSentence({ decisions: 3, steps: 0 })).toBe("Bugün 3 kararın var.");
+    expect(sectionSentence({ decisions: 1, steps: 0 })).toBe("Bugün 1 kararın var.");
+    expect(sectionSentence({ decisions: 2, steps: 1 })).toBe("Önce bu işlemi bankana gir, sonra 2 kararın var.");
+    expect(sectionSentence({ decisions: 2, steps: 3 })).toBe("Önce bu 3 işlemi bankana gir, sonra 2 kararın var.");
+    expect(sectionSentence({ decisions: 0, steps: 2 })).toBe("Bankana girmen gereken 2 işlem var.");
+    expect(sectionSentence({ decisions: 0, steps: 1 })).toBe("Bankana girmen gereken bir işlem var.");
+    expect(sectionSentence({ decisions: 0, steps: 0 })).toBe("Bugün karar vermen gereken bir şey yok.");
   });
 
-  it("says the stop first", () => {
-    expect(sectionSentence({ decisions: 2, steps: 0, stopped: true })).toBe("İşlemler durdu; şimdilik karar yok.");
-  });
 });

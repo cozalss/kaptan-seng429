@@ -300,9 +300,6 @@ function riskChecksOf(spec: RunSpec, proposalNotional: number): RiskCheck[] {
   const pos = proposalNotional / PAPER_EQUITY_TRY;
   const adv = proposalNotional / iss.adv20Try;
   const defaults: Partial<Record<RiskCheck["rule_code"], { detail_tr: string; observed?: string; limit?: string }>> = {
-    // Desk state on the demo day (mocks/pnl.ts liveEquity): −%1,1 from peak, +%0,2 today.
-    R01: { detail_tr: "Durdurulmadı; paran zirvesinden %1,1 aşağıda.", observed: "−%1,1", limit: "−%5" },
-    R02: { detail_tr: "Günlük K/Z +%0,2.", observed: "+%0,2", limit: "−%1" },
     R07: {
       detail_tr: `İşlem riski %0,5; pozisyon ${fmtPct(pos, 1)}; hacmin ${fmtPct(adv, 1)}'i.`,
       observed: fmtPct(pos, 1),
@@ -329,7 +326,7 @@ function riskChecksOf(spec: RunSpec, proposalNotional: number): RiskCheck[] {
       rule_code: "R16",
       outcome: "pass",
       reason_code: null,
-      detail_tr: "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+      detail_tr: "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
       observed: null,
       limit: null,
     });

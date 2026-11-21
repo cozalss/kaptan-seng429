@@ -26,7 +26,7 @@ KEYS = (CURSOR_KEY, DOWN_KEY, STATE_KEY, bus.stream_key("desk"))
 
 
 async def _wipe(redis: Any) -> None:
-    await redis.delete(*KEYS, *(f"{RATE_PREFIX}{k}" for k in ("suggestion", "day_halt", "stopped", "part_down")))
+    await redis.delete(*KEYS, *(f"{RATE_PREFIX}{k}" for k in ("suggestion", "part_down")))
 
 
 async def test_desk_events_become_fixed_messages_and_a_restart_does_not_repeat_them(migrated: Settings) -> None:
@@ -38,16 +38,15 @@ async def test_desk_events_become_fixed_messages_and_a_restart_does_not_repeat_t
         await watch.read_events()  # first start: only what comes after
         pending = json.dumps({"status": "pending", "ticker": "THYAO", "side": "BUY", "qty": 100})
         await bus.append(redis, "desk", "approval.requested", pending)
-        await bus.append(redis, "desk", "kill_switch", json.dumps({"kill_switch": "on", "kill_reason": "x"}))
         with respx.mock(assert_all_called=True) as mock:
             route = mock.post("https://ntfy.sh/").mock(return_value=httpx.Response(200, json={}))
-            assert await watch.read_events() == ("suggestion", "stopped")
+            assert await watch.read_events() == ("suggestion",)
             sent = [json.loads(c.request.content)["message"] for c in route.calls]
-            assert sent == ["KAPtan: yeni bir önerin var.", "KAPtan durduruldu."]
+            assert sent == ["KAPtan: yeni bir önerin var."]
             assert all("THYAO" not in m and "100" not in m for m in sent)
             restarted = AlertWatch(CFG, None, redis, lambda: now, block_ms=10)
             assert await restarted.read_events() == ()  # the cursor was kept: nothing is announced twice
-            assert route.call_count == 2
+            assert route.call_count == 1
         assert await redis.hget(STATE_KEY, "last_sent_at")
     finally:
         await _wipe(redis)

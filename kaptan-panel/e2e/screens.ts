@@ -8,6 +8,7 @@ export const SCREENS: ReadonlyArray<{ path: string; ready: (p: Page) => Promise<
   { path: "/bildirimler", ready: (p) => expect(p.getByRole("group", { name: "Bildirim listesi" })).toBeVisible() },
   { path: "/gecmis", ready: (p) => expect(p.getByRole("list", { name: "Geçmiş kayıtları" })).toBeVisible() },
   { path: "/hisse/ORNEK", ready: (p) => expect(p.getByRole("figure")).toBeVisible() },
+  { path: "/karsilastir?a=ORNEK&b=ORNCM", ready: (p) => expect(p.getByRole("table")).toBeVisible() },
   { path: "/ayarlar", ready: (p) => expect(p.getByRole("list", { name: "Geçerli sınırlar" })).toBeVisible() },
   { path: "/yardim", ready: (p) => expect(p.getByRole("heading", { level: 2, name: "Sözlük" })).toBeVisible() },
 ];

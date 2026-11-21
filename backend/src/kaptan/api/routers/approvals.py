@@ -5,11 +5,10 @@
     GET  /approvals/{proposal_id}/notes             -> ProposalNote[]   (all roles)
     POST /approvals/{proposal_id}/notes  {"body"}   -> ProposalNote     (proposal.note)
 
-Decision rules (mock-api.ts decideApproval): 404 not_found "Öneri bulunamadı." · 409 kill_switch
-"Her şey durduruldu: yeni emir onaylanamaz." · 409 conflict "Bu öneri zaten karara bağlandı ya da
-süresi doldu." · 422 grow_not_allowed "Tutar yalnızca küçültülebilir; büyütme yok." · 409 halted
-"Günlük −%1 durdurması: bugün yeni emir verilemez." (approve only). Effective status: pending + kill
-switch on -> cancelled; pending past expires_at -> expired. Audit `approval.decided`
+Decision rules (mock-api.ts decideApproval): 404 not_found "Öneri bulunamadı." · 409 conflict "Bu öneri zaten
+karara bağlandı ya da süresi doldu." · 422 grow_not_allowed "Tutar yalnızca küçültülebilir; büyütme yok."
+(nothing is blocked by a loss: there is no stop). Effective status: pending past expires_at -> expired.
+Audit `approval.decided`
 {ticker, company, decision, role, note: bool}; SSE desk `approval.decided`; on approve -> execute
 (order + fill + ticket, see PLAN.md package A/B). Notes: 404 "Öneri bulunamadı."; id "not-<n>";
 audit `note.added` {ticker, company, role}.

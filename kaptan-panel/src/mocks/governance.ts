@@ -99,7 +99,7 @@ export const DEMO_ORDER_TICKET: OrderTicket = {
   planned_exit_tr: "5. borsa günü kapanışı → 18.01.2027",
   entry: { status: "awaiting", filled_qty: null, avg_price: null, filled_at: null, note: null, marked_at: null, commission_try: 0, commission_estimated: false, late: false, commission_rate: null, commission_rate_own: false, corrected: false },
   stage: "paper",
-  gate_results: ["R01", "R02", "R03", "R04", "R13", "R11", "R14", "R05", "R06", "R09", "R12", "R07", "R08", "R10", "R15", "R16"].map((code) => ({
+  gate_results: ["R03", "R04", "R13", "R11", "R14", "R05", "R06", "R09", "R12", "R07", "R08", "R10", "R15", "R16"].map((code) => ({
     code,
     passed: true,
   })),

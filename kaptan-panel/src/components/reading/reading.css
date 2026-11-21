@@ -1,0 +1,82 @@
+/* Reading marks: the unread badge, the bar above Okunanlar, the star and the "Yeni" mark. */
+.rd-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-left: 0.375rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--brand);
+  color: var(--on-dark);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.rd-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  padding: 0.875rem 0;
+}
+.rd-count {
+  font-size: 1.0625rem;
+  color: var(--ink);
+}
+.rd-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.rd-chip,
+.rd-star {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0 0.875rem;
+  border: 1.5px solid var(--rule-ui);
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+.rd-chip[aria-pressed="true"],
+.rd-star[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--on-dark);
+  border-color: var(--ink);
+}
+.rd-chip:focus-visible,
+.rd-star:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+.rd-new {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.4rem;
+  background: var(--brand);
+  color: var(--on-dark);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.rd-row-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+@media (max-width: 480px) {
+  .rd-star-word {
+    display: none;
+  }
+}

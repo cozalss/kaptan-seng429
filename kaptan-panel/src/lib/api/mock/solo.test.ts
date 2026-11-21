@@ -106,20 +106,6 @@ describe("mock /me/suggestions/{id}/hold", () => {
 });
 
 describe("one person takes both steps", () => {
-  it("lets one person request and confirm the restart, with the waiver on the ledger", async () => {
-    const { db, api } = setup();
-    await api.killSwitch("Elle durduruldu.");
-    await api.startKillReset({ reason: "Yeniden başlatıyorum." });
-    const after = await api.confirmKillReset({ reason: "Yeniden başlatıyorum." });
-    expect(after.kill_switch).toBe("off");
-    expect(db.snapshot.auditAppends.find((e) => e.action === "auth.single_user_waiver")).toMatchObject({
-      entity_type: "system_flag",
-      entity_id: "kill_switch",
-      payload: { waiver: "single_user_waiver", flow: "kill_reset", first_uid: "sen" },
-    });
-  });
-
-
   it("waives the second signature on a limit change too", async () => {
     const { db, api } = setup();
     await api.proposeLimit({ key: "max_position_pct", value: 0.08, reason: "Daha küçük bir tutar" });

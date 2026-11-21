@@ -80,15 +80,6 @@ test("first visit: KAPtan nasıl çalışır opens once, is skippable, and comes
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
-test("Param while stopped: what it says has no banned word either", async ({ page }) => {
-  await loginApi(page);
-  await page.goto("/portfoy");
-  await page.getByRole("button", { name: "Tüm işlemleri durdur" }).click();
-  await page.getByRole("dialog", { name: "Tüm işlemler durdurulsun mu?" }).getByRole("button", { name: "Evet, durdur" }).click();
-  await expect(page.getByTestId("stop-state")).toBeVisible();
-  await expectPlain(page);
-});
-
 for (const s of SCREENS) {
   test(`${s.path}: fits a 360 px phone, and its text has no banned word`, async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 780 });

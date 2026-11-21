@@ -61,7 +61,7 @@ describe("Ana sayfa", () => {
     const first = within(list).getByRole("article", { name: /^AL Koru Çelik hissesi/ });
     expect(plain(first)).toMatch(/\d adet, tanesi en fazla [\d.,]+ ₺/);
     expect(plain(first)).toContain("KAPtan buna güveniyor, ama garanti değil.");
-    expect(plain(first)).toMatch(/Yarın 09:50’ye kadar cevap ver\./);
+    await waitFor(() => expect(plain(first)).toMatch(/Yarın 09:50’ye kadar cevap ver\./));
     expect(plain(first)).toContain("Onaylarsan para çıkmaz");
     expect(within(first).getByRole("link", { name: "Neden? AL KRGCL" })).toHaveAttribute("href", "/oneri/prop-day-e1-krgcl");
     expect(within(list).getAllByRole("article")).toHaveLength(1);
@@ -175,29 +175,12 @@ describe("Ana sayfa", () => {
     expect(window.localStorage.getItem(HOLDS_KEY)).toContain("tut-FRZEN");
   });
 
-  it("the emergency stop asks first, then stops everything and closes the suggestions", async () => {
-    const u = user();
-    const { db } = renderSolo();
-    await u.click(await screen.findByRole("button", { name: "Tüm işlemleri durdur" }));
-    const dialog = await screen.findByRole("dialog", { name: "Tüm işlemler durdurulsun mu?" });
-    await u.click(within(dialog).getByRole("button", { name: "Vazgeç" }));
-    expect(db.snapshot.risk.kill_switch).toBe("off");
-    await u.click(screen.getByRole("button", { name: "Tüm işlemleri durdur" }));
-    await u.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Evet, durdur" }));
-    expect(await screen.findByRole("heading", { name: "Tüm işlemler durduruldu" })).toBeInTheDocument();
-    expect(db.snapshot.risk.kill_switch).toBe("on");
-    // What is left on the desk stays readable, with its buttons closed and the reason next to them.
-    const sheet = within(screen.getByRole("region", { name: "Öneriler" })).getByRole("article");
-    expect(sheet).toHaveTextContent("İşlemler durduruldu. Yeniden başlatana kadar öneri onaylanamaz; elindeki hisseler yerinde duruyor.");
-    expect(sheet).toHaveTextContent("Şimdilik kapalı");
-    for (const b of within(sheet).getAllByRole("button", { name: /^(Onayla|Geç): / })) expect(b).toBeDisabled();
-
-    // The same person restarts: request (1/2) and confirm (2/2) in one go, the waiver on the ledger.
-    await u.click(screen.getByRole("button", { name: "İşlemleri yeniden başlat" }));
-    await u.click(within(await screen.findByRole("dialog", { name: "İşlemler yeniden başlasın mı?" })).getByRole("button", { name: "Evet, yeniden başlat" }));
-    expect(await screen.findByRole("heading", { name: "Acil durum" })).toBeInTheDocument();
-    expect(db.snapshot.risk.kill_switch).toBe("off");
-    expect(db.snapshot.auditAppends.map((e) => e.action).slice(-3)).toEqual(["kill_switch.reset_started", "auth.single_user_waiver", "kill_switch.reset"]);
+  it("has no stop button, no stopped screen and no emergency band", async () => {
+    renderSolo();
+    expect(await screen.findByRole("region", { name: "Öneriler" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /durdur/i })).toBeNull();
+    expect(screen.queryByTestId("stop-state")).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Acil durum" })).toBeNull();
   });
 
 });

@@ -1,8 +1,8 @@
 """The alert loop: one long-running task, hosted by the scheduler (one replica, behind its leader lock).
 
 It adds no call to the code that decides anything. It reads what the backend already publishes:
-- the `desk` stream (`kaptan:desk`): `approval.requested` = a new suggestion, `halt` = the day's loss limit,
-  `kill_switch` = KAPtan was stopped (kaptan.alerts.messages decides by the state in the event);
+- the `desk` stream (`kaptan:desk`): `approval.requested` = a new suggestion
+  (kaptan.alerts.messages decides by the state in the event);
 - the facts of `GET /system/status` once a minute: a part that has been down for 15 minutes.
 
 The place in the stream is kept in Redis, so a restart of the scheduler picks up where it stopped; an event
@@ -27,7 +27,7 @@ from typing import Any, Final
 
 from redis.exceptions import RedisError
 
-from kaptan.alerts.announce import announce, flush_held
+from kaptan.alerts.announce import announce, flush_held, read_prefs
 from kaptan.alerts.config import AlertConfig, alert_config
 from kaptan.alerts.messages import AlertKind, kind_for_event
 from kaptan.events import bus
@@ -78,8 +78,10 @@ def entry_time(entry_id: str) -> datetime | None:
         return None
 
 
-def kinds_in(entries: list[Entry], now: datetime) -> tuple[AlertKind, ...]:
-    """The alerts a batch of desk entries calls for, each kind once, in the order they happened."""
+def kinds_in(entries: list[Entry], now: datetime, muted: frozenset[str] = frozenset()) -> tuple[AlertKind, ...]:
+    """The alerts a batch of desk entries calls for, each kind once, in the order they happened.
+
+    A suggestion for a company the person muted tells nobody outside the app (it stays on the home)."""
     out: tuple[AlertKind, ...] = ()
     for entry_id, fields in entries:
         at = entry_time(entry_id)
@@ -90,6 +92,8 @@ def kinds_in(entries: list[Entry], now: datetime) -> tuple[AlertKind, ...]:
         except ValueError:
             continue
         kind = kind_for_event(str(fields.get("event", "")), data) if isinstance(data, dict) else None
+        if kind == "suggestion" and isinstance(data, dict) and data.get("ticker") in muted:
+            continue
         if kind is not None and kind not in out:
             out = (*out, kind)
     return out
@@ -143,7 +147,7 @@ class AlertWatch:
         entries: list[Entry] = [(str(i), f or {}) for _key, batch in reply or [] for i, f in batch]
         if not entries:
             return ()
-        kinds = kinds_in(entries, self.clock())
+        kinds = kinds_in(entries, self.clock(), frozenset((await read_prefs(self.pool))["muted"]))
         for kind in kinds:
             await announce(self.pool, self.redis, self.cfg, kind, now=self.clock())
         self.cursor = entries[-1][0]
@@ -171,8 +175,9 @@ class AlertWatch:
         if not entries:
             return False
         now = self.clock()
+        muted = frozenset((await read_prefs(self.pool))["muted"])
         told = (
-            feed_hits_watchlist(entries, await self._watched(), now)
+            feed_hits_watchlist(entries, await self._watched() - muted, now)
             and await announce(self.pool, self.redis, self.cfg, "watch", now=now) == "sent"
         )
         self.feed_cursor = entries[-1][0]

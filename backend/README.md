@@ -83,8 +83,8 @@ Integration tests skip when Postgres is down; the cross-language tests skip when
   (`emir fişi`) when they approve a suggestion, and the person's real fill (`POST /tickets/{no}/mark`, with the
   bank's commission, or an estimate that says so) is what moves cash and shares. A fill after the ticket expired is
   kept and flagged `late`: the book must match the bank. Shares owned before KAPtan are entered by hand
-  (`POST /me/holdings`, `/me/holdings/{id}/sell`); they count in equity, exposure caps and the stops, but get no exit
-  suggestion. Cash, equity, the day P&L, the peak, the −1 % halt and the −5 % stop (`risk/book.py` `own_book`),
+  (`POST /me/holdings`, `/me/holdings/{id}/sell`); they count in equity and exposure caps, but get no exit
+  suggestion. Cash, equity, the day P&L, the peak, the fall from the peak (information only, nothing stops because of it) (`risk/book.py` `own_book`),
   `/me/overview`, `/portfolio/*` and ticket sizing all read it. A deposit or withdrawal is not a gain or a loss:
   the day-start level and the peak are shifted by the flow. Before the starting money exists every number is 0
   (`needs_setup`), no agent run reaches an LLM (disclosures are still read and listed, deferred with
@@ -393,17 +393,16 @@ The gate reads the desk as it is.
   `core.prices_intraday` when filled), P7 entries today, P3/P4 sector/group exposure (`core.issuer_groups`,
   else `core.issuers.group_name`; unknown group = the sector's exposure), `schema_ok` = the proposal
   validates as `TradeProposal`. `GET /risk/status` shows the marked book.
-- **R16 before the order (FR-28).** Approving a real run's card (`run_set='live'`) re-runs R01–R04, R09, R12,
+- **R16 before the order (FR-28).** Approving a real run's card (`run_set='live'`) re-runs R03, R04, R09, R12,
   R13 inside the decision transaction; a failure is audited (`risk.rejected`, `system:risk_gate`), the card
-  stays pending and the API answers 409 `kill_switch` / `halted` / `conflict` with the R16 text.
-- **Jobs:** `risk.monitor.run_risk_monitor(conn, now)`
-  every 5 min in session (−1 % daily → `halted_today` + SSE `halt`, lifted at the next session; −5 % from the
-  peak → kill switch by `system:risk_monitor` + SSE `kill_switch`; after a restart the peak stays, −4.9 % floor
-  until a further −3 %); `risk.pnl_eod.run_pnl_eod(conn, day)` after 18:30 (strategy + `baseline:xu100_bh` +
+  stays pending and the API answers 409 `conflict` with the R16 text.
+- **Jobs:** `risk.pnl_eod.run_pnl_eod(conn, day)` after 18:30 (strategy + `baseline:xu100_bh` +
   `baseline:ew_universe`); `risk.regime.run_regime(conn, day)` (06 §9, `trading.regime_daily`, 5-session exit).
-- **Restart after a stop (06 §11):** with real data a restart needs ≥ 24 h between request and confirm and
-  ≥ 5 sessions since the stop (409 `conflict` until then). `RiskStatus.reset.ready_at` gives the earliest confirm
-  time, `null` = confirm now. The wait always applies.
+- **No stop (2026-11-21):** the person asked for no stopping at all. There is no kill switch, no restart wait, no
+  daily loss halt and no drawdown stop; nothing engages by itself after a loss and no alert or warning is tied to
+  one. `GET /risk/status` only reports the numbers. Old audit rows (`kill_switch.*`, `risk.halted`,
+  `risk.halt_cleared`) stay and still read in Geçmiş; migration 0037 clears the old state columns. The per-trade
+  exit rules (time exit, ATR stop on a position) stay: they raise an exit *suggestion* for one position.
 
 ## Deploy-ready backend (M3 A5, `kaptan.ops`) — runs anywhere with Docker, no provider config
 
@@ -458,7 +457,6 @@ connection and timeout; one failure never stops the others.
 | trading 08:30 | `universe` | `reference.universe.run_universe` |
 | every 30 min | `tedbir_sync` | `reference.tedbir.run_tedbir_sync` (+ SPK bulletin when `TEDBIR_BULLETIN_URL`) |
 | trading 08:45 | `morning_brief` | `brief.run_morning_brief` → `ops.morning_briefs`, `GET /brief/today\|{date}` |
-| in session, every 5 min | `risk_monitor` | `risk.monitor.run_risk_monitor` (SSE `halt` / `kill_switch`) |
 | in session, every 4 min | `quotes` | `prices.intraday.refresh_quotes` for held + pending-order tickers |
 | trading 18:30 | `eod_prices` | `prices.ingest.fetch_ticker` + `store_fetched` (bars + corporate actions) for the day's universe, held/pending tickers, XU100 |
 | after `eod_prices` | `exits` | `portfolio.exits.run_exits` (SSE `approval.requested` per exit card + `counters`) |

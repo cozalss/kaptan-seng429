@@ -30,9 +30,6 @@ ENDPOINTS: list[tuple[str, str, dict[str, Any] | None]] = [
     ("GET", "/portfolio/positions", None),
     ("GET", "/portfolio/pnl?from=2026-12-01&to=2027-01-08", None),
     ("GET", "/risk/status", None),
-    ("POST", "/risk/kill-switch", {"reason": "Test durdurma"}),
-    ("POST", "/risk/kill-switch/reset/request", {"reason": "Olay incelendi, tamam."}),
-    ("POST", "/risk/kill-switch/reset/confirm", {"reason": "Olay incelendi, tamam."}),
     ("GET", "/limits", None),
     (
         "POST",
@@ -85,9 +82,8 @@ async def test_signed_out_is_401_and_validation_is_422(client: httpx.AsyncClient
     res = await client.get(f"{API_PREFIX}/risk/status")
     assert res.status_code == 401
     session = await login(client)
-    short = await _call(client, "POST", "/risk/kill-switch", {"reason": "abc"}, session["access_token"])
-    assert short.status_code == 422
-    assert short.json() == {"detail": "Gerekçe en az 5 harf olmalı.", "code": "validation"}
+    gone = await _call(client, "POST", "/risk/kill-switch", {"reason": "Test durdurma"}, session["access_token"])
+    assert gone.status_code in (404, 405)  # there is no stop endpoint
     note = await _call(client, "POST", "/approvals/p/notes", {"body": "a"}, session["access_token"])
     assert note.json() == {"detail": "Not en az 3 harf olmalı", "code": "validation"}
 

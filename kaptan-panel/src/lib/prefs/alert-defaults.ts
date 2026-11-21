@@ -6,12 +6,13 @@ export function defaultAlertPrefs(): AlertPrefs {
   return {
     kinds: {
       suggestion: { ...on },
-      day_halt: { ...on },
-      stopped: { ...on },
       part_down: { ...on },
       watched: { ...on },
+      price: { ...on },
+      weekly: { ...on },
     },
     quiet: { on: false, start: "22:00", end: "08:00" },
+    muted: [],
   };
 }
 
@@ -23,14 +24,6 @@ export const TOPIC_WORDS: Readonly<
     name: "Yeni öneri",
     when: "KAPtan sana bir öneri hazırladığında.",
   },
-  day_halt: {
-    name: "Günlük sınır",
-    when: "Paran bir günde %1 düşüp yeni işlemler durduğunda.",
-  },
-  stopped: {
-    name: "Her şey durduğunda",
-    when: "KAPtan her şeyi durdurduğunda. Sessiz saatlerde de hemen gelir.",
-  },
   part_down: {
     name: "Sistem sorunu",
     when: "KAPtan’ın bir parçası 15 dakikadan uzun çalışmadığında.",
@@ -38,5 +31,13 @@ export const TOPIC_WORDS: Readonly<
   watched: {
     name: "İzlediğin şirket",
     when: "İzlediğin bir şirket yeni bir bildirim yaptığında.",
+  },
+  price: {
+    name: "Fiyat uyarısı",
+    when: "Kendi kurduğun bir fiyat uyarısı tetiklendiğinde. Telefona hisse adı gitmez.",
+  },
+  weekly: {
+    name: "Haftalık özet",
+    when: "Her cuma, haftalık özetin hazır olduğunda.",
   },
 };

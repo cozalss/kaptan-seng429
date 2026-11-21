@@ -1,7 +1,7 @@
 """After an approval: the order ticket (emir fişi). Nothing is sent and nothing is simulated.
 
 `execute_approved()` runs inside the decision's transaction and returns the SSE events to publish after commit.
-The ticket goes through `GuardedBroker(OrderTicketBroker)` (kill switch, daily halt, cooldown, hard cap are checked
+The ticket goes through `GuardedBroker(OrderTicketBroker)` (cooldown and the hard cap are checked
 again at send); a refusal rolls the approval back with the guard's code and Turkish text. A buy ticket is sized
 from the approved notional and the free cash of the person's own book; a sell ticket sells what the book holds
 of the position. The person enters the order at their own bank and records the real fill

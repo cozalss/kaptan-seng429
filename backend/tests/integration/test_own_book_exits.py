@@ -158,16 +158,11 @@ async def _ready(conn: DictConn) -> None:
     await history(conn, "KRGCL", MON)
 
 
-async def test_the_guard_refuses_a_buy_under_the_kill_switch(desk: DictConn) -> None:
+async def test_the_old_stop_columns_do_not_stop_the_guard(desk: DictConn) -> None:
     await _ready(desk)
-    await desk.execute("UPDATE trading.risk_state SET kill_switch = 'on'")
-    await _refused(desk, "kill_switch")
-
-
-async def test_the_guard_refuses_a_buy_after_the_day_halt(desk: DictConn) -> None:
-    await _ready(desk)
-    await desk.execute("UPDATE trading.risk_state SET halted_today = true")
-    await _refused(desk, "halted")
+    await desk.execute("UPDATE trading.risk_state SET kill_switch = 'on', halted_today = true")
+    outcome = await approve(desk, KRGCL, DECIDE_AT)
+    assert outcome.events[1][1]["side"] == "buy"  # nothing reads them: the buy goes to a ticket
 
 
 async def test_the_guard_refuses_a_buy_inside_the_cooldown_a_stop_sale_starts(desk: DictConn) -> None:
@@ -195,13 +190,12 @@ async def test_the_guard_refuses_a_buy_above_the_hard_cap(desk: DictConn) -> Non
     await _refused(desk, "hard_cap")
 
 
-async def test_a_sell_exit_is_still_approved_under_the_kill_switch(desk: DictConn) -> None:
+async def test_a_sell_exit_is_approved(desk: DictConn) -> None:
     await _bought(desk)
     card = await _stop_hit(desk)
-    await desk.execute("UPDATE trading.risk_state SET kill_switch = 'on'")
     decided_at = datetime.fromisoformat(card["created_at"].replace("Z", "+00:00")) + timedelta(minutes=1)
     outcome = await service.decide(desk, card["proposal_id"], APPROVE, RISK_OFFICER, now=decided_at)
-    assert outcome.events[1][1]["side"] == "sell"  # a stop never blocks leaving a position
+    assert outcome.events[1][1]["side"] == "sell"  # nothing blocks leaving a position
 
 
 async def test_the_whole_life_from_the_starting_money_to_the_cash_after_the_sale(desk: DictConn) -> None:

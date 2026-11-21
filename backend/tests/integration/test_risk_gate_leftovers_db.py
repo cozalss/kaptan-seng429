@@ -1,27 +1,17 @@
-"""M4 package R against the DB: P8 cooldown + m_reset reach the agent's desk, and the security kill (06 §11 c)."""
+"""M4 package R against the DB: the P8 cooldown reaches the agent's desk and the gate."""
 
 from __future__ import annotations
 
-import asyncio
-import json
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
 import pytest
-import redis.asyncio as aioredis
-from psycopg.types.json import Jsonb
 
 from kaptan.agents.feed_run import desk_for
 from kaptan.db import DictConn
-from kaptan.events import bus
 from kaptan.risk.cooldown import cooldown_active
-from kaptan.risk.desk import live_desk
 from kaptan.risk.gate import COOLDOWN_TR, GateContext, GateOrder, evaluate
-from kaptan.risk.kill_switch import confirm_reset, reset_ready_at, start_reset
-from kaptan.risk.security_kill import SECURITY_MONITOR, announce_kill, check_security_kill, r11_rejected_runs
-from kaptan.settings import Settings
-from tests.conftest import skip_or_fail
 
 pytestmark = pytest.mark.integration
 
@@ -62,101 +52,3 @@ async def test_cooldown_reaches_the_agent_desk_and_the_gate(pg: DictConn) -> Non
     assert (verdict.verdict, verdict.results[-1].detail_tr) == ("reject", COOLDOWN_TR)
     # the day after the cooldown's last session the symbol is open again
     assert not await cooldown_active(pg, "ORNEK", NOW + timedelta(days=20))
-
-
-async def test_reset_active_reaches_the_live_desk(pg: DictConn) -> None:
-    await pg.execute("UPDATE trading.risk_state SET reset_at = NULL WHERE id = 1")
-    off = await live_desk(pg, "ORNEK", NOW, published_at=NOW, available_at=NOW)
-    assert not off.reset_active
-    await pg.execute("UPDATE trading.risk_state SET reset_at = %s WHERE id = 1", (NOW - timedelta(days=1),))
-    on = await live_desk(pg, "ORNEK", NOW, published_at=NOW, available_at=NOW)
-    assert on.reset_active
-    demo = await desk_for(pg, "ORNEK", now=NOW)
-    assert not demo.reset_active  # the demo replay keeps its seeded desk
-    live = await desk_for(pg, "ORNEK", live=True, now=NOW)
-    assert live.reset_active
-
-
-async def add_live_run(conn: DictConn, run_id: str, at: datetime, *, outcome: str, r11_reject: bool = False) -> None:
-    idx = (await rows(conn, "SELECT disclosure_index FROM core.disclosures ORDER BY disclosure_index LIMIT 1"))[0]
-    await conn.execute(
-        """
-        INSERT INTO trading.agent_runs (run_id, disclosure_index, ticker, company_name, kind, status, outcome, mode,
-          run_set, strategy_version, started_at, finished_at, explain)
-        VALUES (%s, %s, 'ORNEK', 'ÖRNEK', %s, 'completed', %s, 'paper', 'live', 'v1.1-fwd', %s, %s, '{}')""",
-        (run_id, idx["disclosure_index"], "quarantine" if outcome == "QUARANTINED" else "no_trade", outcome, at, at),
-    )
-    if r11_reject:
-        await conn.execute(
-            "INSERT INTO trading.risk_checks (run_id, phase, rule_code, outcome, detail) "
-            "VALUES (%s, 'pre_trade', 'R11', 'reject', %s)",
-            (run_id, Jsonb({"detail_tr": "Şema hatası veya injection bayrağı: ret."})),
-        )
-
-
-async def kill_state(conn: DictConn) -> dict[str, Any]:
-    return (await rows(conn, "SELECT kill_switch, kill_by, kill_reason FROM trading.risk_state WHERE id = 1"))[0]
-
-
-async def test_three_r11_rejects_in_a_day_engage_the_security_kill(pg: DictConn) -> None:
-    await pg.execute("UPDATE trading.risk_state SET kill_switch = 'off', reset_started = NULL WHERE id = 1")
-    await add_live_run(pg, "run-live-sk1", NOW - timedelta(hours=2), outcome="NO_TRADE", r11_reject=True)
-    await add_live_run(pg, "run-live-sk2", NOW - timedelta(hours=1), outcome="QUARANTINED")
-    await add_live_run(pg, "run-live-ok", NOW - timedelta(minutes=30), outcome="NO_TRADE")  # no R11 reject
-    await add_live_run(pg, "run-live-old", NOW - timedelta(days=1), outcome="QUARANTINED")  # yesterday
-    assert await r11_rejected_runs(pg, NOW) == ["run-live-sk1", "run-live-sk2"]
-    assert not await check_security_kill(pg, NOW)
-    assert (await kill_state(pg))["kill_switch"] == "off"
-
-    await add_live_run(pg, "run-live-sk3", NOW - timedelta(minutes=5), outcome="NO_TRADE", r11_reject=True)
-    assert await check_security_kill(pg, NOW)
-    state = await kill_state(pg)
-    assert (state["kill_switch"], state["kill_by"]) == ("on", SECURITY_MONITOR)
-    audit = await rows(
-        pg,
-        "SELECT actor, payload FROM audit.audit_log WHERE action = 'kill_switch.on' ORDER BY chain_pos DESC LIMIT 1",
-    )
-    assert audit[0]["actor"] == SECURITY_MONITOR
-    assert audit[0]["payload"]["trigger"] == "security"
-    assert audit[0]["payload"]["run_ids"] == ["run-live-sk1", "run-live-sk2", "run-live-sk3"]
-    assert not await check_security_kill(pg, NOW)  # already on: no second kill
-
-    # the two-key restart lifts it; the day's earlier rejects no longer count after it
-    await start_reset(pg, uid="sahip", name="Sahip", role="risk_officer", reason="inceleme", now=NOW)
-    ready = reset_ready_at(NOW, NOW)
-    await confirm_reset(pg, uid="sahip", role="risk_officer", reason="veri temiz", now=ready)
-    after = ready + timedelta(minutes=1)
-    assert (await kill_state(pg))["kill_switch"] == "off"
-    assert await r11_rejected_runs(pg, after) == []
-    await add_live_run(pg, "run-live-sk4", after, outcome="QUARANTINED")
-    assert await r11_rejected_runs(pg, after + timedelta(minutes=1)) == ["run-live-sk4"]
-    assert not await check_security_kill(pg, after + timedelta(minutes=1))
-
-
-async def test_demo_runs_never_count(pg: DictConn) -> None:
-    runs = await r11_rejected_runs(pg, NOW)
-    demo = await rows(pg, "SELECT run_id FROM trading.agent_runs WHERE run_set <> 'live' AND outcome = 'QUARANTINED'")
-    assert not set(runs) & {r["run_id"] for r in demo}
-
-
-async def test_security_kill_is_announced_on_sse_desk(pg: DictConn, migrated: Settings) -> None:
-    """06 §11 (c): the panel hears the security kill at once, as `kill_switch` on desk (like the manual stop)."""
-    redis = aioredis.from_url(migrated.redis_url.get_secret_value(), decode_responses=True)
-    try:
-        await asyncio.wait_for(redis.ping(), timeout=3)
-    except Exception as exc:  # pragma: no cover - Redis down
-        await redis.aclose()
-        skip_or_fail(f"compose Redis unreachable: {exc}")
-    try:
-        await pg.execute("UPDATE trading.risk_state SET kill_switch = 'off', reset_started = NULL WHERE id = 1")
-        for i in range(3):
-            await add_live_run(pg, f"run-live-sse{i}", NOW - timedelta(minutes=10 - i), outcome="QUARANTINED")
-        assert await check_security_kill(pg, NOW)
-        before = await bus.latest_id(redis, bus.stream_key("desk"))
-        assert await announce_kill(redis, pg, NOW) is not None
-        events = await redis.xrange(bus.stream_key("desk"), min=f"({before}", max="+")
-        assert [f["event"] for _, f in events] == ["kill_switch"]
-        status = json.loads(events[0][1]["data"])
-        assert status["kill_switch"] == "on"
-    finally:
-        await redis.aclose()

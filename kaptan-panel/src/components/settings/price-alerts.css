@@ -1,0 +1,132 @@
+/* Ayarlar, wave 5: price alerts, alert history, muted companies, backups. Same rhythm as comfort.css. */
+
+.pa-form {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+  max-width: 40rem;
+}
+.pa-modes {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.pa-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0 1.25rem;
+  margin-top: 0.25rem;
+}
+.pa-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 1.5rem;
+  align-items: center;
+  padding-block: 1rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.pa-row[data-done="true"] .ay-channel-state {
+  color: var(--ink-soft);
+}
+.pa-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.pa-link:hover {
+  color: var(--brand);
+}
+@media (max-width: 639px) {
+  .pa-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The history: time and channel on the left, the sentence that was sent, and whether it arrived. */
+.pa-hist {
+  display: grid;
+  grid-template-columns: 11rem 7rem minmax(0, 1fr);
+  gap: 0.25rem 1rem;
+  padding-block: 0.75rem;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 1rem;
+  color: var(--ink);
+}
+.pa-hist time {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+.pa-bad {
+  color: var(--north);
+  font-weight: 600;
+}
+@media (max-width: 639px) {
+  .pa-hist {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Muted companies and backups. */
+.pa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0;
+  list-style: none;
+}
+.pa-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding-inline: 0.75rem 0.25rem;
+  border: 2px solid var(--rule-ui);
+  color: var(--ink);
+  font-weight: 600;
+}
+.pa-warn {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--north);
+  color: var(--ink);
+  font-weight: 600;
+}
+.pa-files {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pa-file {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.25rem 1.25rem;
+  padding-block: 0.625rem;
+  border-bottom: 1px solid var(--hairline);
+  font-variant-numeric: tabular-nums;
+}
+.pa-file-name {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+.pa-file-age {
+  color: var(--ink-soft);
+}
+.pa-steps {
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.5rem;
+  color: var(--ink);
+}
+.pa-code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 639px) {
+  .pa-file {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

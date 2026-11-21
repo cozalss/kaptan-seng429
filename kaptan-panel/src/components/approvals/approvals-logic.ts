@@ -17,7 +17,7 @@ export const STATUS_LABEL: Readonly<Record<ApprovalStatus, string>> = {
   approved: "Onaylandı",
   rejected: "Reddedildi",
   expired: "Süresi doldu",
-  cancelled: "Durdurulduğu için düştü",
+  cancelled: "İptal oldu",
 };
 
 export function isOpen(status: ApprovalStatus): boolean {
@@ -39,18 +39,14 @@ export function sortQueue(cards: readonly ApprovalCard[], nowMs: number | null):
 export interface DecideGate {
   /** Any decision (approve or reject) is possible. */
   canDecide: boolean;
-  /** Approve specifically (blocked by the daily −1% halt; reject is still allowed). */
+  /** Approve specifically (always the same as `canDecide` now). */
   canApprove: boolean;
   /** Why the controls are disabled (shown as a hint; never hide the buttons, PANEL-CONTRACT §3.3). */
   reason: string | null;
-  tone: "kill" | "halt" | "closed" | null;
+  tone: "closed" | null;
 }
 
-export function decideGate(input: { status: ApprovalStatus; killSwitchOn: boolean; haltedToday: boolean }): DecideGate {
-  if (input.killSwitchOn) return { canDecide: false, canApprove: false, reason: "Her şey durduruldu; öneriler şimdilik onaylanamaz.", tone: "kill" };
+export function decideGate(input: { status: ApprovalStatus }): DecideGate {
   if (!isOpen(input.status)) return { canDecide: false, canApprove: false, reason: `Bu öneri karara bağlandı: ${STATUS_LABEL[input.status]}.`, tone: "closed" };
-  if (input.haltedToday) {
-    return { canDecide: true, canApprove: false, reason: "Paran bugün %1'den fazla düştü; bugün onay verilemez, yalnızca reddedebilirsin.", tone: "halt" };
-  }
   return { canDecide: true, canApprove: true, reason: null, tone: null };
 }

@@ -46,10 +46,6 @@ from kaptan.portfolio.pnl import LIVE_STRATEGY
 from kaptan.prices.calendar import close_known_at, istanbul_date, open_known_at
 from kaptan.prices.reads import latest_marks
 
-#: After a confirmed restart (06 §11 step 4): drawdown floor while it holds, extra loss that kills again.
-RESET_DRAWDOWN_FLOOR: Final = Decimal("-0.049")
-RESET_EXTRA_DD: Final = Decimal("-0.03")
-
 RESERVED_SQL: Final = """
 SELECT t.doc->>'ticker' AS ticker, i.sector, coalesce(g.group_name, i.group_name) AS group_name,
        (t.doc->>'qty')::numeric * (t.doc->>'limit_price')::numeric AS notional
@@ -245,16 +241,3 @@ async def own_book(conn: AsyncConnection[Any], as_of: datetime) -> BookSnapshot:
         holdings=await holdings_at(conn, as_of, None if prev is None else prev[0]) if totals.started else (),
         pending=pending,
     )
-
-
-def effective_drawdown(book: BookSnapshot, reset_equity: Decimal | None, *, reset_active: bool) -> Decimal:
-    """The drawdown the kill rule and the gate see. While a confirmed restart holds (the peak is never
-    reset) it stays just inside −5 % (−4.9 %) until equity is a further
-    −3 % below the reset level (`reset_equity`; None = the restart is new: today's equity is that level)."""
-    dd = book.drawdown_pct
-    if not reset_active:
-        return dd
-    level = book.equity if reset_equity is None else reset_equity
-    if level > 0 and book.equity / level - 1 <= RESET_EXTRA_DD:
-        return dd
-    return max(dd, RESET_DRAWDOWN_FLOOR)

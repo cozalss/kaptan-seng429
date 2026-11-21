@@ -151,6 +151,10 @@ services:
   api:
     <<: *long-running
     command: ["api"]
+    # Read-only: Ayarlar lists the backups with their age. Restoring stays in geri-yukle.ps1.
+    volumes:
+      - ./backend/ops:/ops:ro
+      - ${KAPTAN_BACKUP_DIR:?KAPtan kurulu değil. Önce .\kur.ps1 çalıştır}:/yedek:ro
     depends_on:
       bootstrap: { condition: service_completed_successfully }
       redis: { condition: service_healthy }

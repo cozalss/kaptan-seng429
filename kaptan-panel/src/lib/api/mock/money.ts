@@ -159,15 +159,13 @@ export function createMoney(ctx: MockCtx): Money {
       if (w.confirm.trim().toLocaleLowerCase("tr-TR") !== RESET_WORD) throw new ApiError(422, "confirm", "Onay kelimesini yanlış yazdın. “baştan” yaz.");
       if (!hasStarted(db.snapshot.book)) throw new ApiError(409, "not_started", "Başlangıç paranı henüz girmedin; baştan başlayacak bir şey yok.");
       const closed = closeBook(db.snapshot, now());
-      const killOn = db.snapshot.risk.kill_switch === "on";
       db.update((s) => ({
         ...s,
-        // The kill switch is a safety rule, not a number of the old book: it stays as it is.
-        risk: { ...s.risk, daily_pnl_pct: 0, drawdown_pct: 0, halted_today: false },
+        risk: { ...s.risk, daily_pnl_pct: 0, drawdown_pct: 0 },
         book: { seeded: false, movements: [], holdings: [], corrections: {}, undone: {}, fee: s.book.fee ?? null, previous: [closed, ...(s.book.previous ?? [])] },
       }));
-      db.audit(userActor(a), "book.reset", "book", `defter-${closed.no}`, { closed_book: closed.no, equity: closed.equity, cash: closed.cash, put_in: closed.put_in, kill_switch_stays_on: killOn });
-      return ok({ closed_book: closed.no, kill_switch_on: killOn });
+      db.audit(userActor(a), "book.reset", "book", `defter-${closed.no}`, { closed_book: closed.no, equity: closed.equity, cash: closed.cash, put_in: closed.put_in });
+      return ok({ closed_book: closed.no });
     },
 
     async previousBooks() {

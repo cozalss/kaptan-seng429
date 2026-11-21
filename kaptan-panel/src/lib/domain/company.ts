@@ -28,6 +28,31 @@ export const PriceLine = z.object({
 });
 export type PriceLine = z.infer<typeof PriceLine>;
 
+/** The quiet numbers of the stored prices; the year range is corrected for bonus issues. */
+export const PriceStats = z.object({
+  as_of: IsoDate,
+  day_low: z.number().nullable(),
+  day_high: z.number().nullable(),
+  volume: z.number().nullable(),
+  year_low: z.number().nullable(),
+  year_high: z.number().nullable(),
+  year_low_day: IsoDate.nullable(),
+  year_high_day: IsoDate.nullable(),
+  /** Stored trading days the year range rests on. */
+  year_days: z.number().int().nonnegative(),
+  /** The last close against the year high, percent (<= 0). */
+  from_high_pct: z.number().nullable(),
+  adjusted: z.boolean(),
+});
+export type PriceStats = z.infer<typeof PriceStats>;
+
+export const PriceBenchmark = z.object({ name: z.string(), points: z.array(PricePoint) });
+export type PriceBenchmark = z.infer<typeof PriceBenchmark>;
+
+/** A KAP disclosure KAPtan classed as a buyback (E1) or an insider / main-owner purchase (E2). */
+export const InsiderEvent = z.object({ kind: z.enum(["buyback", "insider"]), disclosure: DisclosureListItem });
+export type InsiderEvent = z.infer<typeof InsiderEvent>;
+
 export const OwnPosition = z.object({
   qty: z.number().int().positive(),
   avg_cost: z.number(),
@@ -63,6 +88,9 @@ export const Company = z.object({
   following: Following,
   watched: z.boolean(),
   price: PriceLine,
+  stats: PriceStats.nullable(),
+  benchmark: PriceBenchmark.nullable(),
+  insiders: z.array(InsiderEvent),
   position: OwnPosition.nullable(),
   disclosures: z.array(DisclosureListItem),
   decisions: z.array(PastDecision),

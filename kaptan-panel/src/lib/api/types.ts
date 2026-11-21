@@ -25,10 +25,17 @@ import type {
   TicketMarkInput,
   TrackRecord,
 } from "@/lib/domain";
+import type { Calendar, MarketStrip } from "@/lib/domain/agenda";
 import type { AlertSettings, SystemStatus } from "@/lib/domain/system";
 import type { BonusInput, CorporateBook, DividendInput, NoticeAnswer, RightsInput } from "@/lib/domain/corporate";
+import type { ImportApplyRequest, ImportPreview, ImportRequest, ImportResult, ImportSources, ImportTable } from "@/lib/domain/imports";
+import type { AlertHistoryItem, PriceAlert, PriceAlertInput } from "@/lib/domain/price-alerts";
+import type { BackupList } from "@/lib/domain/restore";
+import type { WeeklySummary } from "@/lib/domain/weekly";
 import type { AlertPrefs, BackupStatus, PasswordChanged, PauseInput, Preferences } from "@/lib/domain/preferences";
 import type { Company, DisclosureReading, Period, SearchResult, WatchItem } from "@/lib/company/company";
+import type { Compare, ReadingState } from "@/lib/domain/reading";
+import type { Allocation, ClosedTrades, DividendIncome, HoldingNotes, ReturnStats, Versus } from "@/lib/domain/insights";
 import type { BookResetInput, BookResetOut, BrokerFee, BrokerFeeInput, HoldingInput, HoldingSellInput, MoneyBook, MoneyInput, MovementCorrectInput, PreviousBook } from "@/lib/solo/money";
 import type { HoldInput, HoldResult, Overview } from "@/lib/solo/overview";
 
@@ -66,6 +73,18 @@ export interface KaptanApi {
   watch(ticker: string): Promise<WatchItem[]>;
   /** DELETE /watchlist/{ticker}: un-star. Returns the list. */
   unwatch(ticker: string): Promise<WatchItem[]>;
+  /** GET /me/reading: unread count (starred or held companies), unread and saved indexes. */
+  readingState(): Promise<ReadingState>;
+  /** POST /me/reading/read-all: "Hepsini okundu say". */
+  readAll(): Promise<ReadingState>;
+  /** PUT /me/reading/read/{index}: one disclosure was opened. */
+  markRead(index: number): Promise<ReadingState>;
+  /** PUT / DELETE /me/reading/saved/{index}: save for later, or take it off the saved list. */
+  setSaved(index: number, saved: boolean): Promise<ReadingState>;
+  /** GET /me/reading/saved: the saved disclosures, newest save first. */
+  savedDisclosures(): Promise<DisclosureListItem[]>;
+  /** GET /compare?a=&b=&period=: two companies side by side. */
+  compare(a: string, b: string, period?: Period): Promise<Compare>;
 
   // proposals: an approval yields an order ticket
   listApprovals(status?: ApprovalCard["status"] | "all"): Promise<ApprovalCard[]>;
@@ -112,6 +131,34 @@ export interface KaptanApi {
   corporateNotices(): Promise<NoticeAnswer>;
   /** POST /me/corporate/notices/{id}/dismiss: the person does not want this prompt. */
   dismissNotice(noticeId: string): Promise<NoticeAnswer>;
+
+  // statement import (wave 5): the file is parsed in memory by the server and never stored
+  /** POST /me/import/read: a CSV / XLSX / PDF-text file (at most 5 MB) as a table of text cells. */
+  importRead(file: Blob, filename: string, source: string): Promise<ImportTable>;
+  /** POST /me/import/preview: which rows are new, already recorded or in conflict. Writes nothing. */
+  importPreview(input: ImportRequest): Promise<ImportPreview>;
+  /** POST /me/import/apply: writes only the ticked new rows, as normal audited rows. */
+  importApply(input: ImportApplyRequest): Promise<ImportResult>;
+  /** GET /me/import/sources: source names that have a remembered column mapping. */
+  importSources(): Promise<ImportSources>;
+  /** GET /me/insights/allocation: share of the whole money per holding and sector, and the person's limit for one share. */
+  insightsAllocation(): Promise<Allocation>;
+  /** PUT /me/insights/concentration: the most the person wants in one share (5..100 %). Only changes a sentence; audited. */
+  setConcentration(thresholdPct: number): Promise<Allocation>;
+  /** GET /me/insights/closed-trades: every sale with its gain, days held and the win rate. */
+  closedTrades(): Promise<ClosedTrades>;
+  /** GET /me/insights/stats: time-weighted return, best / worst day, biggest fall (all free of deposits and withdrawals). */
+  returnStats(): Promise<ReturnStats>;
+  /** GET /me/insights/dividends: recorded dividends by month, this year vs last, yield on cost. */
+  dividendIncome(): Promise<DividendIncome>;
+  /** GET /me/insights/versus: your money vs the dollar; inflation and deposit say why they are missing. */
+  versusMoney(): Promise<Versus>;
+  /** GET /me/notes: the person's private notes per share. */
+  holdingNotes(): Promise<HoldingNotes>;
+  /** PUT /me/notes/{ticker}: write or replace the note (3..500 characters); audited. */
+  saveHoldingNote(ticker: string, body: string): Promise<HoldingNotes>;
+  /** DELETE /me/notes/{ticker}: remove the note; audited. */
+  clearHoldingNote(ticker: string): Promise<HoldingNotes>;
   /** POST /tickets/{no}/correct: fix the fill recorded on an entered ticket (adet, price, commission). */
   correctFill(ticketNo: string, input: TicketCorrectInput): Promise<OrderTicket>;
   /** GET /me/fee: the commission rate in force (yours, or KAPtan's built-in one). */
@@ -129,11 +176,8 @@ export interface KaptanApi {
   positions(): Promise<Position[]>;
   pnl(from?: string, to?: string): Promise<PnlPoint[]>;
 
-  // stop and restart: start asks; confirm opens at reset.ready_at (null = now)
+  // the book as information (equity, peak, fall from peak, day result); nothing here stops anything
   riskStatus(): Promise<RiskStatus>;
-  killSwitch(reason: string): Promise<RiskStatus>;
-  startKillReset(input: { reason: string }): Promise<RiskStatus>;
-  confirmKillReset(input: { reason: string }): Promise<RiskStatus>;
 
   // limits: propose, then decide (the screens do both as one action)
   limits(): Promise<LimitsView>;
@@ -143,6 +187,11 @@ export interface KaptanApi {
   // the audit ledger (hash chain)
   auditList(query?: AuditListQuery): Promise<AuditPage>;
   verifyAudit(): Promise<ChainVerifyResult>;
+
+  /** GET /me/calendar?days=: dates ahead for the shares you hold and watch, read from real sources only (1 to 120 days, default 60). */
+  calendar(days?: number): Promise<Calendar>;
+  /** GET /market/strip: BIST 100 (last stored close), open or closed, USD/TRY; missing values are null. */
+  marketStrip(): Promise<MarketStrip>;
 
   /** GET /system/status: is KAPtan actually working (the shell's one line, and Ayarlar · Sistem). */
   systemStatus(): Promise<SystemStatus>;
@@ -176,6 +225,18 @@ export interface KaptanApi {
   backupStatus(): Promise<BackupStatus>;
   /** POST /me/backup/run: "Şimdi yedek al". */
   runBackup(): Promise<BackupStatus>;
+  /** GET /me/backup/list: the backups in the folder with their age and the safe restore steps (the restore itself is geri-yukle.ps1). */
+  backupList(): Promise<BackupList>;
+  /** GET /me/price-alerts: the price alerts, open ones first. */
+  priceAlerts(): Promise<PriceAlert[]>;
+  /** POST /me/price-alerts: wait for a price (typed, or +-5 % / +-10 % of now). Audited. Returns the list. */
+  addPriceAlert(input: PriceAlertInput): Promise<PriceAlert[]>;
+  /** DELETE /me/price-alerts/{id}: remove one (fired or not). Audited. Returns the list. */
+  removePriceAlert(id: string): Promise<PriceAlert[]>;
+  /** GET /me/alerts/history: what went out on the phone and e-mail channels, when, and whether it was delivered. */
+  alertHistory(): Promise<AlertHistoryItem[]>;
+  /** GET /me/weekly?at=YYYY-MM-DD: the Monday-Sunday week containing the day (default this week). */
+  weekly(at?: string): Promise<WeeklySummary>;
   /** POST /auth/password: the other devices are signed out; this one stays in. */
   changePassword(input: { current: string; next: string }): Promise<PasswordChanged>;
   /** POST /auth/logout-all: every device, this one too (the caller then goes to /login). */

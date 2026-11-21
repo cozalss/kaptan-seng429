@@ -2,7 +2,7 @@
 
 Adapters are bound to one database transaction (`conn`) and one instant (`now`): SimBIST books the
 order in trading.orders, OrderTicket writes the personal-mode ticket. `GuardedBroker` wraps any of
-them with the checks that live outside the agent graph (kill switch, hard cap, live keys).
+them with the checks that live outside the agent graph (hard cap, live keys).
 """
 
 from __future__ import annotations
@@ -57,7 +57,7 @@ class BrokerError(RuntimeError):
 
 
 class OrderRefused(BrokerError):  # noqa: N818 - the domain word ("refused at send")
-    """GuardedBroker refused the order at send; `code` is machine-readable (kill_switch, hard_cap, …)."""
+    """GuardedBroker refused the order at send; `code` is machine-readable (cooldown, hard_cap, …)."""
 
     def __init__(self, code: str, detail: str) -> None:
         super().__init__(detail)

@@ -1,7 +1,7 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { __setMockDb, MockDb } from "@/lib/api/mock/db";
-import { engageKillSwitch, stopAllTimers, stopLiveTicker } from "@/lib/api/mock/scenarios";
+import { stopAllTimers, stopLiveTicker } from "@/lib/api/mock/scenarios";
 import { approvalCards } from "@/lib/api/mock/selectors";
 import { NBSP } from "@/lib/format";
 import { DEMO_E3_PROPOSAL, PENDING_PROPOSALS } from "@/mocks/ids";
@@ -119,10 +119,10 @@ describe("Neden?", () => {
     renderWithDesk(<ProposalScreen proposalId={PENDING_PROPOSALS[0]} />, db);
     await screen.findByRole("button", { name: "Onayla" });
     act(() => {
-      db.update((s) => ({ ...s, risk: { ...s.risk, halted_today: true } }));
+      db.update((s) => ({ ...s, approvals: { ...s.approvals, [PENDING_PROPOSALS[0]]: { status: "approved", decided_by: "sen", decided_at: db.nowIso(), decision_comment: null, approved_notional_try: null } } }));
     });
     await u.click(screen.getByRole("button", { name: "Onayla" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent(/^Olmadı\. Bugün paran/);
+    expect(await screen.findByRole("alert")).toHaveTextContent(/^Olmadı\./);
     expect(document.querySelector("[data-seal]")).toBeNull();
     expect(screen.queryByRole("group", { name: /^Bankana gireceğin işlem/ })).toBeNull();
   });
@@ -143,15 +143,6 @@ describe("Neden?", () => {
     await u.type(screen.getByPlaceholderText("Kısa bir not…"), "Hacim düşük, dikkat.");
     await u.click(screen.getByRole("button", { name: "Not ekle" }));
     expect(await within(await screen.findByRole("list", { name: "Öneri notları" })).findByText("Hacim düşük, dikkat.")).toBeInTheDocument();
-  });
-
-  it("drops open proposals while stopped and says why", async () => {
-    const db = new MockDb(null);
-    engageKillSwitch(db, "user:sen", "test durdurması");
-    renderWithDesk(<ProposalScreen proposalId={PENDING_PROPOSALS[0]} />, db);
-    expect(await screen.findByText("İptal oldu.")).toBeInTheDocument();
-    expect(screen.getByText("Her şey durdurulduğu için bu öneri düştü.")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Onayla" })).toBeNull();
   });
 
   it("shows decided and unknown proposals plainly", async () => {

@@ -10,6 +10,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Any, Final, Literal
 
+from kaptan.companies.market import company_stats, index_line, insider_events
 from kaptan.db import DictConn
 from kaptan.disclosures.listing import LIST_ITEM_COLUMNS, to_item
 from kaptan.reference._sql import fetch_all, fetch_one
@@ -145,7 +146,7 @@ def position_view(row: dict[str, Any] | None, last: Decimal | None) -> dict[str,
     }
 
 
-async def _name(conn: DictConn, ticker: str, identity: dict[str, Any] | None) -> str | None:
+async def company_name(conn: DictConn, ticker: str, identity: dict[str, Any] | None) -> str | None:
     if identity and identity["name"]:
         return str(identity["name"])
     row = await fetch_one(conn, NAME_FROM_DISCLOSURE_SQL, (ticker,))
@@ -157,7 +158,7 @@ async def company_profile(
 ) -> dict[str, Any] | None:
     """The whole page, or None when this code is unknown (no profile, no issuer, no disclosure)."""
     identity = await fetch_one(conn, IDENTITY_SQL, {"t": ticker})
-    name = await _name(conn, ticker, identity)
+    name = await company_name(conn, ticker, identity)
     if name is None:
         return None
     today = now.date()
@@ -191,6 +192,9 @@ async def company_profile(
             if last_close is None or not prev
             else round((float(last_close) / float(prev) - 1) * 100, 2),
         },
+        "stats": await company_stats(conn, ticker, today),
+        "benchmark": await index_line(conn, since) if bars else None,
+        "insiders": await insider_events(conn, ticker),
         "position": position_view(held, last_close),
         "disclosures": [to_item(dict(r)) for r in disclosures],
         "decisions": [d for d in (decision_of(r) for r in runs) if d is not None],

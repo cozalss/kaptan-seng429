@@ -1,9 +1,11 @@
-import type { ApprovalCard, LimitVersion, LiveArmState, Note, Order, ProposalNote, RestrictedSecurity, Signature, TicketEntry } from "@/lib/domain";
+import type { ApprovalCard, LimitVersion, LiveArmState, Note, Order, ProposalNote, RestrictedSecurity, TicketEntry } from "@/lib/domain";
 import type { ChainFields } from "@/lib/audit-chain";
 import { SEED_LIMIT_VERSIONS, SEED_LIVE_ARM, SEED_RESTRICTED, SEED_WATCHLIST } from "@/mocks/governance";
 import { liveEquity } from "@/mocks/pnl";
 import { initialBook, type MockBook } from "./ledger";
+import { initialAlertsMore, type MockAlertsMore } from "./alerts-more";
 import { initialComfort, type MockComfort } from "./comfort";
+import type { MockReading } from "./reading";
 import { initialStatus, type MockStatus } from "./status";
 
 /** Live strategy's P&L at 13:40 on the fixture day. */
@@ -15,7 +17,7 @@ const OPENING_DAILY_PNL = 0.0021;
  * reload keeps the story. Tests clear it with `db.reset()`.
  */
 export const STORAGE_KEY = "kaptan-mock-state";
-export const STATE_VERSION = 9;
+export const STATE_VERSION = 10;
 
 export type ApprovalPatch = Pick<
   ApprovalCard,
@@ -23,16 +25,9 @@ export type ApprovalPatch = Pick<
 >;
 
 export interface MockRisk {
-  kill_switch: "off" | "on";
-  kill_reason: string | null;
-  kill_at: string | null;
-  kill_by: string | null;
-  halted_today: boolean;
   /** Daily P&L and drawdown overrides set by the loss simulation. */
   daily_pnl_pct: number;
   drawdown_pct: number;
-  /** The person asked to restart; the confirm step clears it. */
-  reset_started: Signature | null;
 }
 
 export interface MockState {
@@ -64,6 +59,10 @@ export interface MockState {
   status: MockStatus;
   /** Personal settings: pause, alert preferences, backup box, password (comfort.ts). */
   comfort: MockComfort;
+  /** Price alerts and the history of what went out (alerts-more.ts). */
+  alertsMore: MockAlertsMore;
+  /** Saved and opened disclosures (reading.ts); absent in states saved before it existed. */
+  reading?: MockReading;
 }
 
 /** `fresh`: a new install with no starting money yet (the home asks for it); default is the seeded book. */
@@ -77,14 +76,8 @@ export function initialState(nowReal: number, fresh = false): MockState {
     canceledOrderIds: [],
     notes: [],
     risk: {
-      kill_switch: "off",
-      kill_reason: null,
-      kill_at: null,
-      kill_by: null,
-      halted_today: false,
       daily_pnl_pct: OPENING_DAILY_PNL,
       drawdown_pct: liveEquity(OPENING_DAILY_PNL).drawdown,
-      reset_started: null,
     },
     positionsManagedByExit: false,
     limitVersions: [...SEED_LIMIT_VERSIONS],
@@ -99,6 +92,7 @@ export function initialState(nowReal: number, fresh = false): MockState {
     book: initialBook(fresh),
     status: initialStatus(),
     comfort: initialComfort(),
+    alertsMore: initialAlertsMore(),
   };
 }
 

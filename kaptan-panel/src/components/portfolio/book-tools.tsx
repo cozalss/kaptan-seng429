@@ -3,8 +3,7 @@
 import "@/components/ufuk/ufuk.css";
 import "./own-money.css";
 
-import { useEffect, useState, type FormEvent } from "react";
-import Link from "next/link";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/lib/api/react";
 import { errorMessage } from "@/lib/api/types";
@@ -82,7 +81,7 @@ function ExportRecords() {
   );
 }
 
-type Step = "closed" | "explain" | "word" | "done";
+type Step = "closed" | "explain" | "word";
 
 function StartOver() {
   const api = useApi();
@@ -92,21 +91,6 @@ function StartOver() {
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
-  const [stopped, setStopped] = useState(false);
-  const [stayedOn, setStayedOn] = useState(false);
-
-  // Whether everything is stopped right now: said before the person confirms, not after.
-  useEffect(() => {
-    if (step === "closed") return;
-    let alive = true;
-    api
-      .riskStatus()
-      .then((s) => alive && setStopped(s.kill_switch === "on"))
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, [api, step]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -115,31 +99,14 @@ function StartOver() {
     setBusy(true);
     setFailure(null);
     try {
-      const out = await api.startOver({ confirm: typed.trim() });
-      if (out.kill_switch_on) {
-        setStayedOn(true);
-        setStep("done");
-      } else {
-        router.push(ROUTES.benim);
-      }
+      await api.startOver({ confirm: typed.trim() });
+      router.push(ROUTES.benim);
     } catch (err) {
       setFailure(errorMessage(err));
     } finally {
       setBusy(false);
     }
   };
-
-  if (step === "done") {
-    return (
-      <div className="bt-block om-panel" role="status">
-        <p className="om-panel-title">Eski defterin kapandı; Geçmiş’te duruyor.</p>
-        {stayedOn ? <p className="om-panel-lead">Her şey durdurulmuştu; baştan başlasan da durdurma açık kalır. Yeniden başlatmayı ana sayfadan istersin.</p> : null}
-        <Button asChild variant="primary" size="lg">
-          <Link href={ROUTES.benim}>Yeni başlangıç parasını yaz</Link>
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="bt-block">
@@ -158,7 +125,6 @@ function StartOver() {
             <li>Bu defter kapanır: paran, hisselerin, hareketlerin ve kazanç çizgin sıfırlanır. Bankanda bekleyen işlemler geçersiz olur.</li>
             <li>Eski defter silinmez; Geçmiş’te “önceki defter” olarak okuyabilirsin.</li>
             <li>KAPtan’ın okuduğu bildirimler, sınırların ve kayıtların sağlamlığı olduğu gibi kalır.</li>
-            <li>{stopped ? "Şu an her şey durdurulmuş. Baştan başlasan da durdurma açık kalır; bu bir güvenlik kuralı." : "Her şeyi durdurmuşsan, o durdurma açık kalır; bu bir güvenlik kuralı."}</li>
             <li>Sonra ana sayfa seni yeniden başlangıç parasını yazmaya götürür.</li>
           </ul>
           <div className="mf-actions">

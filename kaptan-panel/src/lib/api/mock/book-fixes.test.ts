@@ -141,16 +141,14 @@ describe("mock · my broker's commission rate", () => {
 });
 
 describe("mock · start over", () => {
-  it("needs the word, closes the book into history, returns to needs_setup and keeps the kill switch", async () => {
+  it("needs the word, closes the book into history and returns to needs_setup", async () => {
     const { api, db } = setup();
-    await api.killSwitch("Deneme için durdurdum");
     expect(await errorOf(api.startOver({ confirm: "evet" }))).toMatchObject({ status: 422, code: "confirm" });
     const out = await api.startOver({ confirm: "  BAŞTAN " });
-    expect(out).toEqual({ closed_book: 1, kill_switch_on: true });
-    expect(lastAudit(db)).toMatchObject({ action: "book.reset", payload: { closed_book: 1, kill_switch_stays_on: true } });
+    expect(out).toEqual({ closed_book: 1 });
+    expect(lastAudit(db)).toMatchObject({ action: "book.reset", payload: { closed_book: 1 } });
     expect((await api.overview()).needs_setup).toBe(true);
     expect(await api.positions()).toEqual([]);
-    expect((await api.riskStatus()).kill_switch).toBe("on");
     const books = await api.previousBooks();
     expect(books).toHaveLength(1);
     expect(head(books).started_with).toBe(SEED_START_TRY);

@@ -28,6 +28,38 @@ class PriceLine(KModel):
     change_pct: float | None
 
 
+class PriceStats(KModel):
+    """The quiet numbers of the stored prices; each may be absent. The year range is corrected for bonus issues."""
+
+    as_of: IsoDate
+    day_low: float | None
+    day_high: float | None
+    volume: float | None
+    year_low: float | None
+    year_high: float | None
+    year_low_day: IsoDate | None
+    year_high_day: IsoDate | None
+    #: Stored trading days the year range rests on; under about 240 the "year" is shorter than a year.
+    year_days: int
+    #: The last close against the year high, in percent (<= 0).
+    from_high_pct: float | None
+    adjusted: bool
+
+
+class PriceBenchmark(KModel):
+    """BIST 100 closes over the same days as the price line; absent when none are stored."""
+
+    name: str
+    points: list[PricePoint]
+
+
+class InsiderEvent(KModel):
+    """A KAP disclosure KAPtan classed as a buyback (E1) or an insider/main-owner share purchase (E2)."""
+
+    kind: Literal["buyback", "insider"]
+    disclosure: DisclosureListItem
+
+
 class OwnPosition(KModel):
     qty: PosInt
     avg_cost: float
@@ -57,6 +89,9 @@ class Company(KModel):
     following: Following
     watched: bool
     price: PriceLine
+    stats: PriceStats | None
+    benchmark: PriceBenchmark | None
+    insiders: list[InsiderEvent]
     position: OwnPosition | None
     disclosures: list[DisclosureListItem]
     decisions: list[PastDecision]

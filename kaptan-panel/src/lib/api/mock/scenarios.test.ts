@@ -1,5 +1,5 @@
 import { MockDb } from "./db";
-import { engageKillSwitch, executeApproved, startLiveTicker, stopAllTimers, stopLiveTicker } from "./scenarios";
+import { executeApproved, startLiveTicker, stopAllTimers, stopLiveTicker } from "./scenarios";
 import { PENDING_PROPOSALS } from "@/mocks/ids";
 import type { BusMessage, StreamKey } from "@/lib/sse/bus";
 
@@ -18,8 +18,8 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("kill switch", () => {
-  it("issues no order of its own on approval, and hands positions to the exit rule", () => {
+describe("approval", () => {
+  it("issues no order of its own", () => {
     const db = new MockDb(null);
     const [p] = PENDING_PROPOSALS;
     db.update((s) => ({
@@ -28,8 +28,6 @@ describe("kill switch", () => {
     }));
     executeApproved(db, p);
     expect(db.snapshot.orders).toHaveLength(0);
-    engageKillSwitch(db, "user:sen", "Test");
-    expect(db.snapshot.positionsManagedByExit).toBe(true);
   });
 });
 

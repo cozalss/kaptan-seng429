@@ -9,7 +9,6 @@ import subprocess
 import sys
 import textwrap
 from collections.abc import AsyncIterator
-from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -123,35 +122,6 @@ async def test_health_says_nothing_of_a_demo_and_tells_whether_a_model_is_config
     assert "demo_mode" not in body
     assert isinstance(body["llm_ready"], bool)
     assert not body["now"].startswith("2027-01-11")  # the real clock, not the fixture day
-
-
-async def test_the_restart_wait_always_applies_and_nothing_writes_a_waiver(
-    migrated: Settings, seeded: SeedResult
-) -> None:
-    from kaptan.api.errors import ApiError
-    from kaptan.risk import kill_switch as ks
-
-    conn = await connect(migrated.database_url.get_secret_value())
-    now = FIXTURE_ANCHOR
-    try:
-        await ks.engage(conn, by="user:sahip", reason="Deneme durdurması", role="owner", now=now)
-        await ks.start_reset(conn, uid="sahip", name="Sahip", role="owner", reason="Olay incelendi, tamam.", now=now)
-        await conn.commit()
-        with pytest.raises(ApiError) as early:
-            await ks.confirm_reset(conn, uid="sahip", role="owner", reason="Olay incelendi, tamam.", now=now)
-        assert early.value.status == 409 and "24 saat" in early.value.detail
-        await conn.rollback()
-        async with conn.cursor() as cur:
-            await cur.execute("SELECT count(*) AS n FROM audit.audit_log WHERE action = 'kill_switch.wait_waived'")
-            row = await cur.fetchone()
-        assert row is not None and row["n"] == 0
-        await ks.confirm_reset(
-            conn, uid="sahip", role="owner", reason="Olay incelendi, tamam.", now=now + timedelta(days=8)
-        )
-        await conn.commit()
-    finally:
-        await conn.close()
-        await reseed_test_db(migrated)
 
 
 async def test_old_demo_rows_still_read_and_verify(migrated: Settings, seeded: SeedResult) -> None:

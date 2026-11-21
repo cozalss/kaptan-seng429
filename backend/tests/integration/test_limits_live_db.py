@@ -1,30 +1,24 @@
 """FR-33: the gate reads the active limit version; a signed change takes effect on the next run.
-Also the restart rule (06 §11, FR-20 Rev 2) on the real kill-switch functions."""
+A retired stop limit left in an old version is not shown."""
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Any
 
 import pytest
 
-from kaptan.api.errors import ApiError
 from kaptan.db import DictConn
-from kaptan.domain.schemas import LimitDecisionInput, LimitProposalInput, RiskStatus
-from kaptan.risk import kill_switch as ks
+from kaptan.domain.schemas import LimitDecisionInput, LimitProposalInput
 from kaptan.risk import limits
 from kaptan.risk.active_limits import active_limits
 from kaptan.risk.gate import GateLimits
-from kaptan.risk.status import risk_status
 from tests.harness.replay import ReplayProvider, ReplayToolbox
 from tests.harness.scenario import build_context, recorded_run
 
 pytestmark = pytest.mark.integration
 
 NOW = datetime(2027, 1, 11, 10, 40, tzinfo=UTC)
-#: Mon 11 Jan 2027 + 5 sessions (Tue 12 … Mon 18), 10:00 Istanbul.
-OPENS_AT = datetime(2027, 1, 18, 7, 0, tzinfo=UTC)
 
 
 async def test_seeded_v1_is_the_canonical_default(pg: DictConn) -> None:
@@ -56,50 +50,9 @@ async def test_no_active_version_falls_back_to_the_defaults(pg: DictConn) -> Non
     assert active.version is None and active.limits == GateLimits()
 
 
-async def _stopped_and_requested(pg: DictConn, kill_at: datetime, started: datetime) -> None:
-    await pg.execute("UPDATE trading.risk_state SET kill_switch = 'off', reset_started = NULL")
-    await ks.engage(pg, by="user:sahip", reason="test", role="risk_officer", now=kill_at)
-    await ks.start_reset(pg, uid="sahip", name="Sahip", role="risk_officer", reason="Olay incelendi.", now=started)
+async def test_a_retired_stop_limit_in_an_old_version_is_not_shown(pg: DictConn) -> None:
+    await pg.execute("INSERT INTO trading.limits (version, key, value, ord) VALUES (1, 'kill_drawdown_pct', -0.05, 99)")
+    from kaptan.risk.limits import limits_view
 
-
-async def _last_actions(pg: DictConn, n: int) -> list[tuple[str, dict[str, Any]]]:
-    async with pg.cursor() as cur:
-        await cur.execute("SELECT action, payload FROM audit.audit_log ORDER BY chain_pos DESC LIMIT %s", (n,))
-        rows = await cur.fetchall()
-    return [(r["action"], r["payload"]) for r in reversed(rows)]
-
-
-async def test_with_real_data_the_restart_waits_24h_and_5_sessions(pg: DictConn) -> None:
-    kill_at = datetime(2026, 10, 12, 9, 0, tzinfo=UTC)  # Monday
-    started = datetime(2026, 10, 18, 9, 0, tzinfo=UTC)
-    await _stopped_and_requested(pg, kill_at, started)
-    with pytest.raises(ApiError) as early:
-        await ks.confirm_reset(pg, uid="sahip", role="risk_officer", reason="Onay.", now=started + timedelta(hours=2))
-    assert (early.value.status, early.value.code) == (409, "conflict")
-    assert "19.10.2026 12:00" in early.value.detail
-    await ks.confirm_reset(pg, uid="sahip", role="risk_officer", reason="Onay.", now=started + timedelta(hours=25))
-    async with pg.cursor() as cur:
-        await cur.execute("SELECT kill_switch, reset_at FROM trading.risk_state")
-        row = await cur.fetchone()
-    assert row is not None and row["kill_switch"] == "off" and row["reset_at"] == started + timedelta(hours=25)
-    assert [a for a, _ in await _last_actions(pg, 3)] == [
-        "kill_switch.reset_started",
-        "auth.single_user_waiver",
-        "kill_switch.reset",
-    ]
-
-
-async def test_nobody_waiving_the_wait_means_the_wait_applies(pg: DictConn) -> None:
-    await _stopped_and_requested(pg, NOW, NOW)
-    with pytest.raises(ApiError) as early:
-        await ks.confirm_reset(pg, uid="sahip", role="risk_officer", reason="Onay.", now=NOW)
-    assert early.value.status == 409
-
-
-async def test_status_carries_ready_at_until_the_wait_is_over(pg: DictConn) -> None:
-    await _stopped_and_requested(pg, NOW, NOW)
-    live = await risk_status(pg, NOW + timedelta(hours=1))
-    assert live["reset"]["ready_at"] == OPENS_AT
-    assert RiskStatus.model_validate(live).model_dump(mode="json")["reset"]["ready_at"] == "2027-01-18T07:00:00.000Z"
-    opened = await risk_status(pg, OPENS_AT)
-    assert opened["reset"]["ready_at"] is None
+    view = await limits_view(pg)
+    assert "kill_drawdown_pct" not in [v["key"] for v in view["active"]["values"]]

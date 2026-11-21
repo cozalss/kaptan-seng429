@@ -112,13 +112,14 @@ export type RiskRuleCode = z.infer<typeof RiskRuleCode>;
 
 /** Execution order of the pre-trade gate; R16 runs at send time. */
 export const RISK_GATE_ORDER: readonly RiskRuleCode[] = [
-  "R01", "R02", "R03", "R04", "R13", "R11", "R14", "R05",
+  "R03", "R04", "R13", "R11", "R14", "R05",
   "R06", "R09", "R12", "R07", "R08", "R10", "R15",
 ];
 
 export const RISK_RULES: Readonly<Record<RiskRuleCode, { label_tr: string; summary_tr: string }>> = {
-  R01: { label_tr: "Her şeyi durdurma", summary_tr: "Durduruldu mu; paran zirvesinden %5 düştü mü" },
-  R02: { label_tr: "Günlük zarar", summary_tr: "Bir günde %1 düşersen o gün yeni işlem olmaz" },
+  // R01 and R02 no longer run; the codes stay so old records still read.
+  R01: { label_tr: "Eski kural: durdurma", summary_tr: "Artık yok; yalnızca eski kayıtlarda görünür" },
+  R02: { label_tr: "Eski kural: günlük zarar", summary_tr: "Artık yok; yalnızca eski kayıtlarda görünür" },
   R03: { label_tr: "Evren", summary_tr: "Hisse likidite ve halka açıklık alt sınırıyla evrende mi" },
   R04: { label_tr: "Tedbir", summary_tr: "SPK/VBTS tedbiri sert veto; 24 saatten eski tedbir verisi HOLD" },
   R05: { label_tr: "Kanıt", summary_tr: "Kanıt kimlikleri getirilenlerin alt kümesi, karar anından önce, n ≥ 5" },

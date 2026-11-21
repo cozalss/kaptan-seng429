@@ -6,7 +6,7 @@ Vitest · Playwright.
 
 - **Ana sayfa** (`/benim`): paranın durumu tek cümleyle, başladığından beri çizgi, bugünkü kararlar.
 - **Öneri** (`/oneri/[id]`): neden öneriliyor, onaylarsan ne olur, ne kadar emin değil. Onayla ya da reddet.
-- **Param** (`/portfoy`): neye sahipsin, her biri ne kadar değerli, durdurma.
+- **Param** (`/portfoy`): neye sahipsin, her biri ne kadar değerli.
 - **Okunanlar** (`/bildirimler`): KAPtan bugün ne okudu, ne yaptı, hangilerine sıra gelmedi ve neden.
 - **Geçmiş** (`/gecmis`): olan her şey, okunabilir zaman çizelgesi ve "Kayıtlar sağlam mı?" kontrolü.
 - **Ayarlar** (`/ayarlar`): limitler, bildirimler (bu bilgisayar, telefon, e-posta), sistemin durumu, parola, çıkış.

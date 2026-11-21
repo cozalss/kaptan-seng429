@@ -51,8 +51,6 @@ def test_desk_events_match_the_panel_schema() -> None:
         wire = _wire("desk", event, card)
         assert_matches("DeskEvent", wire)
         assert wire["data"] == card  # byte-identical to the REST payload
-    assert_matches("DeskEvent", _wire("desk", "halt", _fixture("risk_status.json")))
-    assert_matches("DeskEvent", _wire("desk", "kill_switch", _fixture("risk_status.json")))
     crisis = {**_fixture("risk_status.json"), "regime": "crisis"}
     assert_matches("DeskEvent", _wire("desk", "regime", crisis))
     sell = {**_fixture("tickets.json")[0], "side": "sell"}

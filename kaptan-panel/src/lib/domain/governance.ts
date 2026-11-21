@@ -92,8 +92,6 @@ export const LimitKey = z.enum([
   "target_concurrent_positions",
   "max_adv_share",
   "price_band_pct",
-  "daily_loss_halt_pct",
-  "kill_drawdown_pct",
   "min_edge_cost_ratio",
   "crisis_exposure_mult",
   "leak_ret5d_threshold",
@@ -153,8 +151,6 @@ export const LIMITS_V1: readonly LimitValue[] = [
   { key: "target_concurrent_positions", value: 8 },
   { key: "max_adv_share", value: 0.01 },
   { key: "price_band_pct", value: 0.02 },
-  { key: "daily_loss_halt_pct", value: -0.01 },
-  { key: "kill_drawdown_pct", value: -0.05 },
   { key: "min_edge_cost_ratio", value: 2 },
   { key: "crisis_exposure_mult", value: 0.5 },
   { key: "leak_ret5d_threshold", value: 0.08 },
@@ -164,8 +160,7 @@ export const LIMITS_V1: readonly LimitValue[] = [
 
 /**
  * `stricter`: which direction tightens the limit. "lower" = a smaller number is stricter
- * (risk per trade); "higher" = a larger number is stricter (edge/cost ≥ 2, or the −1% daily
- * halt moved towards 0).
+ * (risk per trade); "higher" = a larger number is stricter (edge/cost ≥ 2).
  */
 export const LIMIT_META: Readonly<
   Record<LimitKey, { label_tr: string; unit: "pct" | "count" | "ratio" | "mult"; rule: string; stricter: "lower" | "higher" }>
@@ -176,8 +171,6 @@ export const LIMIT_META: Readonly<
   target_concurrent_positions: { label_tr: "Aynı anda hedef hisse", unit: "count", rule: "R08", stricter: "lower" },
   max_adv_share: { label_tr: "Günlük hacim payı tavanı", unit: "pct", rule: "R07", stricter: "lower" },
   price_band_pct: { label_tr: "Fiyat bandı", unit: "pct", rule: "R09", stricter: "lower" },
-  daily_loss_halt_pct: { label_tr: "Günlük zarar durdurması", unit: "pct", rule: "R02", stricter: "higher" },
-  kill_drawdown_pct: { label_tr: "Her şeyi durdurma (zirveden düşüş)", unit: "pct", rule: "R01", stricter: "higher" },
   min_edge_cost_ratio: { label_tr: "Avantaj / maliyet alt sınırı", unit: "ratio", rule: "R06", stricter: "higher" },
   crisis_exposure_mult: { label_tr: "Kriz maruziyet çarpanı", unit: "mult", rule: "R10", stricter: "lower" },
   leak_ret5d_threshold: { label_tr: "Sızıntı eşiği (5 borsa günü)", unit: "pct", rule: "E*", stricter: "lower" },

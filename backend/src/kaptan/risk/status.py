@@ -1,20 +1,17 @@
-"""RiskStatus (GET /risk/status, SSE desk `kill_switch` / `halt`): the book marked to market now, the switch, quotas."""
+"""RiskStatus (GET /risk/status): the book marked to market now, the regime, quotas. Information only."""
 
 from __future__ import annotations
 
 from datetime import datetime
-from decimal import Decimal
 from typing import Any, Final
 
 from psycopg import AsyncConnection
 
 from kaptan.portfolio.marks import js_round
-from kaptan.risk.book import effective_drawdown, own_book
-from kaptan.risk.kill_switch import reset_view
+from kaptan.risk.book import own_book
 
 STATE_SQL: Final = """
-SELECT rs.kill_switch, rs.kill_reason, rs.kill_at, rs.kill_by, rs.halted_today, rs.daily_pnl_pct,
-       rs.drawdown_pct, rs.regime, rs.reset_started, rs.reset_at, rs.reset_equity,
+SELECT rs.regime,
        COALESCE((SELECT armed FROM trading.live_arm WHERE id = 1), false) AS live_armed
 FROM trading.risk_state rs WHERE rs.id = 1
 """
@@ -42,16 +39,8 @@ async def risk_status(conn: AsyncConnection[Any], now: datetime) -> dict[str, An
         quota_rows = await cur.fetchall()
     book = await own_book(conn, now)
     equity, peak = js_round(float(book.equity)), float(js_round(float(book.peak_equity)))
-    reset_eq = None if r["reset_equity"] is None else Decimal(str(r["reset_equity"]))
-    dd = effective_drawdown(book, reset_eq, reset_active=r["reset_at"] is not None)
-    daily, drawdown = round(float(book.daily_pnl_pct), 5), round(float(dd), 5)
-    on = r["kill_switch"] == "on"
+    daily, drawdown = round(float(book.daily_pnl_pct), 5), round(float(book.drawdown_pct), 5)
     return {
-        "kill_switch": r["kill_switch"],
-        "kill_reason": r["kill_reason"],
-        "kill_at": r["kill_at"],
-        "kill_by": r["kill_by"],
-        "halted_today": bool(r["halted_today"]),
         "daily_pnl_pct": daily,
         "drawdown_pct": drawdown,
         "peak_equity": _whole(peak),
@@ -59,6 +48,5 @@ async def risk_status(conn: AsyncConnection[Any], now: datetime) -> dict[str, An
         "regime": r["regime"],
         "live_armed": bool(r["live_armed"]),
         "quota": [{"provider": q["provider"], "used": int(q["used"]), "limit": int(q["limit_n"])} for q in quota_rows],
-        "reset": reset_view(r["reset_started"], r["kill_at"], now) if on else None,
         "as_of": now,
     }

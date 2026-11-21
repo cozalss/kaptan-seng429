@@ -62,6 +62,10 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
 | 1c | GET | `/companies/{ticker}?period=1m\|3m\|1y\|all` | — | `Company` (404 `not_found`) |
 | 1d | GET | `/search?q=` | — | `SearchResult` (Türkçe harfler katlanır; 2 harften azı boş) |
 | 1e | GET/PUT/DELETE | `/watchlist`, `/watchlist/{ticker}` | — | `WatchItem[]` (en çok 50, 409 `watchlist_full`; `watchlist.added/removed` denetlenir) |
+| 1f | GET | `/me/reading` | — | `ReadingState` (okunmamış sayısı: izlenen/elindeki şirketler, gürültü hariç; `unread_indexes` ≤ 500, `saved_indexes`) |
+| 1g | POST/PUT | `/me/reading/read-all`, `/me/reading/read/{index}` | — | `ReadingState` ("Hepsini okundu say", tek duyuru açıldı; 404) |
+| 1h | GET/PUT/DELETE | `/me/reading/saved`, `/me/reading/saved/{index}` | — | `DisclosureListItem[]` / `ReadingState` (sonra oku; denetim kaydı yok, para değil) |
+| 1i | GET | `/compare?a=&b=&period=` | — | `Compare` (iki şirket: fiyat çizgisi, istatistik, 90 günlük KAP sayıları; 404, 422 aynı kod) |
 | 2 | GET | `/approvals?status=pending\|all` | — | `ApprovalCard[]` |
 | 3 | POST | `/approvals/{proposal_id}/decision` | `ApprovalDecision` | `ApprovalCard` |
 | 4 | GET | `/approvals/{proposal_id}/notes` | — | `ProposalNote[]` |
@@ -72,9 +76,6 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
 | 9 | GET | `/portfolio/positions` | — | `Position[]` |
 | 10 | GET | `/portfolio/pnl?from=&to=` | — | `PnlPoint[]` |
 | 11 | GET | `/risk/status` | — | `RiskStatus` |
-| 12 | POST | `/risk/kill-switch` | `{"reason":"…"}` (≥ 5) | `RiskStatus` |
-| 13 | POST | `/risk/kill-switch/reset/request` | `{"reason":"…"}` (≥ 10) | `RiskStatus` |
-| 14 | POST | `/risk/kill-switch/reset/confirm` | `{"reason":"…"}` (≥ 10) | `RiskStatus` |
 | 15 | GET | `/limits` | — | `LimitsView` |
 | 16 | POST | `/limits/proposals` | `LimitProposalInput` | `LimitsView` |
 | 17 | POST | `/limits/proposals/{version}/decision` | `LimitDecisionInput` | `LimitsView` |
@@ -91,7 +92,7 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
 | B2 | POST | `/me/money/{id}/undo` | — | `MoneyBook`. "Bunu yanlış girdim": ters satır; satır listede `status:"undone"` kalır. `409 cannot_undo_start \| already_undone \| has_sales`, `422 over_cash` |
 | B3 | POST | `/tickets/{ticket_no}/correct` | `TicketCorrectInput` = `{filled_qty, avg_price, commission_try?}` | `OrderTicket`. Kaydedilen dolumu düzeltir; nakit ve pozisyon yeniden hesaplanır, denetim `ticket.corrected`. `409 not_entered \| sold_since`, `422 over_qty \| over_limit \| under_limit \| sell_qty \| no_change` |
 | B4 | GET\|PUT | `/me/fee` | `BrokerFeeInput` = `{commission_rate: 0..0.01 \| null}` | `BrokerFee` = `{commission_rate, default_rate, bsmv, own}`. Bankanın komisyon oranı; tahmin bunu kullanır. `TicketEntry.commission_rate`/`commission_rate_own` hangisinin kullanıldığını söyler. `422 out_of_range` |
-| B5 | POST | `/me/book/reset` | `{confirm:"baştan"}` | `{closed_book, kill_switch_on}`. "Baştan başla": defter kapanır, geçmiş silinmez; `needs_setup` döner; açık durdurma açık kalır. `409 not_started`, `422 confirm` |
+| B5 | POST | `/me/book/reset` | `{confirm:"baştan"}` | `{closed_book}`. "Baştan başla": defter kapanır, geçmiş silinmez; `needs_setup` döner. `409 not_started`, `422 confirm` |
 | B6 | GET | `/me/books` | — | `PreviousBook[]` (önceki defterler, salt okunur) |
 | B7 | GET | `/me/export.csv` | — | CSV (UTF-8 BOM, `;`, ondalık virgül); `Content-Disposition: attachment` |
 | C1 | GET | `/me/corporate` | — | `CorporateBook` = `{this_year_try, total_try, per_holding: DividendTotal[], records: CorporateRecord[]}` (kâr payları bu yıl/toplam, hisse başına; kayıtlar yeniden eskiye) |
@@ -101,6 +102,19 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
 | C5 | POST | `/me/corporate/{id}/undo` | — | `CorporateBook`. Silmez: düzeltme satırı ekler (`corrects`). `409 already_undone \| is_undo \| changed`, `404 not_found`. Denetim `<tür>.corrected` |
 | C6 | GET | `/me/corporate/notices` | — | `NoticeAnswer` = `{notices: CorporateNotice[]}`: elindeki hisse için KAP'ın kâr payı / bedelsiz / bedelli duyuruları. Okunamayan rakam `null`, `facts_note` söyler. Defteri değiştirmez |
 | C7 | POST | `/me/corporate/notices/{id}/dismiss` | — | `NoticeAnswer`. Denetim `corporate.dismissed` |
+| I1 | POST | `/me/import/read?source=&filename=` | ham dosya baytları (CSV/TSV/TXT, XLSX, yazısı seçilebilen PDF; en çok 5 MB) | `ImportTable` = `{file_kind, number_style, columns, rows: string[][], truncated, has_header_guess, saved_mapping, saved_matches}`. Dosya bellekte okunur, saklanmaz. Tür baytlardan anlaşılır, ad uyumlu olmalı. `413 too_large`, `415 unsupported_type \| old_excel \| macros`, `422 encrypted \| scanned \| unreadable \| empty`, `422 validation` (kaynak adı) |
+| I2 | POST | `/me/import/preview` | `ImportRequest` = `{source, mapping: ImportMapping, number_style, rows}` | `ImportPreview` = `{rows[{index, date, kind, ticker, qty, price, commission_try, amount_try, status new\|recorded\|conflict\|invalid\|skipped, reason}], new, recorded, conflict, invalid, skipped, unknown_types[], started}`. Yazmaz. Bilinmeyen işlem adı sorulur (`mapping.types`), tahmin edilmez |
+| I3 | POST | `/me/import/apply` | `ImportApplyRequest` = `ImportRequest + {selected: number[]}` | `ImportResult` = `{written, failed[ImportRow], preview}`. Yalnız seçilen yeni satırlar, her biri kendi denetimli kaydıyla (`money.deposited`/`money.withdrawn`/`dividend.recorded`/`holding.sold`/`holding.bought`, `imported: true`) ve bir `import.applied` özetiyle. Aynı dosya iki kez: satır özeti (SHA-256) bilindiği için hiçbir şey eklenmez |
+| I4 | GET | `/me/import/sources` | — | `ImportSources` = `{sources: string[]}` (hatırlanan sütun eşleştirmesi olan kaynak adları) |
+| P1 | GET | `/me/insights/allocation` | — | `Allocation` = `{started, equity_try, cash_try, cash_pct, holdings[{ticker, company, sector, value_try, pct}], sectors[], threshold_pct, warning_tr}`. Pay = paranın tamamında (nakit dahil) yüzde; `warning_tr` en büyük hisse sınırı aşınca ("Paranın %41'i tek hissede (ORNEK). Sınırın %25.") |
+| P2 | PUT | `/me/insights/concentration` | `{threshold_pct: 5..100}` | `Allocation`. Yalnızca cümleyi değiştirir. `422 validation`. Denetim `concentration.threshold_set` |
+| P3 | GET | `/me/insights/closed-trades` | — | `ClosedTrades` = `{trades[{id, ticker, company, sold_at, qty, cost_try, proceeds_try, gain_try, gain_pct, days_held \| null}], wins, losses, win_rate_pct, total_gain_try, avg_days_held, note_tr}`. Ortalama maliyet, komisyon dahil; elle eklenen hissede `days_held` null |
+| P4 | GET | `/me/insights/stats` | — | `ReturnStats` = `{available, reason_tr, days, from, to, twr_pct, best_day, worst_day, max_fall_pct, fall_from, fall_to, caveat_tr}`. Para ekleme/çekmeden arınmış; yalnızca kapanışlar; 2 günden azsa `available: false` |
+| P5 | GET | `/me/insights/dividends` | — | `DividendIncome` = `{year, this_year_try, last_year_try, total_try, months[12], holdings[{ticker, company, last12_try, cost_try, yield_on_cost_pct}]}`. Yalnızca yazılmış kâr payları |
+| P6 | GET | `/me/insights/versus` | — | `Versus` = `{available, from, to, items[{key you\|usd\|inflation\|deposit, label, pct, source_tr, hidden_reason_tr}], reason_tr}`. Dolar `core.fx_rates`'ten; enflasyon ve mevduat için resmi kaynak bağlı değil: sayı yok, neden var |
+| P7 | GET | `/me/notes` | — | `HoldingNotes` = `{notes[{ticker, company, body, updated_at}]}` |
+| P8 | PUT | `/me/notes/{ticker}` | `{body: 3..500}` | `HoldingNotes`. `404 not_in_book`, `422 validation`. Denetim `note.saved` (metin değil, uzunluk) |
+| P9 | DELETE | `/me/notes/{ticker}` | — | `HoldingNotes`. `404 no_note`. Denetim `note.cleared` |
 
 ### 3.0 Kişinin kendi defteri (tek defter)
 
@@ -117,23 +131,17 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
 - `/disclosures/counters` `waiting_for_money`: başlangıç parası girilene kadar öneri çıkmaz.
 - `RiskStatus.equity` / `peak_equity` kurulumdan önce `0` olabilir.
 
-### 3.1 Onay, durdurma ve yeniden başlatma
+### 3.1 Onay (durdurma yoktur)
 
 - **Onay (3).** `approve` onaylar; `approve` + daha küçük `approved_notional_try` **küçültür**; `reject` reddeder.
   Onay ya da ret, yanıtlanmamış öneriyi bir sonraki seansın 09:50'sinde düşmeden önce kapatır. Yanıt ya da kayıt
   bu arada değiştiyse `409` döner.
-- **Durdurma (12).** Yeni emir çıkmaz, açık emirler iptal edilir, bekleyen öneriler düşer, pozisyon satılmaz.
-- **Yeniden başlatma (13, 14).** Tek kişi iki adımı da yapar.
-  1. `reset/request` gerekçeyi alır ve `reset.started` alanını doldurur.
-  2. `RiskStatus.reset.ready_at` alanı, onayın açılacağı en erken anı (ISO) söyler. Gerçek veride bu an, istek ile onay
-     arasında **en az 24 saat** ve durdurmadan sonra **en az 5 seans** geçtikten sonradır. `ready_at` `null` ise ya da
-     geçmişteyse onay hemen yapılabilir.
-  3. `reset/confirm` `ready_at` gelmeden çağrılırsa `409` döner; mesajı panel olduğu gibi gösterir.
-  4. Bekleme süresi yalnızca test ortamında atlanır (`ready_at` `null` gelir); atlama `auth.single_user_waiver`
-     olarak denetim defterine yazılır.
-
-  Panel akışı: "Yeniden başlat" → `reset/request`. Yanıttaki `ready_at` boşsa ya da geçmişteyse hemen `reset/confirm`.
-  Değilse şu cümleyi gösterir: "Yeniden başlatma isteğin alındı. En erken <tarih> tarihinde açılır." Sebebi de yanında yazılır.
+- **Durdurma yoktur (2026-11-21 kararı).** Elle durdurma (kill switch), yeniden başlatma isteği/onayı, 24 saat + 5 seans
+  beklemesi, günlük −%1 duraklaması ve zirveden −%5 durdurması kaldırıldı. `/risk/kill-switch*` uçları yoktur; hiçbir
+  kayıp kendiliğinden bir şeyi durdurmaz ve uyarı da göndermez. Karar kişinindir. `RiskStatus` yalnızca bilgi verir
+  (özkaynak, zirve, zirveden düşüş, günün sonucu). Eski denetim kayıtları (`kill_switch.on`, `kill_switch.reset_started`,
+  `kill_switch.reset`, `risk.halted`, `risk.halt_cleared`) silinmez; Geçmiş'te okunmaya devam eder. Pozisyon başına ATR
+  çıkışı (X2) durdurma değil, bir **çıkış önerisidir** ve durur.
 - **Sınırlar (15–17).** Değişikliği hem önerir hem onaylarsın. İkinci imzanın muafiyeti `auth.single_user_waiver`
   olarak yazılır. Sınırlar yalnızca sıkılaştırılabilir
   (`limitViolations`, `LimitProposalInput` için sunucu da doğrular).
@@ -146,9 +154,8 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
 - `OrderTicket.side` = `"buy" | "sell"`. `sell` = elindeki pozisyondan çıkış; açığa satış yok. Satış fişinin `qty`'si kişisel
   defterde tutulan adettir. Satış fişinde `limit_price` bir **taban**dır: `girildi` işaretinde `avg_price ≥ limit_price`
   (aksi `422 under_limit`). Panel: fiş ve kartta **Alış / Satış** (fişte `AL` / `SAT`).
-- `RiskStatus` = `{kill_switch: off|on, kill_reason|null, kill_at|null, halted_today, daily_pnl_pct, drawdown_pct, peak_equity,
-  equity, regime, live_armed, quota[], reset}` ve `reset` = `{started: Signature|null, ready_at: ISO|null}` (kill switch
-  açıkken), kapalıyken `reset: null`. `kill_by` = `user:<uid>` ya da `system:risk_monitor`.
+- `RiskStatus` = `{daily_pnl_pct, drawdown_pct, peak_equity, equity, regime, live_armed, quota[], as_of}`: yalnızca bilgi;
+  durdurma alanları (`kill_*`, `halted_today`, `reset`) yoktur.
 - `LimitVersion` = `{version, status: proposed|active|superseded|rejected, reason, created_at, effective_from|null,
   values: LimitValue[], proposed_by: Signature, decided_by: Signature|null}`; `LimitsView` = `{active, pending|null, history}`
   (history yeni → eski, `proposed` hariç).
@@ -179,7 +186,7 @@ Gövde `{"detail":"Türkçe, gösterilebilir mesaj","code":"makine_kodu"}`. Pane
 |---|---|---|
 | 401 | `unauthenticated` | oturum yok / süresi doldu |
 | 404 | `not_found` | öneri, koşu ya da fiş yok |
-| 409 | `conflict`, `kill_switch`, `halted`, `already_marked`, `already_on`, `not_on`, `not_started`, `already_started`, `pending_exists`, `too_early` | durum uymuyor · ör. yeniden başlatma için bekleme süresi dolmamış |
+| 409 | `conflict`, `already_marked`, `not_started`, `pending_exists`, `too_early` | durum uymuyor |
 | 422 | `validation`, `over_qty`, `over_limit`, `under_limit`, `after_ttl`, `grow_not_allowed`, `looser`, `no_change` | doğrulama · ör. "Pozisyon tavanı: kanonik sınırdan gevşek olamaz (R07)." |
 | 429 | `rate_limited` | hız sınırı; `Retry-After` |
 
@@ -198,10 +205,6 @@ Gövde `{"detail":"Türkçe, gösterilebilir mesaj","code":"makine_kodu"}`. Pane
 ```
 `POST /limits/proposals/2/decision` `{"decision":"approve"}` → `active.version = 2`, eski sürüm `superseded`.
 
-`POST /risk/kill-switch/reset/request` `{"reason":"Olay incelendi, eşikler doğru çalıştı."}` →
-`reset.started` dolu, `reset.ready_at` ileri bir tarih (bekleme süresi dolduysa `null`).
-`POST /risk/kill-switch/reset/confirm` erken çağrılırsa `409 conflict`; uygunsa `kill_switch:"off"`, `reset:null`.
-
 `POST /audit/verify` → zincir bozulmuşsa `{"ok":false,"first_bad_pos":3907,"kind":"hash_mismatch",…}`.
 
 `POST /tickets/T-2027-0111-003/mark` → `{ "mark": "entered", "filled_qty": 620, "avg_price": 48.32, "filled_at": "…" }`
@@ -217,12 +220,19 @@ Panelin "KAPtan gerçekten çalışıyor mu?" sorusu. Şemalar `src/lib/domain/s
 | GET | `/system/status` | `SystemStatus` |
 | GET | `/me/alerts` | `AlertSettings` |
 | POST | `/me/alerts/test` | `AlertSettings` (`429 rate_limited`: dakikada en çok bir) |
-| GET | `/me/preferences` | `Preferences` = `{pause{active, until, since}, alerts{kinds{suggestion,day_halt,stopped,part_down,watched: {phone, desktop}}, quiet{on, start, end}}}` |
+| GET | `/me/preferences` | `Preferences` = `{pause{active, until, since}, alerts{kinds{suggestion,part_down,watched,price,weekly: {phone, desktop}}, quiet{on, start, end}}}` |
 | PUT | `/me/alerts/preferences` | `Preferences` (gövde `AlertPrefs`; saatler `HH:MM`, İstanbul saati; `422` bozuk saat) |
 | POST | `/me/pause` | `Preferences` (gövde `{days: 1..90}` ya da `{until: "YYYY-MM-DD"}` = KAPtan'ın yeniden çalıştığı ilk gün, 00:00 İstanbul; `422` geçmiş/90 günden uzak/ikisi birden). Tatil modu: bildirimler okunur ve saklanır, ajan koşusu ve kota harcanmaz, öneri çıkmaz; durdurma ve çıkışlar çalışır |
 | POST | `/me/pause/resume` | `Preferences` ("Şimdi devam et"; ara yoksa kayıt yazmaz) |
 | GET | `/me/backup` | `BackupStatus` = `{state: idle\|waiting\|running, last_at, last_ok, requested_at, folder, message_tr}` |
 | POST | `/me/backup/run` | `BackupStatus` ("Şimdi yedek al": yedek servisi 15 sn içinde alır; sürerken ikinci istek yazılmaz; `429` dakikada 3) |
+| GET | `/me/backup/list` | `BackupList` = `{available, folder, last_at, age_days, stale, warning_tr, files[{name, at, size_bytes, age_days}], steps_tr[]}`: yedek klasörü salt okunur bağlıdır; `available` false = klasör görünmüyor (boş liste "yedek yok" demek değildir); `stale` = en yeni yedek 2 günden eski ya da yok. Geri yükleme uygulamadan yapılmaz (`geri-yukle.ps1`) |
+| GET | `/me/price-alerts` | `PriceAlert[]` (bekleyenler önce; `current_price` null = fiyat yok) |
+| POST | `/me/price-alerts` | `{ticker, direction: above\|below, level \| preset_pct: 5\|10}` → liste; denetim `price_alert.created`; `404` bilinmeyen kod, `409 no_price` / `alerts_full` (30), `422 already_passed` / `validation` |
+| DELETE | `/me/price-alerts/{id}` | liste; denetim `price_alert.removed`; `404` |
+| GET | `/me/alerts/history` | `AlertHistoryItem[]` = `{at, channel: ntfy\|email, ok, text}` son 100 gönderim; konu adı, adres, hisse, tutar yok |
+| GET | `/me/weekly?at=YYYY-MM-DD` | `WeeklySummary` (Pazartesi–Pazar haftası; varsayılan bu hafta); `422` bozuk tarih |
+| PUT | `/me/alerts/preferences` | `AlertPrefs` artık `price`, `weekly` (varsayılan açık) ve `muted: string[]` (en çok 50 kod) taşır; susturulan şirketin önerisi ve izlenen bildirimi dışarı haber vermez |
 | POST | `/auth/password` | `{signed_out_others}` (gövde `{current, new}`; `403 wrong_password`, `422 weak_password`/validation: en az 6, en çok 200 karakter, `kaptan2026` ve eskisiyle aynısı yok; `429` dakikada `LOGIN_RATE_PER_MINUTE`. Diğer oturumlar kapanır, bu kalır) |
 | POST | `/auth/logout-all` | `204` (bu cihaz dahil her oturum kapanır; erişim belirteçleri hemen geçersiz olur) |
 
@@ -249,6 +259,8 @@ Panelin "KAPtan gerçekten çalışıyor mu?" sorusu. Şemalar `src/lib/domain/s
 | GET | `/reports/benchmark?from=&to=` | `Benchmark` (paran ve BIST 100, aynı günlerde) |
 | GET | `/reports/karne?period=month\|year&at=2026-11\|2026` | `Karne` (varsayılan: bu ay; `422` bozuk dönem) |
 | GET | `/reports/quiet?day=` | `QuietDay` ("neden öneri yok?" için günün gerçek sayıları) |
+| GET | `/me/calendar?days=` | `Calendar` (elindeki ve izlediğin hisselerin yaklaşan günleri: KAP bildiriminden kâr payı ödeme/hak günü ve genel kurul, geçen yılın rapor günü `approximate`, Merkez Bankası faiz kararı günleri; `notes` neyi göstermediğini söyler; `days` 1-120, varsayılan 60, dışı `422`) |
+| GET | `/market/strip` | `MarketStrip` (BIST 100 son kayıtlı kapanış ve günlük değişim, borsa açık/kapalı ve sonraki açılış günü, Merkez Bankası dolar kuru; kayıtlı olmayan değer `null`) |
 
 - **`TrackItem.return_ratio`**: önerinin ardından ilk seansın açılışından, kartın planlanan en uzun tutma gününün kapanışına
   düzeltilmiş fiyat hareketi (komisyon yok); `index_ratio` aynı seansların BIST 100 hareketi. Süre bitmediyse ikisi `null`,
@@ -273,7 +285,6 @@ Panelin "KAPtan gerçekten çalışıyor mu?" sorusu. Şemalar `src/lib/domain/s
 | desk | `approval.decided` | `ApprovalCard` | kart düşer; Öneri'de damga; Geçmiş yenilenir |
 | desk | `ticket` | `OrderTicket` | Öneri'de emir fişi; Param yenilenir |
 | desk | `order`, `fill` | `Order`, `Fill & {ticker}` | Param yenilenir |
-| desk | `kill_switch`, `halt` | `RiskStatus` | durdurma durumu, `reset` dahil; Geçmiş yenilenir |
 | desk | `regime` | `RiskStatus` | piyasa rejimi değişti (06 §9, `normal` ↔ `crisis`) |
 | desk | `limits.changed` | `LimitsView` | Ayarlar → Sınırlar; Geçmiş yenilenir |
 | feed | `counters` | `DayCounters` | Okunanlar ve ana sayfa sayaçları |
@@ -291,9 +302,9 @@ Bu uçlar backend'de vardır; panelin bugünkü ekranları kullanmaz. Şekilleri
 
 - Üç anahtar: K1 `config/trading.yaml` `mode: live` (ya da `KAPTAN_MODE=live`), K2 `KAPTAN_LIVE_ENABLED=true`, K3 bu
   uçtaki onay. K3 tek kişiyle `start` + `confirm` olarak yapılır; ikinci adımın muafiyeti denetime yazılır. Gün sonunda
-  (18:30 İstanbul) kendiliğinden düşer. Kill switch açıkken onaylanamaz.
+  (18:30 İstanbul) kendiliğinden düşer.
 - BIST için gerçek aracı kurum adaptörü yok: silahlandırmak yalnızca anahtarları kaydeder, `real_broker` hep `false`,
-  emirler SimBIST'te (paper) kalır. Hatalar: `409 kill_switch`, `409 not_started`, `409 already_on`, `409 conflict`
+  emirler SimBIST'te (paper) kalır. Hatalar: `409 not_started`, `409 conflict`
   (18:30 sonrası), `422 validation`.
 
 ### 5.2 İşletim uçları ve çalıştırma akışı

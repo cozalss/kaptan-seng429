@@ -47,14 +47,6 @@
  "stage": "paper",
  "gate_results": [
   {
-   "code": "R01",
-   "passed": true
-  },
-  {
-   "code": "R02",
-   "passed": true
-  },
-  {
    "code": "R03",
    "passed": true
   },

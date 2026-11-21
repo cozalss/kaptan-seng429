@@ -39,14 +39,6 @@
   "planned_exit_tr": "20. borsa günü kapanışı (en çok 40 borsa günü)",
   "gate_results": [
    {
-    "code": "R01",
-    "passed": true
-   },
-   {
-    "code": "R02",
-    "passed": true
-   },
-   {
     "code": "R03",
     "passed": true
    },
@@ -163,14 +155,6 @@
   "planned_exit_tr": "20. borsa günü kapanışı (en çok 60 borsa günü)",
   "gate_results": [
    {
-    "code": "R01",
-    "passed": true
-   },
-   {
-    "code": "R02",
-    "passed": true
-   },
-   {
     "code": "R03",
     "passed": true
    },
@@ -286,14 +270,6 @@
   "stop_line_tr": "Kapanış bazlı stop 32,67 TL TL",
   "planned_exit_tr": "20. borsa günü kapanışı (en çok 40 borsa günü)",
   "gate_results": [
-   {
-    "code": "R01",
-    "passed": true
-   },
-   {
-    "code": "R02",
-    "passed": true
-   },
    {
     "code": "R03",
     "passed": true

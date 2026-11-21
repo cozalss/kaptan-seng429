@@ -28,7 +28,9 @@ from psycopg import AsyncConnection
 from kaptan.audit.writer import AuditDraft, append
 from kaptan.prices.calendar import add_sessions, is_trading_day
 from kaptan.prices.reads import adjusted_series
-from kaptan.risk.kill_switch import RISK_MONITOR
+
+#: The actor on the audit record of a regime change (it stays the old name so history reads the same).
+RISK_MONITOR: Final = "system:risk_monitor"
 
 Regime = Literal["normal", "crisis"]
 

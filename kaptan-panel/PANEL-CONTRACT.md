@@ -46,7 +46,7 @@ const move = useApiMutation((api, input: MoneyInput) => api.moveMoney(input));
   |---|---|
   | 401 | Oturum yok ya da süresi doldu |
   | 404 | Bulunamadı |
-  | 409 | Durum çakışması: `kill_switch`, `already_marked`, `too_early`, `already_started`, `not_started`, `halted` |
+  | 409 | Durum çakışması: `already_marked`, `too_early`, `not_started` |
   | 422 | Doğrulama: `over_qty`, `over_limit`, `over_cash`, `unknown_ticker`, `validation` |
   | 429 | Hız sınırı |
 
@@ -76,7 +76,7 @@ Yalnızca testler için. Durumu tarayıcıda `localStorage`'dadır.
 
 - Form hataları alanın altında, düz cümleyle ve duyurulur (`role="alert"`); sunucunun cümlesi olduğu gibi gösterilir.
 - Para alanı `MoneyField`'dır (noktalı gruplama, virgüllü kuruş, tutarın yazıyla okunması). Başka para kutusu yazılmaz.
-- Yıkıcı ya da geri alınamaz eylemler (durdurma) önce sorar ve sonucu cümleyle söyler.
+- Yıkıcı ya da geri alınamaz eylemler (ör. "Baştan başla") önce sorar ve sonucu cümleyle söyler.
 - Bodoni Moda yalnızca ≥ 32 px; çalışan metin Inter. Metin kontrastı ≥ 7:1, dokunma hedefi ≥ 44 px, 360 px'de yatay kayma yok.
 - Görünen metin SPEC §5'teki yasak sözcük listesine uyar.
 

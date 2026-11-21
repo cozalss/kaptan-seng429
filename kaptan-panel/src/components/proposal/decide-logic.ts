@@ -75,16 +75,8 @@ export function stepFor<T>(flight: Pick<Flight, "action" | "answer" | "phase">, 
   return at.ticket ? { kind: "enter", ticket: at.ticket } : { kind: "preparing" };
 }
 
-/** Which buttons are open, and the plain reason when one is not. */
-export function closedFor({ stopped, halted }: { stopped: boolean; halted: boolean }): { canApprove: boolean; canSkip: boolean; reason: string | null } {
-  if (stopped) return { canApprove: false, canSkip: false, reason: "İşlemler durduruldu. Yeniden başlatana kadar öneri onaylanamaz; elindeki hisseler yerinde duruyor." };
-  if (halted) return { canApprove: false, canSkip: true, reason: "Paran bugün %1'den fazla düştüğü için bugün yeni işlem yok. Yarın kendiliğinden açılır; istersen geçebilirsin." };
-  return { canApprove: true, canSkip: true, reason: null };
-}
-
 /** The sentence over the decisions: what to do now. The bank goes first because it has a clock. */
-export function sectionSentence({ decisions, steps, stopped }: { decisions: number; steps: number; stopped: boolean }): string {
-  if (stopped) return "İşlemler durdu; şimdilik karar yok.";
+export function sectionSentence({ decisions, steps }: { decisions: number; steps: number }): string {
   if (steps > 0 && decisions > 0) return `Önce ${steps > 1 ? `bu ${fmtInt(steps)} işlemi` : "bu işlemi"} bankana gir, sonra ${fmtInt(decisions)} kararın var.`;
   if (steps > 0) return steps > 1 ? `Bankana girmen gereken ${fmtInt(steps)} işlem var.` : "Bankana girmen gereken bir işlem var.";
   if (decisions > 0) return `Bugün ${fmtInt(decisions)} kararın var.`;

@@ -21,6 +21,7 @@ from redis.exceptions import RedisError
 
 from kaptan.alerts.channels import AlertSendError, send_email, send_ntfy
 from kaptan.alerts.config import AlertConfig, Channel
+from kaptan.alerts.history import record_history
 from kaptan.alerts.messages import AlertKind, message_for
 from kaptan.domain.schemas._base import iso_ms
 
@@ -105,6 +106,7 @@ async def send_now(
     *,
     now: datetime | None = None,
     senders: Mapping[Channel, Sender] | None = None,
+    pool: Any = None,
 ) -> Outcome:
     """Send without asking the limit (the caller took the slot). Never raises."""
     targets = {c: s for c, s in (senders_for(cfg) if senders is None else senders).items() if c in cfg.channels}
@@ -118,7 +120,10 @@ async def send_now(
             failed[channel] = reason
             log.warning("alert not sent: channel=%s kind=%s reason=%s", channel, kind, reason)
     delivered = tuple(c for c in targets if c not in failed)
-    await _record(redis, failed, delivered, now or datetime.now(UTC))
+    when = now or datetime.now(UTC)
+    await _record(redis, failed, delivered, when)
+    if pool is not None:
+        await record_history(pool, when, kind, text, {c: failed.get(c) for c in targets})
     return "sent" if delivered else "failed"
 
 
@@ -130,6 +135,7 @@ async def notify(
     now: datetime | None = None,
     senders: Mapping[Channel, Sender] | None = None,
     rate_s: int = RATE_S,
+    pool: Any = None,
 ) -> Outcome:
     """Tell the person, unless nothing is configured or this kind already went out in the last 10 minutes."""
     if not cfg.channels:
@@ -140,7 +146,7 @@ async def notify(
     except (RedisError, OSError) as exc:  # without the limit nothing is sent: a loop must not flood a phone
         log.warning("alert skipped, the limit is unreadable: %s", type(exc).__name__)
         return "failed"
-    return await send_now(redis, cfg, kind, now=now, senders=senders)
+    return await send_now(redis, cfg, kind, now=now, senders=senders, pool=pool)
 
 
 def _error_tr(cfg: AlertConfig, state: Mapping[str, str]) -> str | None:

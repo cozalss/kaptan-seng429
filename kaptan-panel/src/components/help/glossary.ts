@@ -148,17 +148,7 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
   {
     id: "zirve",
     term: "Zirve",
-    text: "Paranın o ana kadar çıktığı en yüksek değer. Her şeyi durduran %5’lik sınır bu değerden hesaplanır.",
-  },
-  {
-    id: "durdur",
-    term: "Her şeyi durdur",
-    text: "Yeni alım ve satım önerisi çıkmaz, bekleyenler iptal olur. Elindeki hisseler satılmaz. Paran zirvesinden %5 düşerse KAPtan bunu kendi yapar.",
-  },
-  {
-    id: "yeniden-baslatma",
-    term: "Yeniden başlatma",
-    text: "Durduktan sonra yeniden açmak için en az 24 saat ve 5 borsa günü geçmesi gerekir. Acele kararlarını önlemek içindir.",
+    text: "Paranın o ana kadar çıktığı en yüksek değer. Paranın zirveden ne kadar düştüğü bu değerden hesaplanır.",
   },
 ];
 

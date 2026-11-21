@@ -9,7 +9,7 @@
    - the sea (--sea) is the horizon scene: the home's chart, sign-in, 404, the closing band;
    - engraved hatching = money: what rose above the waterline, what sank below it, cash;
    - a hard offset shadow = "set on top or stamped"; everything else sits flat, divided by rules;
-   - north red = the boat's flag, the current page's pennant, Durdur. Nothing else;
+   - north red = the boat's flag, the current page's pennant. Nothing else;
    - indigo is the second ink: the wordmark, focus, selection, primary action, focal figures;
    - deep green / claret = gain / loss on a figure, never decoration.
 
@@ -65,12 +65,12 @@
   --flow-1: #c3cde0;
   --flow-2: #7489b3;
   --flow-3: #0c2f63;
-  --north: #b3261e; /* Durdur, veto, broken chain (5.9:1, on panel 6.9:1) */
+  --north: #b3261e; /* veto, broken chain (5.9:1, on panel 6.9:1) */
   --north-deep: #9b1f18; /* north red under the pointer */
   --north-tint: rgb(179 38 30 / 0.1);
   --gain: #0a5530; /* a figure that went up (7.6:1) */
   --loss: #8c1038; /* a figure that went down: claret, not north red (7.8:1) */
-  --ochre: #d9961a; /* the daily −1% "YENİ EMİR DURDU" band only (ink on ochre 7.5:1) */
+  --ochre: #d9961a; /* the pause notice band only (ink on ochre 7.5:1) */
   --ochre-tint: rgb(217 150 26 / 0.22);
   --brand: #0c2f63; /* indigo ink: wordmark, focus ring, ::selection, focal figures (10.3:1) */
   --on-dark: #fffefa;

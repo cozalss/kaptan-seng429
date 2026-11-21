@@ -154,7 +154,6 @@ function Voyage({ p, today }: { p: Position; today: string }) {
     <div className="pm-voyage">
       <p className={cn("pm-voyage-text", (h.dueToday || h.overdue) && "font-semibold")}>
         {sentence}
-        {p.managed_by_exit_rule ? " Durdurma bu hisseyi satmaz." : ""}
       </p>
       <div aria-hidden className="pm-voyage-track">
         <span className="pm-voyage-from">{dateWords(istanbulDate(Date.parse(p.opened_at)))}</span>

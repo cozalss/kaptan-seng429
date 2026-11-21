@@ -1,0 +1,15 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "threshold_pct": {
+   "type": "integer",
+   "minimum": 5,
+   "maximum": 100
+  }
+ },
+ "required": [
+  "threshold_pct"
+ ],
+ "additionalProperties": false
+}

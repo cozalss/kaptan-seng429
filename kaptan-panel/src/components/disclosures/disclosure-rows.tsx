@@ -4,6 +4,7 @@ import { fmtTime } from "@/lib/format";
 import { href } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { TickerLink } from "@/components/company/ticker-link";
+import { NewMark, SaveStar } from "@/components/reading/save-star";
 import { plainEvent, shortName } from "@/components/story/plain";
 import { titleTr } from "@/components/story/turkish";
 import { fateOf, groupByHour, tickerOf } from "./disclosure-logic";
@@ -91,6 +92,7 @@ function Row({ d, card, onOpen }: { d: DisclosureListItem; card: ApprovalCard | 
       <div className="min-w-0">
         <p className="ok-row-who">
           <span className="ok-row-name">{titleTr(shortName(d.company_name))}</span>
+          <NewMark index={d.disclosure_index} />
           {ticker ? (
             <span className="ok-row-ticker">
               <TickerLink ticker={ticker} />
@@ -98,11 +100,14 @@ function Row({ d, card, onOpen }: { d: DisclosureListItem; card: ApprovalCard | 
           ) : null}
         </p>
         <p className="ok-row-said">{plainSaid(d)}</p>
-        {onOpen ? (
-          <button type="button" className="ok-open" onClick={() => onOpen(d.disclosure_index)} aria-label={`${titleTr(shortName(d.company_name))}: duyurunun tamamını oku`}>
-            Tamamını oku
-          </button>
-        ) : null}
+        <div className="rd-row-tools">
+          <SaveStar index={d.disclosure_index} label={titleTr(shortName(d.company_name))} />
+          {onOpen ? (
+            <button type="button" className="ok-open" onClick={() => onOpen(d.disclosure_index)} aria-label={`${titleTr(shortName(d.company_name))}: duyurunun tamamını oku`}>
+              Tamamını oku
+            </button>
+          ) : null}
+        </div>
       </div>
       <div className="ok-row-did">
         <span aria-hidden className="ok-mark" />

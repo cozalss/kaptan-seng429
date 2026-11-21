@@ -16,7 +16,7 @@ async function addKrgcl(page: Page) {
   await expect(money.getByRole("status")).toHaveText("KRGCL eklendi: 100 adet.");
 }
 
-const section = (page: Page) => page.getByRole("region", { name: /kâr payı/ });
+const section = (page: Page) => page.getByRole("region", { name: /^Hisselerin .*kâr payı/ });
 
 test.describe("Param: dividends, bonus and rights issues", () => {
   test("a KAP notice asks; writing what reached your bank adds income, and it can be taken back", async ({ page }) => {

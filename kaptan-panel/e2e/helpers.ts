@@ -49,7 +49,7 @@ export function mainNav(page: Page) {
 
 /** Navigate with the top bar (client-side, so the in-tab mock state and its timers keep running). */
 export async function go(page: Page, label: "Ana sayfa" | "Param" | "Okunanlar" | "Geçmiş", url: RegExp) {
-  await mainNav(page).getByRole("link", { name: label, exact: true }).click();
+  await mainNav(page).getByRole("link", { name: new RegExp(`^${label}( \\d+ okunmamış duyuru)?$`) }).click();
   await expect(page).toHaveURL(url);
 }
 

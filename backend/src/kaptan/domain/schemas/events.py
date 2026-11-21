@@ -15,6 +15,7 @@ from kaptan.domain.schemas.common import EventType
 from kaptan.domain.schemas.crew import CrewActivity, CrewAgent
 from kaptan.domain.schemas.disclosure import DayCounters, DisclosureListItem
 from kaptan.domain.schemas.governance import LimitsView
+from kaptan.domain.schemas.price_alerts import PriceAlertEvent
 from kaptan.domain.schemas.run import NodeName, RunOutcome, RunStatus
 from kaptan.domain.schemas.trading import ApprovalCard, FillWithTicker, Order, OrderTicket, RiskStatus
 
@@ -75,11 +76,10 @@ DESK_EVENTS: Final[dict[str, type[KModel]]] = {
     "approval.decided": ApprovalCard,
     "order": Order,
     "fill": FillWithTicker,
-    "kill_switch": RiskStatus,
-    "halt": RiskStatus,
     "regime": RiskStatus,  # the daily regime changed (06 §9: normal ↔ crisis)
     "limits.changed": LimitsView,
     "ticket": OrderTicket,
+    "price_alert": PriceAlertEvent,  # a price alert fired (stays on this computer, so it names the company)
     "crew": CrewEvent,
 }
 

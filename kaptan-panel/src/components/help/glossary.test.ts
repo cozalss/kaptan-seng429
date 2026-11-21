@@ -73,7 +73,7 @@ describe("the questions", () => {
       "Öneri nedir",
       "Onaylarsam",
       "Param nerede",
-      "Durdurma",
+      "Param düşerse",
       "Ne kadar tutar",
       "Bilgisayar kapalıysa",
       "Yedeği",

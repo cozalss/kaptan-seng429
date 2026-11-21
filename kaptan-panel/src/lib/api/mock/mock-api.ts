@@ -2,17 +2,22 @@ import { ApprovalDecision, TicketMarkInput, type Me, type TicketEntry } from "@/
 import { MOCK_USER } from "@/lib/auth/mock-user";
 import { ApiError, type KaptanApi } from "../types";
 import { getMockDb, type Actor, type MockDb } from "./db";
+import { createAgenda } from "./agenda";
+import { createAlertsMore } from "./alerts-more";
 import { createComfort } from "./comfort";
 import { createEnterprise } from "./enterprise";
 import { createInsight } from "./insight";
+import { createReading } from "./reading";
 import { createCtx, parse, userActor } from "./guard";
 import { commissionFor } from "./ledger";
 import { createCorporate } from "./corporate";
+import { createInsights } from "./insights";
+import { createImports } from "./imports";
 import { createMoney } from "./money";
 import { createReports } from "./reports";
 import { createSolo } from "./solo";
 import { createStatus } from "./status";
-import { engageKillSwitch, executeApproved, startLiveTicker } from "./scenarios";
+import { executeApproved, startLiveTicker } from "./scenarios";
 import * as sel from "./selectors";
 
 export interface MockApiOptions {
@@ -40,10 +45,15 @@ export function createMockApi(opts: MockApiOptions = {}): KaptanApi {
     ...createSolo(ctx),
     ...createMoney(ctx),
     ...createCorporate(ctx),
+    ...createImports(ctx),
+    ...createInsights(ctx),
     ...createStatus(ctx),
     ...createComfort(ctx),
+    ...createAlertsMore(ctx),
     ...createReports(ctx),
     ...createInsight(ctx),
+    ...createReading(ctx),
+    ...createAgenda(ctx),
 
     async me(): Promise<Me> {
       const a = me();
@@ -80,13 +90,9 @@ export function createMockApi(opts: MockApiOptions = {}): KaptanApi {
       const d = parse(ApprovalDecision, input);
       const card = sel.approvalCards(db.snapshot).find((c) => c.proposal_id === proposalId);
       if (!card) throw new ApiError(404, "not_found", "Öneri bulunamadı.");
-      if (db.snapshot.risk.kill_switch === "on") throw new ApiError(409, "kill_switch", "Her şey durduruldu; öneriler şimdilik onaylanamaz.");
       if (card.status !== "pending") throw new ApiError(409, "conflict", "Bu öneri zaten karara bağlandı ya da süresi doldu.");
       if (d.approved_notional_try !== null && d.approved_notional_try > card.final_notional_try) {
         throw new ApiError(422, "grow_not_allowed", "Tutar yalnızca küçültülebilir; büyütme yok.");
-      }
-      if (d.decision === "approve" && db.snapshot.risk.halted_today) {
-        throw new ApiError(409, "halted", "Bugün paran %1'den fazla düştüğü için yeni işlem yok; yarın kendiliğinden kalkar.");
       }
       const patch = {
         status: d.decision === "approve" ? ("approved" as const) : ("rejected" as const),
@@ -160,14 +166,6 @@ export function createMockApi(opts: MockApiOptions = {}): KaptanApi {
     async riskStatus() {
       me();
       return ok(sel.riskStatus(db.snapshot), 60);
-    },
-
-    async killSwitch(reason) {
-      const a = me();
-      if (reason.trim().length < 5) throw new ApiError(422, "validation", "Gerekçe en az 5 harf olmalı.");
-      if (db.snapshot.risk.kill_switch === "on") throw new ApiError(409, "already_on", "Zaten durduruldu.");
-      engageKillSwitch(db, userActor(a), reason.trim());
-      return ok(sel.riskStatus(db.snapshot));
     },
   };
 }

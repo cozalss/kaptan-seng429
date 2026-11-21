@@ -22,7 +22,6 @@ from kaptan.domain.schemas.agents import EvidenceStrength, FlagCode, FlagSeverit
 from kaptan.domain.schemas.common import EventCode, EventType
 from kaptan.domain.schemas.personal import StageId
 from kaptan.domain.schemas.rules import RuleTraceEntry
-from kaptan.domain.schemas.user import Signature
 
 Side = Literal["buy", "sell"]
 ProposalEventType = EventCode | Literal["EXIT"]
@@ -381,15 +380,6 @@ class PnlPoint(KModel):
         raise ValueError("Bilinmeyen strateji")
 
 
-class KillReset(KModel):
-    """Restarting after a stop: you request (1/2), then confirm (2/2) once `ready_at` has passed (06 §11).
-
-    `ready_at`: when the confirm opens; null = it may be confirmed now (or nothing is requested yet)."""
-
-    started: Signature | None
-    ready_at: IsoDateTime | None
-
-
 class QuotaRow(KModel):
     provider: str
     used: NonNegInt
@@ -397,11 +387,6 @@ class QuotaRow(KModel):
 
 
 class RiskStatus(KModel):
-    kill_switch: Literal["off", "on"]
-    kill_reason: str | None
-    kill_at: IsoDateTime | None
-    kill_by: str | None
-    halted_today: bool
     daily_pnl_pct: float
     drawdown_pct: float = Field(le=0)
     peak_equity: NonNegFloat  # 0 before the starting money is entered
@@ -409,5 +394,4 @@ class RiskStatus(KModel):
     regime: Literal["normal", "crisis"]
     live_armed: bool
     quota: list[QuotaRow]
-    reset: KillReset | None
     as_of: IsoDateTime

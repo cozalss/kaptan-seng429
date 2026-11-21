@@ -1,0 +1,102 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "started": {
+   "type": "boolean"
+  },
+  "equity_try": {
+   "type": "number"
+  },
+  "cash_try": {
+   "type": "number"
+  },
+  "cash_pct": {
+   "type": "number"
+  },
+  "holdings": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "ticker": {
+      "type": "string"
+     },
+     "company": {
+      "type": "string"
+     },
+     "sector": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "value_try": {
+      "type": "number"
+     },
+     "pct": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "ticker",
+     "company",
+     "sector",
+     "value_try",
+     "pct"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "sectors": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "sector": {
+      "type": "string"
+     },
+     "value_try": {
+      "type": "number"
+     },
+     "pct": {
+      "type": "number"
+     },
+     "tickers": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "sector",
+     "value_try",
+     "pct",
+     "tickers"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "threshold_pct": {
+   "type": "number"
+  },
+  "warning_tr": {
+   "type": [
+    "string",
+    "null"
+   ]
+  }
+ },
+ "required": [
+  "started",
+  "equity_try",
+  "cash_try",
+  "cash_pct",
+  "holdings",
+  "sectors",
+  "threshold_pct",
+  "warning_tr"
+ ],
+ "additionalProperties": false
+}

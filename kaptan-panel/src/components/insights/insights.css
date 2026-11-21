@@ -1,0 +1,259 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Param's insight blocks: where the money stands, closed trades, return and risk, dividends, notes.
+   Ink on paper, hairlines and scale; no cards. Prefix `ins-`.
+   ────────────────────────────────────────────────────────────────────────── */
+.ins-lead {
+  max-width: 62ch;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.ins-warn {
+  max-width: 62ch;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--north);
+}
+
+/* One bar: width = money. Cash is a hatched block, never one more colour. */
+.ins-bar {
+  display: flex;
+  height: 2.75rem;
+  margin-top: 1.5rem;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+}
+.ins-bar > span {
+  min-width: 2px;
+  border-right: 2px solid var(--paper);
+}
+.ins-bar > span:last-child {
+  border-right: 0;
+}
+.ins-rows {
+  display: grid;
+  gap: 0;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  max-width: 58rem;
+}
+.ins-row {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: 0.25rem 0.875rem;
+  padding: 0.625rem 0;
+  border-top: 1px solid var(--rule-soft);
+  font-size: 1.0625rem;
+  color: var(--ink);
+}
+.ins-row:last-child {
+  border-bottom: 1px solid var(--rule-soft);
+}
+.ins-swatch {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 1px solid var(--ink);
+  align-self: center;
+}
+.ins-num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.ins-sub {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.ins-sector {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--rule-soft);
+}
+.ins-sector-bar {
+  height: 0.625rem;
+  background: var(--sunk);
+}
+.ins-sector-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--brand);
+}
+.ins-limit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem 1rem;
+  margin-top: 1.5rem;
+}
+.ins-field {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ins-input {
+  min-height: 2.75rem;
+  width: 7rem;
+  padding: 0 0.75rem;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 1.0625rem;
+  font-variant-numeric: tabular-nums;
+}
+.ins-input:focus-visible,
+.ins-text:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+.ins-text {
+  width: 100%;
+  min-height: 6rem;
+  padding: 0.625rem 0.75rem;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+.ins-status {
+  min-height: 1.5rem;
+  margin-top: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gain);
+}
+.ins-status:empty {
+  display: none;
+}
+.ins-error {
+  color: var(--north);
+}
+
+/* Figures: scale first, then the caption that says what each is. */
+.ins-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1.5rem 2rem;
+  margin: 1.75rem 0 0;
+  max-width: 58rem;
+}
+.ins-figures dt {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.ins-figures dd {
+  margin: 0.25rem 0 0;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2.125rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.ins-figures dd small {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Closed trades. */
+.ins-trade {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.125rem 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--rule-soft);
+  font-size: 1.0625rem;
+}
+.ins-trade:last-child {
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+/* Dividends by month: bar height = money. */
+.ins-months {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: end;
+  gap: 0.25rem;
+  height: 9rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  max-width: 58rem;
+  border-bottom: 2px solid var(--ink);
+}
+.ins-month {
+  display: grid;
+  align-content: end;
+  height: 100%;
+}
+.ins-month > span {
+  display: block;
+  min-height: 2px;
+  background: var(--brand);
+}
+.ins-month-names {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin: 0.375rem 0 0;
+  padding: 0;
+  list-style: none;
+  max-width: 58rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+}
+@media (max-width: 479px) {
+  .ins-month-names li:nth-child(even) {
+    visibility: hidden;
+  }
+  .ins-trade {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ins-trade .ins-num {
+    text-align: left;
+    white-space: normal;
+  }
+  .ins-row {
+    grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+  }
+  .ins-row .ins-num:last-child {
+    grid-column: 2 / -1;
+    text-align: left;
+  }
+}
+
+/* Notes. */
+.ins-note {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.875rem 0;
+  border-top: 1px solid var(--rule-soft);
+  max-width: 58rem;
+}
+.ins-note:last-child {
+  border-bottom: 1px solid var(--rule-soft);
+}
+.ins-note-body {
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  color: var(--ink);
+  white-space: pre-wrap;
+  max-width: 62ch;
+}
+.ins-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}

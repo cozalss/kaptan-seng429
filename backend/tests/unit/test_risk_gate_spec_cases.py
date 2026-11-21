@@ -66,7 +66,7 @@ def test_r09_sell_at_the_lower_limit_passes_and_below_it_rejects() -> None:
 
 
 def test_an_exit_sell_at_taban_passes_r16() -> None:
-    ctx = replace(CTX, holds_ticker=True, held_qty=100, kill_switch_on=True, restrictions=("spk_tedbir",))
+    ctx = replace(CTX, holds_ticker=True, held_qty=100, restrictions=("spk_tedbir",))
     assert evaluate_at_send(SELL, ctx).outcome == "pass"
 
 

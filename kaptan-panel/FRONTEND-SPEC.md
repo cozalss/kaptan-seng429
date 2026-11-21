@@ -15,7 +15,6 @@ Her ekran şu durumları tasarlar:
 | Hata | Ekran içinde düz bir cümle ve "Yeniden dene". Teknik ayrıntı katlanır, kişisel veri içermez. |
 | Canlı | Akışın bağlı olduğunu gösteren küçük bir gösterge; kopunca "yeniden bağlanıyor". |
 | Başlangıç parası yok | Para alanları `0` gösterilmez: `/benim` tek soru sorar ("Ne kadar parayla başlıyorsun?"), `/portfoy` buna yönlendirir. Önce `needs_setup` bakılır. |
-| Durdurulmuş | Durdurma açıkken yeni öneri ve emir yok; sebep ve yeniden başlatmanın durumu düz cümleyle yazılır. |
 | Bulunamadı | Tasarlanmış 404 (`src/app/not-found.tsx`). |
 
 Yükleme ve hata durumları ekranın ilk cümlesini değiştirmez; önce cümle, sonra durum açıklaması gelir.
@@ -97,7 +96,7 @@ run_id, strategy_version, payload]`, `hash = sha256(prev_hash || canonical)`, ge
 `LimitVersion {version, status: proposed|active|superseded|rejected, reason, created_at, effective_from, values: {key, value}[],
 proposed_by: Signature, decided_by: Signature|null}`. Başlangıç değerleri `06` §9 ve kanonik kararlardadır:
 `risk_per_trade_pct 0.005`, `max_position_pct 0.10`, `max_concurrent_positions 10`, `target_concurrent_positions 8`,
-`max_adv_share 0.01`, `price_band_pct 0.02`, `daily_loss_halt_pct -0.01`, `kill_drawdown_pct -0.05`, `min_edge_cost_ratio 2`,
+`max_adv_share 0.01`, `price_band_pct 0.02`, `min_edge_cost_ratio 2`,
 `crisis_exposure_mult 0.5`, `leak_ret5d_threshold 0.08`, `max_sector_pct 0.25`, `max_group_pct 0.20`.
 
 ### 2.9 Run ve "Neden" yükü (`07 agent_runs`, `04` §11)

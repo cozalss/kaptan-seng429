@@ -1,0 +1,32 @@
+/* Upcoming events (home card, /takvim) and the market strip. Colours come from the shared tokens. */
+.ag-card { display: grid; gap: 0.75rem; border-top: 1px solid var(--hairline); padding: 1.25rem 0; }
+.ag-list { display: grid; gap: 0; }
+.ag-item { display: grid; grid-template-columns: 8.5rem 1fr; gap: 0.25rem 1.25rem; align-items: baseline; padding: 0.75rem 0; border-bottom: 1px solid var(--hairline); }
+.ag-when { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ag-when small { display: block; font-size: 0.8125rem; font-weight: 400; color: var(--ink-soft); }
+.ag-title { font-weight: 600; color: var(--ink); }
+.ag-detail { margin-top: 0.125rem; font-size: 0.9375rem; color: var(--ink-soft); }
+.ag-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; margin-top: 0.375rem; font-size: 0.8125rem; color: var(--ink-soft); }
+.ag-tag { padding: 0 0.375rem; border: 1.5px solid var(--rule-ui); color: var(--ink); font-weight: 600; }
+.ag-tag--maybe { border-style: dashed; }
+.ag-day { margin-top: 1.5rem; }
+.ag-link { font-size: 0.9375rem; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--rule-ui); min-height: 44px; display: inline-flex; align-items: center; }
+.ag-link:hover { text-decoration-color: var(--ink); }
+.ag-link:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.ag-notes { margin-top: 2rem; display: grid; gap: 0.5rem; font-size: 0.9375rem; color: var(--ink-soft); max-width: 60ch; }
+.ag-days { display: inline-flex; border: var(--ink-line) solid var(--ink); }
+.ag-days button { min-height: 44px; min-width: 56px; padding: 0 1rem; font-size: 0.9375rem; font-weight: 600; color: var(--ink); background: transparent; }
+.ag-days button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.ag-days button:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+.mk-strip { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 1.75rem; padding: 0.5rem 0; font-size: 0.9375rem; color: var(--ink-soft); border-bottom: 1px solid var(--hairline); }
+.mk-item { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
+.mk-item strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+.mk-state { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--ink); font-weight: 600; }
+.mk-dot { width: 0.625rem; height: 0.625rem; border-radius: 50%; border: 2px solid var(--ink); }
+.mk-state[data-open="true"] .mk-dot { background: var(--gain); border-color: var(--gain); }
+.mk-age { font-size: 0.8125rem; }
+
+@media (max-width: 640px) {
+  .ag-item { grid-template-columns: 1fr; }
+}

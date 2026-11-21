@@ -6,7 +6,7 @@ Deterministic, no LLM: the same database and `now` give the same document. A Mor
 - orders_for_open: orders waiting for today's open (none on a running system: KAPtan places no order; the field
   stays so the document keeps its shape);
 - pending_approvals / open_positions / expiring_today (planned exit date = today);
-- risk_warnings: stop, day halt, crisis regime, yesterday's result of the person's book;
+- risk_warnings: crisis regime, yesterday's result of the person's book;
 - restriction_changes: tedbir/restriction rows that became known, or ended, since the last close;
 - summary_tr: plain Turkish sentences built from the counts above (no finance jargon, nothing said that is not
   known: a new install with no money, no holdings and no result yet says only what exists)
@@ -54,7 +54,7 @@ FROM trading.orders o
 WHERE o.status = 'pending_open' AND o.created_at <= %(now)s
 ORDER BY o.created_at, o.id
 """
-RISK_SQL: Final = "SELECT kill_switch, kill_reason, halted_today, regime FROM trading.risk_state WHERE id = 1"
+RISK_SQL: Final = "SELECT regime FROM trading.risk_state WHERE id = 1"
 REGIME_SQL: Final = "SELECT d, regime FROM trading.regime_daily WHERE d < %s ORDER BY d DESC LIMIT 1"
 PNL_SQL: Final = """
 SELECT d, equity, daily_return, drawdown FROM trading.pnl_daily WHERE strategy = %s AND d < %s
@@ -93,17 +93,11 @@ def date_tr(day: date) -> str:
 
 def risk_warnings(risk: dict[str, Any] | None, pnl: dict[str, Any] | None) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
-    if risk is not None:
-        if risk["kill_switch"] == "on":
-            out.append({"level": "critical", "text_tr": "KAPtan durduruldu: yeni öneri çıkmaz."})
-        if risk["halted_today"]:
-            out.append({"level": "warn", "text_tr": "Günlük zarar sınırına gelindi: bugün yeni öneri çıkmaz."})
-        if risk["regime"] == "crisis":
-            out.append({"level": "warn", "text_tr": "Piyasa çok dalgalı: öneriler daha küçük tutulur."})
+    if risk is not None and risk["regime"] == "crisis":
+        out.append({"level": "warn", "text_tr": "Piyasa çok dalgalı: öneriler daha küçük tutulur."})
     if pnl is not None and float(pnl["daily_return"]) < 0:
         text = f"Önceki borsa gününde paran {fmt_pct(abs(float(pnl['daily_return'])), 2)} azaldı."
-        level = "warn" if float(pnl["drawdown"]) <= -0.025 else "info"
-        out.append({"level": level, "text_tr": text})
+        out.append({"level": "info", "text_tr": text})
     return out
 
 
@@ -118,13 +112,7 @@ def _risk_sentence(risk: dict[str, Any] | None) -> str | None:
     if risk is None:
         return None
     said = [
-        text
-        for on, text in (
-            (risk["kill_switch"] == "on", "KAPtan durduruldu, yeni öneri çıkmaz"),
-            (bool(risk["halted_today"]), "günlük zarar sınırına gelindi, bugün yeni öneri çıkmaz"),
-            (risk["regime"] == "crisis", "piyasa çok dalgalı, öneriler daha küçük tutulur"),
-        )
-        if on
+        text for on, text in ((risk["regime"] == "crisis", "piyasa çok dalgalı, öneriler daha küçük tutulur"),) if on
     ]
     return f"{said[0][0].upper()}{said[0][1:]}{''.join(f'; {t}' for t in said[1:])}." if said else None
 

@@ -6,7 +6,7 @@ import { useApi, useApiMutation } from "@/lib/api/react";
 import { errorMessage } from "@/lib/api/types";
 import { realName, useSession } from "@/lib/auth/session-context";
 import { logout } from "@/components/shell/session-actions";
-import { ConfirmAction } from "@/components/solo/stop-panel";
+import { ConfirmAction } from "@/components/solo/confirm-action";
 import { PlainField } from "@/components/solo/plain-field";
 import { Button } from "@/components/ui/button";
 import "./comfort.css";

@@ -1,14 +1,12 @@
 """Read side of approvals, tickets and orders: the stored rows plus the mock's live overlays.
 
 - An approval card = `trading.approvals.card` with the decision columns on top; its *effective*
-  status follows selectors.ts patchApproval(): pending + kill switch on → `cancelled`, pending past
-  `expires_at` → `expired`.
+  status follows selectors.ts patchApproval(): pending past `expires_at` → `expired`.
 - A ticket = `order_tickets.doc` + its entry (your mark, or awaiting/expired by valid_until).
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Final
 
@@ -58,29 +56,11 @@ ORDER BY o.created_at, o.id
 """
 
 
-@dataclass(frozen=True, slots=True)
-class RiskFlags:
-    kill_on: bool
-    halted: bool
-
-
-async def risk_flags(conn: AsyncConnection[Any], *, lock: bool = False) -> RiskFlags:
-    """Kill switch and daily halt (trading.risk_state). `lock` holds a share lock until commit so a
-    concurrent kill switch waits for this decision (and then cancels its order)."""
-    sql = "SELECT kill_switch, halted_today FROM trading.risk_state WHERE id = 1"
-    async with conn.cursor() as cur:
-        await cur.execute(sql + (" FOR SHARE" if lock else ""))
-        row = await cur.fetchone()
-    if row is None:
-        return RiskFlags(kill_on=False, halted=False)
-    return RiskFlags(kill_on=row["kill_switch"] == "on", halted=bool(row["halted_today"]))
-
-
 def _iso(value: datetime | None) -> str | None:
     return None if value is None else iso_ms(value)
 
 
-def card_from_row(row: dict[str, Any], *, kill_on: bool, now: datetime) -> dict[str, Any]:
+def card_from_row(row: dict[str, Any], *, now: datetime) -> dict[str, Any]:
     """The card with its decision columns and effective status."""
     card: dict[str, Any] = {
         **row["card"],
@@ -90,8 +70,6 @@ def card_from_row(row: dict[str, Any], *, kill_on: bool, now: datetime) -> dict[
         "decision_comment": row["decision_comment"],
         "approved_notional_try": row["approved_notional_try"],
     }
-    if card["status"] == "pending" and kill_on and card.get("side", "buy") == "buy":  # an exit stays open (X5)
-        return {**card, "status": "cancelled"}
     if card["status"] == "pending" and row["expires_at"] <= now:
         return {**card, "status": "expired"}
     return card
@@ -110,9 +88,8 @@ async def card_rows(
 async def list_cards(
     conn: AsyncConnection[Any], *, now: datetime, proposal_id: str | None = None
 ) -> list[dict[str, Any]]:
-    flags = await risk_flags(conn)
     rows = await card_rows(conn, proposal_id=proposal_id)
-    return [card_from_row(r, kill_on=flags.kill_on, now=now) for r in rows]
+    return [card_from_row(r, now=now) for r in rows]
 
 
 def ticket_from_row(row: dict[str, Any], now: datetime) -> dict[str, Any]:

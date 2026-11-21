@@ -52,9 +52,7 @@ ISSUER_SQL: Final = "SELECT in_universe, price, adv20_try, free_float FROM core.
 RESTRICTIONS_SQL: Final = (
     "SELECT kind, source_ref FROM core.restricted_securities WHERE ticker = %s ORDER BY added_at, id"
 )
-RISK_SQL: Final = (
-    "SELECT kill_switch, halted_today, daily_pnl_pct, drawdown_pct, regime FROM trading.risk_state WHERE id = 1"
-)
+RISK_SQL: Final = "SELECT regime FROM trading.risk_state WHERE id = 1"
 BOOK_SQL: Final = """
 SELECT count(*) AS n_open, coalesce(bool_or(ticker = %s), false) AS holds_ticker
   FROM trading.positions WHERE book = 'paper'
@@ -137,13 +135,7 @@ async def restrictions(conn: AsyncConnection[Any], ticker: str) -> list[dict[str
 
 async def risk_state(conn: AsyncConnection[Any]) -> dict[str, Any]:
     row = await _one(conn, RISK_SQL)
-    return row or {
-        "kill_switch": "off",
-        "halted_today": False,
-        "daily_pnl_pct": 0,
-        "drawdown_pct": 0,
-        "regime": "normal",
-    }
+    return row or {"regime": "normal"}
 
 
 async def book(conn: AsyncConnection[Any], ticker: str) -> dict[str, Any]:

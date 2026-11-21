@@ -1,0 +1,114 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "trades": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "ticker": {
+      "type": "string"
+     },
+     "company": {
+      "type": "string"
+     },
+     "sold_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+     },
+     "qty": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+     },
+     "cost_try": {
+      "type": "number"
+     },
+     "proceeds_try": {
+      "type": "number"
+     },
+     "gain_try": {
+      "type": "number"
+     },
+     "gain_pct": {
+      "type": [
+       "number",
+       "null"
+      ]
+     },
+     "days_held": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "id",
+     "ticker",
+     "company",
+     "sold_at",
+     "qty",
+     "cost_try",
+     "proceeds_try",
+     "gain_try",
+     "gain_pct",
+     "days_held"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "wins": {
+   "type": "integer",
+   "minimum": -9007199254740991,
+   "maximum": 9007199254740991
+  },
+  "losses": {
+   "type": "integer",
+   "minimum": -9007199254740991,
+   "maximum": 9007199254740991
+  },
+  "win_rate_pct": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "total_gain_try": {
+   "type": "number"
+  },
+  "avg_days_held": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "note_tr": {
+   "type": [
+    "string",
+    "null"
+   ]
+  }
+ },
+ "required": [
+  "trades",
+  "wins",
+  "losses",
+  "win_rate_pct",
+  "total_gain_try",
+  "avg_days_held",
+  "note_tr"
+ ],
+ "additionalProperties": false
+}

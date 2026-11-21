@@ -66,16 +66,10 @@ describe("status and queue", () => {
 });
 
 describe("when you may decide", () => {
-  const open = { status: "pending" as const, killSwitchOn: false, haltedToday: false };
+  const open = { status: "pending" as const };
   it("lets you approve or reject an open proposal", () => {
     expect(decideGate(open)).toMatchObject({ canDecide: true, canApprove: true, reason: null, tone: null });
     expect(decideGate({ ...open, status: "claimed" })).toMatchObject({ canDecide: true });
-  });
-  it("blocks every decision while the kill switch is on", () => {
-    expect(decideGate({ ...open, killSwitchOn: true })).toMatchObject({ canDecide: false, tone: "kill" });
-  });
-  it("allows only rejection during the daily halt", () => {
-    expect(decideGate({ ...open, haltedToday: true })).toMatchObject({ canDecide: true, canApprove: false, tone: "halt" });
   });
   it("closes decided and expired cards", () => {
     expect(decideGate({ ...open, status: "expired" })).toMatchObject({ canDecide: false, tone: "closed" });

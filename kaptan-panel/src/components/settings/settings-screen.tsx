@@ -10,13 +10,17 @@ import { Button } from "@/components/ui/button";
 import { Boat } from "@/components/ufuk/boat";
 import { AccountSection } from "./account-section";
 import { AlertPrefsSection } from "./alert-prefs-section";
+import { AlertHistorySection } from "./alert-history-section";
 import { AlertsSection } from "./alerts-section";
 import { BackupSection } from "./backup-section";
 import { FeeSection } from "./fee-section";
 import { LimitsSection } from "./limits-section";
 import { LookSection } from "./look-section";
+import { MutedSection } from "./muted-section";
 import { PauseSection } from "./pause-section";
 import { settingsSentence, PLAIN_LIMITS, valueOf } from "./limits-logic";
+import { PriceAlertsSection } from "./price-alerts-section";
+import { RestoreSection } from "./restore-section";
 import { SystemSection } from "./system-section";
 
 /** /ayarlar: your limits and what each means for you, how KAPtan reaches you and whether it is working, how it works, and your account. */
@@ -36,10 +40,14 @@ export function SettingsScreen() {
         <SystemSection />
       </div>
       <AlertPrefsSection />
+      <PriceAlertsSection />
+      <MutedSection />
+      <AlertHistorySection />
       <div className="ay-pair">
         <BackupSection />
         <LookSection />
       </div>
+      <RestoreSection />
       <HowAndAccount />
     </div>
   );

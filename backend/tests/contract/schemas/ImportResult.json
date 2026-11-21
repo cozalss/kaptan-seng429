@@ -1,0 +1,275 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "written": {
+   "type": "integer",
+   "minimum": -9007199254740991,
+   "maximum": 9007199254740991
+  },
+  "failed": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "index": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991
+     },
+     "date": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "kind": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "buy",
+         "sell",
+         "deposit",
+         "withdrawal",
+         "dividend"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "ticker": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "qty": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "price": {
+      "type": [
+       "number",
+       "null"
+      ]
+     },
+     "commission_try": {
+      "type": [
+       "number",
+       "null"
+      ]
+     },
+     "amount_try": {
+      "type": [
+       "number",
+       "null"
+      ]
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "new",
+       "recorded",
+       "conflict",
+       "invalid",
+       "skipped"
+      ]
+     },
+     "reason": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "index",
+     "date",
+     "kind",
+     "ticker",
+     "qty",
+     "price",
+     "commission_try",
+     "amount_try",
+     "status",
+     "reason"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "preview": {
+   "type": "object",
+   "properties": {
+    "rows": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "properties": {
+       "index": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+       },
+       "date": {
+        "anyOf": [
+         {
+          "type": "string",
+          "format": "date",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "kind": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "buy",
+           "sell",
+           "deposit",
+           "withdrawal",
+           "dividend"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "ticker": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "qty": {
+        "anyOf": [
+         {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "price": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "commission_try": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "amount_try": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "status": {
+        "type": "string",
+        "enum": [
+         "new",
+         "recorded",
+         "conflict",
+         "invalid",
+         "skipped"
+        ]
+       },
+       "reason": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "index",
+       "date",
+       "kind",
+       "ticker",
+       "qty",
+       "price",
+       "commission_try",
+       "amount_try",
+       "status",
+       "reason"
+      ],
+      "additionalProperties": false
+     }
+    },
+    "new": {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    "recorded": {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    "conflict": {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    "invalid": {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    "skipped": {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    "unknown_types": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "started": {
+     "type": "boolean"
+    }
+   },
+   "required": [
+    "rows",
+    "new",
+    "recorded",
+    "conflict",
+    "invalid",
+    "skipped",
+    "unknown_types",
+    "started"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "written",
+  "failed",
+  "preview"
+ ],
+ "additionalProperties": false
+}

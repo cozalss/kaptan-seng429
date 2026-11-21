@@ -92,12 +92,14 @@ export function AlertPrefsSection() {
                     on={shown.kinds[topic].phone}
                     onChange={() => toggle(topic, "phone")}
                   />
-                  <Check
-                    label="Bu bilgisayar"
-                    aria={`${TOPIC_WORDS[topic].name}: bu bilgisayar`}
-                    on={shown.kinds[topic].desktop}
-                    onChange={() => toggle(topic, "desktop")}
-                  />
+                  {topic === "weekly" ? null : (
+                    <Check
+                      label="Bu bilgisayar"
+                      aria={`${TOPIC_WORDS[topic].name}: bu bilgisayar`}
+                      on={shown.kinds[topic].desktop}
+                      onChange={() => toggle(topic, "desktop")}
+                    />
+                  )}
                 </div>
               </li>
             ))}
@@ -142,8 +144,7 @@ export function AlertPrefsSection() {
             </div>
             <p className="ay-channel-detail">
               Saatler İstanbul saatidir. Bu saatlerde telefonuna ve e-postana
-              bildirim gitmez; bekleyenler bitince gönderilir. “Her şey
-              durduğunda” bildirimi hemen gelir. Bu bilgisayarda sessiz
+              bildirim gitmez; bekleyenler bitince gönderilir. Bu bilgisayarda sessiz
               saatlerde bildirim hiç çıkmaz; öneri ana sayfanda seni bekler.
             </p>
           </fieldset>

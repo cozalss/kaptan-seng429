@@ -95,8 +95,6 @@ LimitKey = Literal[
     "target_concurrent_positions",
     "max_adv_share",
     "price_band_pct",
-    "daily_loss_halt_pct",
-    "kill_drawdown_pct",
     "min_edge_cost_ratio",
     "crisis_exposure_mult",
     "leak_ret5d_threshold",
@@ -174,8 +172,6 @@ LIMITS_V1: Final[tuple[tuple[LimitKey, float], ...]] = (
     ("target_concurrent_positions", 8),
     ("max_adv_share", 0.01),
     ("price_band_pct", 0.02),
-    ("daily_loss_halt_pct", -0.01),
-    ("kill_drawdown_pct", -0.05),
     ("min_edge_cost_ratio", 2),
     ("crisis_exposure_mult", 0.5),
     ("leak_ret5d_threshold", 0.08),
@@ -199,8 +195,6 @@ LIMIT_META: Final[dict[LimitKey, LimitMeta]] = {
     "target_concurrent_positions": LimitMeta("Aynı anda hedef hisse", "count", "R08", "lower"),
     "max_adv_share": LimitMeta("Günlük hacim payı tavanı", "pct", "R07", "lower"),
     "price_band_pct": LimitMeta("Fiyat bandı", "pct", "R09", "lower"),
-    "daily_loss_halt_pct": LimitMeta("Günlük zarar durdurması", "pct", "R02", "higher"),
-    "kill_drawdown_pct": LimitMeta("Her şeyi durdurma (zirveden düşüş)", "pct", "R01", "higher"),
     "min_edge_cost_ratio": LimitMeta("Avantaj / maliyet alt sınırı", "ratio", "R06", "higher"),
     "crisis_exposure_mult": LimitMeta("Kriz maruziyet çarpanı", "mult", "R10", "lower"),
     "leak_ret5d_threshold": LimitMeta("Sızıntı eşiği (5 borsa günü)", "pct", "E*", "lower"),
@@ -336,33 +330,4 @@ class NoteInput(KModel):
             raise ValueError("Not en az 3 harf olmalı")
         if len(text) > 500:
             raise ValueError("Not en fazla 500 harf")
-        return text
-
-
-# ── kill switch inputs (API.md §3 #12–14; mock texts) ───────────────────
-class KillSwitchInput(KModel):
-    reason: str
-
-    @field_validator("reason")
-    @classmethod
-    def _reason(cls, v: str) -> str:
-        text = v.strip()
-        if len(text) < 5:
-            raise ValueError("Gerekçe en az 5 harf olmalı.")
-        if len(text) > 500:
-            raise ValueError("En çok 500 karakter")
-        return text
-
-
-class KillResetInput(KModel):
-    reason: str
-
-    @field_validator("reason")
-    @classmethod
-    def _reason(cls, v: str) -> str:
-        text = v.strip()
-        if len(text) < 10:
-            raise ValueError("Gerekçe en az 10 harf olmalı.")
-        if len(text) > 500:
-            raise ValueError("En çok 500 karakter")
         return text

@@ -86,6 +86,8 @@ class Settings(BaseSettings):
     alert_smtp_to: str | None = None
     #: The Windows folder the backups go to (KAPTAN_BACKUP_DIR of the install), only to tell the person where it is.
     kaptan_backup_dir: str | None = None
+    #: Where the API sees that folder (mounted read-only): only to LIST the backups in Ayarlar.
+    backup_mount: str = "/yedek"
 
     #: Live KAP ingestion (M2, kaptan.ingest). Off unless asked for: every compose file turns it on.
     kap_live: bool = False

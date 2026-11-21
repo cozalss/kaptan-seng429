@@ -90,14 +90,11 @@ async def test_resume_without_execution(decision: dict[str, Any], expected: str)
     assert "execute" not in [s["node"] for s in done["steps"]]
 
 
-async def test_kill_switch_makes_the_gate_reject() -> None:
-    ctx = context_for("run-demo-e3-ornek", kill_switch_on=True)
-    state, explain = await _explain(ctx, "e3-killed")
-    assert state["outcome"] == "NO_TRADE"
+async def test_a_stock_outside_the_universe_is_still_vetoed() -> None:
+    ctx = context_for("run-demo-e3-ornek", in_universe=False)
+    state, explain = await _explain(ctx, "e3-outside")
+    assert state["outcome"] == "PREGATE_VETO"
     assert explain["approval"] is None
-    assert explain["proposal"] is None
-    assert explain["risk_checks"][-1]["rule_code"] == "R01"
-    assert explain["risk_checks"][-1]["outcome"] == "reject"
 
 
 class _Broken:

@@ -26,7 +26,6 @@ def context_for(run_id: str, *, published_at: datetime | None = None, **desk: An
     e = r["explain"]
     disc = e["disclosure"]
     issuer = next(i for i in FX.json("issuers.json") if i["ticker"] == disc["primary_ticker"])
-    risk = FX.json("risk_state.json")
     published = published_at or ts(disc["published_at"])
     restrictions = tuple(
         Restriction(x["kind"], x["source_ref"]) for x in FX.json("restricted.json") if x["ticker"] == issuer["ticker"]
@@ -38,8 +37,6 @@ def context_for(run_id: str, *, published_at: datetime | None = None, **desk: An
         "free_float": issuer["freeFloat"],
         "equity_try": Decimal(str(FX.meta["paper_equity_try"])),
         "restrictions": restrictions,
-        "daily_pnl_pct": Decimal(str(risk["daily_pnl_pct"])),
-        "drawdown_pct": Decimal(str(risk["drawdown_pct"])),
         **desk,
     }
     return RunContext(

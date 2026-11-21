@@ -19,7 +19,6 @@ from kaptan.approvals.reads import (
     card_from_row,
     card_rows,
     orders_for_run,
-    risk_flags,
     ticket_from_row,
     ticket_rows,
 )
@@ -52,8 +51,7 @@ async def _approval(conn: AsyncConnection[Any], base: dict[str, Any], *, now: da
     rows = await card_rows(conn, proposal_id=proposal["proposal_id"])
     if not rows:
         return None
-    flags = await risk_flags(conn)
-    return card_from_row(rows[0], kill_on=flags.kill_on, now=now)
+    return card_from_row(rows[0], now=now)
 
 
 async def explain_for(conn: AsyncConnection[Any], run_id: str, *, now: datetime) -> dict[str, Any] | None:

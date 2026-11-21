@@ -4,7 +4,7 @@
 - monotone: the final quantity never exceeds the requested one;
 - a pass/resize verdict always ends with R15 (a human approves), a reject/hold has qty 0;
 - deterministic: the same input gives the same verdict;
-- a SELL is never stopped by R01, R02, R04, R08, R10 or R13 (exits are never blocked by entry rules).
+- a SELL is never stopped by R04, R08, R10 or R13 (exits are never blocked by entry rules).
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from decimal import Decimal
 from kaptan.risk.gate import GateContext, GateOrder, evaluate
 
 N_CASES = 2_000
-ENTRY_ONLY = ("R01", "R02", "R04", "R08", "R10", "R13")
+ENTRY_ONLY = ("R04", "R08", "R10", "R13")
 
 
 def _case(rng: random.Random) -> tuple[GateOrder, GateContext]:
@@ -52,10 +52,6 @@ def _case(rng: random.Random) -> tuple[GateOrder, GateContext]:
         cash_free_try=equity * Decimal(str(round(rng.uniform(0, 1), 3))),
         upper_limit=(last * Decimal("1.1")).quantize(Decimal("0.01")),
         lower_limit=(last * Decimal("0.9")).quantize(Decimal("0.01")),
-        kill_switch_on=rng.random() < 0.2,
-        drawdown_pct=Decimal(str(round(rng.uniform(-0.08, 0), 4))),
-        daily_pnl_pct=Decimal(str(round(rng.uniform(-0.03, 0.02), 4))),
-        halted_today=rng.random() < 0.2,
         restrictions=rng.choice(((), ("spk_tedbir",), ("vbts_brut_takas", "team_insider"))),
         restrictions_age_h=rng.choice((1.0, 30.0)),
         team_blocklisted=rng.random() < 0.2,
@@ -64,7 +60,6 @@ def _case(rng: random.Random) -> tuple[GateOrder, GateContext]:
         held_qty=held if side == "sell" else None,
         daily_entries=rng.randint(0, 3),
         in_cooldown=rng.random() < 0.1,
-        reset_active=rng.random() < 0.1,
         sector_exposure_pct=Decimal(str(round(rng.uniform(0, 0.3), 3))),
         group_exposure_pct=Decimal(str(round(rng.uniform(0, 0.25), 3))),
         gross_exposure_pct=Decimal(str(round(rng.uniform(0, 1.1), 3))),
@@ -80,8 +75,7 @@ def _healthy(order: GateOrder, ctx: GateContext) -> tuple[GateOrder, GateContext
     amount = Decimal(1_000_000)
     o = replace(order, reader_amount=amount, regex_amounts=(amount,), evidence_ids=ids, retrieved_ids=ids,
                 expected_edge_bps=Decimal(100), est_cost_bps=Decimal(30), limit_price=ctx.last_price)  # fmt: skip
-    c = replace(ctx, kill_switch_on=False, drawdown_pct=Decimal(0), halted_today=False, daily_pnl_pct=Decimal(0),
-                restrictions=(), restrictions_age_h=1.0, team_blocklisted=False, in_cooldown=False,
+    c = replace(ctx, restrictions=(), restrictions_age_h=1.0, team_blocklisted=False, in_cooldown=False,
                 holds_ticker=order.side == "sell", n_open_positions=2, daily_entries=0,
                 gross_exposure_pct=Decimal("0.3"))  # fmt: skip
     return o, c

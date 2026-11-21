@@ -31,14 +31,6 @@
     "value": 0.02
    },
    {
-    "key": "daily_loss_halt_pct",
-    "value": -0.01
-   },
-   {
-    "key": "kill_drawdown_pct",
-    "value": -0.05
-   },
-   {
     "key": "min_edge_cost_ratio",
     "value": 2
    },

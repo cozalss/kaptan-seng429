@@ -1,6 +1,7 @@
 "use client";
 
 import "./company.css";
+import "./company-read.css";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -15,9 +16,16 @@ import { PriceAge } from "@/components/solo/price-age";
 import { signTone } from "@/components/story/sign-tone";
 import { Button } from "@/components/ui/button";
 import { kapUrl, plainSaid, whatKaptanDid } from "@/components/disclosures/reading-words";
+import { PriceAlertButton } from "@/components/settings/price-alert-button";
 import { StarButton } from "@/components/watchlist/star-button";
 import { companyName, DECISION_LABEL, followingSentence, priceHeadline } from "./company-words";
 import { PriceLine } from "./price-line";
+import { MyNote } from "./my-note";
+import { InsiderStrip } from "./insider-strip";
+import { StatsStrip } from "./stats-strip";
+import { TwoLines } from "./two-lines";
+import { ReadingMarksProvider } from "@/components/reading/marks";
+import { SaveStar } from "@/components/reading/save-star";
 
 /**
  * /hisse/[ticker]: one company. A plain sentence first, then the price line, what you hold of it, what it
@@ -47,22 +55,27 @@ export function CompanyScreen({ ticker }: { ticker: string }) {
   }
   const c = q.data;
   return (
+    <ReadingMarksProvider>
     <div className="co-screen">
       <PageHeader
         name={c.ticker}
         title={`${companyName(c.name)}${c.sector ? `, ${c.sector} alanında bir şirket.` : "."}`}
         lead={<p>{followingSentence(c.following)}</p>}
-        actions={<StarButton ticker={c.ticker} watched={starred ?? c.watched} onChanged={setStarred} />}
+        actions={<><StarButton ticker={c.ticker} watched={starred ?? c.watched} onChanged={setStarred} /><PriceAlertButton ticker={c.ticker} name={c.name} /></>}
       />
       <PriceSection c={c} period={period} onPeriod={setPeriod} busy={q.refreshing} />
       {c.position ? <PositionSection p={c.position} ticker={c.ticker} /> : null}
+      <MyNote ticker={c.ticker} />
+      <InsiderStrip events={c.insiders} />
       <DecisionsSection decisions={c.decisions} />
       <DisclosuresSection c={c} />
     </div>
+    </ReadingMarksProvider>
   );
 }
 
 function PriceSection({ c, period, onPeriod, busy }: { c: Company; period: Period; onPeriod: (p: Period) => void; busy: boolean }) {
+  const [vsIndex, setVsIndex] = useState(false);
   return (
     <section aria-labelledby="co-fiyat" className="co-sec" aria-busy={busy}>
       <h2 id="co-fiyat" className="u-chapter text-ink">
@@ -76,7 +89,22 @@ function PriceSection({ c, period, onPeriod, busy }: { c: Company; period: Perio
           </button>
         ))}
       </div>
-      <PriceLine points={c.price.points} />
+      {c.benchmark ? (
+        <div className="co-tools">
+          <button type="button" className="co-toggle" aria-pressed={vsIndex} onClick={() => setVsIndex(!vsIndex)}>
+            {c.benchmark.name} ile karşılaştır
+          </button>
+          <Link href={href.compare(c.ticker)} className="co-link">
+            Başka bir hisseyle karşılaştır →
+          </Link>
+        </div>
+      ) : (
+        <Link href={href.compare(c.ticker)} className="co-link">
+          Başka bir hisseyle karşılaştır →
+        </Link>
+      )}
+      {vsIndex && c.benchmark ? <TwoLines a={c.price.points} b={c.benchmark.points} labelA={c.ticker} labelB={c.benchmark.name} /> : <PriceLine points={c.price.points} />}
+      {c.stats ? <StatsStrip stats={c.stats} /> : <p className="co-empty">Bu şirketin kayıtlı fiyatı yok; aralık ve hacim hesaplayamadım.</p>}
       <PriceAge asOf={c.price.last_day ? `${c.price.last_day}T15:30:00.000Z` : null} />
     </section>
   );
@@ -164,11 +192,14 @@ function DisclosuresSection({ c }: { c: Company }) {
                   <p className="co-row-title">{plainSaid(d)}</p>
                   <p className="co-row-text">{whatKaptanDid(d, card)}</p>
                 </div>
-                {url ? (
-                  <a href={url} target="_blank" rel="noopener noreferrer" className="co-link" aria-label="Duyuruyu KAP’ta aç (yeni sekmede)">
-                    KAP’ta aç ↗
-                  </a>
-                ) : null}
+                <div className="rd-row-tools">
+                  <SaveStar index={d.disclosure_index} label={companyName(c.name)} />
+                  {url ? (
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="co-link" aria-label="Duyuruyu KAP’ta aç (yeni sekmede)">
+                      KAP’ta aç ↗
+                    </a>
+                  ) : null}
+                </div>
               </li>
             );
           })}

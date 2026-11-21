@@ -269,25 +269,24 @@ async def test_a_ticket_fill_says_which_rate_estimated_its_commission(desk: Dict
     assert (fixed.body["entry"]["commission_estimated"], fixed.body["entry"]["commission_rate"]) == (False, None)
 
 
-async def test_start_over_closes_the_book_keeps_history_and_leaves_the_kill_switch_on(desk: DictConn) -> None:
+async def test_start_over_closes_the_book_keeps_history(desk: DictConn) -> None:
     ticket = await _entered_ticket(desk)
     await money.add_holding(
         desk, HoldingInput(ticker="KRGCL", qty=5, avg_cost=30.0, bought_on=date(2027, 1, 4)), RISK_OFFICER, now=NOW
     )
-    await desk.execute("UPDATE trading.risk_state SET kill_switch = 'on', kill_reason = 'deneme', kill_at = now()")
     with pytest.raises(ApiError) as wrong:
         await fresh_start.start_over(desk, "evet", RISK_OFFICER, now=NOW + timedelta(hours=1))
     assert (wrong.value.status, wrong.value.code) == (422, "confirm")
     out = await fresh_start.start_over(desk, " BAŞTAN ", RISK_OFFICER, now=NOW + timedelta(hours=1))
-    assert out == {"closed_book": 1, "kill_switch_on": True}
+    assert out == {"closed_book": 1}
     audit = await _audit(desk)
     assert audit["action"] == "book.reset"
-    assert audit["payload"]["closed_book"] == 1 and audit["payload"]["kill_switch_stays_on"] is True
+    assert audit["payload"]["closed_book"] == 1 and "kill_switch_stays_on" not in audit["payload"]
     later = NOW + timedelta(hours=2)
     overview = await me_overview(desk, now=later)
     assert overview["needs_setup"] is True and overview["equity_now"] == 0.0
     assert await list_positions(desk, later) == []
-    assert (await risk_status(desk, later))["kill_switch"] == "on"
+    assert "kill_switch" not in await risk_status(desk, later)
     assert await one(desk, "SELECT count(*) AS n FROM trading.pnl_daily") == {"n": 0}
     assert await one(
         desk, "SELECT entry_status FROM trading.order_tickets WHERE ticket_no = %s", (ticket["ticket_no"],)
@@ -315,7 +314,7 @@ async def test_start_over_voids_tickets_that_wait_and_needs_a_started_book(desk:
     await history(desk, "KRGCL", date(2027, 1, 11))
     ticket = (await approve(desk, KRGCL, DECIDE_AT)).events[1][1]
     out = await fresh_start.start_over(desk, "baştan", RISK_OFFICER, now=NOW + timedelta(minutes=1))
-    assert out["kill_switch_on"] is False
+    assert out == {"closed_book": 1}
     row = await one(
         desk, "SELECT entry_status, note FROM trading.order_tickets WHERE ticket_no = %s", (ticket["ticket_no"],)
     )

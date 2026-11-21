@@ -1627,24 +1627,6 @@
   "risk_checks": [
    {
     "phase": "pre_trade",
-    "rule_code": "R01",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-    "observed": "−%1,1",
-    "limit": "−%5"
-   },
-   {
-    "phase": "pre_trade",
-    "rule_code": "R02",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Günlük K/Z +%0,2.",
-    "observed": "+%0,2",
-    "limit": "−%1"
-   },
-   {
-    "phase": "pre_trade",
     "rule_code": "R03",
     "outcome": "pass",
     "reason_code": null,
@@ -3211,24 +3193,6 @@
   "risk_checks": [
    {
     "phase": "pre_trade",
-    "rule_code": "R01",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-    "observed": "−%1,1",
-    "limit": "−%5"
-   },
-   {
-    "phase": "pre_trade",
-    "rule_code": "R02",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Günlük K/Z +%0,2.",
-    "observed": "+%0,2",
-    "limit": "−%1"
-   },
-   {
-    "phase": "pre_trade",
     "rule_code": "R03",
     "outcome": "pass",
     "reason_code": null,
@@ -4384,24 +4348,6 @@
    "abstain": null
   },
   "risk_checks": [
-   {
-    "phase": "pre_trade",
-    "rule_code": "R01",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-    "observed": "−%1,1",
-    "limit": "−%5"
-   },
-   {
-    "phase": "pre_trade",
-    "rule_code": "R02",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Günlük K/Z +%0,2.",
-    "observed": "+%0,2",
-    "limit": "−%1"
-   },
    {
     "phase": "pre_trade",
     "rule_code": "R03",
@@ -9029,24 +8975,6 @@
   "risk_checks": [
    {
     "phase": "pre_trade",
-    "rule_code": "R01",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-    "observed": "−%1,1",
-    "limit": "−%5"
-   },
-   {
-    "phase": "pre_trade",
-    "rule_code": "R02",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Günlük K/Z +%0,2.",
-    "observed": "+%0,2",
-    "limit": "−%1"
-   },
-   {
-    "phase": "pre_trade",
     "rule_code": "R03",
     "outcome": "pass",
     "reason_code": null,
@@ -9167,7 +9095,7 @@
     "rule_code": "R16",
     "outcome": "pass",
     "reason_code": null,
-    "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+    "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
     "observed": null,
     "limit": null
    }
@@ -9538,14 +9466,6 @@
    "stop_line_tr": "Kapanış bazlı stop 80,89 TL TL",
    "planned_exit_tr": "20. borsa günü kapanışı (en çok 40 borsa günü)",
    "gate_results": [
-    {
-     "code": "R01",
-     "passed": true
-    },
-    {
-     "code": "R02",
-     "passed": true
-    },
     {
      "code": "R03",
      "passed": true
@@ -10416,24 +10336,6 @@
    "abstain": null
   },
   "risk_checks": [
-   {
-    "phase": "pre_trade",
-    "rule_code": "R01",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-    "observed": "−%1,1",
-    "limit": "−%5"
-   },
-   {
-    "phase": "pre_trade",
-    "rule_code": "R02",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Günlük K/Z +%0,2.",
-    "observed": "+%0,2",
-    "limit": "−%1"
-   },
    {
     "phase": "pre_trade",
     "rule_code": "R03",
@@ -12263,24 +12165,6 @@
   "risk_checks": [
    {
     "phase": "pre_trade",
-    "rule_code": "R01",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-    "observed": "−%1,1",
-    "limit": "−%5"
-   },
-   {
-    "phase": "pre_trade",
-    "rule_code": "R02",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Günlük K/Z +%0,2.",
-    "observed": "+%0,2",
-    "limit": "−%1"
-   },
-   {
-    "phase": "pre_trade",
     "rule_code": "R03",
     "outcome": "pass",
     "reason_code": null,
@@ -12401,7 +12285,7 @@
     "rule_code": "R16",
     "outcome": "pass",
     "reason_code": null,
-    "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+    "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
     "observed": null,
     "limit": null
    }
@@ -14015,24 +13899,6 @@
   "risk_checks": [
    {
     "phase": "pre_trade",
-    "rule_code": "R01",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-    "observed": "−%1,1",
-    "limit": "−%5"
-   },
-   {
-    "phase": "pre_trade",
-    "rule_code": "R02",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Günlük K/Z +%0,2.",
-    "observed": "+%0,2",
-    "limit": "−%1"
-   },
-   {
-    "phase": "pre_trade",
     "rule_code": "R03",
     "outcome": "pass",
     "reason_code": null,
@@ -14153,7 +14019,7 @@
     "rule_code": "R16",
     "outcome": "pass",
     "reason_code": null,
-    "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+    "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
     "observed": null,
     "limit": null
    }
@@ -15783,24 +15649,6 @@
   "risk_checks": [
    {
     "phase": "pre_trade",
-    "rule_code": "R01",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-    "observed": "−%1,1",
-    "limit": "−%5"
-   },
-   {
-    "phase": "pre_trade",
-    "rule_code": "R02",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Günlük K/Z +%0,2.",
-    "observed": "+%0,2",
-    "limit": "−%1"
-   },
-   {
-    "phase": "pre_trade",
     "rule_code": "R03",
     "outcome": "pass",
     "reason_code": null,
@@ -15921,7 +15769,7 @@
     "rule_code": "R16",
     "outcome": "pass",
     "reason_code": null,
-    "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+    "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
     "observed": null,
     "limit": null
    }
@@ -17535,24 +17383,6 @@
   "risk_checks": [
    {
     "phase": "pre_trade",
-    "rule_code": "R01",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-    "observed": "−%1,1",
-    "limit": "−%5"
-   },
-   {
-    "phase": "pre_trade",
-    "rule_code": "R02",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Günlük K/Z +%0,2.",
-    "observed": "+%0,2",
-    "limit": "−%1"
-   },
-   {
-    "phase": "pre_trade",
     "rule_code": "R03",
     "outcome": "pass",
     "reason_code": null,
@@ -17673,7 +17503,7 @@
     "rule_code": "R16",
     "outcome": "pass",
     "reason_code": null,
-    "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+    "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
     "observed": null,
     "limit": null
    }
@@ -19292,24 +19122,6 @@
   "risk_checks": [
    {
     "phase": "pre_trade",
-    "rule_code": "R01",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-    "observed": "−%1,1",
-    "limit": "−%5"
-   },
-   {
-    "phase": "pre_trade",
-    "rule_code": "R02",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Günlük K/Z +%0,2.",
-    "observed": "+%0,2",
-    "limit": "−%1"
-   },
-   {
-    "phase": "pre_trade",
     "rule_code": "R03",
     "outcome": "pass",
     "reason_code": null,
@@ -19430,7 +19242,7 @@
     "rule_code": "R16",
     "outcome": "pass",
     "reason_code": null,
-    "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+    "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
     "observed": null,
     "limit": null
    }
@@ -21060,24 +20872,6 @@
   "risk_checks": [
    {
     "phase": "pre_trade",
-    "rule_code": "R01",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-    "observed": "−%1,1",
-    "limit": "−%5"
-   },
-   {
-    "phase": "pre_trade",
-    "rule_code": "R02",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Günlük K/Z +%0,2.",
-    "observed": "+%0,2",
-    "limit": "−%1"
-   },
-   {
-    "phase": "pre_trade",
     "rule_code": "R03",
     "outcome": "pass",
     "reason_code": null,
@@ -21198,7 +20992,7 @@
     "rule_code": "R16",
     "outcome": "pass",
     "reason_code": null,
-    "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+    "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
     "observed": null,
     "limit": null
    }
@@ -21513,14 +21307,6 @@
    "stop_line_tr": "Kapanış bazlı stop 32,67 TL TL",
    "planned_exit_tr": "20. borsa günü kapanışı (en çok 40 borsa günü)",
    "gate_results": [
-    {
-     "code": "R01",
-     "passed": true
-    },
-    {
-     "code": "R02",
-     "passed": true
-    },
     {
      "code": "R03",
      "passed": true
@@ -22954,24 +22740,6 @@
   "risk_checks": [
    {
     "phase": "pre_trade",
-    "rule_code": "R01",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-    "observed": "−%1,1",
-    "limit": "−%5"
-   },
-   {
-    "phase": "pre_trade",
-    "rule_code": "R02",
-    "outcome": "pass",
-    "reason_code": null,
-    "detail_tr": "Günlük K/Z +%0,2.",
-    "observed": "+%0,2",
-    "limit": "−%1"
-   },
-   {
-    "phase": "pre_trade",
     "rule_code": "R03",
     "outcome": "pass",
     "reason_code": null,
@@ -23092,7 +22860,7 @@
     "rule_code": "R16",
     "outcome": "pass",
     "reason_code": null,
-    "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+    "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
     "observed": null,
     "limit": null
    }
@@ -23383,14 +23151,6 @@
    "stop_line_tr": "Kapanış bazlı stop 52,80 TL TL",
    "planned_exit_tr": "20. borsa günü kapanışı (en çok 60 borsa günü)",
    "gate_results": [
-    {
-     "code": "R01",
-     "passed": true
-    },
-    {
-     "code": "R02",
-     "passed": true
-    },
     {
      "code": "R03",
      "passed": true

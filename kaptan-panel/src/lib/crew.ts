@@ -104,7 +104,7 @@ const LIST: ReadonlyArray<Omit<CrewMember, "number" | "kindLabel" | "portraitBas
     kind: "rule",
     name: "Risk Kapısı",
     meta: "Girdi: öneri · Çıktı: aynen / küçült / reddet",
-    role: "16 kuraldan (R01–R16) geçirir: işlem başına %0,5 risk, pozisyon en fazla %10; günlük −%1'de yeni emir durur, zirveden −%5'te kill switch açık emirleri iptal eder.",
+    role: "Kurallardan geçirir: işlem başına %0,5 risk, pozisyon en fazla %10, nakit, sektör ve grup sınırları. Paranın günlük ya da toplam düşüşü hiçbir şeyi kendiliğinden durdurmaz; karar senindir.",
     notDoes: "Bir öneriyi asla büyütmez; pozisyon satmaz.",
   },
 ];

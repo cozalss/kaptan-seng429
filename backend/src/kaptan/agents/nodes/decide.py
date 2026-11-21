@@ -203,7 +203,6 @@ def live_gate_fields(p: dict[str, Any], desk: DeskState) -> dict[str, Any]:
         # R09 staleness matters for an order into the running session; an auction order is banded on the close.
         "price_age_s": desk.price_age_s if p.get("entry") == "intraday_limit" else 0.0,
         "daily_entries": desk.daily_entries,
-        "reset_active": desk.reset_active,
         "sector_exposure_pct": desk.sector_exposure_pct,
         "group_exposure_pct": desk.group_exposure_pct,
         "gross_exposure_pct": desk.gross_exposure_pct,
@@ -239,10 +238,6 @@ def gate_inputs(state: KaptanState, ctx: RunContext, qty: int | None = None) -> 
         cash_free_try=desk.equity_try if desk.cash_free_try is None else desk.cash_free_try,
         upper_limit=_dec(m["upper_limit"]) if m.get("upper_limit") else None,
         lower_limit=_dec(m["lower_limit"]) if m.get("lower_limit") else None,
-        kill_switch_on=desk.kill_switch_on,
-        drawdown_pct=desk.drawdown_pct,
-        daily_pnl_pct=desk.daily_pnl_pct,
-        halted_today=desk.halted_today,
         in_universe=desk.in_universe,
         restrictions=tuple(r.kind for r in desk.restrictions),
         team_blocklisted=any(r.kind == "team_insider" for r in desk.restrictions),

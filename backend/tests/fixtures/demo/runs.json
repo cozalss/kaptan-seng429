@@ -1789,24 +1789,6 @@
    "risk_checks": [
     {
      "phase": "pre_trade",
-     "rule_code": "R01",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-     "observed": "−%1,1",
-     "limit": "−%5"
-    },
-    {
-     "phase": "pre_trade",
-     "rule_code": "R02",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Günlük K/Z +%0,2.",
-     "observed": "+%0,2",
-     "limit": "−%1"
-    },
-    {
-     "phase": "pre_trade",
      "rule_code": "R03",
      "outcome": "pass",
      "reason_code": null,
@@ -3521,24 +3503,6 @@
    "risk_checks": [
     {
      "phase": "pre_trade",
-     "rule_code": "R01",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-     "observed": "−%1,1",
-     "limit": "−%5"
-    },
-    {
-     "phase": "pre_trade",
-     "rule_code": "R02",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Günlük K/Z +%0,2.",
-     "observed": "+%0,2",
-     "limit": "−%1"
-    },
-    {
-     "phase": "pre_trade",
      "rule_code": "R03",
      "outcome": "pass",
      "reason_code": null,
@@ -4849,24 +4813,6 @@
     "abstain": null
    },
    "risk_checks": [
-    {
-     "phase": "pre_trade",
-     "rule_code": "R01",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-     "observed": "−%1,1",
-     "limit": "−%5"
-    },
-    {
-     "phase": "pre_trade",
-     "rule_code": "R02",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Günlük K/Z +%0,2.",
-     "observed": "+%0,2",
-     "limit": "−%1"
-    },
     {
      "phase": "pre_trade",
      "rule_code": "R03",
@@ -10246,24 +10192,6 @@
    "risk_checks": [
     {
      "phase": "pre_trade",
-     "rule_code": "R01",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-     "observed": "−%1,1",
-     "limit": "−%5"
-    },
-    {
-     "phase": "pre_trade",
-     "rule_code": "R02",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Günlük K/Z +%0,2.",
-     "observed": "+%0,2",
-     "limit": "−%1"
-    },
-    {
-     "phase": "pre_trade",
      "rule_code": "R03",
      "outcome": "pass",
      "reason_code": null,
@@ -10384,7 +10312,7 @@
      "rule_code": "R16",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+     "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
      "observed": null,
      "limit": null
     }
@@ -11622,24 +11550,6 @@
     "abstain": null
    },
    "risk_checks": [
-    {
-     "phase": "pre_trade",
-     "rule_code": "R01",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-     "observed": "−%1,1",
-     "limit": "−%5"
-    },
-    {
-     "phase": "pre_trade",
-     "rule_code": "R02",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Günlük K/Z +%0,2.",
-     "observed": "+%0,2",
-     "limit": "−%1"
-    },
     {
      "phase": "pre_trade",
      "rule_code": "R03",
@@ -13660,24 +13570,6 @@
    "risk_checks": [
     {
      "phase": "pre_trade",
-     "rule_code": "R01",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-     "observed": "−%1,1",
-     "limit": "−%5"
-    },
-    {
-     "phase": "pre_trade",
-     "rule_code": "R02",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Günlük K/Z +%0,2.",
-     "observed": "+%0,2",
-     "limit": "−%1"
-    },
-    {
-     "phase": "pre_trade",
      "rule_code": "R03",
      "outcome": "pass",
      "reason_code": null,
@@ -13798,7 +13690,7 @@
      "rule_code": "R16",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+     "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
      "observed": null,
      "limit": null
     }
@@ -15557,24 +15449,6 @@
    "risk_checks": [
     {
      "phase": "pre_trade",
-     "rule_code": "R01",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-     "observed": "−%1,1",
-     "limit": "−%5"
-    },
-    {
-     "phase": "pre_trade",
-     "rule_code": "R02",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Günlük K/Z +%0,2.",
-     "observed": "+%0,2",
-     "limit": "−%1"
-    },
-    {
-     "phase": "pre_trade",
      "rule_code": "R03",
      "outcome": "pass",
      "reason_code": null,
@@ -15695,7 +15569,7 @@
      "rule_code": "R16",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+     "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
      "observed": null,
      "limit": null
     }
@@ -17486,24 +17360,6 @@
    "risk_checks": [
     {
      "phase": "pre_trade",
-     "rule_code": "R01",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-     "observed": "−%1,1",
-     "limit": "−%5"
-    },
-    {
-     "phase": "pre_trade",
-     "rule_code": "R02",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Günlük K/Z +%0,2.",
-     "observed": "+%0,2",
-     "limit": "−%1"
-    },
-    {
-     "phase": "pre_trade",
      "rule_code": "R03",
      "outcome": "pass",
      "reason_code": null,
@@ -17624,7 +17480,7 @@
      "rule_code": "R16",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+     "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
      "observed": null,
      "limit": null
     }
@@ -19383,24 +19239,6 @@
    "risk_checks": [
     {
      "phase": "pre_trade",
-     "rule_code": "R01",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-     "observed": "−%1,1",
-     "limit": "−%5"
-    },
-    {
-     "phase": "pre_trade",
-     "rule_code": "R02",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Günlük K/Z +%0,2.",
-     "observed": "+%0,2",
-     "limit": "−%1"
-    },
-    {
-     "phase": "pre_trade",
      "rule_code": "R03",
      "outcome": "pass",
      "reason_code": null,
@@ -19521,7 +19359,7 @@
      "rule_code": "R16",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+     "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
      "observed": null,
      "limit": null
     }
@@ -21286,24 +21124,6 @@
    "risk_checks": [
     {
      "phase": "pre_trade",
-     "rule_code": "R01",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-     "observed": "−%1,1",
-     "limit": "−%5"
-    },
-    {
-     "phase": "pre_trade",
-     "rule_code": "R02",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Günlük K/Z +%0,2.",
-     "observed": "+%0,2",
-     "limit": "−%1"
-    },
-    {
-     "phase": "pre_trade",
      "rule_code": "R03",
      "outcome": "pass",
      "reason_code": null,
@@ -21424,7 +21244,7 @@
      "rule_code": "R16",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+     "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
      "observed": null,
      "limit": null
     }
@@ -23217,24 +23037,6 @@
    "risk_checks": [
     {
      "phase": "pre_trade",
-     "rule_code": "R01",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-     "observed": "−%1,1",
-     "limit": "−%5"
-    },
-    {
-     "phase": "pre_trade",
-     "rule_code": "R02",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Günlük K/Z +%0,2.",
-     "observed": "+%0,2",
-     "limit": "−%1"
-    },
-    {
-     "phase": "pre_trade",
      "rule_code": "R03",
      "outcome": "pass",
      "reason_code": null,
@@ -23355,7 +23157,7 @@
      "rule_code": "R16",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+     "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
      "observed": null,
      "limit": null
     }
@@ -25110,24 +24912,6 @@
    "risk_checks": [
     {
      "phase": "pre_trade",
-     "rule_code": "R01",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-     "observed": "−%1,1",
-     "limit": "−%5"
-    },
-    {
-     "phase": "pre_trade",
-     "rule_code": "R02",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Günlük K/Z +%0,2.",
-     "observed": "+%0,2",
-     "limit": "−%1"
-    },
-    {
-     "phase": "pre_trade",
      "rule_code": "R03",
      "outcome": "pass",
      "reason_code": null,
@@ -25248,7 +25032,7 @@
      "rule_code": "R16",
      "outcome": "pass",
      "reason_code": null,
-     "detail_tr": "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+     "detail_tr": "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
      "observed": null,
      "limit": null
     }
@@ -26809,24 +26593,6 @@
     "abstain": null
    },
    "risk_checks": [
-    {
-     "phase": "pre_trade",
-     "rule_code": "R01",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Sistem çalışıyor; zirveden düşüş −%1,1.",
-     "observed": "−%1,1",
-     "limit": "−%5"
-    },
-    {
-     "phase": "pre_trade",
-     "rule_code": "R02",
-     "outcome": "pass",
-     "reason_code": null,
-     "detail_tr": "Günlük K/Z +%0,2.",
-     "observed": "+%0,2",
-     "limit": "−%1"
-    },
     {
      "phase": "pre_trade",
      "rule_code": "R03",

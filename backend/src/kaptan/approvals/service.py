@@ -17,7 +17,7 @@ from psycopg import AsyncConnection
 from kaptan.api.deps import Actor
 from kaptan.api.errors import ApiError
 from kaptan.approvals.execute import Event, execute_approved, run_audit
-from kaptan.approvals.reads import RiskFlags, card_from_row, card_rows, risk_flags, ticket_from_row, ticket_rows
+from kaptan.approvals.reads import card_from_row, card_rows, ticket_from_row, ticket_rows
 from kaptan.approvals.ticket_doc import parse_iso
 from kaptan.audit.writer import append
 from kaptan.brokers.costs import commission_of
@@ -39,27 +39,18 @@ class Outcome:
     events: list[Event] = field(default_factory=list)
 
 
-async def _card_or_404(
-    conn: AsyncConnection[Any], proposal_id: str, *, now: datetime, lock: bool
-) -> tuple[dict[str, Any], RiskFlags]:
-    flags = await risk_flags(conn, lock=lock)
+async def _card_or_404(conn: AsyncConnection[Any], proposal_id: str, *, now: datetime, lock: bool) -> dict[str, Any]:
     rows = await card_rows(conn, proposal_id=proposal_id, lock=lock)
     if not rows:
         raise ApiError(404, "not_found", NOT_FOUND_PROPOSAL)
-    return card_from_row(rows[0], kill_on=flags.kill_on, now=now), flags
+    return card_from_row(rows[0], now=now)
 
 
-def _check_decision(card: dict[str, Any], d: ApprovalDecision, *, kill_on: bool, halted: bool) -> None:
-    # The stops block new entries only: a SELL exit keeps managing the position (06 X5).
-    is_buy = card.get("side", "buy") == "buy"
-    if kill_on and is_buy:
-        raise ApiError(409, "kill_switch", "Her şey durduruldu: yeni emir onaylanamaz.")
+def _check_decision(card: dict[str, Any], d: ApprovalDecision) -> None:
     if card["status"] != "pending":
         raise ApiError(409, "conflict", "Bu öneri zaten karara bağlandı ya da süresi doldu.")
     if d.approved_notional_try is not None and d.approved_notional_try > card["final_notional_try"]:
         raise ApiError(422, "grow_not_allowed", "Tutar yalnızca küçültülebilir; büyütme yok.")
-    if d.decision == "approve" and halted and is_buy:
-        raise ApiError(409, "halted", "Günlük −%1 durdurması: bugün yeni emir verilemez.")
 
 
 DECIDE_SQL: Final = """
@@ -79,11 +70,11 @@ async def decide(
     """decideApproval(): approve (optionally smaller) or reject; an approval executes right away.
 
     A real run's approval first passes R16 at send time (`_at_send_block`); a failure is audited and
-    committed, the card stays pending and the caller gets 409 (kill_switch / halted / conflict)."""
+    committed, the card stays pending and the caller gets 409 (conflict)."""
     blocked: ApiError | None = None
     async with conn.transaction():
-        card, flags = await _card_or_404(conn, proposal_id, now=now, lock=True)
-        _check_decision(card, d, kill_on=flags.kill_on, halted=flags.halted)
+        card = await _card_or_404(conn, proposal_id, now=now, lock=True)
+        _check_decision(card, d)
         if d.decision == "approve":
             blocked = await _at_send_block(conn, card, actor, now)
         if blocked is None:
@@ -94,7 +85,6 @@ async def decide(
 
 
 LIVE_RUN_SQL: Final = "SELECT run_set FROM trading.agent_runs WHERE run_id = %s"
-AT_SEND_CODES: Final = {"R01": "kill_switch", "R02": "halted"}
 
 
 async def _at_send_block(
@@ -122,7 +112,7 @@ async def _at_send_block(
         "system:risk_gate", "risk.rejected", "trade_proposal", card["proposal_id"], payload, card["run_id"]
     )
     await append(conn, [draft], now=now)
-    return ApiError(409, AT_SEND_CODES.get(check.failed_rule or "", "conflict"), check.result.detail_tr)
+    return ApiError(409, "conflict", check.result.detail_tr)
 
 
 async def _record_decision(
@@ -187,7 +177,7 @@ async def add_note(
 ) -> dict[str, Any]:
     """addNote(): id `not-<n>`, audit `note.added` {ticker, company, role}."""
     async with conn.transaction():
-        card, _ = await _card_or_404(conn, proposal_id, now=now, lock=False)
+        card = await _card_or_404(conn, proposal_id, now=now, lock=False)
         async with conn.cursor() as cur:
             await cur.execute(
                 """

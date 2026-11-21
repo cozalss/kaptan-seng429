@@ -50,7 +50,7 @@ describe("mock API · reads", () => {
     expect((await api.positions()).length).toBeGreaterThan(0);
     const pnl = await api.pnl("2026-12-01", "2026-12-31");
     expect(pnl.every((p) => p.d >= "2026-12-01" && p.d <= "2026-12-31")).toBe(true);
-    expect((await api.riskStatus()).kill_switch).toBe("off");
+    expect(Object.keys(await api.riskStatus())).not.toEqual(expect.arrayContaining(["kill_switch", "halted_today", "reset"]));
     expect((await api.listApprovals("all")).length).toBeGreaterThanOrEqual(3);
     expect(await api.counters()).toMatchObject({ total: DAY_BY_ANCHOR.total });
   });

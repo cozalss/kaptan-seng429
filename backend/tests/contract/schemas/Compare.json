@@ -1,0 +1,483 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "period": {
+   "type": "string",
+   "enum": [
+    "1m",
+    "3m",
+    "1y",
+    "all"
+   ]
+  },
+  "a": {
+   "type": "object",
+   "properties": {
+    "ticker": {
+     "type": "string",
+     "pattern": "^[A-Z0-9]{3,6}$"
+    },
+    "name": {
+     "type": "string"
+    },
+    "sector": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "price": {
+     "type": "object",
+     "properties": {
+      "period": {
+       "type": "string",
+       "enum": [
+        "1m",
+        "3m",
+        "1y",
+        "all"
+       ]
+      },
+      "points": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "d": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+         },
+         "close": {
+          "type": "number"
+         }
+        },
+        "required": [
+         "d",
+         "close"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "last_close": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "last_day": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "change_pct": {
+       "type": [
+        "number",
+        "null"
+       ]
+      }
+     },
+     "required": [
+      "period",
+      "points",
+      "last_close",
+      "last_day",
+      "change_pct"
+     ],
+     "additionalProperties": false
+    },
+    "stats": {
+     "anyOf": [
+      {
+       "type": "object",
+       "properties": {
+        "as_of": {
+         "type": "string",
+         "format": "date",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+        },
+        "day_low": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "day_high": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "volume": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "year_low": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "year_high": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "year_low_day": {
+         "anyOf": [
+          {
+           "type": "string",
+           "format": "date",
+           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "year_high_day": {
+         "anyOf": [
+          {
+           "type": "string",
+           "format": "date",
+           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "year_days": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 9007199254740991
+        },
+        "from_high_pct": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "adjusted": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "as_of",
+        "day_low",
+        "day_high",
+        "volume",
+        "year_low",
+        "year_high",
+        "year_low_day",
+        "year_high_day",
+        "year_days",
+        "from_high_pct",
+        "adjusted"
+       ],
+       "additionalProperties": false
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "events": {
+     "type": "object",
+     "properties": {
+      "total": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "buyback": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "insider": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "deal": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "earnings": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      }
+     },
+     "required": [
+      "total",
+      "buyback",
+      "insider",
+      "deal",
+      "earnings"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "ticker",
+    "name",
+    "sector",
+    "price",
+    "stats",
+    "events"
+   ],
+   "additionalProperties": false
+  },
+  "b": {
+   "type": "object",
+   "properties": {
+    "ticker": {
+     "type": "string",
+     "pattern": "^[A-Z0-9]{3,6}$"
+    },
+    "name": {
+     "type": "string"
+    },
+    "sector": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "price": {
+     "type": "object",
+     "properties": {
+      "period": {
+       "type": "string",
+       "enum": [
+        "1m",
+        "3m",
+        "1y",
+        "all"
+       ]
+      },
+      "points": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "properties": {
+         "d": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+         },
+         "close": {
+          "type": "number"
+         }
+        },
+        "required": [
+         "d",
+         "close"
+        ],
+        "additionalProperties": false
+       }
+      },
+      "last_close": {
+       "type": [
+        "number",
+        "null"
+       ]
+      },
+      "last_day": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "change_pct": {
+       "type": [
+        "number",
+        "null"
+       ]
+      }
+     },
+     "required": [
+      "period",
+      "points",
+      "last_close",
+      "last_day",
+      "change_pct"
+     ],
+     "additionalProperties": false
+    },
+    "stats": {
+     "anyOf": [
+      {
+       "type": "object",
+       "properties": {
+        "as_of": {
+         "type": "string",
+         "format": "date",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+        },
+        "day_low": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "day_high": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "volume": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "year_low": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "year_high": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "year_low_day": {
+         "anyOf": [
+          {
+           "type": "string",
+           "format": "date",
+           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "year_high_day": {
+         "anyOf": [
+          {
+           "type": "string",
+           "format": "date",
+           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "year_days": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 9007199254740991
+        },
+        "from_high_pct": {
+         "type": [
+          "number",
+          "null"
+         ]
+        },
+        "adjusted": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "as_of",
+        "day_low",
+        "day_high",
+        "volume",
+        "year_low",
+        "year_high",
+        "year_low_day",
+        "year_high_day",
+        "year_days",
+        "from_high_pct",
+        "adjusted"
+       ],
+       "additionalProperties": false
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "events": {
+     "type": "object",
+     "properties": {
+      "total": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "buyback": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "insider": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "deal": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "earnings": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      }
+     },
+     "required": [
+      "total",
+      "buyback",
+      "insider",
+      "deal",
+      "earnings"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "ticker",
+    "name",
+    "sector",
+    "price",
+    "stats",
+    "events"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "period",
+  "a",
+  "b"
+ ],
+ "additionalProperties": false
+}

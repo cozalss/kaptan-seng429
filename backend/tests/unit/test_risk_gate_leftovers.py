@@ -1,12 +1,11 @@
-"""M4 package R: P8 cooldown in the gate, crisis ≤ 1 entry/day, m_reset ×0,5, security kill (06 §7.2, §9, §11)."""
+"""M4 package R: P8 cooldown in the gate, crisis ≤ 1 entry/day, no stop rule (06 §7.2, §9)."""
 
 from __future__ import annotations
 
 from dataclasses import replace
 from decimal import Decimal
 
-from kaptan.risk.gate import COOLDOWN_TR, GateContext, GateLimits, GateOrder, evaluate, evaluate_at_send, r01, r08
-from kaptan.risk.security_kill import SECURITY_KILL_THRESHOLD, should_kill
+from kaptan.risk.gate import CHECKS, COOLDOWN_TR, GateContext, GateLimits, GateOrder, evaluate, r08
 
 IDS = tuple(f"evt:{i}" for i in range(23))
 ORDER = GateOrder(
@@ -80,49 +79,13 @@ def test_crisis_entry_cap_is_a_limit_key() -> None:
     assert r08(ORDER, replace(CTX, regime="crisis"), lim, "pre_trade").outcome == "reject"
 
 
-# m_reset after a kill-switch restart ---------------------------------------------------------------------
+# No stop rule: a loss never blocks or shrinks an entry ------------------------------------------------------
 
 
-def test_reset_halves_a_buy_at_r01() -> None:
-    r = r01(ORDER, replace(CTX, reset_active=True), LIM, "pre_trade")
-    assert (r.outcome, r.new_qty) == ("resize", 500)
-    assert r.detail_tr == "Yeniden başlatma sonrası boyut ×0,5."
+def test_the_gate_has_no_stop_rule_any_more() -> None:
+    from kaptan.domain.schemas.rules import RISK_GATE_ORDER
 
-
-def test_reset_resize_flows_through_the_gate_and_escalates() -> None:
-    v = evaluate(ORDER, replace(CTX, reset_active=True))
-    assert v.verdict == "resize"
-    assert v.final_qty <= 500
-    assert "RESIZED" in v.escalation_reasons
-
-
-def test_reset_stacks_with_the_crisis_halving() -> None:
-    v = evaluate(ORDER, replace(CTX, reset_active=True, regime="crisis"))
-    assert v.final_qty <= 250
-
-
-def test_reset_does_not_touch_sells_or_the_at_send_recheck() -> None:
-    ctx = replace(CTX, reset_active=True, holds_ticker=True)
-    assert r01(replace(ORDER, side="sell"), ctx, LIM, "pre_trade").outcome == "pass"
-    assert r01(ORDER, ctx, LIM, "at_send").outcome == "pass"
-    assert evaluate_at_send(replace(ORDER, qty=500), replace(CTX, reset_active=True)).outcome == "pass"
-
-
-def test_reset_kill_switch_still_rejects_first() -> None:
-    assert r01(ORDER, replace(CTX, reset_active=True, kill_switch_on=True), LIM, "pre_trade").outcome == "reject"
-
-
-def test_reset_of_one_lot_rejects() -> None:
-    v = evaluate(replace(ORDER, qty=1), replace(CTX, reset_active=True))
-    assert (v.verdict, v.final_qty) == ("reject", 0)
-
-
-# Security kill rule (pure) ---------------------------------------------------------------------------------
-
-
-def test_security_kill_threshold() -> None:
-    assert SECURITY_KILL_THRESHOLD == 3
-    assert not should_kill(2, kill_on=False)
-    assert should_kill(3, kill_on=False)
-    assert should_kill(4, kill_on=False)
-    assert not should_kill(5, kill_on=True)
+    assert "R01" not in RISK_GATE_ORDER and "R02" not in RISK_GATE_ORDER
+    assert "R01" not in CHECKS and "R02" not in CHECKS
+    assert not hasattr(CTX, "kill_switch_on") and not hasattr(CTX, "halted_today")
+    assert evaluate(ORDER, CTX).approved

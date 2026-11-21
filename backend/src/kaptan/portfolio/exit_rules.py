@@ -1,9 +1,9 @@
 """Exit rules X1–X6 (06 §6), pure: one position's facts in, the rule that fires (if any) out.
 
 Evaluated after each session's close (18:15+, EOD prices). Priority when several fire: X2 stop >
-X3 negative news (N1) > X4 signal reversal > X1 time. X5 (kill switch) sells nothing: it hands the
-positions to X1–X4. X6 (break-even) never sells; it raises the stop to the entry price once the
-best close reached entry × (1 + 2 × stop_pct). No take-profit.
+X3 negative news (N1) > X4 signal reversal > X1 time. X5 (the retired kill switch) no longer exists.
+X6 (break-even) never sells; it raises the stop to the entry price once the best close
+reached entry × (1 + 2 × stop_pct). No take-profit.
 """
 
 from __future__ import annotations

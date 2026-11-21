@@ -19,9 +19,10 @@ def ist(y: int, m: int, d: int, hh: int, mm: int) -> datetime:
 def test_the_table_has_every_job_of_the_day_once() -> None:
     names = [j.name for j in s.JOBS]
     assert len(names) == len(set(names))
-    for want in ("issuer_profiles", "universe", "morning_brief", "risk_monitor", "quotes",
+    for want in ("issuer_profiles", "universe", "morning_brief", "quotes",
                  "eod_prices", "exits", "pnl_eod", "regime", "audit_anchor", "retention"):  # fmt: skip
         assert want in s.BY_NAME
+    assert "risk_monitor" not in s.BY_NAME  # there is no stop to watch for
     for job in s.JOBS:
         assert (job.at is None) != (job.every_min is None), job.name
         assert job.after is None or job.after in s.BY_NAME
@@ -49,13 +50,12 @@ def test_weekly_and_every_day_jobs() -> None:
 
 
 def test_interval_slots_round_down_and_respect_the_session() -> None:
-    quotes, monitor, tedbir = s.BY_NAME["quotes"], s.BY_NAME["risk_monitor"], s.BY_NAME["tedbir_sync"]
+    quotes, tedbir = s.BY_NAME["quotes"], s.BY_NAME["tedbir_sync"]
     assert s.slot_of(quotes, ist(2026, 10, 20, 10, 7)) == "2026-10-20T10:04"
-    assert s.slot_of(monitor, ist(2026, 10, 20, 10, 7)) == "2026-10-20T10:05"
-    assert s.slot_of(monitor, ist(2026, 10, 20, 9, 59)) is None
-    assert s.slot_of(monitor, ist(2026, 10, 20, 18, 10)) is None  # closing auction over
-    assert s.slot_of(monitor, ist(2026, 10, 28, 12, 35)) is None  # half day: closed at 12:30
-    assert s.slot_of(monitor, ist(2026, 10, 29, 11, 0)) is None
+    assert s.slot_of(quotes, ist(2026, 10, 20, 9, 59)) is None
+    assert s.slot_of(quotes, ist(2026, 10, 20, 18, 10)) is None  # closing auction over
+    assert s.slot_of(quotes, ist(2026, 10, 28, 12, 35)) is None  # half day: closed at 12:30
+    assert s.slot_of(quotes, ist(2026, 10, 29, 11, 0)) is None
     assert s.slot_of(tedbir, ist(2026, 10, 25, 3, 59)) == "2026-10-25T03:30"
     assert s.in_session(ist(2026, 10, 20, 10, 0))
 

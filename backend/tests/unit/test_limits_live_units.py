@@ -23,8 +23,6 @@ def test_the_canonical_v1_values_are_the_defaults() -> None:
         "target_concurrent_positions": 8,
         "max_adv_share": 0.01,
         "price_band_pct": 0.02,
-        "daily_loss_halt_pct": -0.01,
-        "kill_drawdown_pct": -0.05,
         "min_edge_cost_ratio": 2,
         "crisis_exposure_mult": 0.5,
         "max_sector_pct": 0.25,

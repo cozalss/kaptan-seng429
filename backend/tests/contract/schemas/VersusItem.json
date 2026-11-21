@@ -1,0 +1,44 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "key": {
+   "type": "string",
+   "enum": [
+    "you",
+    "usd",
+    "inflation",
+    "deposit"
+   ]
+  },
+  "label": {
+   "type": "string"
+  },
+  "pct": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "source_tr": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "hidden_reason_tr": {
+   "type": [
+    "string",
+    "null"
+   ]
+  }
+ },
+ "required": [
+  "key",
+  "label",
+  "pct",
+  "source_tr",
+  "hidden_reason_tr"
+ ],
+ "additionalProperties": false
+}

@@ -45,15 +45,12 @@ async def test_pending_is_the_default_filter(api: httpx.AsyncClient) -> None:
     assert [c["proposal_id"] for c in res.json()] == want
 
 
-async def test_kill_switch_cancels_pending_cards(api: httpx.AsyncClient, migrated: Settings) -> None:
-    await sql(migrated, "UPDATE trading.risk_state SET kill_switch = 'on', kill_reason = 'test' WHERE id = 1")
+async def test_old_stop_columns_cancel_nothing_and_block_nothing(api: httpx.AsyncClient, migrated: Settings) -> None:
+    await sql(migrated, "UPDATE trading.risk_state SET kill_switch = 'on', kill_reason = 'test', halted_today = true")
     cards = (await call(api, "GET", "/approvals?status=all")).json()
-    assert {c["status"] for c in cards} == {"cancelled", "approved", "rejected"}
+    assert "cancelled" not in {c["status"] for c in cards}
     res = await call(api, "POST", "/approvals/prop-day-e1-krgcl/decision", APPROVE)
-    assert (res.status_code, res.json()) == (
-        409,
-        {"detail": "Her şey durduruldu: yeni emir onaylanamaz.", "code": "kill_switch"},
-    )
+    assert res.status_code == 200, res.text
 
 
 @pytest.mark.parametrize(
@@ -81,11 +78,7 @@ async def test_decision_refusals(
         assert res.json()["detail"] == detail
 
 
-async def test_halt_blocks_approvals_but_not_rejections(api: httpx.AsyncClient, migrated: Settings) -> None:
-    await sql(migrated, "UPDATE trading.risk_state SET halted_today = true WHERE id = 1")
-    res = await call(api, "POST", "/approvals/prop-day-e1-krgcl/decision", APPROVE)
-    assert (res.status_code, res.json()["code"]) == (409, "halted")
-    assert res.json()["detail"] == "Günlük −%1 durdurması: bugün yeni emir verilemez."
+async def test_a_rejection_is_recorded(api: httpx.AsyncClient, migrated: Settings) -> None:
     reject = {"decision": "reject", "approved_notional_try": None, "comment": "Kanıt zayıf."}
     ok = await call(api, "POST", "/approvals/prop-day-e1-krgcl/decision", reject)
     assert ok.status_code == 200, ok.text

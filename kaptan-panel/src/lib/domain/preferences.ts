@@ -5,7 +5,7 @@ import { IsoDate, IsoDateTime } from "./common";
  * Personal settings of one person: Tatil modu (pause), which alert goes where and the quiet hours, and
  * "Şimdi yedek al". Backend: kaptan.api.routers.preferences, kaptan.domain.schemas.preferences.
  */
-export const ALERT_TOPICS = ["suggestion", "day_halt", "stopped", "part_down", "watched"] as const;
+export const ALERT_TOPICS = ["suggestion", "part_down", "watched", "price", "weekly"] as const;
 export const AlertTopic = z.enum(ALERT_TOPICS);
 export type AlertTopic = z.infer<typeof AlertTopic>;
 
@@ -15,19 +15,21 @@ export type KindChoice = z.infer<typeof KindChoice>;
 
 const Clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "HH:MM");
 
-/** Quiet hours in Istanbul time: messages wait and go out at `end`, except the full stop. */
+/** Quiet hours in Istanbul time: messages wait and go out at `end`. */
 export const QuietHours = z.object({ on: z.boolean(), start: Clock, end: Clock });
 export type QuietHours = z.infer<typeof QuietHours>;
 
 export const AlertPrefs = z.object({
   kinds: z.object({
     suggestion: KindChoice,
-    day_halt: KindChoice,
-    stopped: KindChoice,
     part_down: KindChoice,
     watched: KindChoice,
+    price: KindChoice,
+    weekly: KindChoice,
   }),
   quiet: QuietHours,
+  /** Companies whose suggestions and disclosures tell nobody outside the app (price alerts you made still go). */
+  muted: z.array(z.string()),
 });
 export type AlertPrefs = z.infer<typeof AlertPrefs>;
 

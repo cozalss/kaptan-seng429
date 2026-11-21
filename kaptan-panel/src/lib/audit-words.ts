@@ -106,6 +106,17 @@ function holdingSold(e: AuditEntry, what: string): string {
   return qty ? `${base}: ${qty} adet.` : `${base}.`;
 }
 
+function holdingBought(e: AuditEntry, what: string): string {
+  const qty = str(e.payload.qty);
+  const base = `${upperFirst(what)} hissesini aldığını kaydettin`;
+  return qty ? `${base}: ${qty} adet.` : `${base}.`;
+}
+
+function importApplied(e: AuditEntry): string {
+  const n = str(e.payload.written);
+  return n ? `Dökümden ${n} satırı deftere aktardın.` : "Bir dökümü deftere aktardın.";
+}
+
 function regimeChanged(e: AuditEntry): string {
   if (e.payload.to === "crisis") return "Piyasa kriz günlerine girdi; yeni alımlar yarı tutarla yapılacak.";
   if (e.payload.to === "normal") return "Piyasa normale döndü.";
@@ -140,6 +151,8 @@ const PHRASES: Readonly<Record<string, Phrase>> = {
   "money.withdrawn": moneyPhrase("Kasandan para çektin"),
   "holding.added": (e, what) => holdingAdded(e, what),
   "holding.sold": (e, what) => holdingSold(e, what),
+  "holding.bought": (e, what) => holdingBought(e, what),
+  "import.applied": (e) => importApplied(e),
   "holding.corrected": (_e, what) => `${upperFirst(what)} hissesinin kaydını düzelttin.`,
   "holding.undone": (_e, what) => `${upperFirst(what)} hissesini eklediğini geri aldın.`,
   "money.corrected": (e) => moneyCorrected(e),
@@ -154,6 +167,9 @@ const PHRASES: Readonly<Record<string, Phrase>> = {
   "rights.recorded": (_e, what) => `${upperFirst(what)} için bedelli pay aldığını kaydettin.`,
   "rights.corrected": (_e, what) => `${upperFirst(what)} bedelli pay kaydını geri aldın.`,
   "corporate.dismissed": () => "Bir şirket duyurusunu kapattın.",
+  "note.saved": (_e, what) => `${upperFirst(what)} için kendine not yazdın.`,
+  "note.cleared": (_e, what) => `${upperFirst(what)} için yazdığın notu sildin.`,
+  "concentration.threshold_set": (e) => `Tek hissede en çok tutmak istediğin payı %${String(e.payload.threshold_pct ?? "")} yaptın.`,
   "kill_switch.on": (e) => (isPerson(e.actor) ? "Her şeyi durdurdun." : "Paran zirvesinden %5 düştü; KAPtan her şeyi durdurdu."),
   "kill_switch.reset_started": () => "Yeniden başlatmayı istedin.",
   "kill_switch.reset": () => "İşlemleri yeniden başlattın.",

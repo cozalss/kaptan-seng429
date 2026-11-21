@@ -48,7 +48,6 @@ from kaptan.ingest.attachments import StoredAttachment, with_attachment_text
 from kaptan.llm.provider import LLMProvider
 from kaptan.llm.usage import sync_usage
 from kaptan.risk.cooldown import cooldown_active
-from kaptan.risk.security_kill import announce_kill, check_security_kill
 
 log = logging.getLogger("kaptan.agents.feed_run")
 
@@ -144,10 +143,6 @@ async def desk_for(
         free_float=float(issuer["free_float"]),
         equity_try=REPLAY_EQUITY_TRY,
         restrictions=tuple(Restriction(r["kind"], r["source_ref"]) for r in await q.restrictions(conn, ticker)),
-        kill_switch_on=risk["kill_switch"] == "on",
-        halted_today=bool(risk["halted_today"]),
-        daily_pnl_pct=Decimal(str(risk["daily_pnl_pct"])),
-        drawdown_pct=Decimal(str(risk["drawdown_pct"])),
         regime=str(risk["regime"]),
         n_open_positions=int(book["n_open"]),
         holds_ticker=bool(book["holds_ticker"]),
@@ -172,8 +167,6 @@ async def desk_for(
         live=True,
         equity_try=real.equity_try,
         cash_free_try=real.cash_free_try,
-        daily_pnl_pct=real.daily_pnl_pct,
-        drawdown_pct=real.drawdown_pct,
         n_open_positions=real.n_open_positions,
         holds_ticker=real.holds_ticker,
         last_price=real.last_price or desk.last_price,
@@ -184,7 +177,6 @@ async def desk_for(
         sector_exposure_pct=real.sector_exposure_pct,
         group_exposure_pct=real.group_exposure_pct,
         gross_exposure_pct=real.gross_exposure_pct,
-        reset_active=real.reset_active,
     )
 
 
@@ -284,9 +276,8 @@ async def persist_live(
     *,
     limits_version: int | None = None,
     manifest_hash: str = "",
-) -> tuple[str, bool]:
-    """Run, link, card, counters, audit outcome and the feed row in one transaction. Returns the feed
-    status and whether this run engaged the security kill (06 §11 c)."""
+) -> str:
+    """Run, link, card, counters, audit outcome and the feed row in one transaction. Returns the feed status."""
     run, disc, card = explain["run"], explain["disclosure"], explain["approval"]
     feed_status = "waiting_approval" if card is not None else "done"
     run_params = (
@@ -324,12 +315,11 @@ async def persist_live(
                 draft = replace(draft, payload={**draft.payload, "limits_version": limits_version})
             await append(conn, [draft], now=now)
         await write_run_rows(conn, explain, manifest_hash)  # FR-19: per-node outputs + gate checks
-        killed = await check_security_kill(conn, now)  # 06 §11 (c): the day's 3rd R11 reject → kill switch
         await conn.execute(
             FEED_DONE_SQL,
             (feed_status, run["run_id"], run["llm_calls"], run["outcome"], now, now, run["disclosure_index"]),
         )
-    return feed_status, killed
+    return feed_status
 
 
 async def announce(redis: Any, conn: AsyncConnection[Any], explain: dict[str, Any], now: datetime) -> int:
@@ -352,16 +342,13 @@ async def run_disclosure(conn: AsyncConnection[Any], index: int, now: datetime, 
     await conn.commit()  # no read snapshot held while the models answer
     state = await run_or_resume(ctx, ctx.disclosure.run_id)
     explain = assemble(state, ctx, doc, texts)
-    feed_status, killed = await persist_live(
+    feed_status = await persist_live(
         conn, explain, now, limits_version=ctx.limits_version, manifest_hash=ctx.prompt_manifest_hash
     )
     await sync_usage(conn, deps.provider)
     if deps.redis is not None:
         await announce(deps.redis, conn, explain, now)
         await conn.commit()
-        if killed:  # after the commit, like POST /risk/kill-switch
-            await announce_kill(deps.redis, conn, now)
-            await conn.commit()
     run = explain["run"]
     return LiveResult(run["run_id"], feed_status, run["outcome"], int(run["llm_calls"]), explain)
 

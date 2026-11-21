@@ -1,4 +1,5 @@
 import type { Position } from "@/lib/domain";
+import type { ImportMapping } from "@/lib/domain/imports";
 import type { MoneyMovement, PreviousBook } from "@/lib/solo/money";
 import { corporateCash, extrasOf, type CorporateRow } from "./corporate-ledger";
 
@@ -56,6 +57,8 @@ export interface OwnHolding {
   sales: OwnSale[];
   /** The movement this holding wrote into the list (so an undo finds it). */
   movement_id?: string;
+  /** Bought at the bank and imported from a statement: what it cost in cash with commission (a share added by hand costs none). */
+  paid_cash?: number;
 }
 
 /** A movement as stored; the list adds what was fixed (movementsOf). */
@@ -79,6 +82,11 @@ export interface MockBook {
   corporate?: CorporateRow[];
   /** What was done with a KAP notice about a company action, by notice id. */
   notices?: Record<string, "recorded" | "dismissed">;
+  /** The person's limit for one share (%) and private notes per share (mock/insights.ts). */
+  insights?: { threshold_pct: number; notes: Array<{ ticker: string; body: string; updated_at: string }> };
+  /** Statement rows already imported (a stand-in for the backend's row hashes), and the column mapping kept per source. */
+  imported?: string[];
+  importMappings?: Record<string, { mapping: ImportMapping; header_key: string }>;
 }
 
 export function initialBook(fresh: boolean): MockBook {
@@ -146,7 +154,8 @@ export function cashOf(book: MockBook, seedCash: number, fills: readonly BookFil
   const moved = movedByHand(book);
   const traded = fills.reduce((sum, f) => sum + (f.side === "buy" ? -(f.qty * f.price + f.commission) : f.qty * f.price - f.commission), 0);
   const ownSales = book.holdings.flatMap((h) => h.sales).reduce((sum, s) => sum + s.qty * s.price - s.commission, 0);
-  return cents(seedCash + moved + traded + ownSales + corporateCash(book.corporate));
+  const bought = book.holdings.reduce((sum, h) => sum + (h.paid_cash ?? 0), 0);
+  return cents(seedCash + moved + traded + ownSales + corporateCash(book.corporate) - bought);
 }
 
 /**
@@ -155,7 +164,7 @@ export function cashOf(book: MockBook, seedCash: number, fills: readonly BookFil
  */
 export function flowsOf(book: MockBook): number {
   const moved = movedByHand(book);
-  const joined = book.holdings.filter((h) => !book.undone?.[h.movement_id ?? ""]).reduce((sum, h) => sum + h.qty * h.price_at_add, 0);
+  const joined = book.holdings.filter((h) => !h.paid_cash && !book.undone?.[h.movement_id ?? ""]).reduce((sum, h) => sum + h.qty * h.price_at_add, 0);
   return cents(moved + joined);
 }
 

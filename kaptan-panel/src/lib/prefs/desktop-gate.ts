@@ -43,12 +43,20 @@ function safeStore(): Storage | null {
 
 /** The panel's alert kinds (lib/alerts/alerts.ts) as the topics of the preferences. */
 export const TOPIC_OF_ALERT: Readonly<
-  Record<"suggestion" | "halt" | "stop", AlertTopic>
-> = { suggestion: "suggestion", halt: "day_halt", stop: "stopped" };
+  Record<"suggestion" | "price", AlertTopic>
+> = {
+  suggestion: "suggestion",
+  price: "price",
+};
 
 export function mayShowOnThisComputer(
-  kind: "suggestion" | "halt" | "stop",
+  kind: "suggestion" | "price",
   ms: number = Date.now(),
 ): boolean {
   return desktopAllowed(rememberedAlertPrefs(), TOPIC_OF_ALERT[kind], ms);
+}
+
+/** True when the person muted this company (Ayarlar · Şirket bazında sustur): no message outside the app for it. */
+export function isMuted(ticker: string | null | undefined): boolean {
+  return ticker != null && rememberedAlertPrefs().muted.includes(ticker);
 }

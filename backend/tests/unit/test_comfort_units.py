@@ -38,7 +38,6 @@ def test_decide_sends_holds_or_skips() -> None:
     prefs = with_defaults({"quiet": quiet()})
     assert decide(prefs, "suggestion", NOON) == "send"
     assert decide(prefs, "suggestion", NIGHT) == "hold"
-    assert decide(prefs, "stopped", NIGHT) == "send"  # the full stop always goes
     assert decide(prefs, "test", NIGHT) == "send"
     off = with_defaults({"kinds": {"watched": {"phone": False}}})
     assert decide(off, "watch", NOON) == "skip"
@@ -47,8 +46,9 @@ def test_decide_sends_holds_or_skips() -> None:
 
 def test_an_older_document_is_completed_with_the_defaults() -> None:
     assert with_defaults(None) == default_prefs()
-    got = with_defaults({"kinds": {"stopped": {"desktop": False}}})
-    assert got["kinds"]["stopped"] == {"phone": True, "desktop": False}
+    got = with_defaults({"kinds": {"stopped": {"desktop": False}, "price": {"desktop": False}}})
+    assert "stopped" not in got["kinds"]  # a retired topic of an old document is dropped
+    assert got["kinds"]["price"] == {"phone": True, "desktop": False}
     assert got["kinds"]["suggestion"] == {"phone": True, "desktop": True}
 
 
@@ -150,18 +150,18 @@ async def test_a_message_in_the_quiet_hours_waits_and_goes_out_after(monkeypatch
     assert sent == ["KAPtan: yeni bir önerin var."] and redis.held == {}
 
 
-async def test_the_full_stop_is_never_held_and_an_off_kind_is_not_sent() -> None:
+async def test_the_test_message_is_never_held_and_an_off_kind_is_not_sent() -> None:
     sent: list[str] = []
 
     async def deliver(text: str) -> None:
         sent.append(text)
 
     redis = FakeRedis()
-    pool = Pool({"quiet": quiet(), "kinds": {"day_halt": {"phone": False}}})
+    pool = Pool({"quiet": quiet(), "kinds": {"watched": {"phone": False}}})
     senders = {"ntfy": deliver}
-    assert await announce(pool, redis, CFG, "stopped", now=NIGHT, senders=senders) == "sent"
-    assert sent == ["KAPtan durduruldu."]
-    assert await announce(pool, redis, CFG, "day_halt", now=NOON, senders=senders) == "off"
+    assert await announce(pool, redis, CFG, "test", now=NIGHT, senders=senders) == "sent"
+    assert sent == ["KAPtan: deneme bildirimi."]
+    assert await announce(pool, redis, CFG, "watch", now=NOON, senders=senders) == "off"
     assert len(sent) == 1
 
 
@@ -182,5 +182,5 @@ async def test_unreadable_preferences_fall_back_to_the_defaults() -> None:
         def connection(self) -> None:
             raise RuntimeError("db away")
 
-    assert await announce(Broken(), FakeRedis(), CFG, "stopped", now=NIGHT, senders={"ntfy": deliver}) == "sent"
+    assert await announce(Broken(), FakeRedis(), CFG, "test", now=NIGHT, senders={"ntfy": deliver}) == "sent"
     assert sent

@@ -100,13 +100,4 @@ describe("Baştan başla", () => {
     expect((await api.previousBooks()).length).toBe(1);
     expect((await api.overview()).needs_setup).toBe(true);
   });
-
-  it("says before the word that a stop that is on stays on", async () => {
-    const u = user();
-    const api = await started();
-    await api.killSwitch("Deneme için durdurdum");
-    renderWithApi(<BookTools />, api);
-    await u.click(screen.getByRole("button", { name: "Baştan başla" }));
-    expect(await screen.findByText(/her şey durdurulmuş\. Baştan başlasan da durdurma açık kalır/)).toBeInTheDocument();
-  });
 });

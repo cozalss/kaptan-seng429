@@ -24,10 +24,11 @@ describe("Ayarlar · sınırlar", () => {
     const { db } = renderWithDesk(<SettingsScreen />, new MockDb(null));
     const active = await screen.findByRole("list", { name: "Geçerli sınırlar" });
     expect(within(active).getByText("Bir işlemde en fazla paranın %0,5’i riske girer.")).toBeInTheDocument();
-    expect(within(active).getByText("Paran en yüksek hâlinden %5 düşerse her şey durur.")).toBeInTheDocument();
+    expect(within(active).getByText("Aynı anda en fazla 10 farklı hisse elinde olur.")).toBeInTheDocument();
+    expect(within(active).queryByText(/her şey durur/)).toBeNull();
     // What it comes to for you, in lira, from the real money.
     expect(await within(active).findByText(/^Bugünkü paranla: bir işlemde .* ₺ kadar\.$/)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1, name: /^Ayarlar\.\s*Paranı 8 sınır koruyor\.$/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /^Ayarlar\.\s*Paranı 6 sınır koruyor\.$/ })).toBeInTheDocument();
 
     await u.click(screen.getByRole("button", { name: "Değiştir: Bir işlemin riski" }));
     const form = screen.getByRole("form", { name: "Sınırı değiştir" });

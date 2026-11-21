@@ -2,7 +2,7 @@
 
 K1 config (`config/trading.yaml` mode: live, or KAPTAN_MODE=live) · K2 env (KAPTAN_LIVE_ENABLED=true)
 · K3 UI: you start the arm (1/2) and confirm it (2/2, the second signature waived and audited); it
-drops by itself at 18:30 Istanbul and cannot be set while the kill switch is on.
+drops by itself at 18:30 Istanbul.
 
 Arming only records the keys. There is no real broker for BIST, so `missing_keys()` always lists
 `real_broker` and the order path stays on SimBIST (paper), auditing the fallback.
@@ -33,7 +33,6 @@ STATE_SQL: Final = """
 SELECT config_live, env_enabled, ui_key, armed, expires_at, arm_started, armed_by, updated_at
 FROM trading.live_arm WHERE id = 1
 """
-KILL_SQL: Final = "SELECT kill_switch FROM trading.risk_state WHERE id = 1"
 ArmAction = Literal["start", "confirm", "disarm"]
 
 
@@ -68,20 +67,12 @@ async def read_state(conn: AsyncConnection[Any], *, lock: bool = False) -> LiveS
     )
 
 
-async def kill_on(conn: AsyncConnection[Any]) -> bool:
-    async with conn.cursor() as cur:
-        await cur.execute(KILL_SQL)
-        row = await cur.fetchone()
-    return row is not None and row["kill_switch"] == "on"
-
-
-def missing_keys(cfg: ExecConfig, state: LiveState, now: datetime, *, kill: bool) -> list[str]:
-    """Why a live send is not allowed (empty = allowed). Order: config, env, ui_armed, kill_switch_off, real_broker."""
+def missing_keys(cfg: ExecConfig, state: LiveState, now: datetime) -> list[str]:
+    """Why a live send is not allowed (empty = allowed). Order: config, env, ui_armed, real_broker."""
     checks = (
         ("config", cfg.trading.mode == "live" or cfg.mode_live),
         ("env", cfg.live_env_enabled),
         ("ui_armed", state.ui_armed(now)),
-        ("kill_switch_off", not kill),
         ("real_broker", bool(REAL_BROKERS)),
     )
     return [name for name, ok in checks if not ok]
@@ -93,9 +84,9 @@ def arm_expiry(now: datetime) -> datetime:
     return datetime.combine(local.date(), ARM_UNTIL, tzinfo=IST)
 
 
-def view(cfg: ExecConfig, state: LiveState, now: datetime, *, kill: bool) -> dict[str, Any]:
+def view(cfg: ExecConfig, state: LiveState, now: datetime) -> dict[str, Any]:
     """GET /admin/live: LiveArmState + the pending signature + what still blocks a live send."""
-    missing = missing_keys(cfg, state, now, kill=kill)
+    missing = missing_keys(cfg, state, now)
     return {
         "config_live": cfg.trading.mode == "live" or cfg.mode_live,
         "env_enabled": cfg.live_env_enabled,
@@ -168,14 +159,11 @@ async def change(
     """start (1/2) · confirm (2/2, the second signature waived and audited) · disarm. One transaction + audit."""
     async with conn.transaction():
         state = await read_state(conn, lock=True)
-        kill = await kill_on(conn)
         sig = _signature(uid, name, role, now, reason)
         payload: dict[str, Any]
         if action == "disarm":
             await _write(conn, cfg, ui=False, expires=None, started=None, armed_by=None, now=now)
             audit_action, payload = "live.disarmed", {"role": role}
-        elif kill:
-            raise ApiError(409, "kill_switch", "Her şey durduruldu: canlı mod açılamaz.")
         elif action == "start":
             if state.ui_armed(now):
                 raise ApiError(409, "already_on", "Canlı anahtar bugün zaten açık.")
@@ -199,7 +187,7 @@ async def change(
                 raise ApiError(409, "conflict", "Gün sonu geçti (18:30): yarın yeniden başlat.")
             expires = arm_expiry(now)
             await _write(conn, cfg, ui=True, expires=expires, started=None, armed_by=sig, now=now)
-            missing = missing_keys(cfg, LiveState(False, False, True, False, expires, None, sig), now, kill=False)
+            missing = missing_keys(cfg, LiveState(False, False, True, False, expires, None, sig), now)
             audit_action, payload = "live.armed", {"role": role, "missing": missing}
         draft = AuditDraft(
             actor=f"user:{uid}",

@@ -115,18 +115,18 @@ describe("useEventStream (mock bus)", () => {
     __setMockDb(db);
     const seen: string[] = [];
     function Listener() {
-      const status = useEventStream("desk", { halt: (d) => seen.push(`halt:${d.halted_today}`) });
+      const status = useEventStream("desk", { regime: (d) => seen.push(`regime:${d.regime}`) });
       return <p>{status}</p>;
     }
     render(<Listener />);
     expect(screen.getByText("open")).toBeInTheDocument();
-    const risk = (await apiWith(db).riskStatus()) as { halted_today: boolean };
+    const risk = await apiWith(db).riskStatus();
     act(() => {
-      db.bus.emit("desk", "halt", risk);
-      db.bus.emit("desk", "halt", { nonsense: true });
+      db.bus.emit("desk", "regime", risk);
+      db.bus.emit("desk", "regime", { nonsense: true });
       db.bus.emit("desk", "unknown", {});
     });
-    expect(seen).toEqual(["halt:false"]);
+    expect(seen).toEqual(["regime:normal"]);
   });
 });
 

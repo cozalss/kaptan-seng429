@@ -105,8 +105,12 @@ async def test_unknown_restrictions_block_then_a_hard_restriction_then_it_sends(
     await live_card.commit()
 
 
-async def test_a_daily_halt_blocks_through_the_decision_check(client: httpx.AsyncClient, live_card: DictConn) -> None:
-    await live_card.execute("UPDATE trading.risk_state SET halted_today = true")
+async def test_an_old_halt_flag_blocks_nothing(client: httpx.AsyncClient, live_card: DictConn) -> None:
+    await live_card.execute(
+        "INSERT INTO core.restriction_refresh (source, refreshed_at, n_rows) VALUES ('test', %s, 1)",
+        (datetime(2027, 1, 11, 7, 0, tzinfo=UTC),),
+    )
+    await live_card.execute("UPDATE trading.risk_state SET halted_today = true, kill_switch = 'on'")
     await live_card.commit()
     res = await _approve(client)
-    assert res.status_code == 409 and res.json()["code"] == "halted"
+    assert res.status_code == 200, res.text  # nothing reads the retired stop columns any more

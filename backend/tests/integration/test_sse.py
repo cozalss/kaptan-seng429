@@ -238,7 +238,7 @@ async def test_decided_card_reaches_the_desk_within_a_second_and_replays(live_ap
 
         # Disconnected: desk + feed events happen; the desk reconnect with the last id replays its own, in order.
         missed = [
-            await publish(live_app, "desk", "halt", json.loads((EXPECTED / "risk_status.json").read_text("utf-8"))),
+            await publish(live_app, "desk", "regime", json.loads((EXPECTED / "risk_status.json").read_text("utf-8"))),
             await publish(live_app.state.redis, "feed", "counters", COUNTERS),
         ]
         await publish(
@@ -249,7 +249,7 @@ async def test_decided_card_reaches_the_desk_within_a_second_and_replays(live_ap
             lines = res.aiter_lines()
             first = await asyncio.wait_for(_next_event(lines), timeout=1)
             second = await asyncio.wait_for(_next_event(lines), timeout=1)
-        assert (first["id"], first["event"]) == (missed[0], "halt")
+        assert (first["id"], first["event"]) == (missed[0], "regime")
         assert second["event"] == "limits.changed"  # the feed event lives on the feed stream
 
         # The browser's own reconnect sends Last-Event-ID instead of the query parameter.

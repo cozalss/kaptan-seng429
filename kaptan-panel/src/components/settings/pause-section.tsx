@@ -57,7 +57,7 @@ export function PauseSection() {
       <p className="ay-block-lead">
         Tatildeysen ya da bir süre öneri istemiyorsan KAPtan’a ara ver.
         Bildirimleri okumaya ve saklamaya devam eder; öneri çıkarmaz ve ücretsiz
-        kotanı harcamaz. Durdurma sınırların çalışmaya devam eder.{" "}
+        kotanı harcamaz.{" "}
         <WhatIs term="tatil-modu" />
       </p>
 

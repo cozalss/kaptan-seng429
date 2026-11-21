@@ -26,15 +26,19 @@ class QuietHours(KModel):
 
 class AlertKinds(KModel):
     suggestion: KindChoice
-    day_halt: KindChoice
-    stopped: KindChoice
     part_down: KindChoice
     watched: KindChoice
+    price: KindChoice = KindChoice(phone=True, desktop=True)
+    weekly: KindChoice = KindChoice(phone=True, desktop=True)
 
 
 class AlertPrefs(KModel):
     kinds: AlertKinds
     quiet: QuietHours
+    #: Companies whose suggestions and disclosures tell nobody outside the app.
+    muted: Annotated[list[Annotated[str, Field(pattern=r"^[A-Z0-9]{3,6}$")]], Field(max_length=50)] = Field(
+        default_factory=list
+    )
 
 
 class Pause(KModel):

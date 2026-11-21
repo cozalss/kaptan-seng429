@@ -8,7 +8,7 @@ import { prefersReducedMotion } from "@/lib/utils";
 import { Boat } from "@/components/ufuk/boat";
 import { Button } from "@/components/ui/button";
 import { OrderSlip } from "@/components/proposal/order-slip";
-import { closedFor, LEAVE_MS, sectionSentence, splitDecisions, stepFor, type Flight } from "@/components/proposal/decide-logic";
+import { LEAVE_MS, sectionSentence, splitDecisions, stepFor, type Flight } from "@/components/proposal/decide-logic";
 import { InkSeal, useLanded } from "@/components/proposal/seal";
 import { SuggestionObject, type ObjectFacts, type OrderFigures } from "@/components/proposal/suggestion-object";
 import type { Decisions } from "@/components/proposal/use-decisions";
@@ -35,9 +35,6 @@ export interface SuggestionsProps {
   figures?: ReadonlyMap<string, OrderFigures>;
   /** What is held now, by symbol (TUT shows it). */
   held?: ReadonlyMap<string, number>;
-  stopped: boolean;
-  /** Money fell too far today: no new orders, Geç stays open. */
-  halted?: boolean;
   /** Today's reading, for the empty state: how many notices were read and looked at closely. */
   today?: { read: number; toCrew: number } | null;
   decisions: Decisions;
@@ -48,10 +45,9 @@ export interface SuggestionsProps {
  * the rest visibly queued and one press away. Everything is a plain list to a screen reader, and a
  * button to a keyboard; on a phone a swipe also shows the next one.
  */
-export function Suggestions({ suggestions, names, figures, held, stopped, halted = false, today = null, decisions }: SuggestionsProps) {
+export function Suggestions({ suggestions, names, figures, held, today = null, decisions }: SuggestionsProps) {
   const { state, steps, onAnswer, onPick } = decisions;
   const { front, queue } = splitDecisions(orderSuggestions(suggestions), state);
-  const closed = closedFor({ stopped, halted });
   const open = [front, ...queue].filter((s): s is Suggestion => s !== null);
   const facts = (s: Suggestion): ObjectFacts => ({ s, name: names.get(s.symbol) ?? null, figures: figures?.get(s.id) ?? null, heldAmount: held?.get(s.symbol) ?? null });
 
@@ -89,14 +85,14 @@ export function Suggestions({ suggestions, names, figures, held, stopped, halted
       </p>
       {open.length === 0 && answered.length === 0 ? (
         <div className="oneri-stack-wrap">
-          <EmptySuggestions today={today} stopped={stopped} />
+          <EmptySuggestions today={today} />
           {leaving.map((f) => (
             <LeavingSheet key={f.id} flight={f} />
           ))}
         </div>
       ) : (
         <>
-          <h2 className="u-chapter oneri-section-head">{sectionSentence({ decisions: open.length, steps: waitingAtBank, stopped })}</h2>
+          <h2 className="u-chapter oneri-section-head">{sectionSentence({ decisions: open.length, steps: waitingAtBank })}</h2>
           {answered.length ? (
             <div className="oneri-steps">
               {answered.map((id) => (
@@ -107,7 +103,7 @@ export function Suggestions({ suggestions, names, figures, held, stopped, halted
           <div className="oneri-stack-wrap">
             {front ? (
               <SwipeStack data-behind={Math.min(queue.length, 2)} next={() => nextOf(open, frontId, 1, pick)} previous={() => nextOf(open, frontId, -1, pick)}>
-                <SuggestionObject key={front.id} ref={frontHeading} facts={facts(front)} lead="Şimdi buna karar ver" canApprove={closed.canApprove} canSkip={closed.canSkip} closedReason={closed.reason} sealing={false} error={frontError} sharesVerb onAnswer={answer} />
+                <SuggestionObject key={front.id} ref={frontHeading} facts={facts(front)} lead="Şimdi buna karar ver" canApprove canSkip sealing={false} error={frontError} sharesVerb onAnswer={answer} />
               </SwipeStack>
             ) : null}
             {leaving.map((f) => (
@@ -255,18 +251,16 @@ function Queue({ queue, facts, errors, onPick }: { queue: readonly Suggestion[];
 }
 
 /** Nothing to decide is a good day, and the reading counts show why it is not a broken page. */
-function EmptySuggestions({ today, stopped }: { today: { read: number; toCrew: number } | null; stopped: boolean }) {
+function EmptySuggestions({ today }: { today: { read: number; toCrew: number } | null }) {
   return (
     <div className="oneri-empty">
       <div aria-hidden className="oneri-empty-sea">
         <span className="oneri-empty-sun" />
         <Boat className="oneri-empty-boat" />
       </div>
-      <h2 className="u-chapter oneri-empty-head">{sectionSentence({ decisions: 0, steps: 0, stopped })}</h2>
+      <h2 className="u-chapter oneri-empty-head">{sectionSentence({ decisions: 0, steps: 0 })}</h2>
       <p className="oneri-empty-body">
-        {stopped ? (
-          "Sen yeniden başlatana kadar KAPtan yeni öneri çıkarmaz. Elindeki hisseler yerinde duruyor."
-        ) : today && today.read > 0 ? (
+        {today && today.read > 0 ? (
           <>
             KAPtan bugün <strong>{fmtInt(today.read)}</strong> bildirim okudu, <strong>{fmtInt(today.toCrew)}</strong> tanesine yakından baktı. Şu an senden bir şey beklemiyor.
           </>
@@ -274,7 +268,7 @@ function EmptySuggestions({ today, stopped }: { today: { read: number; toCrew: n
           "KAPtan KAP duyurularını okuyor. Söyleyecek bir şeyi olunca burada konuşur; şu an senden bir şey beklemiyor."
         )}
       </p>
-      {stopped ? null : <p className="oneri-empty-note">Bir şey çıkarsa burada görürsün; sayfayı yenilemen gerekmez.</p>}
+      <p className="oneri-empty-note">Bir şey çıkarsa burada görürsün; sayfayı yenilemen gerekmez.</p>
     </div>
   );
 }

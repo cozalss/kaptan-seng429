@@ -1,4 +1,5 @@
-import type { Company, CompanyHit, DisclosureReading, PastDecision, Period, PricePoint, SearchResult, WatchItem } from "@/lib/company/company";
+import type { Company, CompanyHit, InsiderEvent, PriceStats, DisclosureReading, PastDecision, Period, PricePoint, SearchResult, WatchItem } from "@/lib/company/company";
+import type { Compare, CompareSide } from "@/lib/domain/reading";
 import { MAX_WATCHED } from "@/lib/company/company";
 import { foldTr, rankCompany } from "@/lib/company/fold";
 import { ISSUERS } from "@/mocks/issuers";
@@ -36,7 +37,31 @@ const TAIL: Readonly<Record<string, string>> = {
   cancelled: "önerdim; öneri iptal oldu.",
 };
 
-export function createInsight(ctx: MockCtx): Pick<KaptanApi, "company" | "search" | "watchlist" | "watch" | "unwatch" | "disclosureReading"> {
+const YEAR = 252;
+
+function statsOf(points: readonly PricePoint[], full: readonly PricePoint[]): PriceStats | null {
+  const last = full.at(-1);
+  if (!last) return null;
+  const closes = full.map((p) => p.close);
+  const hi = Math.max(...closes);
+  const lo = Math.min(...closes);
+  const prev = points.at(-2)?.close ?? last.close;
+  return {
+    as_of: last.d,
+    day_low: round2(Math.min(prev, last.close)),
+    day_high: round2(Math.max(prev, last.close)),
+    volume: 1_250_000,
+    year_low: lo,
+    year_high: hi,
+    year_low_day: full.find((p) => p.close === lo)?.d ?? null,
+    year_high_day: full.find((p) => p.close === hi)?.d ?? null,
+    year_days: full.length,
+    from_high_pct: round2((last.close / hi - 1) * 100),
+    adjusted: false,
+  };
+}
+
+export function createInsight(ctx: MockCtx): Pick<KaptanApi, "company" | "compare" | "search" | "watchlist" | "watch" | "unwatch" | "disclosureReading"> {
   const { db, me, ok } = ctx;
   const today = () => ctx.now().slice(0, 10);
 
@@ -79,6 +104,12 @@ export function createInsight(ctx: MockCtx): Pick<KaptanApi, "company" | "search
       const held = sel.positions(db.snapshot).filter((p) => p.ticker === code);
       const qty = held.reduce((a, p) => a + p.qty, 0);
       const cost = qty ? held.reduce((a, p) => a + p.qty * p.avg_cost, 0) / qty : 0;
+      const full = walk(code, i.price, YEAR, today());
+      const all = sel.visibleDisclosures(db.snapshot).filter((d) => d.stock_codes.includes(code));
+      const insiders: InsiderEvent[] = all.flatMap((d) => {
+        const t = d.classification?.event_type;
+        return t === "E1" || t === "E2" ? [{ kind: t === "E1" ? ("buyback" as const) : ("insider" as const), disclosure: d }] : [];
+      });
       const doc: Company = {
         ticker: code,
         name: i.name,
@@ -87,10 +118,38 @@ export function createInsight(ctx: MockCtx): Pick<KaptanApi, "company" | "search
         following: { in_universe: i.inUniverse, known: true, reasons_tr: i.inUniverse ? [] : ["Günlük işlem hacmi çok düşük; istediğin kadarını rahat alıp satamazsın."] },
         watched: db.snapshot.watchlist.includes(code),
         price: { period, points, last_close: last, last_day: points.at(-1)?.d ?? null, change_pct: last && prev ? round2((last / prev - 1) * 100) : null },
+        stats: statsOf(points, full),
+        benchmark: { name: "BIST 100", points: walk("XU100", 10_500, DAYS[period], today()) },
+        insiders: insiders.slice(0, 20),
         position: qty && last ? { qty, avg_cost: cost, last_price: last, gain_try: round2((last - cost) * qty), gain_pct: round2((last / cost - 1) * 100), since: held[0]?.opened_at ?? ctx.now() } : null,
         disclosures: sel.visibleDisclosures(db.snapshot).filter((d) => d.stock_codes.includes(code)).slice(0, 30),
         decisions: decisionsOf(code),
       };
+      return ok(doc, 120);
+    },
+
+    async compare(a, b, period = "3m") {
+      me();
+      const codes = [a.toUpperCase(), b.toUpperCase()];
+      if (codes[0] === codes[1]) throw new ApiError(422, "validation", "İki farklı şirket seç.");
+      const side = (code: string): CompareSide => {
+        const i = ISSUERS.find((x) => x.ticker === code);
+        if (!CODE.test(code) || !i) throw new ApiError(404, "not_found", `${code} diye bir şirket bulamadım.`);
+        const points = walk(code, i.price, DAYS[period], today());
+        const last = points.at(-1)?.close ?? null;
+        const prev = points.at(-2)?.close ?? null;
+        const mine = sel.visibleDisclosures(db.snapshot).filter((d) => d.stock_codes.includes(code) && !d.is_noise);
+        const n = (t: string) => mine.filter((d) => d.classification?.event_type === t).length;
+        return {
+          ticker: code,
+          name: i.name,
+          sector: i.sector,
+          price: { period, points, last_close: last, last_day: points.at(-1)?.d ?? null, change_pct: last && prev ? round2((last / prev - 1) * 100) : null },
+          stats: statsOf(points, walk(code, i.price, YEAR, today())),
+          events: { total: mine.length, buyback: n("E1"), insider: n("E2"), deal: n("E3"), earnings: n("E4") },
+        };
+      };
+      const doc: Compare = { period, a: side(codes[0] ?? ""), b: side(codes[1] ?? "") };
       return ok(doc, 120);
     },
 

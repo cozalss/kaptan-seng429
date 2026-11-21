@@ -180,6 +180,17 @@ def _holding_added(e: Entry, what: str) -> str:
     return f"{base}: {qty} adet, tanesi {cost}." if cost else f"{base}: {qty} adet."
 
 
+def _holding_bought(e: Entry, what: str) -> str:
+    qty = _str(e["payload"].get("qty"))
+    base = f"{_upper_first(what)} hissesini aldığını kaydettin"
+    return f"{base}: {qty} adet." if qty else f"{base}."
+
+
+def _import_applied(e: Entry, _what: str) -> str:
+    n = _str(e["payload"].get("written"))
+    return f"Dökümden {n} satırı deftere aktardın." if n else "Bir dökümü deftere aktardın."
+
+
 def _holding_sold(e: Entry, what: str) -> str:
     qty = _str(e["payload"].get("qty"))
     base = f"{_upper_first(what)} hissesini sattığını kaydettin"
@@ -268,6 +279,8 @@ PHRASES: Final[dict[str, Phrase]] = {
     "money.withdrawn": _money("Kasandan para çektin"),
     "holding.added": _holding_added,
     "holding.sold": _holding_sold,
+    "holding.bought": _holding_bought,
+    "import.applied": _import_applied,
     "holding.corrected": lambda _e, what: f"{_upper_first(what)} hissesinin kaydını düzelttin.",
     "holding.undone": lambda _e, what: f"{_upper_first(what)} hissesini eklediğini geri aldın.",
     "money.corrected": _money_corrected,
@@ -282,6 +295,11 @@ PHRASES: Final[dict[str, Phrase]] = {
     "rights.recorded": lambda _e, what: f"{_upper_first(what)} için bedelli pay aldığını kaydettin.",
     "rights.corrected": lambda _e, what: f"{_upper_first(what)} bedelli pay kaydını geri aldın.",
     "corporate.dismissed": lambda _e, _x: "Bir şirket duyurusunu kapattın.",
+    "note.saved": lambda _e, what: f"{_upper_first(what)} için kendine not yazdın.",
+    "note.cleared": lambda _e, what: f"{_upper_first(what)} için yazdığın notu sildin.",
+    "concentration.threshold_set": lambda e, _x: (
+        f"Tek hissede en çok tutmak istediğin payı %{e['payload'].get('threshold_pct', '')} yaptın."
+    ),
     "kill_switch.on": _kill_on,
     "kill_switch.reset_started": lambda _e, _x: "Yeniden başlatmayı istedin.",
     "kill_switch.reset": lambda _e, _x: "İşlemleri yeniden başlattın.",

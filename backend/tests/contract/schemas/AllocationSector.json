@@ -1,0 +1,28 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "sector": {
+   "type": "string"
+  },
+  "value_try": {
+   "type": "number"
+  },
+  "pct": {
+   "type": "number"
+  },
+  "tickers": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  }
+ },
+ "required": [
+  "sector",
+  "value_try",
+  "pct",
+  "tickers"
+ ],
+ "additionalProperties": false
+}

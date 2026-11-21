@@ -7,12 +7,12 @@ import type { MockState } from "./state";
 import * as sel from "./selectors";
 
 /**
- * Notes, the restart after a stop, limit changes and the audit ledger. One
+ * Notes, limit changes and the audit ledger. One
  * person takes every step; each waived second signature is written to the ledger.
  */
 type Enterprise = Pick<
   KaptanApi,
-  "listNotes" | "addNote" | "startKillReset" | "confirmKillReset" | "limits" | "proposeLimit" | "decideLimit" | "auditList" | "verifyAudit"
+  "listNotes" | "addNote" | "limits" | "proposeLimit" | "decideLimit" | "auditList" | "verifyAudit"
 >;
 
 const istDay = (iso: string) => new Date(Date.parse(iso) + 3 * 3_600_000).toISOString().slice(0, 10);
@@ -30,7 +30,6 @@ export function limitsView(s: MockState): LimitsView {
 
 export function createEnterprise(ctx: MockCtx): Enterprise {
   const { db, ok, now } = ctx;
-  const emitRisk = () => db.bus.emit("desk", "kill_switch", sel.riskStatus(db.snapshot));
   const emitLimits = () => db.bus.emit("desk", "limits.changed", limitsView(db.snapshot));
 
   return {
@@ -55,36 +54,6 @@ export function createEnterprise(ctx: MockCtx): Enterprise {
       db.update((s) => ({ ...s, proposalNotes: [...s.proposalNotes, note] }));
       db.audit(userActor(a), "note.added", "trade_proposal", proposalId, { ticker: card.ticker, company: card.company_name }, card.run_id);
       return ok(note);
-    },
-
-    async startKillReset({ reason }) {
-      const a = ctx.me();
-      const text = reason.trim();
-      if (text.length < 10) throw new ApiError(422, "validation", "Gerekçe en az 10 harf olmalı.");
-      const r = db.snapshot.risk;
-      if (r.kill_switch !== "on") throw new ApiError(409, "not_on", "Sistem çalışıyor; yeniden başlatılacak bir şey yok.");
-      if (r.reset_started) throw new ApiError(409, "already_started", "Yeniden başlatma isteğin zaten alındı.");
-      db.update((s) => ({ ...s, risk: { ...s.risk, reset_started: signatureOf(a, now(), text) } }));
-      db.audit(userActor(a), "kill_switch.reset_started", "system_flag", "kill_switch", { step: 1, reason: text });
-      emitRisk();
-      return ok(sel.riskStatus(db.snapshot));
-    },
-
-    async confirmKillReset({ reason }) {
-      const a = ctx.me();
-      const text = reason.trim();
-      if (text.length < 10) throw new ApiError(422, "validation", "Gerekçe en az 10 harf olmalı.");
-      const r = db.snapshot.risk;
-      if (r.kill_switch !== "on") throw new ApiError(409, "not_on", "Sistem çalışıyor; yeniden başlatılacak bir şey yok.");
-      if (!r.reset_started) throw new ApiError(409, "not_started", "Önce yeniden başlatmayı iste.");
-      recordWaiver(ctx, a, "kill_reset", ["system_flag", "kill_switch"]);
-      db.update((s) => ({
-        ...s,
-        risk: { ...s.risk, kill_switch: "off", kill_reason: null, kill_at: null, kill_by: null, reset_started: null, drawdown_pct: Math.max(s.risk.drawdown_pct, -0.049) },
-      }));
-      db.audit(userActor(a), "kill_switch.reset", "system_flag", "kill_switch", { step: 2, reason: text, started_by: r.reset_started.uid });
-      emitRisk();
-      return ok(sel.riskStatus(db.snapshot));
     },
 
     async limits() {

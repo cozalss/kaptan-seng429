@@ -26,11 +26,6 @@ export function inQuiet(quiet: QuietHours, ms: number): boolean {
   return start < end ? now >= start && now < end : now >= start || now < end;
 }
 
-/** The full stop always gets through, quiet hours or not. */
-export const NEVER_QUIET: ReadonlySet<AlertTopic> = new Set<AlertTopic>([
-  "stopped",
-]);
-
 /** May this computer show a notification of this topic now? */
 export function desktopAllowed(
   prefs: AlertPrefs,
@@ -38,5 +33,5 @@ export function desktopAllowed(
   ms: number,
 ): boolean {
   if (!prefs.kinds[topic].desktop) return false;
-  return NEVER_QUIET.has(topic) || !inQuiet(prefs.quiet, ms);
+  return !inQuiet(prefs.quiet, ms);
 }

@@ -55,8 +55,8 @@ Tek uygulama, tek kullanıcı. Üstte menü yok; altta ya da yanda sekmeler yok,
 | `/login` | Tek parola. Giriş sonrası ana sayfaya gidersin. |
 | `/` | Tanıtım sayfası. |
 
-Durdurma düğmesi **Param** ekranındadır. Durdurduğunda yeni emir çıkmaz, bekleyen öneriler düşer, açık emirler iptal
-edilir. Elindeki hisseler satılmaz; her biri kendi çıkış kuralıyla kapanır.
+KAPtan'da durdurma düğmesi ve kendiliğinden devreye giren bir fren yoktur. Karar her zaman senindir; ne zaman
+öneri alacağına, ne zaman bakacağına sen karar verirsin.
 
 <!-- TODO(kullanıcı): ekran görüntüleri aşağıda; hepsi eski sürümden (dört rol, Denetim, Öneri'de iki imza). Son turda değiştirilecek. -->
 <table>
@@ -172,8 +172,8 @@ Dört olay türü. Yalnızca alım; açığa satış ve kaldıraç yok.
 | E4 | Finansal sonuç | Tam rapor, enflasyon muhasebesi ve rapor dili | 5–10 gün |
 
 Son 5 seansta %8'den fazla yükselen hisse atlanır ya da yarıya indirilir (haber sızmış olabilir). İşlem başına
-sermayenin en fazla %0,5'i riske girer; bir pozisyon sermayenin %10'unu geçmez. Günlük −%1'de yeni emir durur,
-zirveden −%5'te durdurma devreye girer. Kuralların tek kaynağı:
+sermayenin en fazla %0,5'i riske girer; bir pozisyon sermayenin %10'unu geçmez. Kayba bağlı otomatik
+bir durdurma yoktur: para düşerse karar sende kalır. Kuralların tek kaynağı:
 [`docs/proje/06-strateji-ve-kurallar.md`](docs/proje/06-strateji-ve-kurallar.md).
 
 **Gerçekçi beklenti.** BIST-100'e göre yılda 0 ile +%5 arası fazladan getiri; sıfır da çıkabilir. E3 için Borsa İstanbul'a
@@ -205,8 +205,7 @@ güvenlik bunun için sadeleştirilmiştir, ama iki şey aynen kalır:
 - **Her öneriyi sen onaylarsın.** Kurallar ve risk kapısı öneriyi büyütemez; yalnızca küçültebilir ya da reddedebilir.
 - **Her atlanan ikinci imza kayda geçer.** Tek kişi olduğun için iki imza yerine geçtiğinde bu `auth.single_user_waiver`
   olarak Geçmiş'e yazılır. Hangi kararın tek imzayla verildiği sonradan görülebilir.
-- **Durdurduktan sonra yeniden başlatmak beklemek ister.** En az 24 saat ve en az 5 seans geçmeden yeniden
-  başlatma onaylanmaz.
+- **Durdurma yoktur.** Kayıp ne kadar büyük olursa olsun KAPtan kendiliğinden bir şeyi durdurmaz, uyarı da vermez.
 
 Karar ve gerekçesi: [`docs/proje/_KANONIK-KARARLAR.md`](docs/proje/_KANONIK-KARARLAR.md) (Revizyon 4).
 
@@ -225,8 +224,8 @@ Yeni kurulum dürüstçe boştur: paran, öneriler ve geçmiş sen kullandıkça
 ## Gerçek para
 
 Strateji gerçek veride henüz kanıtlanmadı: belgelerdeki sınama merdiveni çalıştırılmadı. Beklenti, BIST-100'e göre
-yılda kabaca 0 ile +%5'tir ve zarar da edebilirsin. Günlük −%1 ve toplam −%5 durdurucuları vardır, ama bunlar kaybı
-sıfırlamaz. Ne kadar paranın girileceği senin kararındır; KAPtan üst sınır koymaz. Ayrıntı: RUNBOOK, bölüm 10.
+yılda kabaca 0 ile +%5'tir ve zarar da edebilirsin. Kayba karşı otomatik bir fren yoktur; para düşerse ne yapacağına sen karar
+verirsin. Ne kadar paranın girileceği senin kararındır; KAPtan üst sınır koymaz. Ayrıntı: RUNBOOK, bölüm 10.
 
 ## Teknoloji
 

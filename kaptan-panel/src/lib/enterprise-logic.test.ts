@@ -105,23 +105,21 @@ describe("limit sentences and inputs", () => {
   it("reads every plain limit as a sentence", () => {
     for (const k of PLAIN_LIMITS) expect(limitSentence(k, valueOf(LIMITS_V1, k) ?? 0)).toMatch(/\.$/);
     expect(limitSentence("risk_per_trade_pct", 0.005)).toBe("Bir işlemde en fazla paranın %0,5’i riske girer.");
-    expect(limitSentence("daily_loss_halt_pct", -0.01)).toBe("Paran bir günde %1 düşerse o gün yeni işlem olmaz.");
     expect(limitSentence("min_edge_cost_ratio", 2.5)).toBe("Beklenen kazanç maliyetin en az 2,5 katı değilse öneri çıkmaz.");
     expect(limitSentence("max_sector_pct", 0.25)).toBe("Sektör tavanı: 0,25");
     expect(valueOf(LIMITS_V1, "max_group_pct")).toBe(0.2);
   });
   it("converts between what is typed and what is stored", () => {
     expect(toInput("risk_per_trade_pct", 0.005)).toBe("0,5");
-    expect(toInput("daily_loss_halt_pct", -0.01)).toBe("1");
+    expect(toInput("max_position_pct", 0.1)).toBe("10");
     expect(toInput("max_concurrent_positions", 10)).toBe("10");
     expect(fromInput("risk_per_trade_pct", "0,4")).toBe(0.004);
-    expect(fromInput("daily_loss_halt_pct", "0.8")).toBe(-0.008);
+    expect(fromInput("max_position_pct", "0.8")).toBe(0.008);
     expect(fromInput("max_concurrent_positions", "8")).toBe(8);
     expect(fromInput("max_concurrent_positions", "")).toBeNull();
     expect(fromInput("max_concurrent_positions", "abc")).toBeNull();
     expect(fromInput("max_concurrent_positions", "-1")).toBeNull();
     expect(inputUnit("risk_per_trade_pct")).toBe("%");
-    expect(inputUnit("kill_drawdown_pct")).toBe("% (eksi)");
     expect(inputUnit("max_concurrent_positions")).toBe("adet");
     expect(inputUnit("min_edge_cost_ratio")).toBe("kat");
   });

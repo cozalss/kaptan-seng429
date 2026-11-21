@@ -16,7 +16,7 @@ Each run gets its own pooled connection, a timeout and its own row (summary JSON
 failing or hanging job never stops the others. A failed slot is not retried by the loop: run it by hand.
 
 SSE: exits publish `approval.requested` per new exit card plus
-`counters`; the risk monitor publishes `halt` / `kill_switch` itself; a regime change publishes `regime`.
+`counters`; a regime change publishes `regime`.
 """
 
 from __future__ import annotations
@@ -56,7 +56,7 @@ log = logging.getLogger("kaptan.workers.scheduler")
 TICK_S: Final = 20.0
 DEFAULT_TIMEOUT_S: Final = 15 * 60.0
 XU100: Final = "XU100"
-Days = Literal["daily", "trading", "weekdays", "monday"]
+Days = Literal["daily", "trading", "weekdays", "monday", "friday"]
 Trigger = Literal["schedule", "catchup", "manual"]
 
 
@@ -146,20 +146,48 @@ async def job_morning_brief(conn: Any, ctx: Ctx, day: date, now: datetime) -> An
     return await run_morning_brief(conn, day, now, live_marks=ctx.settings.prices_live)
 
 
-async def job_risk_monitor(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
-    from kaptan.risk.monitor import run_risk_monitor
-
-    result = await run_risk_monitor(conn, now, redis=ctx.redis)
-    return {"ran": result.ran, "events": list(result.events)}
-
-
 async def job_quotes(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
+    from kaptan.alerts.price import open_tickers
     from kaptan.prices.intraday import refresh_quotes
 
-    tickers = await _tickers(conn, HELD_SQL)
+    # the held shares and the ones with a waiting price alert (Ayarlar · Fiyat uyarıları)
+    tickers = sorted({*await _tickers(conn, HELD_SQL), *await open_tickers(conn)})
     if not tickers:
         return {"tickers": 0}
     return await _polite(ctx, lambda c: refresh_quotes(conn, tickers, now, client=c))
+
+
+async def job_price_alerts(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
+    """Fire the price alerts whose price was reached (after the quotes of the same slot)."""
+    from kaptan.alerts.config import alert_config
+    from kaptan.alerts.price import check_alerts
+
+    fired = await check_alerts(conn, now, redis=ctx.redis, pool=ctx.pool, cfg=alert_config(ctx.settings))
+    return {"fired": fired}
+
+
+async def job_weekly_summary(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
+    """Friday evening: the phone gets one generic sentence; the page is in the app (/hafta)."""
+    from kaptan.alerts.announce import announce
+    from kaptan.alerts.config import alert_config
+
+    outcome = await announce(ctx.pool, ctx.redis, alert_config(ctx.settings), "weekly", now=now)
+    return {"outcome": outcome}
+
+
+async def job_fx_rates(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
+    """`fx_rates` (17:00): today's TCMB bulletin into core.fx_rates (USD/TRY strip, Param's dollar comparison).
+    TCMB publishes it by 16:30; a missing or broken bulletin is reported, the next day's run catches up the day
+    through the archive only when someone runs `fx_backfill`."""
+    from kaptan.market.fx import FxSourceError, fetch_today
+    from kaptan.market.fx_store import upsert_rates
+
+    async with ctx.http() as http:
+        try:
+            rates = await fetch_today(http)
+        except FxSourceError as exc:
+            return {"rates": 0, "error": str(exc)[:200]}
+    return {"rates": await upsert_rates(conn, rates)}
 
 
 async def job_eod_prices(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
@@ -275,8 +303,10 @@ JOBS: Final[tuple[Job, ...]] = (
     Job("universe", job_universe, at=time(8, 30), days="trading", timeout_s=10 * 60),
     Job("tedbir_sync", job_tedbir, every_min=30, days="daily", timeout_s=10 * 60),
     Job("morning_brief", job_morning_brief, at=time(8, 45), days="trading", timeout_s=5 * 60),
-    Job("risk_monitor", job_risk_monitor, every_min=5, in_session=True, timeout_s=4 * 60, own_tx=True),
     Job("quotes", job_quotes, every_min=4, in_session=True, timeout_s=3 * 60),
+    Job("price_alerts", job_price_alerts, every_min=4, in_session=True, after="quotes", timeout_s=3 * 60, own_tx=True),
+    Job("weekly_summary", job_weekly_summary, at=time(18, 0), days="friday", timeout_s=5 * 60),
+    Job("fx_rates", job_fx_rates, at=time(17, 0), days="trading", timeout_s=5 * 60),
     Job("eod_prices", job_eod_prices, at=time(18, 30), days="trading", timeout_s=60 * 60),
     Job("exits", job_exits, at=time(18, 30), days="trading", after="eod_prices", timeout_s=10 * 60, own_tx=True),
     Job("pnl_eod", job_pnl_eod, at=time(18, 45), days="trading", after="exits", timeout_s=10 * 60),
@@ -307,6 +337,8 @@ def runs_on(job: Job, d: date) -> bool:
         return True
     if job.days == "monday":
         return d.weekday() == 0
+    if job.days == "friday":
+        return d.weekday() == 4
     if job.days == "weekdays":
         return d.weekday() < 5
     return _trading(d)

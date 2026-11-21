@@ -26,10 +26,10 @@ describe("quiet hours", () => {
     ).toBe(true);
   });
 
-  it("let the full stop through and silence the rest on this computer", () => {
+  it("silences every kind on this computer during quiet hours", () => {
     const prefs = { ...defaultAlertPrefs(), quiet: quiet() };
     expect(desktopAllowed(prefs, "suggestion", NIGHT)).toBe(false);
-    expect(desktopAllowed(prefs, "stopped", NIGHT)).toBe(true);
+    expect(desktopAllowed(prefs, "part_down", NIGHT)).toBe(false);
     expect(desktopAllowed(prefs, "suggestion", NOON)).toBe(true);
     const off = {
       ...prefs,

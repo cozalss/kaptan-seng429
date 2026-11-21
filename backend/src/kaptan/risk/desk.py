@@ -2,7 +2,7 @@
 
 For real runs (LLM_MODE=live, see agents/feed_run.py). What it fills in:
 
-- equity, free cash, daily P&L and drawdown: the person's own book marked to market (risk/book.py);
+- equity and free cash: the person's own book marked to market (risk/book.py);
 - R04 `restrictions_age_h`: now − the last restriction refresh (core.restriction_refresh); no refresh
   recorded = unknown = stale (06 R04: no buy while the restrictions are unknown);
 - R11 `kap_delay_s`: how late we saw the disclosure (available_at − published_at);
@@ -26,7 +26,7 @@ from psycopg import AsyncConnection
 
 from kaptan.prices.calendar import IST, SESSION_OPEN, CalendarRangeError, is_trading_day, session_close
 from kaptan.prices.reads import latest_mark
-from kaptan.risk.book import BookSnapshot, Exposure, effective_drawdown, own_book
+from kaptan.risk.book import BookSnapshot, Exposure, own_book
 
 UNKNOWN_AGE: Final = math.inf
 
@@ -44,7 +44,6 @@ INTRADAY_SQL: Final = """
 SELECT close, ts FROM core.prices_intraday
  WHERE ticker = %s AND ts <= %s AND ts >= %s AND fetched_at <= %s ORDER BY ts DESC LIMIT 1
 """
-RESET_SQL: Final = "SELECT reset_at, reset_equity FROM trading.risk_state WHERE id = 1"
 ISSUER_SQL: Final = """
 SELECT i.sector, coalesce(g.group_name, i.group_name) AS group_name
   FROM core.issuers i LEFT JOIN core.issuer_groups g ON g.ticker = i.ticker WHERE i.ticker = %s
@@ -55,8 +54,6 @@ SELECT i.sector, coalesce(g.group_name, i.group_name) AS group_name
 class LiveDesk:
     equity_try: Decimal
     cash_free_try: Decimal
-    daily_pnl_pct: Decimal
-    drawdown_pct: Decimal
     n_open_positions: int
     holds_ticker: bool
     last_price: Decimal | None
@@ -70,8 +67,6 @@ class LiveDesk:
     gross_exposure_pct: Decimal = Decimal(0)
     #: 06 R12: lots of this ticker held (the sell side may not exceed it).
     held_qty: int = 0
-    #: 06 §11 step 4: a confirmed restart still in force (the monitor clears reset_at back inside −2.5 %).
-    reset_active: bool = False
 
 
 def is_session_open(now: datetime) -> bool:
@@ -157,9 +152,6 @@ async def live_desk(
     available_at: datetime,
 ) -> LiveDesk:
     book = await own_book(conn, now)
-    reset = await _one(conn, RESET_SQL) or {"reset_at": None, "reset_equity": None}
-    reset_equity = None if reset["reset_equity"] is None else Decimal(str(reset["reset_equity"]))
-    drawdown = effective_drawdown(book, reset_equity, reset_active=reset["reset_at"] is not None)
     issuer = await _one(conn, ISSUER_SQL, (ticker,))
     sector_pct, group_pct = exposure_pct(
         book, None if issuer is None else issuer["sector"], None if issuer is None else issuer["group_name"]
@@ -173,8 +165,6 @@ async def live_desk(
     return LiveDesk(
         equity_try=book.equity,
         cash_free_try=book.free_cash,
-        daily_pnl_pct=book.daily_pnl_pct,
-        drawdown_pct=drawdown,
         n_open_positions=len(book.holdings),
         holds_ticker=any(h.ticker == ticker for h in book.holdings),
         last_price=price,
@@ -184,7 +174,6 @@ async def live_desk(
         daily_entries=await daily_entries(conn, now),
         sector_exposure_pct=sector_pct,
         group_exposure_pct=group_pct,
-        reset_active=reset["reset_at"] is not None,
         gross_exposure_pct=gross_exposure_pct(book),
         held_qty=sum(h.qty for h in book.holdings if h.ticker == ticker),
     )

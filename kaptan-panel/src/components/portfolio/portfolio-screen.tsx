@@ -12,7 +12,6 @@ import { fmtLira, fmtSignedLira } from "@/lib/solo/words";
 import { Band, PageHeader, ScreenState } from "@/components/shell/page-frame";
 import { useDesk } from "@/components/shell/desk-state";
 import { BenchmarkLine } from "@/components/solo/benchmark-line";
-import { StopCard, StoppedBanner, useStopRestart } from "@/components/solo/stop-panel";
 import { signTone } from "@/components/story/sign-tone";
 import { Button } from "@/components/ui/button";
 import { OrderSlip } from "@/components/proposal/order-slip";
@@ -20,13 +19,15 @@ import { slipsToEnter } from "@/components/tickets/ticket-logic";
 import { fmtSignedPct } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CorporateSection } from "./corporate-section";
-import { Guards } from "./guards";
+import { RegimeLine } from "./guards";
 import { Holdings } from "./holdings";
 import { BookTools } from "./book-tools";
+import { ParamInsights } from "@/components/insights/param-insights";
 import { MoneySection } from "./money-section";
 import { placesSentence, todayLira } from "./param-words";
 import { istanbulDate } from "./risk-math";
 import { Skyline } from "./skyline";
+import { StatementImport } from "./statement-import";
 
 /**
  * /portfoy ("Param"): what do I own, what is each worth, what did I pay, am I up or down. The
@@ -37,13 +38,11 @@ export function PortfolioScreen() {
   const { risk, error: deskError, refresh } = useDesk();
   const now = useNow(30_000);
   const today = now === null ? null : istanbulDate(now);
-  const riskKey = risk ? `${risk.kill_switch}|${risk.reset?.started?.at ?? ""}` : "";
-  const q = useApiQuery((api) => Promise.all([api.positions(), api.listTickets()]), [riskKey]);
-  // The cash comes from the home's call, the brakes from the limits: without them their sentences are dropped.
-  const money = useApiQuery((api) => api.overview(), [riskKey]);
-  const limits = useApiQuery((api) => api.limits(), []);
-  const book = useApiQuery((api) => api.money(), [riskKey]);
-  const corporate = useApiQuery((api) => api.corporateBook(), [riskKey]);
+  const q = useApiQuery((api) => Promise.all([api.positions(), api.listTickets()]), []);
+  // The cash comes from the home's call.
+  const money = useApiQuery((api) => api.overview(), []);
+  const book = useApiQuery((api) => api.money(), []);
+  const corporate = useApiQuery((api) => api.corporateBook(), []);
   const reload = () => {
     void q.refetch();
     void money.refetch();
@@ -54,14 +53,11 @@ export function PortfolioScreen() {
     fill: reload,
     ticket: () => void q.refetch(),
     order: () => void q.refetch(),
-    "limits.changed": () => void limits.refetch(),
   });
 
   const positions = q.data?.[0];
   const waiting = slipsToEnter(q.data?.[1], now);
   const cash = money.data?.cash ?? null;
-  const stopped = risk?.kill_switch === "on";
-  const controls = useStopRestart(refresh);
   const unreachable = deskError !== null && risk === null;
 
   if (money.data?.needs_setup) return <NeedsSetup />;
@@ -72,7 +68,6 @@ export function PortfolioScreen() {
     <div className="pm-screen">
       <PageHeader name="Param" title={sentence} />
 
-      {stopped && risk ? <StoppedBanner risk={risk} pending={controls.restartPending} error={controls.restartError} onRestart={controls.onRestart} /> : null}
 
       {unreachable ? <ScreenState kind="error" title={MSG_UNREACHABLE} onRetry={() => void refresh()}>Paran yerinde; yalnızca şu an göremiyorum. Birkaç saniye sonra yeniden dene.</ScreenState> : null}
 
@@ -110,12 +105,15 @@ export function PortfolioScreen() {
       <MoneySection book={book.data ?? null} onChanged={reload} />
 
       <CorporateSection book={corporate.data ?? null} hasHoldings={(positions?.length ?? 0) > 0} holdingsKey={(positions ?? []).map((p) => `${p.ticker}:${p.qty}`).join(",")} onChanged={reload} />
+      <ParamInsights reloadKey={`${(positions ?? []).map((p) => `${p.ticker}:${p.qty}`).join(",")}|${corporate.data?.records.length ?? 0}`} />
+      <StatementImport onChanged={reload} />
       {book.data ? <BookTools /> : null}
 
-      <Band aria-label="Seni koruyan şeyler" className="pm-protect">
-        <Guards risk={risk} limits={limits.data ?? null} />
-        {risk && !stopped ? <StopCard pending={controls.stopPending} error={controls.stopError} onStop={controls.onStop} /> : null}
-      </Band>
+      {risk ? (
+        <Band aria-label="Piyasanın hâli" className="pm-protect">
+          <RegimeLine regime={risk.regime} />
+        </Band>
+      ) : null}
     </div>
   );
 }

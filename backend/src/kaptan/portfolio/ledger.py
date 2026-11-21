@@ -260,12 +260,14 @@ async def _insert(conn: AsyncConnection[Any], **fields: Any) -> int:
 
 
 async def add_money(
-    conn: AsyncConnection[Any], kind: MoneyKind, amount: Decimal, *, equity_before: Decimal, note: str, now: datetime
-) -> int:
-    """Starting money or a deposit (+) or a withdrawal (−): cash and the money put in move together."""
+    conn: AsyncConnection[Any], kind: MoneyKind, amount: Decimal, *, equity_before: Decimal, note: str, now: datetime,
+    occurred_at: datetime | None = None,
+) -> int:  # fmt: skip
+    """Starting money or a deposit (+) or a withdrawal (−): cash and the money put in move together.
+    `occurred_at`: the day it really happened (a statement import); left out, it is `now`."""
     signed = -amount if kind == "withdrawal" else amount
     return await _insert(
-        conn, kind=kind, occurred_at=now, recorded_at=now, amount_try=amount, cash_delta=signed,
+        conn, kind=kind, occurred_at=occurred_at or now, recorded_at=now, amount_try=amount, cash_delta=signed,
         capital_delta=signed, flow_try=signed, equity_before=equity_before, note=note,
     )  # fmt: skip
 

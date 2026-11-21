@@ -48,8 +48,8 @@ a deposit, a withdrawal or a correction is never a gain or a loss; the movements
   `commission_rate_own`). Audit `fee.changed` {old_rate, new_rate}.
 - POST /me/book/reset {confirm: "baştan"}: closes the book (open positions, P&L series and waiting tickets are kept
   as the old book's archive; waiting tickets are voided), opens an empty one: `needs_setup` again. 409 not_started ·
-  422 confirm. Untouched: disclosures, KAPtan's reading, limits, the audit chain. A kill switch that is ON stays ON
-  (`kill_switch_on` in the answer). Audit `book.reset`. GET /me/books lists the closed books (read-only).
+  422 confirm. Untouched: disclosures, KAPtan's reading, limits, the audit chain.
+  Audit `book.reset`. GET /me/books lists the closed books (read-only).
 - GET /me/export.csv: every ledger row of every book as `;`-separated, decimal-comma CSV with a UTF-8 BOM.
 """
 

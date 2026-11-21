@@ -1,5 +1,5 @@
-import type { Position, RiskStatus } from "@/lib/domain";
-import { dateLocative, dayGuard, exitSentence, peakGuard, placesSentence, skyline, waterSplit } from "./param-words";
+import type { Position } from "@/lib/domain";
+import { dateLocative, exitSentence, placesSentence, skyline, waterSplit } from "./param-words";
 
 const pos = (over: Partial<Position> = {}): Position => ({
   id: "pos-1",
@@ -23,9 +23,6 @@ const pos = (over: Partial<Position> = {}): Position => ({
   book: "paper",
   ...over,
 });
-
-const risk = (over: Partial<RiskStatus> = {}): RiskStatus =>
-  ({ kill_switch: "off", kill_reason: null, kill_at: null, kill_by: null, halted_today: false, daily_pnl_pct: 0, drawdown_pct: 0, peak_equity: 1_000_000, equity: 1_000_000, regime: "normal", live_armed: false, quota: [], reset: null, as_of: "2027-01-11T10:00:00Z", ...over }) as RiskStatus;
 
 describe("placesSentence", () => {
   it("counts every holding and the cash as a place", () => {
@@ -106,28 +103,5 @@ describe("skyline", () => {
     const s = skyline([], 500);
     expect(s.columns).toEqual([]);
     expect(s.cashShare).toBe(1);
-  });
-});
-
-describe("the two guards", () => {
-  it("dayGuard: how far today's brake is, from the real start of the day", () => {
-    const g = dayGuard(risk({ equity: 1_010_000, daily_pnl_pct: 0.01 }), -0.01);
-    expect(g.limit).toBeCloseTo(10_000);
-    expect(g.floor).toBeCloseTo(990_000);
-    expect(g.distance).toBeCloseTo(20_000);
-    expect(g.reached).toBe(false);
-  });
-
-  it("dayGuard: reached when the day is already at the brake", () => {
-    expect(dayGuard(risk({ equity: 985_000, daily_pnl_pct: -0.015 }), -0.01).reached).toBe(true);
-    expect(dayGuard(risk({ halted_today: true, equity: 995_000, daily_pnl_pct: -0.005 }), -0.01).reached).toBe(true);
-  });
-
-  it("peakGuard: the floor sits under the peak, never above it", () => {
-    const g = peakGuard(risk({ peak_equity: 1_030_000, equity: 1_018_000 }), -0.05);
-    expect(g.floor).toBeCloseTo(978_500);
-    expect(g.distance).toBeCloseTo(39_500);
-    expect(g.reached).toBe(false);
-    expect(peakGuard(risk({ peak_equity: 1_030_000, equity: 970_000 }), -0.05).reached).toBe(true);
   });
 });

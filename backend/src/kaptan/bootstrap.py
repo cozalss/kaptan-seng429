@@ -10,7 +10,7 @@
 `data` (the default) creates what an empty, migrated database needs before the API can run, and only what is
 missing:
 - limit version 1 (`rules-v1.0`, the canonical values `LIMITS_V1`, 06 §9), active;
-- the single `trading.risk_state` row (kill switch off);
+- the single `trading.risk_state` row (the market regime; the old stop columns stay unused);
 - `trading.quota_usage` rows (0 used, limit = today's LLM_CAP_* settings);
 - the `trading.live_arm` row with every key off;
 - one `system.bootstrap` audit record listing what was created (none when nothing was).

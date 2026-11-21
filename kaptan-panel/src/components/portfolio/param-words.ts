@@ -102,35 +102,6 @@ export function skyline(positions: readonly Position[], cash: number): Skyline {
   };
 }
 
-export interface Guard {
-  /** The lira the rule allows to fall (day guard) or the floor's distance from the peak. */
-  limit: number;
-  /** The money level where the rule acts. */
-  floor: number;
-  /** How far the money is from it now. */
-  distance: number;
-  /** Where the money stood when the measure began (start of the day, or the peak). */
-  start: number;
-  reached: boolean;
-}
-
-/** The daily brake, measured from the money at the start of today. `haltPct` is negative (−0,01). */
-export function dayGuard(risk: Pick<RiskStatus, "equity" | "daily_pnl_pct" | "halted_today">, haltPct: number): Guard {
-  const start = risk.equity / (1 + risk.daily_pnl_pct);
-  const limit = start * Math.abs(haltPct);
-  const floor = start - limit;
-  const distance = risk.equity - floor;
-  return { limit, floor, distance, start, reached: risk.halted_today || distance <= 0 };
-}
-
-/** The big brake, measured from the highest the money has ever been. `stopPct` is negative (−0,05). */
-export function peakGuard(risk: Pick<RiskStatus, "equity" | "peak_equity">, stopPct: number): Guard {
-  const limit = risk.peak_equity * Math.abs(stopPct);
-  const floor = risk.peak_equity - limit;
-  const distance = risk.equity - floor;
-  return { limit, floor, distance, start: risk.peak_equity, reached: distance <= 0 };
-}
-
 /** Today's change in lira, from the same two figures the home uses. */
 export function todayLira(risk: Pick<RiskStatus, "equity" | "daily_pnl_pct">): number {
   return risk.equity - risk.equity / (1 + risk.daily_pnl_pct);

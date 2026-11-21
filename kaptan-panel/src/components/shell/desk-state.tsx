@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ApprovalCard, DayCounters, RiskStatus, SystemStatus } from "@/lib/domain";
 import { alertFor, type DeskSignal } from "@/lib/alerts/alerts";
 import { raiseDesktopAlert } from "@/lib/alerts/desktop";
+import { isMuted } from "@/lib/prefs/desktop-gate";
 import { HOME, href } from "@/lib/nav";
 import { useApi } from "@/lib/api/react";
 import { errorMessage, isUnreachable } from "@/lib/api/types";
@@ -64,13 +65,9 @@ export function DeskStateProvider({ children }: { children: ReactNode }) {
     setRisk(r);
   }, []);
 
-  // Desktop alerts (off until turned on in Ayarlar): a stop alerts once, when it begins.
-  const riskRef = useRef<RiskStatus | null>(null);
-  useEffect(() => {
-    riskRef.current = risk;
-  }, [risk]);
+  // Desktop alerts (off until turned on in Ayarlar).
   const alertOn = (signal: DeskSignal) => {
-    const alert = alertFor(signal, riskRef.current);
+    const alert = alertFor(signal);
     if (alert) raiseDesktopAlert(alert, (path) => router.push(path));
   };
 
@@ -113,7 +110,7 @@ export function DeskStateProvider({ children }: { children: ReactNode }) {
   const deskStatus = useEventStream("desk", {
     "approval.requested": (card) => {
       setPending((list) => [card, ...list.filter((x) => x.proposal_id !== card.proposal_id)]);
-      alertOn({ event: "approval.requested", data: card });
+      if (!isMuted(card.ticker)) alertOn({ event: "approval.requested", data: card });
       // On the home the card arrives in place; elsewhere one quiet slip says so.
       if (pathname === HOME) return;
       notify.event(`Yeni öneri: ${card.company_name}`, undefined, {
@@ -122,15 +119,6 @@ export function DeskStateProvider({ children }: { children: ReactNode }) {
       });
     },
     "approval.decided": (card) => setPending((list) => list.filter((x) => x.proposal_id !== card.proposal_id)),
-    kill_switch: (r) => {
-      alertOn({ event: "kill_switch", data: r });
-      setLiveRisk(r);
-      if (r.kill_switch === "on") setPending([]);
-    },
-    halt: (r) => {
-      alertOn({ event: "halt", data: r });
-      setLiveRisk(r);
-    },
     regime: (r) => setLiveRisk(r),
   });
 

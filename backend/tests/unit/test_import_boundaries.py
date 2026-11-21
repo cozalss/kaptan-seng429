@@ -1,6 +1,6 @@
 """09 §2.2 LLM06 / §13.1 (excessive agency): the LLM side cannot reach execution. No module under
-kaptan.agents, kaptan.llm or kaptan.rag may import the brokers, the approval/execution service, the kill
-switch, the limit service or the live-arm keys, at module level or lazily inside a function. The
+kaptan.agents, kaptan.llm or kaptan.rag may import the brokers, the approval/execution service, the
+limit service or the live-arm keys, at module level or lazily inside a function. The
 deterministic risk gate (kaptan.risk.gate) stays allowed: it is pure logic and only says no."""
 
 from __future__ import annotations
@@ -14,7 +14,6 @@ LLM_SIDE: Final = ("agents", "llm", "rag")
 FORBIDDEN: Final = (
     "kaptan.brokers",
     "kaptan.approvals",
-    "kaptan.risk.kill_switch",
     "kaptan.risk.limits",
     "kaptan.portfolio.closing",
 )

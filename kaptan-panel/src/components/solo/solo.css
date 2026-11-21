@@ -156,32 +156,6 @@
   view-transition-name: nav-flag;
 }
 
-.stop-chip {
-  display: inline-flex;
-  height: 44px;
-  align-items: center;
-  gap: 0.5rem;
-  padding-inline: 0.625rem;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--north);
-  white-space: nowrap;
-  border-radius: 2px;
-  transition: background-color var(--dur-quick) var(--ease-ink);
-}
-.stop-chip:hover {
-  background: var(--north-tint);
-}
-.stop-chip:focus-visible {
-  outline: 3px solid var(--north);
-  outline-offset: 0;
-}
-.stop-chip__mark {
-  width: 11px;
-  height: 11px;
-  background: currentColor;
-}
-
 /* A phone: the nav leaves the top bar for the thumb. One <nav>, moved by CSS. */
 @media (max-width: 639px) {
   :root {
@@ -507,13 +481,6 @@
 .home-band {
   padding-block: clamp(3rem, 7vw, 6rem);
 }
-.home-close {
-  position: relative;
-  overflow: hidden;
-  background: var(--sea);
-  color: var(--on-sea);
-}
-
 /* ── Param nerede? A map where area is money ──────────────────────────────── */
 .map {
   position: relative;

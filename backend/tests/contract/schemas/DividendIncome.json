@@ -1,0 +1,86 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "year": {
+   "type": "integer",
+   "minimum": -9007199254740991,
+   "maximum": 9007199254740991
+  },
+  "this_year_try": {
+   "type": "number"
+  },
+  "last_year_try": {
+   "type": "number"
+  },
+  "total_try": {
+   "type": "number"
+  },
+  "months": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "month": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}$"
+     },
+     "total_try": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "month",
+     "total_try"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "holdings": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "ticker": {
+      "type": "string"
+     },
+     "company": {
+      "type": "string"
+     },
+     "last12_try": {
+      "type": "number"
+     },
+     "cost_try": {
+      "type": [
+       "number",
+       "null"
+      ]
+     },
+     "yield_on_cost_pct": {
+      "type": [
+       "number",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "ticker",
+     "company",
+     "last12_try",
+     "cost_try",
+     "yield_on_cost_pct"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "year",
+  "this_year_try",
+  "last_year_try",
+  "total_try",
+  "months",
+  "holdings"
+ ],
+ "additionalProperties": false
+}

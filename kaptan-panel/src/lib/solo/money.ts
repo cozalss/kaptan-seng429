@@ -119,8 +119,6 @@ export type BookResetInput = z.infer<typeof BookResetInput>;
 
 export const BookResetOut = z.object({
   closed_book: z.number().int().positive(),
-  /** A stop that was on stays on: starting over does not lift it. */
-  kill_switch_on: z.boolean(),
 });
 export type BookResetOut = z.infer<typeof BookResetOut>;
 

@@ -1,10 +1,10 @@
 ﻿# Yedekten dönüş.
-#   .\geri-yukle.ps1 -Deneme            en son yedeği ayrı bir veritabanına açar, kayıtları doğrular, siler.
+#   .\geri-yukle.ps1 -Kontrol            en son yedeği ayrı bir veritabanına açar, kayıtları doğrular, siler.
 #                                       Canlı veriye dokunmaz. Yedeğin işe yaradığını görmek için.
 #   .\geri-yukle.ps1                    aynısını yapar, doğrulanırsa o yedeğe geçer. Bugünkü veriyi silmez, eski
 #                                       adıyla bir kenara koyar.
 #   -Dosya kaptan-20261103T000000Z.dump  en son yerine bu yedek
-param([switch]$Deneme, [string]$Dosya)
+param([switch]$Kontrol, [string]$Dosya)
 
 . "$PSScriptRoot\backend\ops\kaptan-ortak.ps1"
 
@@ -50,9 +50,9 @@ if (-not (Test-RestoredLedger)) {
     Fail 'Bu yedeğin kayıtları doğrulanmadı. KULLANMA. Canlı veriye dokunulmadı. Daha eski bir yedeği -Dosya ile dene.'
 }
 
-if ($Deneme) {
+if ($Kontrol) {
     docker compose exec -T backup sh /ops/restore-into.sh --drop
-    Say "Deneme başarılı: $dump açıldı, kayıtlar sağlam. Canlı veriye dokunulmadı."
+    Say "Kontrol başarılı: $dump açıldı, kayıtlar sağlam. Canlı veriye dokunulmadı."
     exit 0
 }
 

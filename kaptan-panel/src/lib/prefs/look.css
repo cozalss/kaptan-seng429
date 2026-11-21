@@ -109,10 +109,6 @@
   :root[data-text="xlarge"] .solo-wordmark {
     height: 1.5rem;
   }
-  :root[data-text="xlarge"] .stop-chip {
-    gap: 0.375rem;
-    padding-inline: 0.375rem;
-  }
   :root[data-text="xlarge"] .bar__row button[aria-label="Hesabım"] > svg {
     display: none;
   }

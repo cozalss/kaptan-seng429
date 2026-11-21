@@ -136,15 +136,9 @@ def smtp() -> type[FakeSmtp]:
 def realistic_events() -> list[tuple[str, dict[str, Any]]]:
     cards = _load("approvals_all.json")
     risk = _load("risk_status.json")
-    halted = {**risk, "halted_today": True, "daily_pnl_pct": -0.0104}
-    stopped = {**risk, "kill_switch": "on", "kill_reason": "Zirveden %5 düşüş (R01)", "drawdown_pct": -0.0512}
     return [
         *[("approval.requested", card) for card in cards],
         *[("approval.decided", card) for card in cards],
-        ("halt", halted),
-        ("halt", risk),
-        ("kill_switch", stopped),
-        ("kill_switch", risk),
         ("regime", risk),
     ]
 
@@ -169,8 +163,6 @@ def assert_carries_no_signal(text: str) -> None:
 def test_every_message_is_one_of_the_fixed_sentences() -> None:
     assert set(MESSAGES) == set(get_args(AlertKind))
     assert message_for("suggestion") == "KAPtan: yeni bir önerin var."
-    assert message_for("day_halt") == "KAPtan: günlük zarar sınırına gelindi, yeni öneri durdu."
-    assert message_for("stopped") == "KAPtan durduruldu."
     assert message_for("part_down") == "KAPtan: bir parça çalışmıyor."
     assert message_for("test") == "KAPtan: deneme bildirimi."
 
@@ -183,16 +175,13 @@ def test_events_map_to_kinds_by_their_state() -> None:
     assert kind_for_event("approval.requested", pending) == "suggestion"
     assert kind_for_event("approval.requested", decided) is None
     assert kind_for_event("approval.decided", pending) is None
-    assert kind_for_event("halt", {**risk, "halted_today": True}) == "day_halt"
-    assert kind_for_event("halt", risk) is None  # the halt was lifted
-    assert kind_for_event("kill_switch", {**risk, "kill_switch": "on"}) == "stopped"
-    assert kind_for_event("kill_switch", risk) is None  # the restart
+    assert kind_for_event("halt", risk) is None and kind_for_event("kill_switch", risk) is None  # no stop events
     assert kind_for_event("regime", risk) is None and kind_for_event("fill", {}) is None
 
 
 def test_no_text_built_from_a_real_event_carries_a_signal() -> None:
     kinds = {kind_for_event(event, data) for event, data in realistic_events()} - {None}
-    assert kinds == {"suggestion", "day_halt", "stopped"}
+    assert kinds == {"suggestion"}
     assert len(forbidden_words()) >= 8  # the tickers and the company words of the fixture cards
     for kind in get_args(AlertKind):
         assert_carries_no_signal(message_for(kind))
@@ -448,10 +437,10 @@ async def test_at_most_one_message_per_kind_per_ten_minutes() -> None:
     redis, rec = FakeRedis(), Recorder()
     assert await notify(redis, BOTH, "suggestion", now=NOW, senders=rec.senders()) == "sent"
     assert await notify(redis, BOTH, "suggestion", now=NOW, senders=rec.senders()) == "rate_limited"
-    assert await notify(redis, BOTH, "stopped", now=NOW, senders=rec.senders()) == "sent"  # another kind
+    assert await notify(redis, BOTH, "part_down", now=NOW, senders=rec.senders()) == "sent"  # another kind
     assert [text for _c, text in rec.sent].count("KAPtan: yeni bir önerin var.") == 2  # once per channel
     assert redis.ttl[service.rate_key("suggestion")] == 600 == service.RATE_S
-    assert redis.ttl[service.rate_key("stopped")] == 600
+    assert redis.ttl[service.rate_key("part_down")] == 600
 
 
 async def test_nothing_configured_sends_nothing_and_takes_no_slot() -> None:
@@ -471,13 +460,13 @@ async def test_a_failed_channel_is_said_in_plain_turkish_and_the_other_still_sen
 ) -> None:
     redis, rec = FakeRedis(), Recorder(fail=("ntfy",))
     with caplog.at_level(logging.WARNING, logger="kaptan.alerts"):
-        assert await notify(redis, BOTH, "day_halt", now=NOW, senders=rec.senders()) == "sent"
-    assert rec.sent == [("email", "KAPtan: günlük zarar sınırına gelindi, yeni öneri durdu.")]
+        assert await notify(redis, BOTH, "part_down", now=NOW, senders=rec.senders()) == "sent"
+    assert rec.sent == [("email", "KAPtan: bir parça çalışmıyor.")]
     doc = await alert_settings(redis, BOTH)
     assert doc["last_error_tr"] == "Telefon bildirimi gönderilemedi." and doc["last_sent_at"] is not None
     assert "http_500" in caplog.text and TOPIC not in caplog.text and TO not in caplog.text
     both = Recorder(fail=("ntfy", "email"))
-    assert await notify(redis, BOTH, "stopped", now=NOW, senders=both.senders()) == "failed"
+    assert await notify(redis, BOTH, "watch", now=NOW, senders=both.senders()) == "failed"
     assert (await alert_settings(redis, BOTH))["last_error_tr"] == "Telefon bildirimi ve e-posta gönderilemedi."
 
 
@@ -486,7 +475,7 @@ async def test_the_next_success_clears_the_error() -> None:
     await notify(redis, BOTH, "suggestion", now=NOW, senders=Recorder(fail=("email",)).senders())
     assert (await alert_settings(redis, BOTH))["last_error_tr"] == "E-posta gönderilemedi."
     later = NOW + timedelta(minutes=11)
-    assert await notify(redis, BOTH, "stopped", now=later, senders=Recorder().senders()) == "sent"
+    assert await notify(redis, BOTH, "part_down", now=later, senders=Recorder().senders()) == "sent"
     assert await alert_settings(redis, BOTH) == {
         "ntfy": True,
         "email": True,

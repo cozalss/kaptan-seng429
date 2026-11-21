@@ -12,6 +12,8 @@ export const ROUTES = {
   bildirimler: "/bildirimler",
   gecmis: "/gecmis",
   karne: "/gecmis/karne",
+  hafta: "/gecmis/hafta",
+  takvim: "/takvim",
   ayarlar: "/ayarlar",
   yardim: "/yardim",
   login: "/login",
@@ -25,6 +27,8 @@ export const href = {
   proposal: (proposalId: string) => `${ROUTES.oneri}/${encodeURIComponent(proposalId)}`,
   /** A company's page (`/hisse/THYAO`). */
   company: (ticker: string) => `/hisse/${encodeURIComponent(ticker)}`,
+  /** Two companies side by side (`/karsilastir?a=THYAO`); the second is picked on the page. */
+  compare: (a: string, b?: string) => `/karsilastir?a=${encodeURIComponent(a)}${b ? `&b=${encodeURIComponent(b)}` : ""}`,
 } as const;
 
 export type NavKey = "benim" | "portfoy" | "bildirimler" | "gecmis";
@@ -65,6 +69,7 @@ export const LEGACY_REDIRECTS: ReadonlyArray<{ source: string; destination: stri
 /** Which nav item is current for a path (an Öneri belongs to Ana sayfa); null outside the nav (Ayarlar). */
 export function activeNavHref(pathname: string): string | null {
   if (pathname === ROUTES.benim || pathname.startsWith(`${ROUTES.oneri}/`)) return ROUTES.benim;
+  if (pathname === ROUTES.takvim) return ROUTES.benim;
   if (pathname.startsWith(`${ROUTES.gecmis}/`)) return ROUTES.gecmis;
   return NAV_ITEMS.find((i) => i.href === pathname)?.href ?? null;
 }

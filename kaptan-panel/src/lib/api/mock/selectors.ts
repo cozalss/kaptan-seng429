@@ -132,7 +132,6 @@ function baseExplain(spec: RunSpec): Explain {
 function patchApproval(state: MockState, a: ApprovalCard, realNow: number): ApprovalCard {
   const patch = state.approvals[a.proposal_id];
   const merged = patch ? { ...a, ...patch } : a;
-  if (merged.status === "pending" && state.risk.kill_switch === "on") return { ...merged, status: "cancelled" };
   if (merged.status === "pending" && Date.parse(merged.expires_at) <= nowMs(state, realNow)) return { ...merged, status: "expired" };
   return merged;
 }
@@ -359,7 +358,7 @@ function seedLevels(state: MockState): { equity: number; peak: number; daily: nu
   const r = state.risk;
   const live = liveEquity(r.daily_pnl_pct);
   const drawdown = Math.min(0, r.drawdown_pct);
-  // The fixture's running peak; only a post-reset override (drawdown floor) re-derives it.
+  // The fixture's running peak.
   const peak = drawdown === live.drawdown ? live.peak : Math.round(live.equity / (1 + drawdown));
   return { equity: live.equity, peak, daily: r.daily_pnl_pct, drawdown };
 }
@@ -421,14 +420,8 @@ export function companyOf(ticker: string): { name: string; price: number } | nul
 
 /* ── risk ────────────────────────────────────────────────────────────── */
 export function riskStatus(state: MockState, realNow: number = Date.now()): RiskStatus {
-  const r = state.risk;
   const book = bookOf(state, realNow);
   return {
-    kill_switch: r.kill_switch,
-    kill_reason: r.kill_reason,
-    kill_at: r.kill_at,
-    kill_by: r.kill_by,
-    halted_today: r.halted_today,
     daily_pnl_pct: book.daily_pnl_pct,
     drawdown_pct: book.drawdown_pct,
     peak_equity: book.peak_equity,
@@ -440,7 +433,6 @@ export function riskStatus(state: MockState, realNow: number = Date.now()): Risk
       { provider: "Groq gpt-oss", used: 61, limit: 1_000 },
       { provider: "Prompt Guard 2", used: 140, limit: 14_400 },
     ],
-    reset: r.kill_switch === "on" ? { started: r.reset_started, ready_at: null } : null,
     as_of: new Date(nowMs(state, realNow)).toISOString(),
   };
 }

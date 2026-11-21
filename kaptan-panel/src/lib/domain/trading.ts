@@ -3,7 +3,6 @@ import { Confidence, EventCode, IsoDate, IsoDateTime, Ticker } from "./common";
 import { EvidenceStrength, FlagCode } from "./agents";
 import { RuleTraceEntry } from "./rules";
 import { StageId } from "./personal";
-import { Signature } from "./user";
 
 /* ── TradeProposal (05) ───────────────────────────────────────────────── */
 export const TradeProposal = z.object({
@@ -317,25 +316,8 @@ export const PnlPoint = z.object({
 });
 export type PnlPoint = z.infer<typeof PnlPoint>;
 
-/* ── Risk status, stop and restart (06 §11) ── */
-/**
- * The way back after a stop: present while stopped, `null` when running. The one person asks
- * (`started`) and confirms. With real data confirm opens at `ready_at` (≥ 24 h after the request
- * and ≥ 5 market days after the stop); `null` means it may be confirmed now.
- */
-export const KillReset = z.object({
-  started: Signature.nullable(),
-  ready_at: IsoDateTime.nullable().default(null),
-});
-export type KillReset = z.infer<typeof KillReset>;
-
+/* ── Risk status (information only: nothing here stops anything) ── */
 export const RiskStatus = z.object({
-  kill_switch: z.enum(["off", "on"]),
-  kill_reason: z.string().nullable(),
-  kill_at: IsoDateTime.nullable(),
-  /** "user:<uid>" (someone pressed it) or "system:risk_monitor" (−5% from the peak, R01). */
-  kill_by: z.string().nullable(),
-  halted_today: z.boolean(),
   daily_pnl_pct: z.number(),
   drawdown_pct: z.number().max(0),
   /** Both are 0 until the person has entered their starting money. */
@@ -344,7 +326,6 @@ export const RiskStatus = z.object({
   regime: z.enum(["normal", "crisis"]),
   live_armed: z.boolean(),
   quota: z.array(z.object({ provider: z.string(), used: z.number().int().nonnegative(), limit: z.number().int().positive() })),
-  reset: KillReset.nullable(),
   as_of: IsoDateTime,
 });
 export type RiskStatus = z.infer<typeof RiskStatus>;

@@ -58,10 +58,6 @@ class DeskState:
     free_float: float
     equity_try: Decimal
     restrictions: tuple[Restriction, ...] = ()
-    kill_switch_on: bool = False
-    halted_today: bool = False
-    daily_pnl_pct: Decimal = Decimal(0)
-    drawdown_pct: Decimal = Decimal(0)
     regime: str = "normal"
     n_open_positions: int = 0
     holds_ticker: bool = False
@@ -70,8 +66,6 @@ class DeskState:
     live_armed: bool = False
     #: P8 stop cooldown of this ticker (kaptan.risk.cooldown; the same check GuardedBroker runs at send).
     in_cooldown: bool = False
-    #: 06 §11 step 4: a kill-switch restart is in force → new entries at m_reset (live runs only).
-    reset_active: bool = False
     #: Live desk inputs (kaptan.risk.desk; set for real runs).
     live: bool = False
     cash_free_try: Decimal | None = None  # None: the equity

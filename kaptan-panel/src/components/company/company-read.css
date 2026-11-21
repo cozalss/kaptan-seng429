@@ -1,0 +1,144 @@
+/* Company page additions (wave 5 READ): price statistics, the BIST 100 overlay, the compare page. */
+.co-stats {
+  display: grid;
+  gap: 0.5rem;
+}
+.co-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--hairline);
+  margin: 0;
+}
+.co-stats-grid > div {
+  padding: 0.75rem 1rem 0.75rem 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.co-stats-grid dt {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.co-stats-grid dd {
+  margin: 0.125rem 0 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.co-stats-grid small {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+.co-stats-note {
+  max-width: 62ch;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.co-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.co-toggle {
+  min-height: 2.75rem;
+  padding: 0 0.875rem;
+  border: 1.5px solid var(--rule-ui);
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.co-toggle[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--on-dark);
+  border-color: var(--ink);
+}
+.co-toggle:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+.co-two .co-stroke-b {
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+}
+.co-two svg {
+  color: var(--hairline);
+}
+.co-two-cap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+.co-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.co-key-a,
+.co-key-b {
+  display: inline-block;
+  width: 1.5rem;
+  height: 0;
+  border-top: 3px solid var(--ink);
+}
+.co-key-b {
+  border-top: 3px dashed var(--muted);
+}
+.co-two-note {
+  flex-basis: 100%;
+}
+.co-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+}
+.co-pick label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.co-pick select {
+  min-height: 2.75rem;
+  min-width: 12rem;
+  padding: 0 0.5rem;
+  border: 1.5px solid var(--rule-ui);
+  background: var(--paper, transparent);
+  color: var(--ink);
+  font-size: 1rem;
+}
+.co-pick select:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+.cmp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+}
+.cmp-table th,
+.cmp-table td {
+  padding: 0.625rem 0.75rem 0.625rem 0;
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+  vertical-align: top;
+}
+.cmp-table thead th {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.cmp-table tbody th {
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+.cmp-table td {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ink);
+}

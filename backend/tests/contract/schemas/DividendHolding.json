@@ -1,0 +1,35 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "ticker": {
+   "type": "string"
+  },
+  "company": {
+   "type": "string"
+  },
+  "last12_try": {
+   "type": "number"
+  },
+  "cost_try": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "yield_on_cost_pct": {
+   "type": [
+    "number",
+    "null"
+   ]
+  }
+ },
+ "required": [
+  "ticker",
+  "company",
+  "last12_try",
+  "cost_try",
+  "yield_on_cost_pct"
+ ],
+ "additionalProperties": false
+}

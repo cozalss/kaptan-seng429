@@ -135,6 +135,9 @@ function ReportBody({ k }: { k: Karne }) {
         Bu sayfa yalnızca geçmişi anlatır; geleceği söylemez. KAPtan hiçbir zaman senin yerine işlem yapmaz.{" "}
         <Link href={ROUTES.gecmis} className="rp-link no-print">
           Geçmişe dön
+        </Link>{" "}
+        <Link href={ROUTES.hafta} className="rp-link no-print">
+          Haftalık özet
         </Link>
       </p>
     </article>

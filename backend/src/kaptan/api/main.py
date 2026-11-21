@@ -20,6 +20,7 @@ from kaptan.agents.checkpoint import open_saver
 from kaptan.api.errors import install_error_handlers
 from kaptan.api.routers import (
     admin,
+    agenda,
     alerts,
     approvals,
     audit,
@@ -29,10 +30,14 @@ from kaptan.api.routers import (
     corporate,
     disclosures,
     eval,
+    imports,
+    insights,
     limits,
     personal,
     portfolio,
     preferences,
+    price_alerts,
+    reading,
     reports,
     risk,
     runs,
@@ -69,8 +74,13 @@ ROUTERS: Final = (
     reports.router,  # GET /reports/track|benchmark|karne|quiet (wave 4 REPORT)
     alerts.router,  # GET /me/alerts, POST /me/alerts/test
     preferences.router,  # /me/preferences, /me/pause, /me/backup (COMFORT)
+    price_alerts.router,  # /me/price-alerts, /me/alerts/history, /me/backup/list, /me/weekly (wave 5 ALERTS)
     companies.router,  # /companies/{ticker}, /search, /watchlist
+    agenda.router,  # /me/calendar, /market/strip (wave 5 HOME)
+    reading.router,  # /me/reading, /compare (wave 5 READ)
+    insights.router,  # /me/insights/*, /me/notes (wave 5 PARAM)
     corporate.router,  # /me/corporate: dividends, bonus and rights issues, KAP notices (wave 4 CORP)
+    imports.router,  # /me/import: statement upload, preview, apply (wave 5 IMPORT)
 )
 
 

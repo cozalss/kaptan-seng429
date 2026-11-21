@@ -1,0 +1,134 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "has_header": {
+   "type": "boolean"
+  },
+  "date": {
+   "anyOf": [
+    {
+     "type": "integer",
+     "minimum": 0,
+     "exclusiveMaximum": 30
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "type": {
+   "anyOf": [
+    {
+     "type": "integer",
+     "minimum": 0,
+     "exclusiveMaximum": 30
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "fixed_kind": {
+   "anyOf": [
+    {
+     "type": "string",
+     "enum": [
+      "buy",
+      "sell",
+      "deposit",
+      "withdrawal",
+      "dividend"
+     ]
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "ticker": {
+   "anyOf": [
+    {
+     "type": "integer",
+     "minimum": 0,
+     "exclusiveMaximum": 30
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "qty": {
+   "anyOf": [
+    {
+     "type": "integer",
+     "minimum": 0,
+     "exclusiveMaximum": 30
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "price": {
+   "anyOf": [
+    {
+     "type": "integer",
+     "minimum": 0,
+     "exclusiveMaximum": 30
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "commission": {
+   "anyOf": [
+    {
+     "type": "integer",
+     "minimum": 0,
+     "exclusiveMaximum": 30
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "amount": {
+   "anyOf": [
+    {
+     "type": "integer",
+     "minimum": 0,
+     "exclusiveMaximum": 30
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "types": {
+   "default": {},
+   "type": "object",
+   "propertyNames": {
+    "type": "string",
+    "maxLength": 60
+   },
+   "additionalProperties": {
+    "type": "string",
+    "enum": [
+     "buy",
+     "sell",
+     "deposit",
+     "withdrawal",
+     "dividend",
+     "skip"
+    ]
+   }
+  }
+ },
+ "required": [
+  "has_header",
+  "types"
+ ],
+ "additionalProperties": false
+}

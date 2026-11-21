@@ -1,4 +1,4 @@
-"""The risk gate R01–R16 (06 §10, 05 §5.2): the last deterministic brake. Pure, no I/O.
+"""The risk gate R03–R16 (R01 and R02 are retired; 06 §10, 05 §5.2): the last deterministic brake. Pure, no I/O.
 
 Rules run in `RISK_GATE_ORDER`; the first REJECT or HOLD stops the chain, RESIZEs shrink the
 quantity cumulatively and the gate never grows it (monotone). R15 always asks a human (no auto
@@ -13,7 +13,7 @@ from decimal import ROUND_FLOOR, ROUND_HALF_UP, Decimal
 from typing import Final, Literal
 
 from kaptan.domain.schemas.rules import RISK_GATE_ORDER, RISK_RULES, RiskRuleCode
-from kaptan.rules.format import fmt_dec, fmt_pct, fmt_signed_pct
+from kaptan.rules.format import fmt_dec, fmt_pct
 
 Outcome = Literal["pass", "resize", "reject", "hold", "approval_required"]
 Phase = Literal["pre_trade", "at_send"]
@@ -21,7 +21,7 @@ Phase = Literal["pre_trade", "at_send"]
 HARD_RESTRICTIONS: Final = frozenset(
     {"spk_tedbir", "vbts_brut_takas", "vbts_aciga_satis", "vbts_kredili_islem", "vbts_tek_fiyat", "trading_halt"}
 )
-AT_SEND_RULES: Final[tuple[RiskRuleCode, ...]] = ("R01", "R02", "R03", "R04", "R09", "R12", "R13")
+AT_SEND_RULES: Final[tuple[RiskRuleCode, ...]] = ("R03", "R04", "R09", "R12", "R13")
 CENT: Final = Decimal("0.01")
 #: P8 (06 §7.2): the one refusal text, shared with GuardedBroker (kaptan.brokers.guarded).
 COOLDOWN_TR: Final = "Stop sonrası bekleme: bu hisseye 10 borsa günü yeni giriş yok (P8)."
@@ -44,8 +44,6 @@ class GateLimits:
     price_band_pct: Decimal = Decimal("0.02")
     near_limit_up_pct: Decimal = Decimal("0.01")
     max_price_age_s: int = 20 * 60
-    daily_loss_halt_pct: Decimal = Decimal("-0.01")
-    kill_drawdown_pct: Decimal = Decimal("-0.05")
     min_edge_cost_ratio: Decimal = Decimal(2)
     crisis_exposure_mult: Decimal = Decimal("0.5")
     max_sector_pct: Decimal = Decimal("0.25")
@@ -53,8 +51,6 @@ class GateLimits:
     max_daily_entries: int = 3
     #: 06 §9: in the crisis regime at most one new entry per day.
     max_daily_entries_crisis: int = 1
-    #: 06 §11 step 4: `m_reset`, the size multiplier after a kill-switch restart (until back within −2.5 %).
-    reset_size_mult: Decimal = Decimal("0.5")
     min_evidence_n: int = 5
     amount_tolerance: Decimal = Decimal("0.005")
     max_kap_delay_s: int = 300
@@ -109,10 +105,6 @@ class GateContext:
     upper_limit: Decimal | None = None
     #: 06 R09 note: a SELL only has to satisfy limit ≥ taban (exit priority).
     lower_limit: Decimal | None = None
-    kill_switch_on: bool = False
-    drawdown_pct: Decimal = Decimal(0)
-    daily_pnl_pct: Decimal = Decimal(0)
-    halted_today: bool = False
     in_universe: bool = True
     restrictions: tuple[str, ...] = ()
     restrictions_age_h: float = 0.0
@@ -131,8 +123,6 @@ class GateContext:
     daily_entries: int = 0
     #: P8 (06 §7.2): the ticker is inside a stop (X2) cooldown (kaptan.risk.cooldown).
     in_cooldown: bool = False
-    #: 06 §11 step 4: a confirmed kill-switch restart is still in force (risk_state.reset_at).
-    reset_active: bool = False
     sector_exposure_pct: Decimal = Decimal(0)
     group_exposure_pct: Decimal = Decimal(0)
     regime: Literal["normal", "crisis"] = "normal"
@@ -197,26 +187,6 @@ def _no(code: RiskRuleCode, phase: Phase, outcome: Outcome, detail: str, **kw: s
 
 def _f(x: Decimal) -> float:
     return float(x)
-
-
-def r01(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
-    obs, cap = fmt_pct(_f(c.drawdown_pct), 1), fmt_pct(_f(lim.kill_drawdown_pct), 0)
-    if o.side == "buy" and (c.kill_switch_on or c.drawdown_pct <= lim.kill_drawdown_pct):
-        why = "Her şey durduruldu" if c.kill_switch_on else "Zirveden düşüş −%5 sınırında"
-        return _no("R01", ph, "reject", f"{why}; yeni alım yok.", observed=obs, limit=cap)
-    if o.side == "buy" and c.reset_active and ph == "pre_trade":  # 06 §11 step 4: m_reset (sizing only)
-        mult = fmt_dec(_f(lim.reset_size_mult), 1)
-        why = f"Yeniden başlatma sonrası boyut ×{mult}."
-        res = _no("R01", ph, "resize", why, observed=obs, limit=cap)
-        return replace(res, new_qty=_floor_qty(Decimal(o.qty) * lim.reset_size_mult))
-    return _ok("R01", ph, f"Sistem çalışıyor; zirveden düşüş {obs}.", observed=obs, limit=cap)
-
-
-def r02(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
-    obs, cap = fmt_signed_pct(_f(c.daily_pnl_pct), 1), fmt_pct(_f(lim.daily_loss_halt_pct), 0)
-    if o.side == "buy" and (c.halted_today or c.daily_pnl_pct <= lim.daily_loss_halt_pct):
-        return _no("R02", ph, "reject", f"Günlük K/Z {obs}; bugün yeni emir yok.", observed=obs, limit=cap)
-    return _ok("R02", ph, f"Günlük K/Z {obs}.", observed=obs, limit=cap)
 
 
 def r03(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
@@ -381,8 +351,6 @@ def r10(o: GateOrder, c: GateContext, lim: GateLimits, ph: Phase) -> RiskResult:
 
 
 CHECKS: Final[dict[RiskRuleCode, Check]] = {
-    "R01": r01,
-    "R02": r02,
     "R03": r03,
     "R04": r04,
     "R05": r05,
@@ -414,7 +382,7 @@ def _r15(o: GateOrder, c: GateContext, lim: GateLimits, resized: bool) -> tuple[
 
 
 def evaluate(order: GateOrder, ctx: GateContext, limits: GateLimits | None = None) -> GateVerdict:
-    """Pre-trade gate: R01 → … → R10 in RISK_GATE_ORDER, then R15 (approval required, level)."""
+    """Pre-trade gate: R03 → … → R10 in RISK_GATE_ORDER, then R15 (approval required, level)."""
     lim = limits or GateLimits()
     if ctx.compliance_decision == "veto":
         raise ValueError("a compliance veto never reaches the risk gate")
@@ -444,7 +412,7 @@ def evaluate(order: GateOrder, ctx: GateContext, limits: GateLimits | None = Non
 
 
 def evaluate_at_send(order: GateOrder, ctx: GateContext, limits: GateLimits | None = None) -> RiskResult:
-    """R16: at send time the approval must still be valid and R01–R04, R09, R12, R13 must pass again."""
+    """R16: at send time the approval must still be valid and R03, R04, R09, R12, R13 must pass again."""
     lim = limits or GateLimits()
     if ctx.approval_expired:
         return _no("R16", "at_send", "reject", "Onay süresi doldu: gönderilmedi.")
@@ -455,5 +423,5 @@ def evaluate_at_send(order: GateOrder, ctx: GateContext, limits: GateLimits | No
     return _ok(
         "R16",
         "at_send",
-        "Gönderim anında R01–R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
+        "Gönderim anında R03, R04, R09, R12, R13 yeniden geçti; onay süresi dolmamış.",
     )

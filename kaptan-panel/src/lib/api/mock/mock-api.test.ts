@@ -140,33 +140,22 @@ describe("mock API · order tickets", () => {
   });
 });
 
-describe("mock API · stop and restart", () => {
-  it("stops, blocks approvals, and one person restarts with both steps, the waiver on record", async () => {
-    const { api, db } = setup();
-    const on = await api.killSwitch("Piyasa çok oynak");
-    expect(on).toMatchObject({ kill_switch: "on", kill_by: "user:sen", reset: { started: null, ready_at: null } });
-    expect(await errorOf(api.killSwitch("tekrar açık"))).toMatchObject({ status: 409, code: "already_on" });
-    expect(await errorOf(api.decideApproval(P1, approve()))).toMatchObject({ status: 409, code: "kill_switch" });
-
-    expect(await errorOf(api.confirmKillReset({ reason: "Önce ben onaylayayım" }))).toMatchObject({ status: 409, code: "not_started" });
-    expect(await errorOf(api.startKillReset({ reason: "kısa" }))).toMatchObject({ status: 422 });
-    const started = await api.startKillReset({ reason: "Olay incelendi, piyasa kaynaklı" });
-    // The double waives the wait: ready_at stays null, so the panel confirms at once.
-    expect(started.reset).toMatchObject({ started: { uid: "sen", reason: "Olay incelendi, piyasa kaynaklı" }, ready_at: null });
-    expect(await errorOf(api.startKillReset({ reason: "İkinci kez başlatıyorum" }))).toMatchObject({ status: 409, code: "already_started" });
-
-    expect(await errorOf(api.confirmKillReset({ reason: "kısa" }))).toMatchObject({ status: 422 });
-    const off = await api.confirmKillReset({ reason: "Kendim onaylıyorum" });
-    expect(off).toMatchObject({ kill_switch: "off", reset: null });
-    expect(off.drawdown_pct).toBeGreaterThan(-0.05);
-    const actions = db.snapshot.auditAppends.map((a) => a.action);
-    expect(actions).toEqual(expect.arrayContaining(["kill_switch.on", "kill_switch.reset_started", "auth.single_user_waiver", "kill_switch.reset"]));
-  });
-  it("refuses a restart when nothing is stopped and validates the stop reason", async () => {
+describe("mock API · no stopping", () => {
+  it("has no stop or restart calls and no stop fields in the risk status", async () => {
     const { api } = setup();
-    expect(await errorOf(api.startKillReset({ reason: "Gereksiz bir başlatma" }))).toMatchObject({ status: 409, code: "not_on" });
-    expect(await errorOf(api.confirmKillReset({ reason: "Gereksiz bir onaylama" }))).toMatchObject({ status: 409, code: "not_on" });
-    expect(await errorOf(api.killSwitch("x"))).toMatchObject({ status: 422 });
+    expect(Object.keys(api)).not.toEqual(expect.arrayContaining(["killSwitch"]));
+    expect("startKillReset" in api).toBe(false);
+    expect("confirmKillReset" in api).toBe(false);
+    const status = await api.riskStatus();
+    for (const gone of ["kill_switch", "kill_reason", "kill_at", "kill_by", "halted_today", "reset"]) expect(status).not.toHaveProperty(gone);
+  });
+  it("approves just the same after a very large loss: nothing engages by itself", async () => {
+    const { api, db } = setup();
+    db.update((s) => ({ ...s, risk: { ...s.risk, daily_pnl_pct: -0.08, drawdown_pct: -0.3 } }));
+    const card = await api.decideApproval(P1, approve());
+    expect(card.status).toBe("approved");
+    const status = await api.riskStatus();
+    expect(status.drawdown_pct).toBeLessThan(-0.05);
   });
 });
 

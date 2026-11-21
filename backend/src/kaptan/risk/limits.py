@@ -17,8 +17,8 @@ from kaptan.api.errors import ApiError
 from kaptan.audit.writer import AuditDraft, append
 from kaptan.auth.four_eyes import second_signature
 from kaptan.domain.schemas import LimitDecisionInput, LimitProposalInput
-from kaptan.domain.schemas.governance import limit_violations
-from kaptan.risk.kill_switch import signature
+from kaptan.domain.schemas._base import iso_ms
+from kaptan.domain.schemas.governance import LIMIT_META, limit_violations
 
 PENDING_EXISTS: Final = "Onay bekleyen bir değişiklik zaten var."
 NO_CHANGE: Final = "Yeni değer şimdikiyle aynı."
@@ -30,6 +30,11 @@ SELECT version, status, reason, created_at, effective_from, proposed_by, decided
 FROM trading.limit_versions ORDER BY version DESC
 """
 VALUES_SQL: Final = "SELECT version, key, value FROM trading.limits ORDER BY version, ord"
+
+
+def signature(uid: str, name: str, role: str, at: datetime, reason: str | None) -> dict[str, Any]:
+    """A Signature document as stored in JSONB (ISO-ms time)."""
+    return {"uid": uid, "name": name, "role": role, "at": iso_ms(at), "reason": reason}
 
 
 def _num(x: float) -> float | int:
@@ -45,6 +50,8 @@ async def limits_view(conn: AsyncConnection[Any]) -> dict[str, Any]:
         values = await cur.fetchall()
     by_version: dict[int, list[dict[str, Any]]] = {}
     for v in values:
+        if v["key"] not in LIMIT_META:  # an old version may hold a key that was retired (the two stop limits)
+            continue
         by_version.setdefault(int(v["version"]), []).append({"key": v["key"], "value": _num(v["value"])})
     docs = [{**dict(v), "values": by_version.get(int(v["version"]), [])} for v in versions]
     active = next((d for d in docs if d["status"] == "active"), None)

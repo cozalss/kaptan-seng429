@@ -64,16 +64,14 @@ def test_entry_time_reads_the_stream_id() -> None:
 
 
 def test_a_batch_announces_each_kind_once_and_skips_old_or_decided_events() -> None:
-    risk_on = {"kill_switch": "on", "halted_today": False}
     batch = [
         _entry(T0, "approval.requested", {"status": "pending"}),
         _entry(T0, "approval.requested", {"status": "pending"}),
         _entry(T0, "approval.requested", {"status": "approved"}),
-        _entry(T0, "kill_switch", risk_on),
         _entry(T0, "fill", {}),
-        _entry(T0, "halt", {"halted_today": False}),
-        ("not-an-id", {"event": "halt", "data": json.dumps({"halted_today": True})}),
-        (_entry(T0, "halt", {})[0], {"event": "halt", "data": "{broken"}),
+        _entry(T0, "halt", {"halted_today": True}),  # the old stop events no longer mean anything
+        ("not-an-id", {"event": "approval.requested", "data": json.dumps({"status": "pending"})}),
+        (_entry(T0, "approval.requested", {})[0], {"event": "approval.requested", "data": "{broken"}),
     ]
-    assert kinds_in(batch, T0 + timedelta(minutes=1)) == ("suggestion", "stopped")
+    assert kinds_in(batch, T0 + timedelta(minutes=1)) == ("suggestion",)
     assert kinds_in(batch, T0 + MAX_EVENT_AGE + timedelta(seconds=1)) == ()  # the phone must not ring for old news

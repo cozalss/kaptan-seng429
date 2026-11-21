@@ -3,9 +3,9 @@
  "type": "string",
  "enum": [
   "suggestion",
-  "day_halt",
-  "stopped",
   "part_down",
-  "watched"
+  "watched",
+  "price",
+  "weekly"
  ]
 }

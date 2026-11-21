@@ -3,8 +3,8 @@
 `ops.preferences.alerts` holds one document (kaptan.domain.schemas.preferences.AlertPrefs); NULL means the
 defaults: every kind on for the phone and this computer, no quiet hours. Quiet hours are Istanbul time. A
 message that falls inside them is held in Redis (`kaptan:alerts:held`, one entry per kind: a second suggestion
-adds nothing, the text is the same) and goes out when they end. The full stop (`stopped`) and the test message
-never wait. `decide` is pure; `AlertWatch` (kaptan.alerts.watch) does the holding and the sending.
+adds nothing, the text is the same) and goes out when they end. The test message never waits.
+`decide` is pure; `AlertWatch` (kaptan.alerts.watch) does the holding and the sending.
 """
 
 from __future__ import annotations
@@ -24,12 +24,14 @@ HELD_MAX_AGE_H: Final = 24
 #: The alert kind (kaptan.alerts.messages) -> the preference topic the person sees.
 TOPIC_OF: Final[dict[str, str]] = {
     "suggestion": "suggestion",
-    "day_halt": "day_halt",
-    "stopped": "stopped",
     "part_down": "part_down",
     "watch": "watched",
+    "price": "price",
+    "weekly": "weekly",
 }
-NEVER_HELD: Final = frozenset({"stopped", "test"})
+#: The preference topics the person sees (kaptan.domain.schemas.preferences.AlertKinds).
+TOPICS: Final = ("suggestion", "part_down", "watched", "price", "weekly")
+NEVER_HELD: Final = frozenset({"test"})
 
 Decision = Literal["send", "hold", "skip"]
 
@@ -37,8 +39,9 @@ Decision = Literal["send", "hold", "skip"]
 def default_prefs() -> dict[str, Any]:
     on = {"phone": True, "desktop": True}
     return {
-        "kinds": {t: dict(on) for t in ("suggestion", "day_halt", "stopped", "part_down", "watched")},
+        "kinds": {t: dict(on) for t in TOPICS},
         "quiet": {"on": False, "start": "22:00", "end": "08:00"},
+        "muted": [],
     }
 
 
@@ -48,7 +51,8 @@ def with_defaults(raw: dict[str, Any] | None) -> dict[str, Any]:
     if not raw:
         return base
     kinds = {t: {**base["kinds"][t], **(raw.get("kinds", {}).get(t) or {})} for t in base["kinds"]}
-    return {"kinds": kinds, "quiet": {**base["quiet"], **(raw.get("quiet") or {})}}
+    muted = [t for t in raw.get("muted") or [] if isinstance(t, str)]
+    return {"kinds": kinds, "quiet": {**base["quiet"], **(raw.get("quiet") or {})}, "muted": muted}
 
 
 def _minutes(value: str) -> int:

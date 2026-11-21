@@ -11,8 +11,6 @@
     "target_concurrent_positions",
     "max_adv_share",
     "price_band_pct",
-    "daily_loss_halt_pct",
-    "kill_drawdown_pct",
     "min_edge_cost_ratio",
     "crisis_exposure_mult",
     "leak_ret5d_threshold",

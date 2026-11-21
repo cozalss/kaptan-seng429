@@ -2,40 +2,6 @@
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "type": "object",
  "properties": {
-  "kill_switch": {
-   "type": "string",
-   "enum": [
-    "off",
-    "on"
-   ]
-  },
-  "kill_reason": {
-   "type": [
-    "string",
-    "null"
-   ]
-  },
-  "kill_at": {
-   "anyOf": [
-    {
-     "type": "string",
-     "format": "date-time",
-     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-    },
-    {
-     "type": "null"
-    }
-   ]
-  },
-  "kill_by": {
-   "type": [
-    "string",
-    "null"
-   ]
-  },
-  "halted_today": {
-   "type": "boolean"
-  },
   "daily_pnl_pct": {
    "type": "number"
   },
@@ -88,72 +54,6 @@
     "additionalProperties": false
    }
   },
-  "reset": {
-   "anyOf": [
-    {
-     "type": "object",
-     "properties": {
-      "started": {
-       "anyOf": [
-        {
-         "type": "object",
-         "properties": {
-          "uid": {
-           "type": "string"
-          },
-          "name": {
-           "type": "string"
-          },
-          "at": {
-           "type": "string",
-           "format": "date-time",
-           "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-          },
-          "reason": {
-           "type": [
-            "string",
-            "null"
-           ]
-          }
-         },
-         "required": [
-          "uid",
-          "name",
-          "at",
-          "reason"
-         ],
-         "additionalProperties": false
-        },
-        {
-         "type": "null"
-        }
-       ]
-      },
-      "ready_at": {
-       "default": null,
-       "anyOf": [
-        {
-         "type": "string",
-         "format": "date-time",
-         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
-        },
-        {
-         "type": "null"
-        }
-       ]
-      }
-     },
-     "required": [
-      "started",
-      "ready_at"
-     ],
-     "additionalProperties": false
-    },
-    {
-     "type": "null"
-    }
-   ]
-  },
   "as_of": {
    "type": "string",
    "format": "date-time",
@@ -161,11 +61,6 @@
   }
  },
  "required": [
-  "kill_switch",
-  "kill_reason",
-  "kill_at",
-  "kill_by",
-  "halted_today",
   "daily_pnl_pct",
   "drawdown_pct",
   "peak_equity",
@@ -173,7 +68,6 @@
   "regime",
   "live_armed",
   "quota",
-  "reset",
   "as_of"
  ],
  "additionalProperties": false

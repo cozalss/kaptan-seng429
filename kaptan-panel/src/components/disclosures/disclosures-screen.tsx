@@ -2,7 +2,7 @@
 
 import "./disclosures.css";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { deferredCount, type ApprovalCard } from "@/lib/domain";
@@ -24,6 +24,9 @@ import { Funnel, type FunnelFilter } from "./funnel";
 import { FilterBar } from "./filter-bar";
 import { filtersToQuery, isNarrowed, parseFilters, toQuery, type Filters } from "./filters";
 import { ReadingDrawer } from "./reading-drawer";
+import { ReadingMarksProvider, useReadingMarks } from "@/components/reading/marks";
+import { ReadingBar } from "@/components/reading/reading-bar";
+import { SavedList } from "@/components/reading/saved-list";
 import { DisclosureHours, Worthwhile } from "./disclosure-rows";
 import { readingSentence, waitingNote, type FunnelCounts, type WaitingNote } from "./reading-words";
 
@@ -36,6 +39,14 @@ const PAGE = 25;
  * everything else, hour by hour.
  */
 export function DisclosuresScreen() {
+  return (
+    <ReadingMarksProvider>
+      <DisclosuresBody />
+    </ReadingMarksProvider>
+  );
+}
+
+function DisclosuresBody() {
   const now = useNow(60_000);
   const { counters } = useDesk();
   const router = useRouter();
@@ -57,6 +68,14 @@ export function DisclosuresScreen() {
     router.replace(`${pathname}${query}`, { scroll: false });
   };
   const narrowed = isNarrowed(filters);
+  const marks = useReadingMarks();
+  const [savedView, setSavedView] = useState(false);
+  const openIndex = filters.open;
+  const markOpened = marks?.open;
+  useEffect(() => {
+    if (openIndex) void markOpened?.(openIndex);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only a newly opened duyuru counts as read
+  }, [openIndex]);
   const picked = filters.day;
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FunnelFilter>("all");
@@ -125,20 +144,23 @@ export function DisclosuresScreen() {
         title={sentence}
         lead={
           <p>
-            Bildirim ya da duyuru, borsadaki bir şirketin yasa gereği herkese açıkladığı haberdir; <Term word="KAP">KAP</Term> adlı resmî sitede yayımlanır. KAPtan hepsini senin yerine okur.
+            Bildirim ya da duyuru, borsadaki bir şirketin yasa gereği herkese açıkladığı haberdir; <Term word="KAP">KAP</Term> adlı resmî sitede yayımlanır. KAPtan hepsini senin yerine okur. <Link href="/takvim" className="underline underline-offset-4">Yaklaşan tarihler için takvime bak.</Link>
           </p>
         }
       />
 
-      {q.error && !q.data ? (
+      <ReadingBar saved={savedView} onSaved={setSavedView} />
+      {savedView ? <SavedList onOpen={(open) => setFilters({ ...filters, open })} /> : null}
+
+      {!savedView && q.error && !q.data ? (
         <ScreenState kind="error" title="Bağlantı kurulamadı." onRetry={q.refetch}>
           {q.error} Okuma sürüyor; yalnızca şu an gösteremiyorum.
         </ScreenState>
       ) : null}
 
-      {!q.data && !q.error ? <FunnelLoading /> : null}
+      {!savedView && !q.data && !q.error ? <FunnelLoading /> : null}
 
-      {counts && q.data ? (
+      {!savedView && counts && q.data ? (
         <>
           <FilterBar key={filtersToQuery({ ...filters, open: null })} filters={filters} today={today} onChange={(next) => { setShown(PAGE); setFilters(next); }} />
           <Funnel counts={counts} filter={filter} onFilter={(f) => { setFilter(f); setShown(PAGE); }} />

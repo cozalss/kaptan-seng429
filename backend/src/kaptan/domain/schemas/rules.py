@@ -129,8 +129,6 @@ RiskRuleCode = Literal[
 
 #: Execution order of the pre-trade gate; R16 runs at send time.
 RISK_GATE_ORDER: Final[tuple[RiskRuleCode, ...]] = (
-    "R01",
-    "R02",
     "R03",
     "R04",
     "R13",
@@ -147,8 +145,9 @@ RISK_GATE_ORDER: Final[tuple[RiskRuleCode, ...]] = (
 )
 
 RISK_RULES: Final[dict[RiskRuleCode, tuple[str, str]]] = {
-    "R01": ("Durdurma", "Her şey durduruldu mu; zirveden düşüş ≤ −%5 mi"),
-    "R02": ("Günlük zarar", "Günlük K/Z ≤ −%1 ise yeni emir durur"),
+    # R01 and R02 no longer run; the codes stay so old stored records still read.
+    "R01": ("Eski kural: durdurma", "Artık yok; yalnızca eski kayıtlarda görünür"),
+    "R02": ("Eski kural: günlük zarar", "Artık yok; yalnızca eski kayıtlarda görünür"),
     "R03": ("Evren", "Hisse likidite ve halka açıklık alt sınırıyla evrende mi"),
     "R04": ("Tedbir", "SPK/VBTS tedbiri sert veto; 24 saatten eski tedbir verisi HOLD"),
     "R05": ("Kanıt", "Kanıt kimlikleri getirilenlerin alt kümesi, karar anından önce, n ≥ 5"),
@@ -162,7 +161,7 @@ RISK_RULES: Final[dict[RiskRuleCode, tuple[str, str]]] = {
     "R13": ("Engel listen", "İçeriden-öğrenen engel listende değil"),
     "R14": ("Tutar uyuşması", "Okuyucu tutarı metindeki regex tutarlarıyla eşleşiyor (±%0,5)"),
     "R15": ("Onay zorunlu", "Her öneri insan onayına gider; ertesi borsa günü 09:50'de düşer"),
-    "R16": ("Gönderim anı", "Onay süresi; R01–R04, R09, R12, R13 yeniden; işlem bilgisi 30 dk"),
+    "R16": ("Gönderim anı", "Onay süresi; R03, R04, R09, R12, R13 yeniden; işlem bilgisi 30 dk"),
 }
 
 RiskOutcome = Literal["pass", "resize", "reject", "hold", "approval_required"]

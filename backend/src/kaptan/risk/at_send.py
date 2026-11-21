@@ -1,5 +1,5 @@
-"""R16 before the order exists (06 R16, FR-28): the approval decision re-runs R01–R04, R09, R12, R13
-with the desk as it is *now* (marked equity, kill switch, daily halt, restrictions and their age, the
+"""R16 before the order exists (06 R16, FR-28): the approval decision re-runs R03, R04, R09, R12, R13
+with the desk as it is *now* (marked equity, restrictions and their age, the
 latest price) and the active limit version, inside the decision's transaction.
 
 Used by approvals/service.py for cards of real runs (`run_set = 'live'`); recorded cards keep M1's path.
@@ -25,7 +25,7 @@ from kaptan.risk.gate import AT_SEND_RULES, CHECKS, GateContext, GateOrder, Risk
 ISSUER_SQL: Final = "SELECT in_universe, price, adv20_try FROM core.issuers WHERE ticker = %s"
 RESTRICTIONS_SQL: Final = "SELECT kind FROM core.restricted_securities WHERE ticker = %s ORDER BY added_at, id"
 STATE_SQL: Final = """
-SELECT rs.kill_switch, rs.halted_today, rs.regime,
+SELECT rs.regime,
        COALESCE((SELECT armed FROM trading.live_arm WHERE id = 1), false) AS live_armed
   FROM trading.risk_state rs WHERE rs.id = 1
 """
@@ -74,7 +74,7 @@ async def check_at_send(conn: AsyncConnection[Any], card: dict[str, Any], now: d
     active = await active_limits(conn)
     desk = await live_desk(conn, ticker, now, published_at=now, available_at=now)
     issuer = await _one(conn, ISSUER_SQL, (ticker,))
-    state = await _one(conn, STATE_SQL) or {"kill_switch": "off", "halted_today": False, "live_armed": False}
+    state = await _one(conn, STATE_SQL) or {"live_armed": False}
     async with conn.cursor() as cur:
         await cur.execute(RESTRICTIONS_SQL, (ticker,))
         kinds = tuple(str(r["kind"]) for r in await cur.fetchall())
@@ -96,10 +96,6 @@ async def check_at_send(conn: AsyncConnection[Any], card: dict[str, Any], now: d
         cash_free_try=desk.cash_free_try,
         upper_limit=upper,
         lower_limit=lower,
-        kill_switch_on=state["kill_switch"] == "on",
-        drawdown_pct=desk.drawdown_pct,
-        daily_pnl_pct=desk.daily_pnl_pct,
-        halted_today=bool(state["halted_today"]),
         in_universe=bool(issuer["in_universe"]) if issuer else False,
         restrictions=kinds,
         restrictions_age_h=desk.restrictions_age_h,

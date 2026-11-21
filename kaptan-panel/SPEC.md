@@ -11,8 +11,8 @@ anahtarı, demo ve örnek veri yoktur. Hedef aynı anda iki şey: jüriyi etkile
 yapmamış birinin her ekranı anlayabilmesi. İkisi çelişirse anlaşılırlık kazanır; güzel olan yeniden çizilir.
 
 Panel ne olduğunu **söyler**, son kararı **sen** verirsin. KAPtan emri kendi başına vermez: onayladığın öneri girilecek bir
-emre dönüşür; emri bankanda ya da aracı kurumunda sen girer, gerçekleşeni sen kaydedersin. Kasa, hisseler, kâr/zarar ve
-durdurma kuralları senin kendi defterini okur. Başlangıç paranı girene kadar KAPtan bildirimleri okur ama yorumlamaz.
+emre dönüşür; emri bankanda ya da aracı kurumunda sen girer, gerçekleşeni sen kaydedersin. Kasa, hisseler ve kâr/zarar
+senin kendi defterini okur. Başlangıç paranı girene kadar KAPtan bildirimleri okur ama yorumlamaz.
 Yeni kurulumda ekranlar dürüstçe boştur; boşluk uydurma veriyle doldurulmaz.
 
 ## 1. Ekranlar
@@ -24,7 +24,7 @@ alt çubuktadır. Her ekran tek bir büyük cümleyle açılır.
 |---|---|---|---|
 | `/benim` | Ana sayfa | Paran ne kadar, nasıl hareket etti, bugün ne karar vermeliyim? | Büyük cümle. Tam genişlikte "Ufuk" çizgisi. Bekleyen öneriler (AL / TUT / SAT). Son işlemler. Başlangıç parası henüz girilmediyse onu isteyen tek adım. |
 | `/oneri/[id]` | — | Bu öneri neden var, onaylarsam ne olur? | Fiil, bir cümle, tutar, "Neden?". Belirsizlik açıkça yazılır. Onayla / Reddet; onay girilecek emri çıkarır. |
-| `/portfoy` | Param | Neye sahibim, her biri ne kadar değerli? | "Param nerede?" orantılı harita. Elindekiler, daha önce sahip olduklarını ekleme, durdurma. |
+| `/portfoy` | Param | Neye sahibim, her biri ne kadar değerli? | "Param nerede?" orantılı harita. Elindekiler, daha önce sahip olduklarını ekleme. |
 | `/bildirimler` | Okunanlar | KAPtan bugün ne okudu ve ne yaptı? | Sayılar ve liste. "Bugün 3 bildirime sıra gelmedi." ve nedeni; para girilmediyse "Başlangıç paranı girene kadar KAPtan bildirimleri yorumlamaz." ve ana sayfaya bağlantı. |
 | `/gecmis` | Geçmiş | Olan her şey, ne zaman ve neden? | Okunabilir zaman çizelgesi. Üstte "Kayıtlar sağlam mı?" kontrolü. |
 | `/ayarlar` | Ayarlar (hesap menüsü) | Limitlerim, KAPtan bana nasıl haber verir, çalışıyor mu? | Limitler düz cümle. **Bildirimler**: bu bilgisayar, telefon, e-posta, deneme bildirimi. **Sistem**: KAPtan'ın söylediği her sorun ya da "çalışıyor" ve son bakış saati. Parola, çıkış, "KAPtan nasıl çalışır". |
@@ -36,21 +36,20 @@ alt çubuktadır. Her ekran tek bir büyük cümleyle açılır.
 
 **İlk açılış.** "KAPtan nasıl çalışır": üç kısa adım, geçilebilir, bir kez gösterilir.
 
-**Durdurma.** Düğme Param'dadır. Durdurmak yeni öneriyi keser, bekleyenler düşer. Elindeki hisseler **satılmaz**; her biri
-kendi çıkış kuralıyla kapanır. Yeniden başlatma iki adımdır (API.md §3.1): en erken tarih söylenir ve beklenir.
+**Durdurma yoktur.** Elle durdurma düğmesi, yeniden başlatma beklemesi ve kayba bağlı otomatik frenler (günlük −%1, zirveden −%5)
+kaldırıldı. KAPtan paranın düşüşünü yalnızca gösterir; karar senindir. Her hisse kendi çıkış planıyla (zaman, ATR) kapanır.
 
 ## 2. Kabuk satırı: KAPtan kendi durumu hakkında dürüsttür
 
-Üst çubuğun altında bir seferde **en çok bir** satır görünür, en önemlisi önce: Durduruldu (kuzey kırmızısı), günlük durdurma
-(koyu sarı), sonra KAPtan'ın kendi sorunu (mürekkep satırı). Sistem satırı `GET /system/status`'tan gelir: sorunun cümlesi
+Üst çubuğun altında bir seferde **en çok bir** satır görünür, yalnızca KAPtan'ın kendi sorunu (mürekkep satırı). Sistem satırı `GET /system/status`'tan gelir: sorunun cümlesi
 (`message`), senin ne yapabileceğin ya da bir şey yapman gerekmediği ve Ayarlar · Sistem'e giden "Ayrıntı". Suçlayıcı dil yok.
-Bölge `role="status"`'tur (yalnız Durdur `alert`), odağı çalmaz. Durum dakikada bir, sekme gizliyken hiç, aynı anda tek istekle
+Bölge `role="status"`, odağı çalmaz. Durum dakikada bir, sekme gizliyken hiç, aynı anda tek istekle
 sorulur; API cevap vermezse 15 saniyede bir. Sorun yoksa satır yoktur.
 
 ## 3. Bildirimler
 
 - **Bu bilgisayar.** Tarayıcının kendi bildirimi; yalnızca Ayarlar'da düğmeye basılınca açılır ve izin o anda istenir (sayfa
-  yüklenirken asla). Olaylar panelin zaten aldığı akıştan gelir: yeni öneri, günlük durdurma, durdurma. Sekme açıkken
+  yüklenirken asla). Olaylar panelin zaten aldığı akıştan gelir: yeni öneri. Sekme açıkken
   çalışır; kullanıcı uygulamaya bakıyorsa bildirim çıkmaz. Metin: "Yeni bir önerin var." Hisse adı, tutar, yön yazılmaz.
   Tıklayınca ilgili ekran öne gelir. İzin reddedilmişse ya da tarayıcı desteklemiyorsa bunu düz cümleyle söyler.
 - **Telefon / e-posta.** Backend ntfy ya da e-posta ile gönderir; kurulum `kur.cmd` ile bu bilgisayarda yapılır. Ayarlar hangi
@@ -98,7 +97,7 @@ bildirimleri, kaynaklar) kalır.
 Hedef: jürinin "bu ne, kim yaptı?" diyeceği bir uygulama, standart bir panel değil.
 
 - Bodoni Moda yalnızca ≥ 32 px; bütün gövde metni Inter, rakamlar tabular.
-- Palet: indigo-lacivert mürekkep, serin kâğıt, tek işaret kırmızısı ("kuzey": durdurma, veto, bozuk kayıt), kazanç ve kayıp
+- Palet: indigo-lacivert mürekkep, serin kâğıt, tek işaret kırmızısı ("kuzey": veto, bozuk kayıt), kazanç ve kayıp
   mürekkepleri. Metin kontrastı ≥ 7:1; açık ve koyu tema ikisi de bilerek tasarlanır.
 - Hareket: yalnızca transform, opacity, clip-path; her animasyonun amacı var; `prefers-reduced-motion`'a uyar; INP < 200 ms,
   CLS < 0,1. Dokunma hedefi ≥ 44 px, 360 px'te yatay kaydırma yok, axe temiz, tam klavye.

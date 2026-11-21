@@ -1,20 +1,20 @@
-import type { ApprovalCard, RiskStatus } from "@/lib/domain";
-import { HOME, href, ROUTES } from "@/lib/nav";
+import type { ApprovalCard } from "@/lib/domain";
+import { href, ROUTES } from "@/lib/nav";
 
 /**
  * Desktop alerts, the pure part: which of the events the panel already receives is worth a
  * notification, what it says and where a click leads. The text never names a share, a company,
  * an amount or a direction: the same sentences the backend sends to the phone.
  */
-export type AlertKind = "suggestion" | "halt" | "stop" | "watch";
+export type AlertKind = "suggestion" | "watch" | "price";
 
 export const ALERT_TITLE = "KAPtan";
 
 export const ALERT_TEXT: Readonly<Record<AlertKind, string>> = {
   suggestion: "Yeni bir önerin var.",
-  halt: "Günlük zarar sınırına gelindi, yeni öneri durdu.",
-  stop: "KAPtan durduruldu.",
   watch: "İzlediğin bir şirketten yeni bildirim var.",
+  // A price alert stays on this computer, so its real text names the company (priceAlertBody); this is the generic one.
+  price: "Bir fiyat uyarın tetiklendi.",
 };
 
 export interface DesktopAlert {
@@ -24,25 +24,16 @@ export interface DesktopAlert {
   path: string;
 }
 
-type RiskNow = Pick<RiskStatus, "kill_switch" | "halted_today">;
-
-export type DeskSignal =
-  | { event: "approval.requested"; data: Pick<ApprovalCard, "proposal_id"> }
-  | { event: "halt" | "kill_switch"; data: RiskNow };
+export type DeskSignal = { event: "approval.requested"; data: Pick<ApprovalCard, "proposal_id"> };
 
 /** A new disclosure for a company on the watchlist; a click opens Okunanlar filtered to the watchlist. */
 export const WATCH_ALERT: DesktopAlert = { kind: "watch", body: ALERT_TEXT.watch, path: `${ROUTES.bildirimler}?kimler=izlediklerim` };
 
 const alertOf = (kind: AlertKind, path: string): DesktopAlert => ({ kind, body: ALERT_TEXT[kind], path });
 
-/**
- * The alert for a desk event, or null. A stop and a daily stop alert once, when they begin:
- * `before` is the risk state the panel knew until now (null = none yet).
- */
-export function alertFor(signal: DeskSignal, before: RiskNow | null): DesktopAlert | null {
-  if (signal.event === "approval.requested") return alertOf("suggestion", href.proposal(signal.data.proposal_id));
-  if (signal.event === "kill_switch") return signal.data.kill_switch === "on" && before?.kill_switch !== "on" ? alertOf("stop", HOME) : null;
-  return signal.data.halted_today && !before?.halted_today ? alertOf("halt", HOME) : null;
+/** The alert for a desk event, or null. */
+export function alertFor(signal: DeskSignal): DesktopAlert | null {
+  return alertOf("suggestion", href.proposal(signal.data.proposal_id));
 }
 
 export type AlertPermission = NotificationPermission | "unsupported";

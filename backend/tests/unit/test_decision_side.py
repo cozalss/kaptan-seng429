@@ -1,4 +1,4 @@
-"""A SELL exit is still decided while stopped (06 X5: X1–X4 keep managing positions); a BUY is not."""
+"""A decision depends on the card only: a buy or a sell is approvable while pending, whatever the book's losses."""
 
 from __future__ import annotations
 
@@ -20,22 +20,13 @@ def _card(side: str | None) -> dict[str, Any]:
     return card
 
 
-@pytest.mark.parametrize("side", ["buy", None])
-def test_a_buy_is_refused_under_the_kill_switch_and_the_daily_halt(side: str | None) -> None:
-    with pytest.raises(ApiError) as kill:
-        _check_decision(_card(side), APPROVE, kill_on=True, halted=False)
-    assert kill.value.code == "kill_switch"
-    with pytest.raises(ApiError) as halt:
-        _check_decision(_card(side), APPROVE, kill_on=False, halted=True)
-    assert halt.value.code == "halted"
-
-
-def test_a_sell_exit_is_still_approvable_while_stopped() -> None:
-    _check_decision(_card("sell"), APPROVE, kill_on=True, halted=True)
+@pytest.mark.parametrize("side", ["buy", "sell", None])
+def test_a_pending_card_is_approvable_whatever_the_side(side: str | None) -> None:
+    _check_decision(_card(side), APPROVE)
 
 
 def test_a_decided_sell_card_is_still_a_conflict() -> None:
     card = {**_card("sell"), "status": "approved"}
     with pytest.raises(ApiError) as exc:
-        _check_decision(card, APPROVE, kill_on=True, halted=False)
+        _check_decision(card, APPROVE)
     assert exc.value.code == "conflict"

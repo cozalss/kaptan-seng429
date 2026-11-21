@@ -49,13 +49,13 @@ describe("limitViolations (tighten only)", () => {
   it("accepts the canonical set and any tighter value", () => {
     expect(limitViolations(LIMITS_V1)).toEqual([]);
     expect(limitViolations(withValue("max_position_pct", 0.05))).toEqual([]);
-    expect(limitViolations(withValue("daily_loss_halt_pct", -0.005))).toEqual([]);
+    expect(limitViolations(withValue("max_sector_pct", 0.2))).toEqual([]);
     expect(limitViolations(withValue("min_edge_cost_ratio", 3))).toEqual([]);
   });
   it("refuses looser, sign-flipped, fractional or missing values", () => {
     expect(limitViolations(withValue("max_position_pct", 0.2))[0]).toMatch(/gevşek/);
-    expect(limitViolations(withValue("kill_drawdown_pct", -0.1))[0]).toMatch(/gevşek/);
-    expect(limitViolations(withValue("daily_loss_halt_pct", 0.01)).join(" ")).toMatch(/işareti/);
+    expect(limitViolations(withValue("max_group_pct", 0.3))[0]).toMatch(/gevşek/);
+    expect(limitViolations(withValue("max_position_pct", -0.1)).join(" ")).toMatch(/işareti/);
     expect(limitViolations(withValue("max_concurrent_positions", 2.5)).join(" ")).toMatch(/tam sayı/);
     expect(limitViolations(LIMITS_V1.filter((v) => v.key !== "price_band_pct"))[0]).toMatch(/eksik/);
   });

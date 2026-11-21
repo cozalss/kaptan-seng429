@@ -1,5 +1,6 @@
 "use client";
 
+import { useDesk } from "@/components/shell/desk-state";
 import { useEffect, useRef, useState } from "react";
 import type { ApprovalCard, ApprovalStatus, OrderTicket } from "@/lib/domain";
 import { fmtInt } from "@/lib/format";
@@ -7,10 +8,8 @@ import { confidenceSentence, fmtLira } from "@/lib/solo/words";
 import { useApiMutation } from "@/lib/api/react";
 import { useNow } from "@/lib/clock";
 import { decideGate } from "@/components/approvals/approvals-logic";
-import { useDesk } from "@/components/shell/desk-state";
 import { answerByLine } from "@/components/story/plain";
 import { Button } from "@/components/ui/button";
-import { closedFor } from "./decide-logic";
 import { OrderSlip } from "./order-slip";
 import { InkSeal, useLanded } from "./seal";
 import { pressSays } from "./suggestion-object";
@@ -23,7 +22,7 @@ const STRENGTH_SURE: Readonly<Record<ApprovalCard["evidence_summary"]["strength"
 
 const CLOSED: Partial<Record<ApprovalStatus, { title: string; body: string }>> = {
   rejected: { title: "Geçtin.", body: "İşlem yapılmadı. Kararın Geçmiş'e yazıldı." },
-  cancelled: { title: "İptal oldu.", body: "Her şey durdurulduğu için bu öneri düştü." },
+  cancelled: { title: "İptal oldu.", body: "Bu öneri iptal edildi; işlem yapılmadı." },
   expired: { title: "Süresi doldu.", body: "Karar için son saat geçti; öneri kendiliğinden düştü." },
 };
 
@@ -123,12 +122,8 @@ function OpenSheet({
   error: string | null;
   onDecide: (d: "approve" | "reject") => void;
 }) {
-  const desk = useDesk();
   const nowMs = useNow(30_000);
-  const stopped = desk.risk?.kill_switch === "on";
-  const halted = desk.risk?.halted_today ?? false;
-  const gate = decideGate({ status, killSwitchOn: stopped, haltedToday: halted });
-  const closed = closedFor({ stopped, halted });
+  const gate = decideGate({ status });
   const sell = card.side === "sell";
   const by = answerByLine(card.expires_at, nowMs);
   return (
@@ -140,7 +135,6 @@ function OpenSheet({
       </p>
       <p className="oneri-decide-line">{confidenceSentence(STRENGTH_SURE[card.evidence_summary.strength])}</p>
       {by ? <p className="oneri-decide-line font-semibold">{by}</p> : null}
-      {closed.reason ? <p className="oneri-closed">{closed.reason}</p> : null}
       <div className="oneri-decide-buttons">
         <Button variant="primary" size="lg" className="oneri-object-approve" disabled={!gate.canApprove} aria-disabled={pending || undefined} onClick={() => (pending ? undefined : onDecide("approve"))}>
           Onayla

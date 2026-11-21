@@ -1,4 +1,4 @@
-"""Risk gate R01–R16 (06 §10): order, first reject stops, resizes only shrink, R15 always asks a human."""
+"""Risk gate R03–R16 (06 §10): order, first reject stops, resizes only shrink, R15 always asks a human."""
 
 from __future__ import annotations
 
@@ -33,8 +33,6 @@ CTX = GateContext(
     adv20_try=Decimal(20_000_000),
     cash_free_try=Decimal(1_016_480),
     upper_limit=Decimal("52.14"),
-    drawdown_pct=Decimal("-0.01132"),
-    daily_pnl_pct=Decimal("0.0021"),
 )
 
 
@@ -52,10 +50,6 @@ def test_demo_e3_gate_matches_the_fixture_risk_checks() -> None:
 @pytest.mark.parametrize(
     ("ctx_change", "order_change", "code", "outcome"),
     [
-        ({"kill_switch_on": True}, {}, "R01", "reject"),
-        ({"drawdown_pct": Decimal("-0.05")}, {}, "R01", "reject"),
-        ({"daily_pnl_pct": Decimal("-0.011")}, {}, "R02", "reject"),
-        ({"halted_today": True}, {}, "R02", "reject"),
         ({"in_universe": False}, {}, "R03", "reject"),
         ({"restrictions": ("vbts_brut_takas",)}, {}, "R04", "reject"),
         ({"restrictions_age_h": 30.0}, {}, "R04", "reject"),  # 06 R04 case 5
@@ -143,12 +137,12 @@ def test_a_compliance_veto_never_reaches_the_gate() -> None:
 def test_r16_at_send() -> None:
     ok = evaluate_at_send(ORDER, CTX)
     assert (ok.rule_code, ok.phase, ok.outcome) == ("R16", "at_send", "pass")
-    assert ok.detail_tr.startswith("Gönderim anında R01–R04")
+    assert ok.detail_tr.startswith("Gönderim anında R03, R04")
     expired = evaluate_at_send(ORDER, replace(CTX, approval_expired=True))
     assert expired.outcome == "reject"
-    killed = evaluate_at_send(ORDER, replace(CTX, kill_switch_on=True), GateLimits())
-    assert killed.outcome == "reject"
-    assert "R01" in killed.detail_tr
+    blocked = evaluate_at_send(ORDER, replace(CTX, in_universe=False), GateLimits())
+    assert blocked.outcome == "reject"
+    assert "R03" in blocked.detail_tr
 
 
 @pytest.mark.parametrize(

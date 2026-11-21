@@ -1,0 +1,32 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "ticker": {
+   "type": "string"
+  },
+  "company": {
+   "type": "string"
+  },
+  "sector": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "value_try": {
+   "type": "number"
+  },
+  "pct": {
+   "type": "number"
+  }
+ },
+ "required": [
+  "ticker",
+  "company",
+  "sector",
+  "value_try",
+  "pct"
+ ],
+ "additionalProperties": false
+}

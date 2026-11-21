@@ -157,12 +157,12 @@ docker compose exec backup sh /ops/backup-once.sh
 `audit verify: ok=True`, `anchors: ... mismatched=[]`, `Deneme başarılı`.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\geri-yukle.ps1 -Deneme
+powershell -ExecutionPolicy Bypass -File .\geri-yukle.ps1 -Kontrol
 ```
 
 **Yedeğe dön.** Önce yedek ayrı bir veritabanına açılır ve kayıtlar doğrulanır. Doğrulanmazsa hiçbir şey değişmez.
 Doğrulanırsa KAPtan durur, o yedeğe geçer. Bugünkü veri silinmez, `kaptan_eski_<tarih>` adıyla kenarda kalır.
-[denendi: önceki turda; bu turda yalnız `-Deneme` kısmı yeniden çalıştırıldı, geçiş kısmı çalıştırılmadı]
+[denendi: önceki turda; bu turda yalnız `-Kontrol` kısmı yeniden çalıştırıldı, geçiş kısmı çalıştırılmadı]
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\geri-yukle.ps1
@@ -244,11 +244,12 @@ Bunu kullanmadan önce oku.
   üretmiş bir sistemdir; öneri hattının sonrası yalnız test verisiyle denendi.
 - **Beklenti düşüktür.** Belgeler, BIST-100'e göre yılda kabaca **0 ile +%5** fazladan getiri bekliyor. Sıfır da
   çıkabilir, **zarar da edebilirsin.** Bu bir söz değil, bir beklentidir.
-- **Zarara karşı iki sigorta vardır:** gün içinde **−%1**'e inersen yeni öneri durur; zirveden **−%5**'e inersen
-  KAPtan kendiliğinden durur. Durdurmak, elindeki hisseleri satmaz; her biri kendi çıkış kuralıyla kapanır.
-  Yeniden başlatmak için durdurmadan bu yana en az 24 saat ve en az 5 borsa günü geçmeli. Bu durdurucular senin
-  girdiğin paraya ve işlemlere bakar, bu yüzden gerçek işlemleri doğru girmen önemlidir.
-- Bu durdurucuları ve sınırları ben bu turda gerçek paraya karşı denemedim **[denenmedi]**.
+- **Zarara karşı otomatik bir fren yoktur.** Kendi isteğinle (2026-11-21) durdurma düğmesi, günlük zarar sınırı ve
+  zirveden düşüş durdurması kaldırıldı. Para düşse de KAPtan bir şeyi kendiliğinden durdurmaz ve bu konuda uyarı
+  vermez; ne yapacağına sen karar verirsin. Kalan kurallar (tek hisse payı, nakit, sektör sınırı, likidite, fiyat
+  bandı) her öneri için ayrı ayrı çalışır; bir hisse için çıkış önerisi (süre dolması, ATR stop) yine gelir ve bu
+  yalnız o hisse içindir, sistemi durdurmaz.
+- Bu kuralları ben bu turda gerçek paraya karşı denemedim **[denenmedi]**.
 - **KAPtan hiçbir zaman senin yerine emir vermez.** Her işlemi sen yaparsın.
 - **Ne kadar paranın girileceği senin kendi kararındır.** KAPtan bir üst sınır koymaz. Kaybetmeyi göze
   alabileceğin bir tutarla başla, ya da önce hiç gerçek para koymadan, yalnız izleyerek bir süre kullan.
@@ -271,7 +272,7 @@ hemen yanıt verir **[denendi]**.
 
 **Harcama sınırı ve kayıt zinciri:** ayrıntı için `live.env` ve `backend/README.md`. Panelde Geçmiş →
 "Kayıtlar sağlam mı?" zinciri doğrular; zincir her gece 23:30'da da doğrulanır. Zincir kırıksa o andan sonra karar
-verme, son sağlam yedeği `-Deneme` ile sına.
+verme, son sağlam yedeği `-Kontrol` ile sına.
 
 **Parolalar ve anahtarlar:**
 

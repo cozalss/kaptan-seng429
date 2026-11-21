@@ -1,0 +1,11 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "string",
+ "enum": [
+  "dividend_pay",
+  "dividend_ex",
+  "general_meeting",
+  "report_window",
+  "rate_decision"
+ ]
+}

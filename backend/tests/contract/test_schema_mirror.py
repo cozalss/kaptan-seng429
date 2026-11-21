@@ -108,11 +108,6 @@ def test_inputs_parse_like_zod() -> None:
         s.LimitProposalInput.model_validate({"key": "risk_per_trade_pct", "value": 0.004, "reason": "kısa"})
     with pytest.raises(ValueError, match="Not en az 3 harf olmalı"):
         s.NoteInput.model_validate({"body": " a "})
-    with pytest.raises(ValueError, match=r"Gerekçe en az 5 harf olmalı."):
-        s.KillSwitchInput.model_validate({"reason": "abc"})
-    with pytest.raises(ValueError, match=r"Gerekçe en az 10 harf olmalı."):
-        s.KillResetInput.model_validate({"reason": "kısa"})
-    assert s.KillResetInput.model_validate({"reason": "  Olay incelendi, eşikler doğru.  "}).reason.startswith("Olay")
 
 
 def test_every_api_response_schema_is_exported() -> None:

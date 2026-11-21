@@ -2,8 +2,15 @@ import { z } from "zod";
 import { Benchmark, Karne, MorningBrief, QuietDay, TrackRecord, ApprovalCard, AuditPage, ChainVerifyResult, DayCounters, DisclosureListItem, Explain, LimitsView, Me, OrderTicket, PnlPoint, Position, ProposalNote, RiskStatus } from "@/lib/domain";
 import { noteServerTime } from "@/lib/clock";
 import { Company, DisclosureReading, SearchResult, WatchItem } from "@/lib/company/company";
+import { Compare, ReadingState } from "@/lib/domain/reading";
+import { Calendar, MarketStrip } from "@/lib/domain/agenda";
 import { AlertSettings, SystemStatus } from "@/lib/domain/system";
 import { CorporateBook, NoticeAnswer } from "@/lib/domain/corporate";
+import { Allocation, ClosedTrades, DividendIncome, HoldingNotes, ReturnStats, Versus } from "@/lib/domain/insights";
+import { AlertHistoryItem, PriceAlert } from "@/lib/domain/price-alerts";
+import { ImportPreview, ImportResult, ImportSources, ImportTable } from "@/lib/domain/imports";
+import { BackupList } from "@/lib/domain/restore";
+import { WeeklySummary } from "@/lib/domain/weekly";
 import { BackupStatus, PasswordChanged, Preferences } from "@/lib/domain/preferences";
 import { BookResetOut, BrokerFee, MoneyBook, PreviousBook } from "@/lib/solo/money";
 import { HoldResult, Overview } from "@/lib/solo/overview";
@@ -61,7 +68,7 @@ async function request<T extends z.ZodType>(schema: T, path: string, init: Reque
   const headers = new Headers(init.headers);
   const sentToken = accessToken;
   if (sentToken) headers.set("Authorization", `Bearer ${sentToken}`);
-  if (init.body) headers.set("Content-Type", "application/json");
+  if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
   let res: Response;
   try {
     res = await fetch(`${BASE}${path}`, { ...init, headers, credentials: "include" });
@@ -142,6 +149,12 @@ export function createHttpApi(): KaptanApi {
     watchlist: () => request(z.array(WatchItem), "/watchlist"),
     watch: (ticker) => request(z.array(WatchItem), `/watchlist/${id(ticker)}`, { method: "PUT" }),
     unwatch: (ticker) => request(z.array(WatchItem), `/watchlist/${id(ticker)}`, { method: "DELETE" }),
+    readingState: () => request(ReadingState, "/me/reading"),
+    readAll: () => request(ReadingState, "/me/reading/read-all", post()),
+    markRead: (index) => request(ReadingState, `/me/reading/read/${index}`, { method: "PUT" }),
+    setSaved: (index, saved) => request(ReadingState, `/me/reading/saved/${index}`, { method: saved ? "PUT" : "DELETE" }),
+    savedDisclosures: () => request(z.array(DisclosureListItem), "/me/reading/saved"),
+    compare: (a, b, period = "3m") => request(Compare, `/compare${qs({ a, b, period })}`),
     listApprovals: (status = "pending") => request(z.array(ApprovalCard), `/approvals${qs({ status })}`),
     decideApproval: (pid, d) => request(ApprovalCard, `/approvals/${id(pid)}/decision`, post(d)),
     explain: (runId) => request(Explain, `/runs/${id(runId)}/explain`),
@@ -165,18 +178,29 @@ export function createHttpApi(): KaptanApi {
     undoCorporate: (rid) => request(CorporateBook, `/me/corporate/${id(rid)}/undo`, post()),
     corporateNotices: () => request(NoticeAnswer, "/me/corporate/notices"),
     dismissNotice: (nid) => request(NoticeAnswer, `/me/corporate/notices/${id(nid)}/dismiss`, post()),
+    insightsAllocation: () => request(Allocation, "/me/insights/allocation"),
+    setConcentration: (pct) => request(Allocation, "/me/insights/concentration", { method: "PUT", body: JSON.stringify({ threshold_pct: pct }) }),
+    closedTrades: () => request(ClosedTrades, "/me/insights/closed-trades"),
+    returnStats: () => request(ReturnStats, "/me/insights/stats"),
+    dividendIncome: () => request(DividendIncome, "/me/insights/dividends"),
+    versusMoney: () => request(Versus, "/me/insights/versus"),
+    holdingNotes: () => request(HoldingNotes, "/me/notes"),
+    saveHoldingNote: (ticker, body) => request(HoldingNotes, `/me/notes/${id(ticker)}`, { method: "PUT", body: JSON.stringify({ body }) }),
+    clearHoldingNote: (ticker) => request(HoldingNotes, `/me/notes/${id(ticker)}`, { method: "DELETE" }),
     correctFill: (no, input) => request(OrderTicket, `/tickets/${id(no)}/correct`, post(input)),
     brokerFee: () => request(BrokerFee, "/me/fee"),
     setBrokerFee: (input) => request(BrokerFee, "/me/fee", { method: "PUT", body: JSON.stringify(input) }),
     startOver: (input) => request(BookResetOut, "/me/book/reset", post(input)),
     previousBooks: () => request(z.array(PreviousBook), "/me/books"),
     exportRecords: () => download("/me/export.csv"),
+    importRead: (file, filename, source) =>
+      request(ImportTable, `/me/import/read${qs({ source, filename })}`, { method: "POST", body: file, headers: { "Content-Type": "application/octet-stream" } }),
+    importPreview: (input) => request(ImportPreview, "/me/import/preview", post(input)),
+    importApply: (input) => request(ImportResult, "/me/import/apply", post(input)),
+    importSources: () => request(ImportSources, "/me/import/sources"),
     positions: () => request(z.array(Position), "/portfolio/positions"),
     pnl: (from, to) => request(z.array(PnlPoint), `/portfolio/pnl${qs({ from, to })}`),
     riskStatus: () => request(RiskStatus, "/risk/status").then(withServerTime),
-    killSwitch: (reason) => request(RiskStatus, "/risk/kill-switch", post({ reason })),
-    startKillReset: (input) => request(RiskStatus, "/risk/kill-switch/reset/request", post(input)),
-    confirmKillReset: (input) => request(RiskStatus, "/risk/kill-switch/reset/confirm", post(input)),
     limits: () => request(LimitsView, "/limits"),
     proposeLimit: (input) => request(LimitsView, "/limits/proposals", post(input)),
     decideLimit: (version, input) => request(LimitsView, `/limits/proposals/${version}/decision`, post(input)),
@@ -192,6 +216,8 @@ export function createHttpApi(): KaptanApi {
         if (e instanceof ApiError && e.status === 404) return null;
         throw e;
       }),
+    calendar: (days) => request(Calendar, `/me/calendar${qs({ days })}`),
+    marketStrip: () => request(MarketStrip, "/market/strip"),
     systemStatus: () => request(SystemStatus, "/system/status"),
     alertSettings: () => request(AlertSettings, "/me/alerts"),
     testAlerts: () => request(AlertSettings, "/me/alerts/test", post()),
@@ -201,6 +227,12 @@ export function createHttpApi(): KaptanApi {
     endPause: () => request(Preferences, "/me/pause/resume", post()),
     backupStatus: () => request(BackupStatus, "/me/backup"),
     runBackup: () => request(BackupStatus, "/me/backup/run", post()),
+    backupList: () => request(BackupList, "/me/backup/list"),
+    priceAlerts: () => request(z.array(PriceAlert), "/me/price-alerts"),
+    addPriceAlert: (input) => request(z.array(PriceAlert), "/me/price-alerts", post(input)),
+    removePriceAlert: (id) => request(z.array(PriceAlert), `/me/price-alerts/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    alertHistory: () => request(z.array(AlertHistoryItem), "/me/alerts/history"),
+    weekly: (at) => request(WeeklySummary, `/me/weekly${qs({ at })}`),
     changePassword: ({ current, next }) => request(PasswordChanged, "/auth/password", post({ current, new: next })),
     signOutEverywhere: async () => {
       await request(z.undefined(), "/auth/logout-all", post());
