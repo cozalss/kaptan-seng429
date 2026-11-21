@@ -1,7 +1,8 @@
 import type { MoneyMovement } from "@/lib/solo/money";
+import type { StoredMovement } from "./ledger";
 import { cashOf, dayFigures, estimateCommission, flowsOf, hasStarted, initialBook, movementsOf, oldestPrice, ownHeld, ownPositions, putInOf, SEED_START_TRY, type MockBook, type OwnHolding } from "./ledger";
 
-const mv = (kind: MoneyMovement["kind"], amount_try: number, at = "2027-01-11T10:45:00.000Z"): MoneyMovement => ({ id: `mv-${kind}-${amount_try}`, kind, amount_try, occurred_at: at, note: "" });
+const mv = (kind: MoneyMovement["kind"], amount_try: number, at = "2027-01-11T10:45:00.000Z"): StoredMovement => ({ id: `mv-${kind}-${amount_try}`, kind, amount_try, occurred_at: at, note: "" });
 
 const holding = (over: Partial<OwnHolding> = {}): OwnHolding => ({
   id: "own-1",

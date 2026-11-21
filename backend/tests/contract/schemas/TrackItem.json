@@ -1,0 +1,97 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "proposal_id": {
+   "type": "string"
+  },
+  "ticker": {
+   "type": "string"
+  },
+  "company_name": {
+   "type": "string"
+  },
+  "suggested_at": {
+   "type": "string",
+   "format": "date-time",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+  },
+  "decision": {
+   "type": "string",
+   "enum": [
+    "took",
+    "approved_open",
+    "not_bought",
+    "declined",
+    "skipped",
+    "expired",
+    "waiting",
+    "cancelled"
+   ]
+  },
+  "decision_tr": {
+   "type": "string"
+  },
+  "entry_day": {
+   "type": "string",
+   "format": "date",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+  },
+  "result_day": {
+   "anyOf": [
+    {
+     "type": "string",
+     "format": "date",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "planned_sessions": {
+   "type": "integer",
+   "minimum": -9007199254740991,
+   "maximum": 9007199254740991
+  },
+  "status": {
+   "type": "string",
+   "enum": [
+    "done",
+    "open",
+    "no_data"
+   ]
+  },
+  "return_ratio": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "index_ratio": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "result_tr": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "proposal_id",
+  "ticker",
+  "company_name",
+  "suggested_at",
+  "decision",
+  "decision_tr",
+  "entry_day",
+  "result_day",
+  "planned_sessions",
+  "status",
+  "return_ratio",
+  "index_ratio",
+  "result_tr"
+ ],
+ "additionalProperties": false
+}

@@ -161,6 +161,16 @@ def _money(lead: str) -> Phrase:
     return phrase
 
 
+def _money_corrected(e: Entry, _what: str) -> str:
+    old, new = _lira(e["payload"].get("old_amount_try")), _lira(e["payload"].get("new_amount_try"))
+    return f"Parayı düzelttin: {old} yerine {new}." if old and new else "Bir para hareketini düzelttin."
+
+
+def _money_undone(e: Entry, _what: str) -> str:
+    amount = _lira(e["payload"].get("amount_try"))
+    return f"Bir para hareketini geri aldın: {amount}." if amount else "Bir para hareketini geri aldın."
+
+
 def _holding_added(e: Entry, what: str) -> str:
     qty = _str(e["payload"].get("qty"))
     cost = _lira(e["payload"].get("avg_cost"))
@@ -258,6 +268,20 @@ PHRASES: Final[dict[str, Phrase]] = {
     "money.withdrawn": _money("Kasandan para çektin"),
     "holding.added": _holding_added,
     "holding.sold": _holding_sold,
+    "holding.corrected": lambda _e, what: f"{_upper_first(what)} hissesinin kaydını düzelttin.",
+    "holding.undone": lambda _e, what: f"{_upper_first(what)} hissesini eklediğini geri aldın.",
+    "money.corrected": _money_corrected,
+    "money.undone": _money_undone,
+    "ticket.corrected": lambda _e, _x: "İşlemin gerçekleşen kaydını düzelttin.",
+    "book.reset": lambda _e, _x: "Baştan başladın; eski defterin Geçmiş'te duruyor.",
+    "fee.changed": lambda _e, _x: "Bankanın komisyon oranını değiştirdin.",
+    "dividend.recorded": lambda _e, what: f"{_upper_first(what)} kâr payı aldığını kaydettin.",
+    "dividend.corrected": lambda _e, what: f"{_upper_first(what)} kâr payı kaydını geri aldın.",
+    "bonus.recorded": lambda _e, what: f"{_upper_first(what)} için bedelsiz payların geldiğini kaydettin.",
+    "bonus.corrected": lambda _e, what: f"{_upper_first(what)} bedelsiz pay kaydını geri aldın.",
+    "rights.recorded": lambda _e, what: f"{_upper_first(what)} için bedelli pay aldığını kaydettin.",
+    "rights.corrected": lambda _e, what: f"{_upper_first(what)} bedelli pay kaydını geri aldın.",
+    "corporate.dismissed": lambda _e, _x: "Bir şirket duyurusunu kapattın.",
     "kill_switch.on": _kill_on,
     "kill_switch.reset_started": lambda _e, _x: "Yeniden başlatmayı istedin.",
     "kill_switch.reset": lambda _e, _x: "İşlemleri yeniden başlattın.",
@@ -265,6 +289,15 @@ PHRASES: Final[dict[str, Phrase]] = {
     "auth.login": lambda _e, _x: "Giriş yaptın.",
     "auth.logout": lambda _e, _x: "Çıkış yaptın.",
     "auth.single_user_waiver": lambda _e, _x: "Tek başına onayladın; bu da kayda geçti.",
+    "auth.password_changed": lambda _e, _x: "Parolanı değiştirdin.",
+    "auth.password_change_failed": lambda _e, _x: "Parola değiştirilmek istendi ama şimdiki parola yanlış girildi.",
+    "auth.signed_out_everywhere": lambda _e, _x: "Her yerden çıkış yaptın.",
+    "preferences.paused": lambda _e, _x: "Öneri getirmeye ara verdin.",
+    "preferences.resumed": lambda _e, _x: "Aranı bitirdin; KAPtan yeniden öneri getiriyor.",
+    "preferences.alerts_changed": lambda _e, _x: "Bildirim ayarlarını değiştirdin.",
+    "backup.requested": lambda _e, _x: "Hemen yedek alınmasını istedin.",
+    "watchlist.added": lambda _e, what: f"{_upper_first(what)} şirketini izleme listene ekledin.",
+    "watchlist.removed": lambda _e, what: f"{_upper_first(what)} şirketini izleme listenden çıkardın.",
     "kill_switch.wait_waived": lambda _e, _x: "Yeniden başlatma için beklemedin; bu da kayda geçti.",
     "suggestion.held": lambda _e, what: f"{what} için “Tut” dedin.",
     "suggestion.skipped": lambda _e, what: f"{what} önerisini geçtin.",

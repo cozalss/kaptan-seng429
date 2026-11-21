@@ -2,18 +2,20 @@
 
 import "./settings.css";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { useApiQuery } from "@/lib/api/react";
-import { realName, useSession } from "@/lib/auth/session-context";
 import { useEventStream } from "@/lib/sse/use-event-stream";
 import { openHowItWorks } from "@/components/onboarding/how-it-works";
 import { PageHeader } from "@/components/shell/page-frame";
-import { logout } from "@/components/shell/session-actions";
 import { Button } from "@/components/ui/button";
 import { Boat } from "@/components/ufuk/boat";
+import { AccountSection } from "./account-section";
+import { AlertPrefsSection } from "./alert-prefs-section";
 import { AlertsSection } from "./alerts-section";
+import { BackupSection } from "./backup-section";
+import { FeeSection } from "./fee-section";
 import { LimitsSection } from "./limits-section";
+import { LookSection } from "./look-section";
+import { PauseSection } from "./pause-section";
 import { settingsSentence, PLAIN_LIMITS, valueOf } from "./limits-logic";
 import { SystemSection } from "./system-section";
 
@@ -27,9 +29,16 @@ export function SettingsScreen() {
     <div className="ay-screen">
       <PageHeader name="Ayarlar" title={settingsSentence(count)} lead="KAPtan bu sınırların dışına çıkamaz. Değiştirince hemen geçerli olur ve Geçmiş’e yazılır." />
       <LimitsSection view={q.data ?? null} error={q.error} onRetry={q.refetch} onChanged={() => void q.refetch()} />
+      <PauseSection />
+      <FeeSection />
       <div className="ay-pair">
         <AlertsSection />
         <SystemSection />
+      </div>
+      <AlertPrefsSection />
+      <div className="ay-pair">
+        <BackupSection />
+        <LookSection />
       </div>
       <HowAndAccount />
     </div>
@@ -37,9 +46,6 @@ export function SettingsScreen() {
 }
 
 function HowAndAccount() {
-  const router = useRouter();
-  const name = realName(useSession().name);
-  const [leaving, setLeaving] = useState(false);
   return (
     <div className="ay-pair">
       <section aria-labelledby="nasil" className="ay-how">
@@ -54,24 +60,7 @@ function HowAndAccount() {
           </Button>
         </div>
       </section>
-      <section aria-labelledby="hesap" className="ay-account">
-        <h2 id="hesap" className="u-chapter text-ink">
-          Hesabın
-        </h2>
-        <p className="mt-2 text-body text-ink-soft">{name ? `${name} olarak girdin.` : "Giriş yaptın."} Parolan bu ekrandan değişmez; KAPtan’ın kurulum ayarlarında durur.</p>
-        <Button
-          variant="secondary"
-          className="mt-3"
-          pending={leaving}
-          disabled={leaving}
-          onClick={async () => {
-            setLeaving(true);
-            router.push(await logout());
-          }}
-        >
-          {leaving ? "Çıkılıyor…" : "Çıkış yap"}
-        </Button>
-      </section>
+      <AccountSection />
     </div>
   );
 }

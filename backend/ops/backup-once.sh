@@ -18,7 +18,7 @@ else
 fi
 
 psql -qtAX --dbname="$url_nopw" -c "INSERT INTO ops.job_runs (job, slot, trigger, started_at, finished_at, ok)
-  VALUES ('backup', '$today', 'schedule', '$started', now(), $ok)" \
+  VALUES ('backup', '$today', '${BACKUP_TRIGGER:-schedule}', '$started', now(), $ok)" \
   || echo "backup: result not recorded in ops.job_runs" >&2
 
 [ "$ok" = true ]

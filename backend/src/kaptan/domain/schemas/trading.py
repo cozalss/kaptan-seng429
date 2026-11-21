@@ -236,6 +236,12 @@ class TicketEntry(KModel):
     commission_estimated: bool
     #: Recorded after `valid_until`: still the person's real fill, kept in the book.
     late: bool
+    #: The broker commission rate an ESTIMATED commission used (a fraction); null when the person typed it.
+    commission_rate: NonNegFloat | None
+    #: True when that rate is the person's own, False for KAPtan's built-in one.
+    commission_rate_own: bool
+    #: The fill was fixed after it was first recorded.
+    corrected: bool
 
 
 def _note(v: str | None) -> str | None:
@@ -245,6 +251,14 @@ def _note(v: str | None) -> str | None:
     if len(text) > 500:
         raise ValueError("En çok 500 karakter")
     return text
+
+
+class TicketCorrectInput(KModel):
+    """POST /tickets/{ticket_no}/correct: what the bank really did. Commission left out: estimated again."""
+
+    filled_qty: int = Field(gt=0)
+    avg_price: float = Field(gt=0)
+    commission_try: float | None = Field(default=None, ge=0)
 
 
 class TicketMarkEntered(KModel):

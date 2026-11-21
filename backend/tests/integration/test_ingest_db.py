@@ -137,7 +137,9 @@ async def test_live_poll_stores_links_queues_and_publishes(
     assert notice["primary_ticker"] == "BAHKM" and notice["company_name"] != "KAMUYU AYDINLATMA PLATFORMU"
 
     queued = await one(ipool, "SELECT count(*) AS n, min(priority) AS p FROM ops.detail_fetch_queue")
-    assert queued["n"] == 60 + 28 + 3 + 1 + 43 and queued["p"] == 0  # E1 + E2 + E3 + E4 + llm
+    assert (
+        queued["n"] == 60 + 28 + 3 + 1 + 43 + 7 and queued["p"] == 0
+    )  # E1 + E2 + E3 + E4 + llm + 7 more corporate-action subjects (11 in the day, 4 already queued)
     raw = await one(ipool, "SELECT count(*) AS n FROM ops.ingest_raw WHERE source = 'kap.list_main'")
     assert raw["n"] == 481
 

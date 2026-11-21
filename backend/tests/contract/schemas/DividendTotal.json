@@ -1,0 +1,25 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "ticker": {
+   "type": "string"
+  },
+  "company": {
+   "type": "string"
+  },
+  "this_year_try": {
+   "type": "number"
+  },
+  "total_try": {
+   "type": "number"
+  }
+ },
+ "required": [
+  "ticker",
+  "company",
+  "this_year_try",
+  "total_try"
+ ],
+ "additionalProperties": false
+}

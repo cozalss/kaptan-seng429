@@ -13,6 +13,7 @@ import { Term } from "@/components/story/term";
 import { titleTr } from "@/components/story/turkish";
 import { AFTER_APPROVAL, ENTRY_LABEL, isMarkable, SIDE_LABEL, SIDE_VERB, ticketPhase, validFrom, validityWords, whenWords } from "@/components/tickets/ticket-logic";
 import { InkSeal } from "./seal";
+import { commissionRateWords, FixFill } from "./fix-fill";
 import { SlipActions } from "./slip-actions";
 import "./oneri.css";
 import "./oneri-slip.css";
@@ -101,7 +102,7 @@ export function OrderSlip({
           </p>
         ) : null}
       </div>
-      {marked ? <Marked ticket={t} /> : <Validity ticket={t} />}
+      {marked ? <Marked ticket={t} onFixed={done} /> : <Validity ticket={t} />}
       {marked ? null : <SlipActions ticket={t} onMarked={done} onCopied={() => setCopies((n) => n + 1)} />}
     </div>
   );
@@ -153,7 +154,7 @@ function Validity({ ticket }: { ticket: OrderTicket }) {
   );
 }
 
-function Marked({ ticket }: { ticket: OrderTicket }) {
+function Marked({ ticket, onFixed }: { ticket: OrderTicket; onFixed: (t: OrderTicket) => void }) {
   const e = ticket.entry;
   return (
     <div className="oneri-slip-marked">
@@ -162,7 +163,10 @@ function Marked({ ticket }: { ticket: OrderTicket }) {
         {e.status === "entered" && e.filled_qty && e.avg_price ? ` · ${fmtInt(e.filled_qty)} adet, tanesi ${fmtLira(e.avg_price, true)}` : ""}
       </p>
       {e.status === "entered" ? <p data-testid="komisyon">{e.commission_estimated ? `Komisyonu yazmadın; KAPtan tahmin etti: ${fmtLira(e.commission_try, true)}.` : `Bankanın kestiği komisyon: ${fmtLira(e.commission_try, true)}.`}</p> : null}
+      {e.status === "entered" && e.commission_estimated ? <p data-testid="komisyon-orani">{commissionRateWords(e.commission_rate, e.commission_rate_own)}</p> : null}
+      {e.status === "entered" && e.corrected ? <p data-testid="duzeltildi">Bu kaydı sonradan düzelttin; eski rakamlar Geçmiş’te duruyor.</p> : null}
       {e.status === "entered" && e.late ? <p>Süresi dolduktan sonra girdin; yine de Param’a yazıldı, çünkü bankandakiyle aynı olmalı.</p> : null}
+      {e.status === "entered" ? <FixFill ticket={ticket} onFixed={onFixed} /> : null}
       {e.status === "entered" ? (
         <Link href={ROUTES.portfoy} className="oneri-slip-link">
           Param’da gör →

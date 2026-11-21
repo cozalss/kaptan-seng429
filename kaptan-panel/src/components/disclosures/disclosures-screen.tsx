@@ -4,6 +4,7 @@ import "./disclosures.css";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { deferredCount, type ApprovalCard } from "@/lib/domain";
 import { MAX_DISCLOSURES } from "@/lib/api/limits";
 import { useApiQuery } from "@/lib/api/react";
@@ -20,6 +21,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { fateOf, flowFromList, tickerOf } from "./disclosure-logic";
 import { Funnel, type FunnelFilter } from "./funnel";
+import { FilterBar } from "./filter-bar";
+import { filtersToQuery, isNarrowed, parseFilters, toQuery, type Filters } from "./filters";
+import { ReadingDrawer } from "./reading-drawer";
 import { DisclosureHours, Worthwhile } from "./disclosure-rows";
 import { readingSentence, waitingNote, type FunnelCounts, type WaitingNote } from "./reading-words";
 
@@ -34,7 +38,26 @@ const PAGE = 25;
 export function DisclosuresScreen() {
   const now = useNow(60_000);
   const { counters } = useDesk();
-  const [picked, setPicked] = useState<string | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const fromAddress = useMemo(() => parseFilters(params), [params]);
+  // The screen answers a change at once; the address follows. An address we pushed ourselves is only an echo;
+  // any other change of it (Back, a link) wins.
+  const addressKey = filtersToQuery(fromAddress);
+  const [local, setLocal] = useState({ seen: addressKey, now: fromAddress, pushed: [] as string[] });
+  if (local.seen !== addressKey) {
+    const at = local.pushed.indexOf(addressKey);
+    setLocal(at >= 0 ? { ...local, seen: addressKey, pushed: local.pushed.slice(at + 1) } : { seen: addressKey, now: fromAddress, pushed: [] });
+  }
+  const filters = local.now;
+  const setFilters = (next: Filters) => {
+    const query = filtersToQuery(next);
+    setLocal((l) => ({ ...l, now: next, pushed: [...l.pushed, query] }));
+    router.replace(`${pathname}${query}`, { scroll: false });
+  };
+  const narrowed = isNarrowed(filters);
+  const picked = filters.day;
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FunnelFilter>("all");
   const [shown, setShown] = useState(PAGE);
@@ -42,7 +65,9 @@ export function DisclosuresScreen() {
   const day = picked ?? session?.shown ?? null;
   const today = now === null ? null : istanbulDay(now);
 
-  const q = useApiQuery((api) => (day ? api.disclosures({ day, limit: MAX_DISCLOSURES }) : Promise.resolve(null)), [day]);
+  const server = toQuery(filters);
+  const serverKey = JSON.stringify(server);
+  const q = useApiQuery((api) => (day ? api.disclosures({ day, limit: MAX_DISCLOSURES, ...server }) : Promise.resolve(null)), [day, serverKey]);
   // The day's exact total (the list stops at MAX_DISCLOSURES): GET /disclosures/counters?day=.
   const exact = useApiQuery((api) => (day ? api.counters(day) : Promise.resolve(null)), [day]);
   const cards = useApiQuery((api) => api.listApprovals("all"), []);
@@ -69,10 +94,10 @@ export function DisclosuresScreen() {
     const list = flowFromList(q.data);
     const usefulInList = q.data.filter((d) => cardOf.has(d.disclosure_index)).length;
     const e = exact.data;
-    return e && e.total >= q.data.length
+    return e && !narrowed && e.total >= q.data.length
       ? { total: e.total, noise: e.noise, archived: e.archived, processed: e.processed, useful: Math.max(e.proposals, usefulInList) }
       : { total: list.total, noise: list.noise, archived: list.archived, processed: list.processed, useful: usefulInList };
-  }, [q.data, exact.data, cardOf]);
+  }, [q.data, exact.data, cardOf, narrowed]);
 
   const rows = useMemo(() => {
     const all = q.data ?? [];
@@ -87,7 +112,7 @@ export function DisclosuresScreen() {
   const capped = (q.data?.length ?? 0) >= MAX_DISCLOSURES;
 
   const pickDay = (next: string) => {
-    setPicked(next);
+    setFilters({ ...filters, day: next, open: null });
     setShown(PAGE);
     setFilter("all");
   };
@@ -115,6 +140,7 @@ export function DisclosuresScreen() {
 
       {counts && q.data ? (
         <>
+          <FilterBar key={filtersToQuery({ ...filters, open: null })} filters={filters} today={today} onChange={(next) => { setShown(PAGE); setFilters(next); }} />
           <Funnel counts={counts} filter={filter} onFilter={(f) => { setFilter(f); setShown(PAGE); }} />
           <WaitingLines
             note={waitingNote({
@@ -161,7 +187,7 @@ export function DisclosuresScreen() {
                 </div>
                 {rows.length ? (
                   <>
-                    <DisclosureHours rows={rows.slice(0, shown)} label="Bildirim listesi" cardOf={cardOf} />
+                    <DisclosureHours rows={rows.slice(0, shown)} label="Bildirim listesi" cardOf={cardOf} onOpen={(open) => setFilters({ ...filters, open })} />
                     {rows.length > shown ? (
                       <div className="ok-more">
                         <p className="text-dense text-muted tabular-nums">
@@ -198,6 +224,7 @@ export function DisclosuresScreen() {
           )}
         </>
       ) : null}
+      {filters.open ? <ReadingDrawer index={filters.open} onClose={() => setFilters({ ...filters, open: null })} /> : null}
     </div>
   );
 }

@@ -4013,6 +4013,26 @@
         "late": {
          "default": false,
          "type": "boolean"
+        },
+        "commission_rate": {
+         "default": null,
+         "anyOf": [
+          {
+           "type": "number",
+           "minimum": 0
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "commission_rate_own": {
+         "default": false,
+         "type": "boolean"
+        },
+        "corrected": {
+         "default": false,
+         "type": "boolean"
         }
        },
        "required": [
@@ -4024,7 +4044,10 @@
         "marked_at",
         "commission_try",
         "commission_estimated",
-        "late"
+        "late",
+        "commission_rate",
+        "commission_rate_own",
+        "corrected"
        ],
        "additionalProperties": false
       },

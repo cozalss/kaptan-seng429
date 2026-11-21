@@ -16,11 +16,15 @@ import { Wordmark } from "@/components/brand/marks";
 import { ShellBanner } from "@/components/shell/banners";
 import { DeskStateProvider, ResetBoundary, useDesk } from "@/components/shell/desk-state";
 import { logout } from "@/components/shell/session-actions";
+import { openShortcuts, Shortcuts } from "@/components/shell/shortcuts";
+import { PrefsSync } from "@/lib/prefs/prefs-sync";
 import { UnreachableScreen } from "@/components/shell/unreachable";
 import { MENU_CONTENT, MENU_ITEM } from "@/components/ui/menu";
 import { SkeletonLines } from "@/components/ui/primitives";
 import { notify, Toaster } from "@/components/ui/toast";
 import { ConfirmAction, useStopRestart } from "./stop-panel";
+import { SearchBox } from "@/components/search/search-box";
+import { WatchAlerts } from "@/components/watchlist/watch-alerts";
 
 /** A page that has not landed by then simply appears: input is never held longer than this. */
 const TRANSITION_CAP_MS = 240;
@@ -123,6 +127,8 @@ export function SoloShell({ user, children }: { user: SessionUser; children: Rea
               </ResetBoundary>
             </main>
             <Toaster />
+            <Shortcuts />
+            <PrefsSync />
           </div>
         </DeskStateProvider>
       </ApiProvider>
@@ -157,6 +163,8 @@ function SoloHeader({ pathname }: { pathname: string }) {
           </Link>
           <MainNav pathname={pathname} />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            <SearchBox />
+            <WatchAlerts />
             <StopControl />
             <AccountMenu />
           </div>
@@ -265,6 +273,12 @@ function AccountMenu() {
         <M.Content side="bottom" align="end" sideOffset={8} className={cn(MENU_CONTENT, "w-[220px]")}>
           <M.Item asChild className={MENU_ITEM}>
             <Link href={ROUTES.ayarlar}>Ayarlar</Link>
+          </M.Item>
+          <M.Item asChild className={MENU_ITEM}>
+            <Link href={ROUTES.yardim}>Yardım</Link>
+          </M.Item>
+          <M.Item className={MENU_ITEM} onSelect={openShortcuts}>
+            Klavye kısayolları
           </M.Item>
           <M.Item className={MENU_ITEM} disabled={leaving} onSelect={signOut}>
             {leaving ? "Çıkılıyor…" : "Çıkış"}

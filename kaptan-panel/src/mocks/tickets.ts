@@ -21,6 +21,9 @@ export const EMPTY_ENTRY: TicketEntry = Object.freeze({
   commission_try: 0,
   commission_estimated: false,
   late: false,
+  commission_rate: null,
+  commission_rate_own: false,
+  corrected: false,
 }) as TicketEntry;
 
 const istDate = (iso: string) => new Date(Date.parse(iso) + ISTANBUL_OFFSET_H * 3_600_000).toISOString().slice(0, 10);

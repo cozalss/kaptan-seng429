@@ -18,6 +18,7 @@ visible row, stage `text` after the detail fetcher stored its text). For each en
    every live provider is over its daily cap (kaptan.llm.budget). Such a row is `deferred`, with the reason.
    Before the person has entered their starting money no run is made at all: every in-scope row is `deferred`
    (`waiting_for_money`), is still listed, and is re-driven by the first sweep after the money exists.
+   Tatil modu (`ops.preferences.pause_until` in the future) is the same hold with the reason `paused`.
    llm-route rows may use only part of a cap, so a flood of them leaves room for an E row.
 5. **Re-drive:** housekeeping (`sweep`) ends what can no longer run and puts deferred rows back on the stream in
    priority order, as many as the caps have room for. They then take the normal path below, so the ack, the
@@ -51,6 +52,7 @@ from kaptan.agents.nodes.screen import _veto_reasons
 from kaptan.ingest.publish import AGENT_STREAM, AGENT_STREAM_MAXLEN
 from kaptan.ingest.subject_routes import DETAIL_ROUTES
 from kaptan.llm.budget import DayUsage
+from kaptan.ops.pause import PAUSED, paused_until
 from kaptan.portfolio.ledger import started as book_started
 from kaptan.text.turkish import IST
 
@@ -311,6 +313,10 @@ class AgentFeed:
                 log.info("disclosure %s deferred: %s", index, WAITING_FOR_MONEY)
                 return await self._mark(conn, index, "deferred", WAITING_FOR_MONEY, stream_id)
             resuming = feed is not None and feed["status"] == "running"
+            if not resuming and await paused_until(conn, self.now()) is not None:  # Tatil modu: nothing may run
+                await conn.commit()
+                log.info("disclosure %s deferred: %s", index, PAUSED)
+                return await self._mark(conn, index, "deferred", PAUSED, stream_id)
             if not resuming and not await _pre_gate_vetoes(conn, str(disc["primary_ticker"])):
                 capped = await self._over_cap(conn, index, str(disc["subject_route"]))
                 await conn.commit()
@@ -414,6 +420,8 @@ class AgentFeed:
             return ()
         if not await book_started(conn):
             return ()  # they stay deferred; the first sweep after the starting money puts them back
+        if await paused_until(conn, self.now()) is not None:
+            return ()  # Tatil modu: the first sweep after its end puts them back
         hour, day = await self._spent(conn, NEVER_RAN)
         return pick_redrive(waiting, hour, day, self.cfg.max_runs_per_hour, self.cfg.max_runs_per_day, self.cfg.count)
 

@@ -1,0 +1,22 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "ticker": {
+   "type": "string",
+   "pattern": "^[A-Z0-9]{3,6}$"
+  },
+  "name": {
+   "type": "string"
+  },
+  "sector": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "ticker",
+  "name",
+  "sector"
+ ],
+ "additionalProperties": false
+}

@@ -1,0 +1,418 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "period": {
+   "type": "string",
+   "enum": [
+    "month",
+    "year"
+   ]
+  },
+  "label_tr": {
+   "type": "string"
+  },
+  "start": {
+   "type": "string",
+   "format": "date",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+  },
+  "end": {
+   "type": "string",
+   "format": "date",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+  },
+  "is_current": {
+   "type": "boolean"
+  },
+  "started": {
+   "type": "boolean"
+  },
+  "put_in_net": {
+   "type": "number"
+  },
+  "value_start": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "value_end": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "gain_try": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "realized_try": {
+   "type": "number"
+  },
+  "unrealized_try": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "commissions_try": {
+   "type": "number"
+  },
+  "dividends_try": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "suggestions": {
+   "type": "object",
+   "properties": {
+    "made": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "took": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "skipped": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "declined": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "expired": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "waiting": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    }
+   },
+   "required": [
+    "made",
+    "took",
+    "skipped",
+    "declined",
+    "expired",
+    "waiting"
+   ],
+   "additionalProperties": false
+  },
+  "decisions": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "track": {
+   "type": "object",
+   "properties": {
+    "count": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "done": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "open": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "no_data": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "up": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "down": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "flat": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "avg_ratio": {
+     "type": [
+      "number",
+      "null"
+     ]
+    },
+    "index_avg_ratio": {
+     "type": [
+      "number",
+      "null"
+     ]
+    },
+    "best": {
+     "anyOf": [
+      {
+       "type": "object",
+       "properties": {
+        "ticker": {
+         "type": "string"
+        },
+        "company_name": {
+         "type": "string"
+        },
+        "ratio": {
+         "type": "number"
+        }
+       },
+       "required": [
+        "ticker",
+        "company_name",
+        "ratio"
+       ],
+       "additionalProperties": false
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "worst": {
+     "anyOf": [
+      {
+       "type": "object",
+       "properties": {
+        "ticker": {
+         "type": "string"
+        },
+        "company_name": {
+         "type": "string"
+        },
+        "ratio": {
+         "type": "number"
+        }
+       },
+       "required": [
+        "ticker",
+        "company_name",
+        "ratio"
+       ],
+       "additionalProperties": false
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "followed_all": {
+     "type": "object",
+     "properties": {
+      "n": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "avg_ratio": {
+       "type": [
+        "number",
+        "null"
+       ]
+      }
+     },
+     "required": [
+      "n",
+      "avg_ratio"
+     ],
+     "additionalProperties": false
+    },
+    "you_took": {
+     "type": "object",
+     "properties": {
+      "n": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "avg_ratio": {
+       "type": [
+        "number",
+        "null"
+       ]
+      }
+     },
+     "required": [
+      "n",
+      "avg_ratio"
+     ],
+     "additionalProperties": false
+    },
+    "you_skipped": {
+     "type": "object",
+     "properties": {
+      "n": {
+       "type": "integer",
+       "minimum": 0,
+       "maximum": 9007199254740991
+      },
+      "avg_ratio": {
+       "type": [
+        "number",
+        "null"
+       ]
+      }
+     },
+     "required": [
+      "n",
+      "avg_ratio"
+     ],
+     "additionalProperties": false
+    },
+    "headline_tr": {
+     "type": "string"
+    },
+    "caveat_tr": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "compare_tr": {
+     "type": [
+      "string",
+      "null"
+     ]
+    }
+   },
+   "required": [
+    "count",
+    "done",
+    "open",
+    "no_data",
+    "up",
+    "down",
+    "flat",
+    "avg_ratio",
+    "index_avg_ratio",
+    "best",
+    "worst",
+    "followed_all",
+    "you_took",
+    "you_skipped",
+    "headline_tr",
+    "caveat_tr",
+    "compare_tr"
+   ],
+   "additionalProperties": false
+  },
+  "benchmark": {
+   "type": "object",
+   "properties": {
+    "start": {
+     "anyOf": [
+      {
+       "type": "string",
+       "format": "date",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "end": {
+     "anyOf": [
+      {
+       "type": "string",
+       "format": "date",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "available": {
+     "type": "boolean"
+    },
+    "you_ratio": {
+     "type": [
+      "number",
+      "null"
+     ]
+    },
+    "index_ratio": {
+     "type": [
+      "number",
+      "null"
+     ]
+    },
+    "sentence_tr": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "reason_tr": {
+     "type": [
+      "string",
+      "null"
+     ]
+    }
+   },
+   "required": [
+    "start",
+    "end",
+    "available",
+    "you_ratio",
+    "index_ratio",
+    "sentence_tr",
+    "reason_tr"
+   ],
+   "additionalProperties": false
+  },
+  "notes_tr": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  }
+ },
+ "required": [
+  "period",
+  "label_tr",
+  "start",
+  "end",
+  "is_current",
+  "started",
+  "put_in_net",
+  "value_start",
+  "value_end",
+  "gain_try",
+  "realized_try",
+  "unrealized_try",
+  "commissions_try",
+  "dividends_try",
+  "suggestions",
+  "decisions",
+  "track",
+  "benchmark",
+  "notes_tr"
+ ],
+ "additionalProperties": false
+}

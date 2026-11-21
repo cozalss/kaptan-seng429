@@ -104,3 +104,113 @@ export const EvalSummary = z.object({
   ),
 });
 export type EvalSummary = z.infer<typeof EvalSummary>;
+
+/* ── Karne: the track record, the money line against BIST 100, the monthly/yearly report ── */
+export const TrackDecision = z.enum(["took", "approved_open", "not_bought", "declined", "skipped", "expired", "waiting", "cancelled"]);
+export type TrackDecision = z.infer<typeof TrackDecision>;
+
+/** One suggestion and what happened after it. Ratios: 0.032 = +%3,2; null while the period is open or has no prices. */
+export const TrackItem = z.object({
+  proposal_id: z.string(),
+  ticker: z.string(),
+  company_name: z.string(),
+  suggested_at: IsoDateTime,
+  decision: TrackDecision,
+  decision_tr: z.string(),
+  entry_day: IsoDate,
+  /** Last day of the planned period: the result is known after its close. */
+  result_day: IsoDate.nullable(),
+  planned_sessions: z.number().int(),
+  status: z.enum(["done", "open", "no_data"]),
+  return_ratio: z.number().nullable(),
+  index_ratio: z.number().nullable(),
+  result_tr: z.string(),
+});
+export type TrackItem = z.infer<typeof TrackItem>;
+
+const TrackGroup = z.object({ n: z.number().int().nonnegative(), avg_ratio: z.number().nullable() });
+const TrackPick = z.object({ ticker: z.string(), company_name: z.string(), ratio: z.number() });
+
+export const TrackSummary = z.object({
+  count: z.number().int().nonnegative(),
+  done: z.number().int().nonnegative(),
+  open: z.number().int().nonnegative(),
+  no_data: z.number().int().nonnegative(),
+  up: z.number().int().nonnegative(),
+  down: z.number().int().nonnegative(),
+  flat: z.number().int().nonnegative(),
+  avg_ratio: z.number().nullable(),
+  index_avg_ratio: z.number().nullable(),
+  best: TrackPick.nullable(),
+  worst: TrackPick.nullable(),
+  followed_all: TrackGroup,
+  you_took: TrackGroup,
+  you_skipped: TrackGroup,
+  headline_tr: z.string(),
+  caveat_tr: z.string().nullable(),
+  compare_tr: z.string().nullable(),
+});
+export type TrackSummary = z.infer<typeof TrackSummary>;
+
+export const TrackRecord = z.object({ as_of: IsoDateTime, items: z.array(TrackItem), summary: TrackSummary });
+export type TrackRecord = z.infer<typeof TrackRecord>;
+
+/** Your result over a period against BIST 100 over the same days; `available` false = show nothing. */
+export const Benchmark = z.object({
+  start: IsoDate.nullable(),
+  end: IsoDate.nullable(),
+  available: z.boolean(),
+  you_ratio: z.number().nullable(),
+  index_ratio: z.number().nullable(),
+  sentence_tr: z.string().nullable(),
+  reason_tr: z.string().nullable(),
+});
+export type Benchmark = z.infer<typeof Benchmark>;
+
+export const KarnePeriod = z.enum(["month", "year"]);
+export type KarnePeriod = z.infer<typeof KarnePeriod>;
+
+export const Karne = z.object({
+  period: KarnePeriod,
+  label_tr: z.string(),
+  start: IsoDate,
+  end: IsoDate,
+  is_current: z.boolean(),
+  started: z.boolean(),
+  /** Money put in during the period (start + deposits − withdrawals + cost of holdings added). */
+  put_in_net: z.number(),
+  value_start: z.number().nullable(),
+  value_end: z.number().nullable(),
+  /** value_end − value_start − outside money; null when a value is unknown. */
+  gain_try: z.number().nullable(),
+  realized_try: z.number(),
+  /** Shares still held over their cost, now (current period only). */
+  unrealized_try: z.number().nullable(),
+  commissions_try: z.number(),
+  /** Null until the book has dividend rows: the page leaves the line out. */
+  dividends_try: z.number().nullable(),
+  suggestions: z.object({
+    made: z.number().int().nonnegative(),
+    took: z.number().int().nonnegative(),
+    skipped: z.number().int().nonnegative(),
+    declined: z.number().int().nonnegative(),
+    expired: z.number().int().nonnegative(),
+    waiting: z.number().int().nonnegative(),
+  }),
+  decisions: z.number().int().nonnegative(),
+  track: TrackSummary,
+  benchmark: Benchmark,
+  notes_tr: z.array(z.string()),
+});
+export type Karne = z.infer<typeof Karne>;
+
+/** Why a day has (no) suggestions, from the day's real counts. */
+export const QuietDay = z.object({
+  day: IsoDate,
+  read: z.number().int().nonnegative(),
+  relevant: z.number().int().nonnegative(),
+  proposals: z.number().int().nonnegative(),
+  sentence_tr: z.string(),
+  reasons: z.array(z.object({ reason_tr: z.string(), n: z.number().int().nonnegative() })),
+});
+export type QuietDay = z.infer<typeof QuietDay>;

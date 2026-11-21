@@ -1,0 +1,47 @@
+/* Karne: the report page and its print sheet (A4, always light). */
+.rp-screen { display: block; }
+.rp-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.rp-seg { display: inline-flex; border: var(--ink-line) solid var(--ink); }
+.rp-seg-btn { min-height: 44px; min-width: 56px; padding: 0 1rem; font-size: 0.9375rem; font-weight: 600; color: var(--ink); background: transparent; }
+.rp-seg-btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.rp-seg-btn:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.rp-body { margin-top: 2rem; max-width: 60rem; }
+.rp-printed-title, .rp-foot { display: none; }
+.rp-note { margin-bottom: 1rem; font-size: 0.9375rem; color: var(--ink-soft); }
+.rp-section { margin-top: var(--space-chapter); padding-top: 1.25rem; border-top: 1px solid var(--hairline); break-inside: avoid-page; }
+.rp-money { margin-top: 1rem; }
+.rp-money-row { display: flex; align-items: baseline; justify-content: space-between; gap: 1.5rem; padding: 0.75rem 0; border-bottom: 1px solid var(--hairline); }
+.rp-fig { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 1.25rem; white-space: nowrap; text-align: right; }
+.rp-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: 1.25rem 2rem; }
+.rp-list { border-top: 1px solid var(--hairline); }
+.rp-row { display: grid; grid-template-columns: 5.5rem minmax(9rem, 14rem) 1fr; gap: 0.25rem 1rem; align-items: baseline; padding: 0.75rem 0; border-bottom: 1px solid var(--hairline); font-size: 0.9375rem; }
+.rp-ticker { font-weight: 700; letter-spacing: 0.02em; }
+.rp-decision--took { font-weight: 600; color: var(--ink); }
+.rp-decision--skip, .rp-decision--wait { color: var(--ink-soft); }
+.rp-list:not([data-all]) .rp-extra { display: none; }
+.rp-link { font-size: 0.9375rem; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--rule-ui); }
+.rp-link:hover { text-decoration-color: var(--ink); }
+@media (max-width: 640px) {
+  .rp-row { grid-template-columns: 1fr; }
+  .rp-money-row { flex-direction: column; gap: 0.25rem; }
+  .rp-fig { text-align: left; }
+}
+@media print {
+  @page { size: A4; margin: 16mm; }
+  html:root:root, html:root[data-theme] {
+    color-scheme: light;
+    --paper: #fff; --panel: #fff; --sunk: #f0f0f0; --ink: #111; --ink-soft: #222; --muted: #444;
+    --rule-ui: rgb(0 0 0 / 0.7); --hairline: rgb(0 0 0 / 0.3); --brand: #0c2f63;
+    --gain: #0a5530; --loss: #8c1038; --north: #b3261e;
+  }
+  html, body { background: #fff !important; color: #111 !important; }
+  [data-solo] > header, [data-solo] nav, [data-solo] > a, .no-print, [data-sonner-toaster] { display: none !important; }
+  main { padding: 0 !important; }
+  .u-page { max-width: none !important; padding-inline: 0 !important; }
+  .rp-extra { display: grid !important; }
+  .rp-printed-title, .rp-foot { display: block; }
+  .rp-printed-title { font-size: 11pt; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4mm; }
+  .rp-foot { margin-top: 10mm; font-size: 9pt; color: #333; }
+  .rp-section, .rp-row, .rp-money-row { break-inside: avoid; }
+  * { animation: none !important; transition: none !important; box-shadow: none !important; }
+}

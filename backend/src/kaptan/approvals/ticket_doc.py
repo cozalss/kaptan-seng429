@@ -42,6 +42,9 @@ EMPTY_ENTRY: Final[dict[str, Any]] = {
     "commission_try": 0,
     "commission_estimated": False,
     "late": False,
+    "commission_rate": None,
+    "commission_rate_own": False,
+    "corrected": False,
 }
 
 

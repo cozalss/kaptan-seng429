@@ -1,0 +1,172 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Ayarlar, the comfort sections: Tatil modu, which alert goes where, Yedek, Görünüm and the account's password.
+   They sit on the same rhythm as the other blocks (settings.css: .ay-block, .ay-channels).
+   ────────────────────────────────────────────────────────────────────────── */
+
+.cf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-top: 1rem;
+}
+.cf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.cf-inline {
+  flex-basis: 100%;
+}
+.cf-label {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.cf-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.375rem;
+}
+.cf-date,
+.cf-time {
+  width: auto;
+  min-width: 9rem;
+  min-height: 2.75rem;
+}
+.cf-time {
+  padding-inline: 0.75rem;
+  border: 2px solid var(--rule-ui);
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+}
+.cf-time:disabled {
+  background: var(--sunk);
+  color: var(--muted);
+}
+.cf-path {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+
+/* Which alert goes where: the kind and when it comes on the left, two ticks on the right. */
+.cf-kind {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.25rem 1.5rem;
+  align-items: center;
+  padding-block: 1rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.cf-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+}
+.cf-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 2.75rem;
+  font-size: 1rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+.cf-check input {
+  width: 1.5rem;
+  height: 1.5rem;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+.cf-quiet {
+  margin-top: 1.25rem;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+@media (max-width: 639px) {
+  .cf-kind {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Görünüm: a row of big, plain choices; the chosen one is inked. */
+.cf-seg {
+  margin-top: 1.25rem;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.cf-seg-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.375rem;
+}
+.cf-seg-item {
+  position: relative;
+  display: inline-flex;
+  min-height: 2.75rem;
+  cursor: pointer;
+}
+.cf-seg-item input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.cf-seg-item span {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 1.125rem;
+  border: 2px solid var(--ink);
+  background: var(--panel);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+.cf-seg-item input:checked + span {
+  background: var(--ink);
+  color: var(--paper);
+}
+.cf-seg-item input:focus-visible + span {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.cf-password {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 26rem;
+  margin-top: 1.25rem;
+}
+
+/* The home's pause notice: a ruled band, ochre like the day stop's, with the way back at its end. */
+.cf-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-block: 1rem;
+  padding-block: 1rem;
+  border-block: 2px solid var(--ink);
+  background: var(--ochre-tint);
+}
+.cf-notice-text {
+  max-width: 62ch;
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* A block that stands alone in the screen gets the same breathing room as the paired ones. */
+.ay-screen > .ay-block {
+  margin-top: clamp(3rem, 2rem + 4vw, 6rem);
+}

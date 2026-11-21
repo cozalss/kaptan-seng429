@@ -1,0 +1,105 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "id": {
+   "type": "string"
+  },
+  "ticker": {
+   "type": "string"
+  },
+  "kind": {
+   "type": "string",
+   "enum": [
+    "dividend",
+    "bonus",
+    "rights",
+    "split"
+   ]
+  },
+  "headline": {
+   "type": "string"
+  },
+  "published_at": {
+   "type": "string",
+   "format": "date-time",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+  },
+  "held_qty": {
+   "type": "integer",
+   "minimum": -9007199254740991,
+   "maximum": 9007199254740991
+  },
+  "per_share_gross_try": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "per_share_net_try": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "pay_date": {
+   "anyOf": [
+    {
+     "type": "string",
+     "format": "date",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "ex_date": {
+   "anyOf": [
+    {
+     "type": "string",
+     "format": "date",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "bonus_pct": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "expected_gross_try": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "facts_note": {
+   "type": "string"
+  },
+  "url": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "id",
+  "ticker",
+  "kind",
+  "headline",
+  "published_at",
+  "held_qty",
+  "per_share_gross_try",
+  "per_share_net_try",
+  "pay_date",
+  "ex_date",
+  "bonus_pct",
+  "expected_gross_try",
+  "facts_note",
+  "url"
+ ],
+ "additionalProperties": false
+}

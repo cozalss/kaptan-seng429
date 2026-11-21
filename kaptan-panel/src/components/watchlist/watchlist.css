@@ -1,0 +1,55 @@
+.wl-strip {
+  display: grid;
+  gap: 0.75rem;
+  border-top: 1px solid var(--hairline);
+  padding: 1.25rem 0;
+}
+.wl-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0 2rem;
+}
+.wl-item {
+  display: grid;
+  gap: 0.125rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.wl-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.625rem;
+}
+.wl-ticker {
+  font-weight: 700;
+  color: var(--ink);
+}
+.wl-company {
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+.wl-new {
+  padding: 0 0.375rem;
+  border: 1.5px solid var(--north);
+  color: var(--north);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.wl-figures {
+  font-size: 1.0625rem;
+  color: var(--ink);
+}
+.wl-age {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.wl-all {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  color: var(--brand);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

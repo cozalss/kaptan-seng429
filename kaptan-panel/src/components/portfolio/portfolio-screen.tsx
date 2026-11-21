@@ -11,6 +11,7 @@ import { useEventStream } from "@/lib/sse/use-event-stream";
 import { fmtLira, fmtSignedLira } from "@/lib/solo/words";
 import { Band, PageHeader, ScreenState } from "@/components/shell/page-frame";
 import { useDesk } from "@/components/shell/desk-state";
+import { BenchmarkLine } from "@/components/solo/benchmark-line";
 import { StopCard, StoppedBanner, useStopRestart } from "@/components/solo/stop-panel";
 import { signTone } from "@/components/story/sign-tone";
 import { Button } from "@/components/ui/button";
@@ -18,8 +19,10 @@ import { OrderSlip } from "@/components/proposal/order-slip";
 import { slipsToEnter } from "@/components/tickets/ticket-logic";
 import { fmtSignedPct } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { CorporateSection } from "./corporate-section";
 import { Guards } from "./guards";
 import { Holdings } from "./holdings";
+import { BookTools } from "./book-tools";
 import { MoneySection } from "./money-section";
 import { placesSentence, todayLira } from "./param-words";
 import { istanbulDate } from "./risk-math";
@@ -40,10 +43,12 @@ export function PortfolioScreen() {
   const money = useApiQuery((api) => api.overview(), [riskKey]);
   const limits = useApiQuery((api) => api.limits(), []);
   const book = useApiQuery((api) => api.money(), [riskKey]);
+  const corporate = useApiQuery((api) => api.corporateBook(), [riskKey]);
   const reload = () => {
     void q.refetch();
     void money.refetch();
     void book.refetch();
+    void corporate.refetch();
   };
   useEventStream("desk", {
     fill: reload,
@@ -73,6 +78,8 @@ export function PortfolioScreen() {
 
       {risk ? <Figures equity={risk.equity} today={todayLira(risk)} todayPct={risk.daily_pnl_pct} since={money.data?.pnl_abs ?? null} sincePct={money.data?.pnl_pct ?? null} /> : null}
 
+      <BenchmarkLine className="mt-3" />
+
       {waiting.length ? (
         <Band aria-labelledby="fisler" className="pm-slips">
           <h2 id="fisler" className="u-chapter text-ink">
@@ -92,7 +99,7 @@ export function PortfolioScreen() {
       {positions && today ? (
         <>
           <Skyline positions={positions} cash={cash ?? 0} />
-          <Holdings positions={positions} today={today} onChanged={reload} />
+          <Holdings positions={positions} today={today} onChanged={reload} dividends={corporate.data?.per_holding} />
         </>
       ) : !q.error ? (
         <ScreenState kind="loading" title="Elindekilere bakıyorum…">
@@ -101,6 +108,9 @@ export function PortfolioScreen() {
       ) : null}
 
       <MoneySection book={book.data ?? null} onChanged={reload} />
+
+      <CorporateSection book={corporate.data ?? null} hasHoldings={(positions?.length ?? 0) > 0} holdingsKey={(positions ?? []).map((p) => `${p.ticker}:${p.qty}`).join(",")} onChanged={reload} />
+      {book.data ? <BookTools /> : null}
 
       <Band aria-label="Seni koruyan şeyler" className="pm-protect">
         <Guards risk={risk} limits={limits.data ?? null} />

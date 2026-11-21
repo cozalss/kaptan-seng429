@@ -230,10 +230,21 @@
 }
 .pm-row-ticker {
   font-size: 0.875rem;
-  line-height: 1.25rem;
+  line-height: 1.5rem; /* room for the 24 px link inside */
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--muted);
+}
+/* The code is a link: at least 24 px tall and 44 px wide, so a finger or a pointer hits it (WCAG 2.2 target size). */
+.pm-row-ticker {
+  position: relative; /* above the big name below, whose line box reaches up into this row */
+  z-index: 1;
+}
+.pm-row-ticker a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  min-width: 2.75rem;
 }
 .pm-row-name {
   margin-top: 0.125rem;

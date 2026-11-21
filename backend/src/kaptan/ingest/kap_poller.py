@@ -22,6 +22,7 @@ from datetime import UTC, date, datetime, time, timedelta
 from typing import Any, Final
 
 from kaptan.ingest import repo
+from kaptan.ingest.corporate_actions import is_corporate_subject
 from kaptan.ingest.kap_client import KapClient
 from kaptan.ingest.normalize import NormalizedDisclosure, normalize_rows
 from kaptan.ingest.publish import publish_new
@@ -189,7 +190,7 @@ class KapPoller:
             if status != "inserted":
                 continue
             result.new_indices.append(row.disclosure_index)
-            if self.cfg.fetch_details and wants_detail(row.subject_route):
+            if self.cfg.fetch_details and (wants_detail(row.subject_route) or is_corporate_subject(row.subject)):
                 await repo.enqueue_detail(conn, row.disclosure_index, LIVE_PRIORITY)
         if len(self.state.raw_hashes) > 20_000:  # keep only the last two days' worth
             for key in sorted(self.state.raw_hashes)[:10_000]:

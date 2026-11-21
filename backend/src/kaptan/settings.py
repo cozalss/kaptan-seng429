@@ -84,6 +84,8 @@ class Settings(BaseSettings):
     alert_smtp_user: str | None = None
     alert_smtp_password: SecretStr | None = None
     alert_smtp_to: str | None = None
+    #: The Windows folder the backups go to (KAPTAN_BACKUP_DIR of the install), only to tell the person where it is.
+    kaptan_backup_dir: str | None = None
 
     #: Live KAP ingestion (M2, kaptan.ingest). Off unless asked for: every compose file turns it on.
     kap_live: bool = False

@@ -180,3 +180,124 @@ class EvalSummary(KModel):
     latency: Latency
     cost: Cost
     shadow: list[ShadowRow]
+
+
+# ── Track record, benchmark, report (Karne), quiet day: mirror of the "Karne" block of reports.ts ──
+
+TrackDecision = Literal["took", "approved_open", "not_bought", "declined", "skipped", "expired", "waiting", "cancelled"]
+TrackStatus = Literal["done", "open", "no_data"]
+KarnePeriod = Literal["month", "year"]
+
+
+class TrackItem(KModel):
+    """One suggestion KAPtan made and what happened after it (a ratio: 0.032 = +%3,2)."""
+
+    proposal_id: str
+    ticker: str
+    company_name: str
+    suggested_at: IsoDateTime
+    decision: TrackDecision
+    decision_tr: str
+    entry_day: IsoDate
+    result_day: IsoDate | None
+    planned_sessions: int
+    status: TrackStatus
+    return_ratio: float | None
+    index_ratio: float | None
+    result_tr: str
+
+
+class TrackGroup(KModel):
+    n: NonNegInt
+    avg_ratio: float | None
+
+
+class TrackPick(KModel):
+    ticker: str
+    company_name: str
+    ratio: float
+
+
+class TrackSummary(KModel):
+    count: NonNegInt
+    done: NonNegInt
+    open: NonNegInt
+    no_data: NonNegInt
+    up: NonNegInt
+    down: NonNegInt
+    flat: NonNegInt
+    avg_ratio: float | None
+    index_avg_ratio: float | None
+    best: TrackPick | None
+    worst: TrackPick | None
+    followed_all: TrackGroup
+    you_took: TrackGroup
+    you_skipped: TrackGroup
+    headline_tr: str
+    caveat_tr: str | None
+    compare_tr: str | None
+
+
+class TrackRecord(KModel):
+    as_of: IsoDateTime
+    items: list[TrackItem]
+    summary: TrackSummary
+
+
+class Benchmark(KModel):
+    """The person's result over a period against BIST 100 over the same days; nothing when it cannot be had."""
+
+    start: IsoDate | None
+    end: IsoDate | None
+    available: bool
+    you_ratio: float | None
+    index_ratio: float | None
+    sentence_tr: str | None
+    reason_tr: str | None
+
+
+class KarneSuggestions(KModel):
+    made: NonNegInt
+    took: NonNegInt
+    skipped: NonNegInt
+    declined: NonNegInt
+    expired: NonNegInt
+    waiting: NonNegInt
+
+
+class Karne(KModel):
+    period: KarnePeriod
+    label_tr: str
+    start: IsoDate
+    end: IsoDate
+    is_current: bool
+    started: bool
+    put_in_net: float
+    value_start: float | None
+    value_end: float | None
+    gain_try: float | None
+    realized_try: float
+    unrealized_try: float | None
+    commissions_try: float
+    dividends_try: float | None
+    suggestions: KarneSuggestions
+    decisions: NonNegInt
+    track: TrackSummary
+    benchmark: Benchmark
+    notes_tr: list[str]
+
+
+class QuietReason(KModel):
+    reason_tr: str
+    n: NonNegInt
+
+
+class QuietDay(KModel):
+    """Why a day has (no) suggestions, from the day's real counts."""
+
+    day: IsoDate
+    read: NonNegInt
+    relevant: NonNegInt
+    proposals: NonNegInt
+    sentence_tr: str
+    reasons: list[QuietReason]

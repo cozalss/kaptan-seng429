@@ -111,7 +111,7 @@
 
 /* The night reading: its own steps of the same inks, not an inversion. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --paper: #0b0f1d;
     --panel: #151b2f;
     --sunk: #20283f;

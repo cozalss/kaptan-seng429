@@ -55,9 +55,19 @@ const STATES: ReadonlyArray<{ name: string; path: string; seed: MockSeed; ready:
   { name: "set up, nothing owned: home", path: "/benim", seed: { fresh: true }, ready: setUpNothingOwned },
   { name: "Param, money in", path: "/portfoy", seed: {}, ready: openDeposit },
   { name: "Param, a sale with errors", path: "/portfoy", seed: {}, ready: openSaleWithError },
+  { name: "Karne, the month", path: "/gecmis/karne", seed: {}, ready: (p) => expect(p.getByTestId("track-summary")).toBeVisible() },
+  { name: "Karne, the year", path: "/gecmis/karne", seed: {}, ready: karneYear },
   { name: "the bank step with the commission field", path: "/benim", seed: {}, ready: openBankStep },
+  { name: "Param, the starting money row being corrected", path: "/portfoy", seed: {}, ready: openMoneyCorrection },
+  { name: "Param, the start-over confirmation", path: "/portfoy", seed: {}, ready: openStartOver },
+  { name: "Ayarlar, my commission rate", path: "/ayarlar", seed: {}, ready: (p) => expect(p.getByRole("textbox", { name: "Binde kaç?" })).toBeVisible() },
+  { name: "the slip with a fill being fixed", path: "/benim", seed: {}, ready: openFillFix },
 ];
 
+async function karneYear(p: Page) {
+  await p.getByRole("button", { name: "Yıl", exact: true }).click();
+  await expect(p.getByRole("heading", { level: 1 })).toContainText(/\d{4} döneminde/);
+}
 async function startMoney(p: Page) {
   await p.getByRole("textbox", { name: "Başlangıç paran" }).fill("25000");
   await p.getByRole("button", { name: "Bu parayla başla" }).click();
@@ -95,6 +105,25 @@ async function openSaleWithError(p: Page) {
   await p.getByRole("button", { name: "Satışı kaydet" }).click();
   await expect(p.getByText("Elinde 10 adet var; fazlasını satamazsın.")).toBeVisible();
 }
+async function openMoneyCorrection(p: Page) {
+  const row = p.locator("[data-movement]").filter({ hasText: "ile başladın" });
+  await row.getByRole("button", { name: /Başlangıç parasını değiştir/ }).click();
+  await expect(p.getByRole("textbox", { name: "Başlangıç paran ne kadardı?" })).toBeVisible();
+}
+async function openStartOver(p: Page) {
+  await p.getByRole("button", { name: "Baştan başla" }).click();
+  await expect(p.getByText("Eski defter silinmez")).toBeVisible();
+}
+async function openFillFix(p: Page) {
+  const suggestions = p.getByRole("region", { name: "Öneriler" });
+  await suggestions.getByRole("button", { name: /^Onayla: AL / }).first().click();
+  const slip = suggestions.getByRole("group", { name: /^Bankana gireceğin işlem/ }).first();
+  await slip.getByRole("button", { name: "Girdim" }).click();
+  await slip.getByLabel("Adet").fill("2");
+  await slip.getByRole("button", { name: "Girdiğimi kaydet" }).click();
+  await slip.getByRole("button", { name: "Yanlış yazdım, düzelteyim" }).click();
+  await expect(slip.getByRole("form", { name: "Girdiğini düzelt" })).toBeVisible();
+}
 async function openBankStep(p: Page) {
   const suggestions = p.getByRole("region", { name: "Öneriler" });
   await suggestions.getByRole("button", { name: /^Onayla: AL / }).first().click();
@@ -117,5 +146,28 @@ for (const width of [360, 1440]) {
         await expectNoViolations(page);
       });
     }
+  });
+}
+
+/** Company actions (wave 4): the KAP prompt with its form open on Param. */
+for (const width of [360, 1440]) {
+  test(`axe corporate prompt and form @${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
+    await loginApi(page);
+    await page.goto("/portfoy");
+    const money = page.getByRole("region", { name: /koydun\.$/ });
+    await money.getByRole("button", { name: "Elindeki bir hisseyi ekle", exact: true }).click();
+    await page.getByLabel("Hisse kodu").fill("KRGCL");
+    await page.getByLabel("Kaç adet?").fill("100");
+    await page.getByLabel("Tanesini kaç liradan aldın?").fill("30");
+    await page.getByLabel("Ne zaman aldın?").fill("2027-01-04");
+    await money.getByRole("button", { name: "Hisseyi ekle", exact: true }).click();
+    const corp = page.getByRole("region", { name: /kâr payı/ });
+    await corp.getByRole("button", { name: "KRGCL: yazayım" }).first().click();
+    await expect(corp.getByRole("form", { name: "Kâr payı geldi" })).toBeVisible();
+    // Scoped to this section: other screens' own findings (the holding rows' links) are theirs.
+    await page.waitForTimeout(700);
+    const result = await new AxeBuilder({ page }).include("[aria-labelledby=kar-payi]").withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
+    expect(result.violations.map((v) => `${v.id}: ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);
   });
 }

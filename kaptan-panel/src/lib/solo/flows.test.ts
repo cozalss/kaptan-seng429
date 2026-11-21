@@ -1,7 +1,7 @@
 import type { MoneyMovement } from "./money";
 import { gainOf, homeSeries, horizonPoints, levelSeries, putInAt, signedFlow, withToday } from "./flows";
 
-const mv = (kind: MoneyMovement["kind"], amount_try: number, occurred_at: string): MoneyMovement => ({ id: `${kind}-${occurred_at}`, kind, amount_try, occurred_at, note: "" });
+const mv = (kind: MoneyMovement["kind"], amount_try: number, occurred_at: string): MoneyMovement => ({ id: `${kind}-${occurred_at}`, kind, amount_try, occurred_at, note: "", status: "active", original_amount_try: null, changed_at: null });
 
 const MOVES = [
   mv("start", 100_000, "2026-11-09T06:00:00.000Z"),

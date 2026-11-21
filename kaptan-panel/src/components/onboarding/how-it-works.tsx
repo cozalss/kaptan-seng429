@@ -17,7 +17,7 @@ export function openHowItWorks(): void {
   window.dispatchEvent(new Event(OPEN_EVENT));
 }
 
-const STEPS = [
+export const STEPS = [
   {
     title: "KAPtan okur.",
     text: "Borsadaki şirketler her gün yüzlerce duyuru yapar. KAPtan hepsini senin yerine okur; sen okumak zorunda kalmazsın.",

@@ -1,0 +1,119 @@
+/*
+ * Look and feel: the theme choice (Açık / Koyu / Cihaz gibi) and the text size (Normal / Büyük / Çok büyük),
+ * remembered on this computer (lib/prefs/look.ts) and set on <html> before the first paint (look-script.ts).
+ *
+ * "Cihaz gibi" sets nothing: the `prefers-color-scheme` blocks of globals.css, solo.css and oneri.css apply, each
+ * prefixed with :root:not([data-theme="light"]) so an explicit "Açık" wins over a dark device. "Koyu" repeats the
+ * same declarations under :root[data-theme="dark"] below. A new dark block must be written both ways.
+ */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0b0f1d;
+  --panel: #151b2f;
+  --sunk: #20283f;
+  --ink: #eef1f7;
+  --ink-lift: #d6dbe6;
+  --ink-soft: #dbe0ea;
+  --muted: #b7bfd1; /* 10.6:1 on paper */
+  --wash: #a9bff0;
+  --wash-tint: rgb(169 191 240 / 0.12);
+  --wash-tint-strong: rgb(169 191 240 / 0.22);
+  --rule-ui: rgb(238 241 247 / 0.62);
+  --rule-soft: rgb(238 241 247 / 0.4);
+  --hairline: rgb(238 241 247 / 0.24);
+  --scrim: rgb(6 8 16 / 0.78);
+  --north: #ff8f80;
+  --north-deep: #ffaea3;
+  --north-tint: rgb(255 143 128 / 0.12);
+  --gain: #72d69e;
+  --loss: #ff9dbb;
+  --brand: #a9c1f5;
+  --on-dark: #0b0f1d;
+  --line: rgb(238 241 247 / 0.14);
+  --line-strong: rgb(238 241 247 / 0.28);
+  --shadow-ink: 3px 3px 0 rgb(0 0 0 / 0.6);
+  --shadow-ink-lg: 6px 6px 0 rgb(0 0 0 / 0.6);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-raise: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -8px rgb(0 0 0 / 0.6);
+  --shadow-pop:
+    0 0 0 1px rgb(238 241 247 / 0.08), 0 12px 32px -8px rgb(0 0 0 / 0.7);
+
+  --sea: #1a2a5e; /* lighter than the sky: moonlit water */
+  --sea-deep: #131f49;
+  --on-sea: #f4f6fb;
+  --on-sea-soft: #d3dbed;
+  --sea-stroke: rgb(211 219 237 / 0.3);
+  --sea-rule: rgb(244 246 251 / 0.4);
+  --flag: #ee4b3e;
+  --hatch-up: #a9c1f5;
+  --hatch-down: #ff9dbb;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .8 0 0 0 0 .85 0 0 0 0 1 0 0 0 .5 -.2'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.1'/%3E%3C/svg%3E");
+}
+
+:root[data-theme="dark"] {
+  --solo-c1: #3d7ad6;
+  --solo-c2: #d4642a;
+  --solo-c3: #1a9a72;
+  --solo-c4: #c08800;
+  --solo-c5: #cf5a93;
+  --solo-c6: #8a7ae6;
+  --solo-other: #8d8a84;
+  --solo-cash: #4a4e5a;
+}
+
+:root[data-theme="dark"] .solo-wordmark {
+  color: var(--ink);
+}
+:root[data-theme="dark"] .bg-brand.border-brand:not(:disabled) {
+  background-color: #3d6bd0;
+  border-color: #3d6bd0;
+  color: #ffffff;
+}
+:root[data-theme="dark"] .bg-brand.border-brand:not(:disabled):hover {
+  background-color: #5281e3;
+  border-color: #5281e3;
+}
+:root[data-theme="dark"] .bg-north.border-north:not(:disabled) {
+  background-color: #c4392f;
+  border-color: #c4392f;
+  color: #ffffff;
+}
+:root[data-theme="dark"] .bg-north.border-north:not(:disabled):hover {
+  background-color: #d84a40;
+  border-color: #d84a40;
+}
+
+:root[data-theme="dark"] .oneri-paper {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .035 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  box-shadow: 6px 6px 0 rgb(0 0 0 / 0.6);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* Text size: the whole page grows, so the px-sized text of every screen follows. */
+:root[data-text="large"] {
+  zoom: 1.15;
+}
+:root[data-text="xlarge"] {
+  zoom: 1.3;
+}
+
+/* The largest text on a phone: the bar's three parts must still fit in one row (checked at 360 px in e2e/comfort.spec.ts). */
+@media (max-width: 479px) {
+  :root[data-text="xlarge"] .bar__row {
+    gap: 0.25rem;
+  }
+  :root[data-text="xlarge"] .solo-wordmark {
+    height: 1.5rem;
+  }
+  :root[data-text="xlarge"] .stop-chip {
+    gap: 0.375rem;
+    padding-inline: 0.375rem;
+  }
+  :root[data-text="xlarge"] .bar__row button[aria-label="Hesabım"] > svg {
+    display: none;
+  }
+}

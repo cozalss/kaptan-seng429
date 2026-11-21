@@ -1,0 +1,104 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "id": {
+   "type": "string"
+  },
+  "kind": {
+   "type": "string",
+   "enum": [
+    "dividend",
+    "bonus",
+    "rights"
+   ]
+  },
+  "ticker": {
+   "type": "string"
+  },
+  "company": {
+   "type": "string"
+  },
+  "occurred_at": {
+   "type": "string",
+   "format": "date-time",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+  },
+  "recorded_at": {
+   "type": "string",
+   "format": "date-time",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+  },
+  "net_try": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "gross_try": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "qty_added": {
+   "anyOf": [
+    {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "qty_after": {
+   "anyOf": [
+    {
+     "type": "integer",
+     "minimum": -9007199254740991,
+     "maximum": 9007199254740991
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "price": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "note": {
+   "type": "string"
+  },
+  "corrects": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "undone": {
+   "type": "boolean"
+  }
+ },
+ "required": [
+  "id",
+  "kind",
+  "ticker",
+  "company",
+  "occurred_at",
+  "recorded_at",
+  "net_try",
+  "gross_try",
+  "qty_added",
+  "qty_after",
+  "price",
+  "note",
+  "corrects",
+  "undone"
+ ],
+ "additionalProperties": false
+}

@@ -4,7 +4,7 @@ import { Wordmark } from "@/components/brand/marks";
 import { Boat } from "@/components/ufuk/boat";
 import { Sea } from "@/components/ufuk/sea";
 import { buttonVariants } from "@/components/ui/button";
-import { HOME } from "@/lib/nav";
+import { HOME, ROUTES } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 /** A page that does not exist: an empty horizon, a far-off boat, one sentence, one way home. */
@@ -25,6 +25,12 @@ export default function NotFound() {
           Ana sayfaya dön
           <span aria-hidden>→</span>
         </Link>
+        <p className="mt-6 text-body text-ink-soft">
+          Aradığın bir şey mi vardı?{" "}
+          <Link href={ROUTES.yardim} className="font-medium text-ink underline underline-offset-4">
+            Yardım’a bak
+          </Link>
+        </p>
       </main>
     </div>
   );

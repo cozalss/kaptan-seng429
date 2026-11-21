@@ -1,0 +1,205 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "count": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "done": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "open": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "no_data": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "up": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "down": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "flat": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "avg_ratio": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "index_avg_ratio": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "best": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "ticker": {
+       "type": "string"
+      },
+      "company_name": {
+       "type": "string"
+      },
+      "ratio": {
+       "type": "number"
+      }
+     },
+     "required": [
+      "ticker",
+      "company_name",
+      "ratio"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "worst": {
+   "anyOf": [
+    {
+     "type": "object",
+     "properties": {
+      "ticker": {
+       "type": "string"
+      },
+      "company_name": {
+       "type": "string"
+      },
+      "ratio": {
+       "type": "number"
+      }
+     },
+     "required": [
+      "ticker",
+      "company_name",
+      "ratio"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "followed_all": {
+   "type": "object",
+   "properties": {
+    "n": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "avg_ratio": {
+     "type": [
+      "number",
+      "null"
+     ]
+    }
+   },
+   "required": [
+    "n",
+    "avg_ratio"
+   ],
+   "additionalProperties": false
+  },
+  "you_took": {
+   "type": "object",
+   "properties": {
+    "n": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "avg_ratio": {
+     "type": [
+      "number",
+      "null"
+     ]
+    }
+   },
+   "required": [
+    "n",
+    "avg_ratio"
+   ],
+   "additionalProperties": false
+  },
+  "you_skipped": {
+   "type": "object",
+   "properties": {
+    "n": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 9007199254740991
+    },
+    "avg_ratio": {
+     "type": [
+      "number",
+      "null"
+     ]
+    }
+   },
+   "required": [
+    "n",
+    "avg_ratio"
+   ],
+   "additionalProperties": false
+  },
+  "headline_tr": {
+   "type": "string"
+  },
+  "caveat_tr": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "compare_tr": {
+   "type": [
+    "string",
+    "null"
+   ]
+  }
+ },
+ "required": [
+  "count",
+  "done",
+  "open",
+  "no_data",
+  "up",
+  "down",
+  "flat",
+  "avg_ratio",
+  "index_avg_ratio",
+  "best",
+  "worst",
+  "followed_all",
+  "you_took",
+  "you_skipped",
+  "headline_tr",
+  "caveat_tr",
+  "compare_tr"
+ ],
+ "additionalProperties": false
+}

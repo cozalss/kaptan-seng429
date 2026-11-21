@@ -29,7 +29,7 @@ describe("Param", () => {
     const { db } = renderWithDesk(<PortfolioScreen />, new MockDb(null));
     expect(await screen.findByRole("heading", { level: 1, name: /^Param\.\s*Paran \d+ yerde duruyor\.$/ })).toBeInTheDocument();
     const held = await screen.findByRole("list", { name: "Elindekiler" });
-    expect(within(held).getAllByRole("link")[0]).toHaveAttribute("href", expect.stringMatching(/^\/oneri\/prop-/));
+    expect(within(held).getAllByRole("link").find((l) => l.getAttribute("href")?.startsWith("/oneri/"))).toHaveAttribute("href", expect.stringMatching(/^\/oneri\/prop-/));
     expect(held).not.toHaveTextContent("paper");
     expect(await screen.findByText(/^Paran bugün .* düşerse KAPtan o gün yeni işlem önermez\. Şu an bu sınıra .* uzaktasın\.$/)).toBeInTheDocument();
     expect(screen.getByText("Hepsi birlikte")).toBeInTheDocument();

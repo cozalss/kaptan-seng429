@@ -102,3 +102,29 @@ async def revoke_by_token(conn: AsyncConnection[Any], token: str, now: datetime)
 
 def _col(row: Any, index: int, key: str) -> Any:
     return row[key] if isinstance(row, dict) else row[index]
+
+
+async def revoke_others(conn: AsyncConnection[Any], keep_family: str, now: datetime) -> int:
+    """Sign every other device out; returns how many sessions (families) that closed."""
+    async with conn.cursor() as cur:
+        await cur.execute(
+            "UPDATE auth.refresh_tokens SET revoked_at = %s WHERE revoked_at IS NULL AND family_id <> %s "
+            "RETURNING family_id",
+            (now, keep_family),
+        )
+        rows = await cur.fetchall()
+    return len({str(_col(r, 0, "family_id")) for r in rows})
+
+
+async def revoke_all(conn: AsyncConnection[Any], now: datetime) -> int:
+    """Sign everything out, this device included; returns how many sessions that closed."""
+    return await revoke_others(conn, "", now)
+
+
+async def family_alive(conn: AsyncConnection[Any], family: str) -> bool:
+    """False once the session was signed out (its access token stops working at once, not after 15 minutes)."""
+    async with conn.cursor() as cur:
+        await cur.execute(
+            "SELECT 1 FROM auth.refresh_tokens WHERE family_id = %s AND revoked_at IS NULL LIMIT 1", (family,)
+        )
+        return await cur.fetchone() is not None

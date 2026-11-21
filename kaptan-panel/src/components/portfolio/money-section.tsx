@@ -11,10 +11,11 @@ import { useNow } from "@/lib/clock";
 import { fmtInt } from "@/lib/format";
 import type { MoneyBook } from "@/lib/solo/money";
 import { moneyError, parseMoney } from "@/lib/solo/money-input";
-import { fmtMoney, movementSentence } from "@/lib/solo/money-words";
+import { fmtMoney } from "@/lib/solo/money-words";
 import { Button } from "@/components/ui/button";
 import { MoneyField } from "@/components/solo/money-field";
 import { HoldingForm } from "./holding-form";
+import { MovementRow } from "./movement-row";
 
 type Panel = "deposit" | "withdrawal" | "holding" | null;
 
@@ -62,7 +63,7 @@ export function MoneySection({ book, onChanged }: { book: MoneyBook | null; onCh
         </h2>
         {book ? (
           <p className="om-lead">
-            Bunun <strong>{fmtMoney(book.cash)}</strong> şu an nakit duruyor. Bankanda para eklersen ya da çekersen buraya da yaz; KAPtan öneri büyüklüğünü bu paraya göre hesaplar.
+            Bunun <strong>{fmtMoney(book.cash)}</strong> şu an nakit duruyor. Bankanda para eklersen ya da çekersen buraya da yaz; KAPtan öneri büyüklüğünü bu paraya göre hesaplar. Yanlış yazdığın bir şey olursa aşağıdaki listeden düzeltebilir ya da geri alabilirsin.
           </p>
         ) : null}
       </div>
@@ -97,7 +98,7 @@ export function MoneySection({ book, onChanged }: { book: MoneyBook | null; onCh
           <h3 className="u-caption">Paranın hareketleri</h3>
           <ol className="om-list">
             {list.map((m) => (
-              <li key={m.id}>{movementSentence(m, now)}</li>
+              <MovementRow key={m.id} m={m} now={now} onChanged={(message) => close(message)} />
             ))}
           </ol>
           {movements.length > SHOWN ? (

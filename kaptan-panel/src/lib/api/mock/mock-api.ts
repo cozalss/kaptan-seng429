@@ -2,10 +2,14 @@ import { ApprovalDecision, TicketMarkInput, type Me, type TicketEntry } from "@/
 import { MOCK_USER } from "@/lib/auth/mock-user";
 import { ApiError, type KaptanApi } from "../types";
 import { getMockDb, type Actor, type MockDb } from "./db";
+import { createComfort } from "./comfort";
 import { createEnterprise } from "./enterprise";
+import { createInsight } from "./insight";
 import { createCtx, parse, userActor } from "./guard";
-import { estimateCommission } from "./ledger";
+import { commissionFor } from "./ledger";
+import { createCorporate } from "./corporate";
 import { createMoney } from "./money";
+import { createReports } from "./reports";
 import { createSolo } from "./solo";
 import { createStatus } from "./status";
 import { engageKillSwitch, executeApproved, startLiveTicker } from "./scenarios";
@@ -35,7 +39,11 @@ export function createMockApi(opts: MockApiOptions = {}): KaptanApi {
     ...createEnterprise(ctx),
     ...createSolo(ctx),
     ...createMoney(ctx),
+    ...createCorporate(ctx),
     ...createStatus(ctx),
+    ...createComfort(ctx),
+    ...createReports(ctx),
+    ...createInsight(ctx),
 
     async me(): Promise<Me> {
       const a = me();
@@ -117,6 +125,7 @@ export function createMockApi(opts: MockApiOptions = {}): KaptanApi {
       // A fill recorded after the order's time is still the person's real fill: the book must match
       // the bank, so it is kept and flagged `late`. Left empty, the commission is estimated and says so.
       const filled = m.mark === "entered";
+      const charged = filled ? commissionFor(db.snapshot.book, m.commission_try, m.filled_qty, m.avg_price) : null;
       const entry: TicketEntry = {
         status: m.mark,
         filled_qty: m.mark === "entered" ? m.filled_qty : null,
@@ -124,9 +133,12 @@ export function createMockApi(opts: MockApiOptions = {}): KaptanApi {
         filled_at: m.mark === "entered" ? m.filled_at : null,
         note: m.note?.trim() || null,
         marked_at: now(),
-        commission_try: filled ? (m.commission_try ?? estimateCommission(m.filled_qty, m.avg_price)) : 0,
-        commission_estimated: filled && m.commission_try === undefined,
+        commission_try: charged?.amount ?? 0,
+        commission_estimated: charged?.estimated ?? false,
         late: filled && Date.parse(m.filled_at) > Date.parse(ticket.valid_until),
+        commission_rate: charged?.rate ?? null,
+        commission_rate_own: charged?.own ?? false,
+        corrected: false,
       };
       db.update((s) => ({ ...s, ticketMarks: { ...s.ticketMarks, [ticketNo]: entry } }));
       db.audit(userActor(a), `ticket.${m.mark}`, "order_ticket", ticketNo, m.mark === "entered" ? { qty: m.filled_qty, price: m.avg_price, commission_try: entry.commission_try, late: entry.late } : {}, ticket.run_id);

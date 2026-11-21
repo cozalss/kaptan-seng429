@@ -3,6 +3,7 @@ import type { ChainFields } from "@/lib/audit-chain";
 import { SEED_LIMIT_VERSIONS, SEED_LIVE_ARM, SEED_RESTRICTED, SEED_WATCHLIST } from "@/mocks/governance";
 import { liveEquity } from "@/mocks/pnl";
 import { initialBook, type MockBook } from "./ledger";
+import { initialComfort, type MockComfort } from "./comfort";
 import { initialStatus, type MockStatus } from "./status";
 
 /** Live strategy's P&L at 13:40 on the fixture day. */
@@ -61,6 +62,8 @@ export interface MockState {
   book: MockBook;
   /** What the system says about itself: problems, disclosures waiting for a turn, alert channels (status.ts). */
   status: MockStatus;
+  /** Personal settings: pause, alert preferences, backup box, password (comfort.ts). */
+  comfort: MockComfort;
 }
 
 /** `fresh`: a new install with no starting money yet (the home asks for it); default is the seeded book. */
@@ -95,6 +98,7 @@ export function initialState(nowReal: number, fresh = false): MockState {
     tamperOn: false,
     book: initialBook(fresh),
     status: initialStatus(),
+    comfort: initialComfort(),
   };
 }
 

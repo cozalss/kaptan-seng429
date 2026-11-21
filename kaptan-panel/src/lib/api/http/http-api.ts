@@ -1,8 +1,11 @@
 import { z } from "zod";
-import { ApprovalCard, AuditPage, ChainVerifyResult, DayCounters, DisclosureListItem, Explain, LimitsView, Me, OrderTicket, PnlPoint, Position, ProposalNote, RiskStatus } from "@/lib/domain";
+import { Benchmark, Karne, MorningBrief, QuietDay, TrackRecord, ApprovalCard, AuditPage, ChainVerifyResult, DayCounters, DisclosureListItem, Explain, LimitsView, Me, OrderTicket, PnlPoint, Position, ProposalNote, RiskStatus } from "@/lib/domain";
 import { noteServerTime } from "@/lib/clock";
+import { Company, DisclosureReading, SearchResult, WatchItem } from "@/lib/company/company";
 import { AlertSettings, SystemStatus } from "@/lib/domain/system";
-import { MoneyBook } from "@/lib/solo/money";
+import { CorporateBook, NoticeAnswer } from "@/lib/domain/corporate";
+import { BackupStatus, PasswordChanged, Preferences } from "@/lib/domain/preferences";
+import { BookResetOut, BrokerFee, MoneyBook, PreviousBook } from "@/lib/solo/money";
 import { HoldResult, Overview } from "@/lib/solo/overview";
 import { ApiError, unreachableError, type KaptanApi } from "../types";
 import { repairDeep } from "./mojibake";
@@ -105,6 +108,20 @@ function withServerTime<T extends { as_of: string }>(body: T): T {
   return body;
 }
 
+/** A file from the API (the records export): sent with the same sign-in as every request, kept as a Blob. */
+async function download(path: string): Promise<{ filename: string; blob: Blob }> {
+  if (accessToken === null) await refresh();
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}, credentials: "include" });
+  } catch {
+    throw unreachableError();
+  }
+  if (!res.ok) throw new ApiError(res.status, "http", res.status === 401 ? "Oturumunun süresi doldu. Yeniden giriş yap." : "Dosya hazırlanamadı. Biraz sonra yeniden dene.");
+  const named = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "");
+  return { filename: named?.[1] ?? "kayitlarim.csv", blob: await res.blob() };
+}
+
 export function createHttpApi(): KaptanApi {
   const id = encodeURIComponent;
   return {
@@ -113,12 +130,18 @@ export function createHttpApi(): KaptanApi {
     counters: (day?: string) => request(DayCounters, `/disclosures/counters${qs({ day })}`).then(withServerTime),
     // One odd row (an unusual ticker, a new enum value) must not blank the whole list: keep the rows that parse.
     disclosures: (q = {}) =>
-      request(z.array(z.unknown()), `/disclosures${qs({ day: q.day, limit: q.limit, ticker: q.ticker })}`).then((rows) =>
+      request(z.array(z.unknown()), `/disclosures${qs({ day: q.day, limit: q.limit, ticker: q.ticker, type: q.type, acted: q.acted ? "true" : undefined, scope: q.scope })}`).then((rows) =>
         rows.flatMap((r) => {
           const one = DisclosureListItem.safeParse(r);
           return one.success ? [one.data] : [];
         }),
       ),
+    disclosureReading: (index) => request(DisclosureReading, `/disclosures/${index}`),
+    company: (ticker, period = "3m") => request(Company, `/companies/${id(ticker)}${qs({ period })}`),
+    search: (q) => request(SearchResult, `/search${qs({ q })}`),
+    watchlist: () => request(z.array(WatchItem), "/watchlist"),
+    watch: (ticker) => request(z.array(WatchItem), `/watchlist/${id(ticker)}`, { method: "PUT" }),
+    unwatch: (ticker) => request(z.array(WatchItem), `/watchlist/${id(ticker)}`, { method: "DELETE" }),
     listApprovals: (status = "pending") => request(z.array(ApprovalCard), `/approvals${qs({ status })}`),
     decideApproval: (pid, d) => request(ApprovalCard, `/approvals/${id(pid)}/decision`, post(d)),
     explain: (runId) => request(Explain, `/runs/${id(runId)}/explain`),
@@ -133,6 +156,21 @@ export function createHttpApi(): KaptanApi {
     addHolding: (input) => request(Position, "/me/holdings", post(input)),
     // "Nothing is left" may come as JSON null or as an empty 204: both mean the holding is gone.
     sellHolding: (pid, input) => request(Position.nullish(), `/me/holdings/${id(pid)}/sell`, post(input)).then((p) => p ?? null),
+    correctMovement: (mid, input) => request(MoneyBook, `/me/money/${id(mid)}/correct`, post(input)),
+    undoMovement: (mid) => request(MoneyBook, `/me/money/${id(mid)}/undo`, post()),
+    corporateBook: () => request(CorporateBook, "/me/corporate"),
+    recordDividend: (input) => request(CorporateBook, "/me/corporate/dividends", post(input)),
+    recordBonus: (input) => request(CorporateBook, "/me/corporate/bonus", post(input)),
+    recordRights: (input) => request(CorporateBook, "/me/corporate/rights", post(input)),
+    undoCorporate: (rid) => request(CorporateBook, `/me/corporate/${id(rid)}/undo`, post()),
+    corporateNotices: () => request(NoticeAnswer, "/me/corporate/notices"),
+    dismissNotice: (nid) => request(NoticeAnswer, `/me/corporate/notices/${id(nid)}/dismiss`, post()),
+    correctFill: (no, input) => request(OrderTicket, `/tickets/${id(no)}/correct`, post(input)),
+    brokerFee: () => request(BrokerFee, "/me/fee"),
+    setBrokerFee: (input) => request(BrokerFee, "/me/fee", { method: "PUT", body: JSON.stringify(input) }),
+    startOver: (input) => request(BookResetOut, "/me/book/reset", post(input)),
+    previousBooks: () => request(z.array(PreviousBook), "/me/books"),
+    exportRecords: () => download("/me/export.csv"),
     positions: () => request(z.array(Position), "/portfolio/positions"),
     pnl: (from, to) => request(z.array(PnlPoint), `/portfolio/pnl${qs({ from, to })}`),
     riskStatus: () => request(RiskStatus, "/risk/status").then(withServerTime),
@@ -144,9 +182,30 @@ export function createHttpApi(): KaptanApi {
     decideLimit: (version, input) => request(LimitsView, `/limits/proposals/${version}/decision`, post(input)),
     auditList: (q = {}) => request(AuditPage, `/audit${qs({ scope: q.scope, q: q.q, limit: q.limit })}`),
     verifyAudit: () => request(ChainVerifyResult, "/audit/verify", post()),
+    trackRecord: (r = {}) => request(TrackRecord, `/reports/track${qs({ from: r.from, to: r.to })}`),
+    benchmark: (r = {}) => request(Benchmark, `/reports/benchmark${qs({ from: r.from, to: r.to })}`),
+    karne: (period = "month", at) => request(Karne, `/reports/karne${qs({ period, at })}`),
+    quietDay: (day) => request(QuietDay, `/reports/quiet${qs({ day })}`),
+    // 404 = no brief was built for today: nothing to show, not an error.
+    briefToday: () =>
+      request(MorningBrief, "/brief/today").catch((e: unknown) => {
+        if (e instanceof ApiError && e.status === 404) return null;
+        throw e;
+      }),
     systemStatus: () => request(SystemStatus, "/system/status"),
     alertSettings: () => request(AlertSettings, "/me/alerts"),
     testAlerts: () => request(AlertSettings, "/me/alerts/test", post()),
+    preferences: () => request(Preferences, "/me/preferences"),
+    saveAlertPrefs: (prefs) => request(Preferences, "/me/alerts/preferences", { method: "PUT", body: JSON.stringify(prefs) }),
+    startPause: (input) => request(Preferences, "/me/pause", post(input)),
+    endPause: () => request(Preferences, "/me/pause/resume", post()),
+    backupStatus: () => request(BackupStatus, "/me/backup"),
+    runBackup: () => request(BackupStatus, "/me/backup/run", post()),
+    changePassword: ({ current, next }) => request(PasswordChanged, "/auth/password", post({ current, new: next })),
+    signOutEverywhere: async () => {
+      await request(z.undefined(), "/auth/logout-all", post());
+      accessToken = null;
+    },
   };
 }
 

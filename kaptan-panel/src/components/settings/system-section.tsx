@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { useDesk } from "@/components/shell/desk-state";
-import { adviceFor, lastLook, needsRestartHint, RESTART_HOW, systemSentence, systemSummary, UNREACHABLE_NEXT } from "@/components/shell/system-words";
+import {
+  adviceFor,
+  lastLook,
+  needsRestartHint,
+  RESTART_HOW,
+  systemSentence,
+  systemSummary,
+  UNREACHABLE_NEXT,
+} from "@/components/shell/system-words";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -24,12 +32,18 @@ export function SystemSection() {
         <span className="pf-name">
           Sistem<span className="sr-only">. </span>
         </span>
-        <span className="u-chapter block text-ink">{systemSentence(system, systemDown)}</span>
+        <span className="u-chapter block text-ink">
+          {systemSentence(system, systemDown)}
+        </span>
       </h2>
       {/* Always mounted: "Yeniden bak" changes its text, and that is read out. */}
       <div role="status" className="ay-system">
-        {systemDown ? <p className="ay-block-lead">{UNREACHABLE_NEXT}</p> : null}
-        {!systemDown && system && problems.length === 0 ? <p className="ay-block-lead">{systemSummary(system)}</p> : null}
+        {systemDown ? (
+          <p className="ay-block-lead">{UNREACHABLE_NEXT}</p>
+        ) : null}
+        {!systemDown && system && problems.length === 0 ? (
+          <p className="ay-block-lead">{systemSummary(system)}</p>
+        ) : null}
         {problems.length ? (
           <>
             <ul aria-label="KAPtan’ın söyledikleri" className="ay-problems">
@@ -40,12 +54,24 @@ export function SystemSection() {
                 </li>
               ))}
             </ul>
-            {system && needsRestartHint(system) ? <p className="ay-channel-detail mt-3">{RESTART_HOW}</p> : null}
-            {system ? <p className="ay-channel-detail mt-3 tabular-nums">{lastLook(system)}</p> : null}
+            {system && needsRestartHint(system) ? (
+              <p className="ay-channel-detail mt-3">{RESTART_HOW}</p>
+            ) : null}
+            {system ? (
+              <p className="ay-channel-detail mt-3 tabular-nums">
+                {lastLook(system)}
+              </p>
+            ) : null}
           </>
         ) : null}
       </div>
-      <Button variant="secondary" className="mt-4" pending={looking} disabled={looking} onClick={() => void look()}>
+      <Button
+        variant="secondary"
+        className="mt-4"
+        pending={looking}
+        disabled={looking}
+        onClick={() => void look()}
+      >
         {looking ? "Bakılıyor…" : "Yeniden bak"}
       </Button>
     </section>

@@ -43,7 +43,7 @@ from psycopg import AsyncConnection
 from kaptan.portfolio import ledger
 from kaptan.portfolio.ledger import CENT, Flow
 from kaptan.portfolio.pnl import LIVE_STRATEGY
-from kaptan.prices.calendar import close_known_at, istanbul_date
+from kaptan.prices.calendar import close_known_at, istanbul_date, open_known_at
 from kaptan.prices.reads import latest_marks
 
 #: After a confirmed restart (06 §11 step 4): drawdown floor while it holds, extra loss that kills again.
@@ -59,6 +59,20 @@ SELECT t.doc->>'ticker' AS ticker, i.sector, coalesce(g.group_name, i.group_name
  WHERE t.entry_status = 'awaiting' AND t.marked_at IS NULL AND coalesce(t.doc->>'side', 'buy') = 'buy'
    AND t.valid_until > %s
  ORDER BY t.ticket_no
+"""
+UNRECORDED_SQL: Final = """
+SELECT a.ticker, a.ex_date, a.factor FROM core.corporate_actions a
+ WHERE a.ticker = ANY(%(t)s) AND a.kind IN ('bedelsiz', 'split') AND a.ex_date > %(after)s AND a.ex_date <= %(today)s
+   AND NOT EXISTS (
+     SELECT 1 FROM trading.corporate_book c
+      WHERE c.ticker = a.ticker AND c.kind = 'bonus' AND c.corrects_id IS NULL
+        AND (c.effective_at AT TIME ZONE 'Europe/Istanbul')::date BETWEEN a.ex_date AND a.ex_date + 4
+        AND NOT EXISTS (SELECT 1 FROM trading.corporate_book u WHERE u.corrects_id = c.id))
+ ORDER BY a.ticker, a.ex_date
+"""
+SHARES_BEFORE_SQL: Final = """
+SELECT coalesce(sum(qty_delta), 0)::int AS qty FROM trading.book_ledger
+ WHERE ticker = %s AND occurred_at < %s AND book_no = (SELECT max(no) FROM trading.book_epochs)
 """
 LAST_CLOSE_SQL: Final = """
 SELECT d, equity, peak_equity FROM trading.pnl_daily WHERE strategy = %s AND d < %s ORDER BY d DESC LIMIT 1
@@ -156,16 +170,51 @@ async def _rows(conn: AsyncConnection[Any], sql: str, params: Any) -> list[dict[
         return [dict(r) for r in await cur.fetchall()]
 
 
-async def holdings_at(conn: AsyncConnection[Any], as_of: datetime) -> tuple[Holding, ...]:
-    """The shares the ledger holds at `as_of`, each at its latest stored price known then."""
+async def holdings_at(
+    conn: AsyncConnection[Any], as_of: datetime, adjust_after: date | None = None
+) -> tuple[Holding, ...]:
+    """The shares the ledger holds at `as_of`, each at its latest stored price known then.
+
+    `adjust_after`: the day of the last stored close. A bonus issue or split that took effect after it and that the
+    person has not recorded yet (`kaptan.portfolio.corporate`) is applied to the valuation only, so the new, lower
+    price is not read as a loss before they have told KAPtan about the new shares."""
     held = await ledger.shares(conn, as_of)
     marks = await latest_marks(conn, [h.ticker for h in held], as_of) if held else {}
+    unrecorded = await _unrecorded_bonus(conn, [h.ticker for h in held], as_of, adjust_after) if held else {}
     out = []
     for h in held:
         mark = marks.get(h.ticker)
         price = dec(mark.price) if mark is not None else (h.last_trade_price or Decimal(0))
+        if mark is not None:
+            price = _like_with_like(price, h.qty, mark.d, unrecorded.get(h.ticker, ()))
         out.append(Holding(h.ticker, h.qty, price, None if mark is None else mark.known_at, h.sector, h.group))
     return tuple(out)
+
+
+def _like_with_like(price: Decimal, qty: int, price_day: date, actions: Iterable[tuple[date, Decimal, int]]) -> Decimal:
+    """The price that, times the shares held, is what they are worth: the part of the holding that existed before
+    an unrecorded bonus counts at the old level (price / factor); `actions` = (ex-date, factor, shares before it)."""
+    value = price * qty
+    for ex_date, factor, before in actions:
+        if price_day >= ex_date and 0 < factor < 1 and qty > 0:
+            old = min(qty, before)
+            value += price * old * (1 / factor - 1)
+    return value / qty if qty > 0 else price
+
+
+async def _unrecorded_bonus(
+    conn: AsyncConnection[Any], tickers: list[str], as_of: datetime, after: date | None
+) -> dict[str, list[tuple[date, Decimal, int]]]:
+    """Bonus issues / splits the price history shows (core.corporate_actions) since `after` that no record covers."""
+    if after is None:
+        return {}
+    out: dict[str, list[tuple[date, Decimal, int]]] = {}
+    for a in await _rows(conn, UNRECORDED_SQL, {"t": tickers, "after": after, "today": istanbul_date(as_of)}):
+        shares_before = await _rows(conn, SHARES_BEFORE_SQL, (a["ticker"], open_known_at(a["ex_date"])))
+        before = int(shares_before[0]["qty"])
+        if before > 0:
+            out.setdefault(a["ticker"], []).append((a["ex_date"], dec(a["factor"]), before))
+    return out
 
 
 async def last_close(conn: AsyncConnection[Any], strategy: str, before: date) -> tuple[date, Decimal, Decimal] | None:
@@ -193,7 +242,7 @@ async def own_book(conn: AsyncConnection[Any], as_of: datetime) -> BookSnapshot:
         reserved=sum((p.value for p in pending), Decimal(0)),
         day_start_equity=shift_level(base_equity, since),
         prior_peak=shift_level(base_peak, since),
-        holdings=await holdings_at(conn, as_of) if totals.started else (),
+        holdings=await holdings_at(conn, as_of, None if prev is None else prev[0]) if totals.started else (),
         pending=pending,
     )
 

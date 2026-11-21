@@ -7,6 +7,12 @@ POST /me/money       MoneyInput -> MoneyBook
 POST /me/holdings    HoldingInput -> Position
 POST /me/holdings/{position_id}/sell  HoldingSellInput -> Position | null
 POST /me/suggestions/{id}/hold {"kind": "held"|"skipped", "note"?} -> SuggestionHoldOut (proposal.decide)
+POST /me/money/{movement_id}/correct  MovementCorrectInput -> MoneyBook   (the amount was typed wrong)
+POST /me/money/{movement_id}/undo     -> MoneyBook                        ("Bunu yanlış girdim")
+GET/PUT /me/fee                       BrokerFee / BrokerFeeInput -> BrokerFee  (my broker's commission rate)
+POST /me/book/reset                   BookResetInput -> BookResetOut      ("Baştan başla")
+GET /me/books                         -> PreviousBook[]                   ("önceki defter", read-only)
+GET /me/export.csv                    -> text/csv (UTF-8 BOM, ";" and decimal comma; streamed)
 
 Errors are `{detail, code}` (Turkish detail):
 - POST /me/money: 409 already_started "Başlangıç paranı zaten girdin. Para eklemek için 'Para ekle'yi kullan." ·
@@ -24,6 +30,27 @@ Errors are `{detail, code}` (Turkish detail):
   "Elinde olandan fazlasını satamazsın." · 422 future_time "Gelecekteki bir zamanı giremezsin.". Cash rises by
   `qty x price - commission` (commission typed, else the cost model's estimate). Audit `holding.sold`
   {ticker, company, qty, price, commission_try, commission_estimated}. Returns null when nothing is left.
+
+Fixing what was typed wrong (every fix is a NEW ledger row that points at the original; nothing is edited or deleted;
+a deposit, a withdrawal or a correction is never a gain or a loss; the movements list keeps the row and marks it
+`corrected` ("düzeltildi", with `original_amount_try`) or `undone` ("geri alındı")):
+- POST /me/money/{id}/correct: start / deposit / withdrawal take `amount_try`; a hand-entered holding takes `qty` +
+  `avg_cost` (+ `bought_on`). 404 not_found "Bu hareketi bulamadım." · 409 already_undone "Bunu zaten geri aldın." ·
+  409 has_sales (a holding you sold from) · 422 over_cash "Bu değişiklikle boştaki nakdin eksiye düşerdi. ..." ·
+  422 no_change "Bu zaten böyle yazılı." · 422 validation. Audit `money.corrected` {kind, old_amount_try,
+  new_amount_try} / `holding.corrected` {ticker, company, old, new}.
+- POST /me/money/{id}/undo: a reversing row. 409 cannot_undo_start (change its amount, or start over) · the
+  errors above.
+  Audit `money.undone` {kind, amount_try} / `holding.undone`.
+- GET/PUT /me/fee: the commission rate the bank takes (a fraction, 0.002 = binde 2; BSMV comes on top). PUT
+  `{commission_rate}` 0 to 0.01, null = KAPtan's built-in rate; 422 out_of_range. The commission estimate of a ticket
+  fill and of a hand-entered sale uses it, and the ticket entry says which rate it used (`commission_rate`,
+  `commission_rate_own`). Audit `fee.changed` {old_rate, new_rate}.
+- POST /me/book/reset {confirm: "baştan"}: closes the book (open positions, P&L series and waiting tickets are kept
+  as the old book's archive; waiting tickets are voided), opens an empty one: `needs_setup` again. 409 not_started ·
+  422 confirm. Untouched: disclosures, KAPtan's reading, limits, the audit chain. A kill switch that is ON stays ON
+  (`kill_switch_on` in the answer). Audit `book.reset`. GET /me/books lists the closed books (read-only).
+- GET /me/export.csv: every ledger row of every book as `;`-separated, decimal-comma CSV with a UTF-8 BOM.
 """
 
 from __future__ import annotations
@@ -31,16 +58,28 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Path, Request
+from fastapi.responses import StreamingResponse
 
 from kaptan.api.deps import ClockDep, CurrentUser
 from kaptan.db import Conn
 from kaptan.disclosures.counters import publish_counters
-from kaptan.domain.schemas.money import HoldingInput, HoldingSellInput, MoneyBook, MoneyInput
+from kaptan.domain.schemas.money import (
+    BookResetInput,
+    BookResetOut,
+    BrokerFee,
+    BrokerFeeInput,
+    HoldingInput,
+    HoldingSellInput,
+    MoneyBook,
+    MoneyInput,
+    MovementCorrectInput,
+    PreviousBook,
+)
 from kaptan.domain.schemas.overview import MeOverview, SuggestionHoldInput, SuggestionHoldOut
 from kaptan.domain.schemas.personal import PersonalStageStatus
 from kaptan.domain.schemas.trading import Position
 from kaptan.evalreports.stage import personal_stage
-from kaptan.portfolio import money
+from kaptan.portfolio import export, fee, fresh_start, money
 from kaptan.portfolio.overview import hold_suggestion, me_overview
 from kaptan.text.turkish import IST
 
@@ -105,4 +144,55 @@ async def hold(
         actor=actor.audit_actor,
         role=actor.role,
         now=clock.now(),
+    )
+
+
+@router.post("/me/money/{movement_id}/correct", response_model=MoneyBook)
+async def correct_money(
+    movement_id: Annotated[str, Path(max_length=40)],
+    body: MovementCorrectInput,
+    actor: CurrentUser,
+    conn: Conn,
+    clock: ClockDep,
+) -> Any:
+    return await money.correct_movement(conn, movement_id, body, actor, now=clock.now())
+
+
+@router.post("/me/money/{movement_id}/undo", response_model=MoneyBook)
+async def undo_money(
+    movement_id: Annotated[str, Path(max_length=40)], actor: CurrentUser, conn: Conn, clock: ClockDep
+) -> Any:
+    return await money.undo_movement(conn, movement_id, actor, now=clock.now())
+
+
+@router.get("/me/fee", response_model=BrokerFee)
+async def get_fee(user: CurrentUser, conn: Conn) -> Any:
+    return await fee.view(conn)
+
+
+@router.put("/me/fee", response_model=BrokerFee)
+async def put_fee(body: BrokerFeeInput, actor: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
+    return await fee.set_rate(conn, body.commission_rate, actor, now=clock.now())
+
+
+@router.post("/me/book/reset", response_model=BookResetOut)
+async def reset_book(request: Request, body: BookResetInput, actor: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
+    out = await fresh_start.start_over(conn, body.confirm, actor, now=clock.now())
+    await publish_counters(request.app)  # after commit: `waiting_for_money` is true again
+    return out
+
+
+@router.get("/me/books", response_model=list[PreviousBook])
+async def previous_books(user: CurrentUser, conn: Conn) -> Any:
+    return await fresh_start.previous_books(conn)
+
+
+@router.get("/me/export.csv")
+async def export_csv(user: CurrentUser, conn: Conn, clock: ClockDep) -> StreamingResponse:
+    rows = await export.records(conn)  # read first: the connection is not held while the file streams
+    day = clock.now().astimezone(IST).date().isoformat()
+    return StreamingResponse(
+        (piece.encode("utf-8") for piece in export.csv_lines(rows)),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="kayitlarim-{day}.csv"', "Cache-Control": "no-store"},
     )

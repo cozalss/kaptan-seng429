@@ -215,12 +215,16 @@ DO `$`$ BEGIN
 END `$`$;
 "@
     if ($PasswordChanged) {
-        # Parola değiştiyse açık oturumlar da kapanır. Yeni kurulumda tablo henüz yoktur.
+        # Parola değiştiyse açık oturumlar da kapanır. Yeni kurulumda tablolar henüz yoktur.
         $sql += @"
 
 DO `$`$ BEGIN
   IF to_regclass('auth.refresh_tokens') IS NOT NULL THEN
     UPDATE auth.refresh_tokens SET revoked_at = now() WHERE revoked_at IS NULL;
+  END IF;
+  -- A password changed inside the app (Ayarlar) is cleared: the one chosen here is the last one and wins.
+  IF to_regclass('auth.credentials') IS NOT NULL THEN
+    UPDATE auth.credentials SET passphrase_hash = NULL, changed_at = NULL;
   END IF;
 END `$`$;
 "@

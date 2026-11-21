@@ -1,0 +1,14 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "string",
+ "enum": [
+  "took",
+  "approved_open",
+  "not_bought",
+  "declined",
+  "skipped",
+  "expired",
+  "waiting",
+  "cancelled"
+ ]
+}

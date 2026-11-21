@@ -1,0 +1,126 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "kinds": {
+   "type": "object",
+   "properties": {
+    "suggestion": {
+     "type": "object",
+     "properties": {
+      "phone": {
+       "type": "boolean"
+      },
+      "desktop": {
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "phone",
+      "desktop"
+     ],
+     "additionalProperties": false
+    },
+    "day_halt": {
+     "type": "object",
+     "properties": {
+      "phone": {
+       "type": "boolean"
+      },
+      "desktop": {
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "phone",
+      "desktop"
+     ],
+     "additionalProperties": false
+    },
+    "stopped": {
+     "type": "object",
+     "properties": {
+      "phone": {
+       "type": "boolean"
+      },
+      "desktop": {
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "phone",
+      "desktop"
+     ],
+     "additionalProperties": false
+    },
+    "part_down": {
+     "type": "object",
+     "properties": {
+      "phone": {
+       "type": "boolean"
+      },
+      "desktop": {
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "phone",
+      "desktop"
+     ],
+     "additionalProperties": false
+    },
+    "watched": {
+     "type": "object",
+     "properties": {
+      "phone": {
+       "type": "boolean"
+      },
+      "desktop": {
+       "type": "boolean"
+      }
+     },
+     "required": [
+      "phone",
+      "desktop"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "suggestion",
+    "day_halt",
+    "stopped",
+    "part_down",
+    "watched"
+   ],
+   "additionalProperties": false
+  },
+  "quiet": {
+   "type": "object",
+   "properties": {
+    "on": {
+     "type": "boolean"
+    },
+    "start": {
+     "type": "string",
+     "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+    },
+    "end": {
+     "type": "string",
+     "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+    }
+   },
+   "required": [
+    "on",
+    "start",
+    "end"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "kinds",
+  "quiet"
+ ],
+ "additionalProperties": false
+}

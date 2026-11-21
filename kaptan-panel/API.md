@@ -57,6 +57,11 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
 | # | Yöntem | Yol | İstek | Yanıt |
 |---|---|---|---|---|
 | 1 | GET | `/disclosures/counters` | — | `DayCounters` |
+| 1a | GET | `/disclosures?day=&ticker=&type=E1\|E2\|E3\|E4\|IGNORE&acted=true&scope=watchlist\|mine` | — | `DisclosureListItem[]` (filtreler VE ile birleşir) |
+| 1b | GET | `/disclosures/{index}` | — | `DisclosureReading` (tam metin, okunan rakamlar, ne yaptı; 404) |
+| 1c | GET | `/companies/{ticker}?period=1m\|3m\|1y\|all` | — | `Company` (404 `not_found`) |
+| 1d | GET | `/search?q=` | — | `SearchResult` (Türkçe harfler katlanır; 2 harften azı boş) |
+| 1e | GET/PUT/DELETE | `/watchlist`, `/watchlist/{ticker}` | — | `WatchItem[]` (en çok 50, 409 `watchlist_full`; `watchlist.added/removed` denetlenir) |
 | 2 | GET | `/approvals?status=pending\|all` | — | `ApprovalCard[]` |
 | 3 | POST | `/approvals/{proposal_id}/decision` | `ApprovalDecision` | `ApprovalCard` |
 | 4 | GET | `/approvals/{proposal_id}/notes` | — | `ProposalNote[]` |
@@ -82,6 +87,20 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
 | 24 | GET | `/me/overview` | — | `MeOverview` (tek kullanıcı ana sayfası; tek çağrı) |
 | 25 | POST | `/me/suggestions/{suggestion_id}/hold` | `{"kind":"held\|skipped","note"?}` | `SuggestionHoldOut` (backend'de; panel henüz çağırmıyor) |
 | 26 | POST | `/me/holdings/{position_id}/sell` | `HoldingSellInput` = `{qty, price, sold_at, commission_try?}` | `Position \| null` (kalmadıysa `null`). Yalnız elle eklenen hisse; `422 over_qty` |
+| B1 | POST | `/me/money/{id}/correct` | `MovementCorrectInput` = `{amount_try?, qty?, avg_cost?, bought_on?, note?}` | `MoneyBook`. Yanlış yazılan tutarı düzeltir (başlangıç parası dahil); eski satıra işaret eden yeni defter satırı, kazanç/zarar değil. `409 already_undone \| has_sales`, `422 over_cash \| no_change` |
+| B2 | POST | `/me/money/{id}/undo` | — | `MoneyBook`. "Bunu yanlış girdim": ters satır; satır listede `status:"undone"` kalır. `409 cannot_undo_start \| already_undone \| has_sales`, `422 over_cash` |
+| B3 | POST | `/tickets/{ticket_no}/correct` | `TicketCorrectInput` = `{filled_qty, avg_price, commission_try?}` | `OrderTicket`. Kaydedilen dolumu düzeltir; nakit ve pozisyon yeniden hesaplanır, denetim `ticket.corrected`. `409 not_entered \| sold_since`, `422 over_qty \| over_limit \| under_limit \| sell_qty \| no_change` |
+| B4 | GET\|PUT | `/me/fee` | `BrokerFeeInput` = `{commission_rate: 0..0.01 \| null}` | `BrokerFee` = `{commission_rate, default_rate, bsmv, own}`. Bankanın komisyon oranı; tahmin bunu kullanır. `TicketEntry.commission_rate`/`commission_rate_own` hangisinin kullanıldığını söyler. `422 out_of_range` |
+| B5 | POST | `/me/book/reset` | `{confirm:"baştan"}` | `{closed_book, kill_switch_on}`. "Baştan başla": defter kapanır, geçmiş silinmez; `needs_setup` döner; açık durdurma açık kalır. `409 not_started`, `422 confirm` |
+| B6 | GET | `/me/books` | — | `PreviousBook[]` (önceki defterler, salt okunur) |
+| B7 | GET | `/me/export.csv` | — | CSV (UTF-8 BOM, `;`, ondalık virgül); `Content-Disposition: attachment` |
+| C1 | GET | `/me/corporate` | — | `CorporateBook` = `{this_year_try, total_try, per_holding: DividendTotal[], records: CorporateRecord[]}` (kâr payları bu yıl/toplam, hisse başına; kayıtlar yeniden eskiye) |
+| C2 | POST | `/me/corporate/dividends` | `DividendInput` = `{ticker, net_try, gross_try?, received_on, note?, notice_id?}` | `CorporateBook`. Gelirdir: nakit ve kazanç artar, koyulan para artmaz. `409 not_started`, `422 never_held`, `422 future_date`. Denetim `dividend.recorded` |
+| C3 | POST | `/me/corporate/bonus` | `BonusInput` = `{ticker, ex_date, new_qty \| bonus_pct, note?, notice_id?}` | `CorporateBook`. Adet artar, toplam maliyet aynı, nakit yok. `409 not_held`, `422 not_more`, `422 future_date`. Denetim `bonus.recorded` |
+| C4 | POST | `/me/corporate/rights` | `RightsInput` = `{ticker, subscribed_on, qty, price, note?, notice_id?}` | `CorporateBook`. Pay alınır, nakit düşer. `409 not_held`, `422 over_cash`. Denetim `rights.recorded` |
+| C5 | POST | `/me/corporate/{id}/undo` | — | `CorporateBook`. Silmez: düzeltme satırı ekler (`corrects`). `409 already_undone \| is_undo \| changed`, `404 not_found`. Denetim `<tür>.corrected` |
+| C6 | GET | `/me/corporate/notices` | — | `NoticeAnswer` = `{notices: CorporateNotice[]}`: elindeki hisse için KAP'ın kâr payı / bedelsiz / bedelli duyuruları. Okunamayan rakam `null`, `facts_note` söyler. Defteri değiştirmez |
+| C7 | POST | `/me/corporate/notices/{id}/dismiss` | — | `NoticeAnswer`. Denetim `corporate.dismissed` |
 
 ### 3.0 Kişinin kendi defteri (tek defter)
 
@@ -198,6 +217,14 @@ Panelin "KAPtan gerçekten çalışıyor mu?" sorusu. Şemalar `src/lib/domain/s
 | GET | `/system/status` | `SystemStatus` |
 | GET | `/me/alerts` | `AlertSettings` |
 | POST | `/me/alerts/test` | `AlertSettings` (`429 rate_limited`: dakikada en çok bir) |
+| GET | `/me/preferences` | `Preferences` = `{pause{active, until, since}, alerts{kinds{suggestion,day_halt,stopped,part_down,watched: {phone, desktop}}, quiet{on, start, end}}}` |
+| PUT | `/me/alerts/preferences` | `Preferences` (gövde `AlertPrefs`; saatler `HH:MM`, İstanbul saati; `422` bozuk saat) |
+| POST | `/me/pause` | `Preferences` (gövde `{days: 1..90}` ya da `{until: "YYYY-MM-DD"}` = KAPtan'ın yeniden çalıştığı ilk gün, 00:00 İstanbul; `422` geçmiş/90 günden uzak/ikisi birden). Tatil modu: bildirimler okunur ve saklanır, ajan koşusu ve kota harcanmaz, öneri çıkmaz; durdurma ve çıkışlar çalışır |
+| POST | `/me/pause/resume` | `Preferences` ("Şimdi devam et"; ara yoksa kayıt yazmaz) |
+| GET | `/me/backup` | `BackupStatus` = `{state: idle\|waiting\|running, last_at, last_ok, requested_at, folder, message_tr}` |
+| POST | `/me/backup/run` | `BackupStatus` ("Şimdi yedek al": yedek servisi 15 sn içinde alır; sürerken ikinci istek yazılmaz; `429` dakikada 3) |
+| POST | `/auth/password` | `{signed_out_others}` (gövde `{current, new}`; `403 wrong_password`, `422 weak_password`/validation: en az 6, en çok 200 karakter, `kaptan2026` ve eskisiyle aynısı yok; `429` dakikada `LOGIN_RATE_PER_MINUTE`. Diğer oturumlar kapanır, bu kalır) |
+| POST | `/auth/logout-all` | `204` (bu cihaz dahil her oturum kapanır; erişim belirteçleri hemen geçersiz olur) |
 
 - **`SystemStatus`** = `{reading, message|null, checked_at, ingest{ok, last_poll_at|null, age_s|null}, agents{ok,
   last_run_at|null, age_s|null}, scheduler{ok}, backup{ok, last_at|null, age_h|null}, problems: {code, message}[]}`.
@@ -210,6 +237,30 @@ Panelin "KAPtan gerçekten çalışıyor mu?" sorusu. Şemalar `src/lib/domain/s
 - **`DayCounters`** iki alan ekler: `deferred_reason_tr: string | null` (sıra gelmeyen bildirimlerin nedeni, tek cümle; `deferred`
   zaten vardı) ve `waiting_for_money: boolean` (başlangıç parası girilene kadar `true`: bildirimler okunup listelenir, ama
   öneri çıkmaz ve LLM kotası harcanmaz).
+
+### 3.6 Karne: öneri sicili, BIST 100 ve aylık/yıllık rapor
+
+Şemalar `src/lib/domain/reports.ts` (altta "Karne" bloğu). Hepsi salt okunur. Panel ayrıca ana sayfada `GET /brief/today` çağırır
+(404 = henüz yok, panel hiçbir şey göstermez; bkz. 5.3).
+
+| Yöntem | Yol | Yanıt |
+|---|---|---|
+| GET | `/reports/track?from=&to=` | `TrackRecord` (verilen her alım önerisi, ne yaptın, sonra fiyat ne yaptı) |
+| GET | `/reports/benchmark?from=&to=` | `Benchmark` (paran ve BIST 100, aynı günlerde) |
+| GET | `/reports/karne?period=month\|year&at=2026-11\|2026` | `Karne` (varsayılan: bu ay; `422` bozuk dönem) |
+| GET | `/reports/quiet?day=` | `QuietDay` ("neden öneri yok?" için günün gerçek sayıları) |
+
+- **`TrackItem.return_ratio`**: önerinin ardından ilk seansın açılışından, kartın planlanan en uzun tutma gününün kapanışına
+  düzeltilmiş fiyat hareketi (komisyon yok); `index_ratio` aynı seansların BIST 100 hareketi. Süre bitmediyse ikisi `null`,
+  `status: "open"`, `result_tr` "Sonuç 6 Aralık'ta belli olur". Süre bitti ama fiyat kaydı yoksa `status: "no_data"`: hiçbir ortalamaya
+  girmez, tahmin edilmez. `decision` = `took|approved_open|not_bought|declined|skipped|expired|waiting|cancelled`.
+- **`TrackSummary.caveat_tr`**: 30'dan az sonuçlanmış öneride "bu kadar azla bir şey söylemek erken" der. `compare_tr` "her öneriyi
+  izleseydin" ile "senin aldıkların"ı karşılaştırır (her öneriye eşit tutar).
+- **`Benchmark`**: kişinin sonucu `pnl_daily.daily_return` zincirinden (para ekleme/çekme kazanç sayılmaz), BIST 100 kayıtlı XU100
+  kapanışlarından. İki günden az kapanış ya da endeks fiyatı yoksa `available: false` + `reason_tr`; panel satırı göstermez.
+- **`Karne`**: `null` alan bilinmiyor demektir, sayfa o satırı çıkarır (`dividends_try` defterde temettü satırı olana kadar `null`).
+  `gain_try` = dönem sonu değer − dönem başı değer − dışarıdan giren/çıkan para; `realized_try` defterden ortalama maliyetle yeniden
+  hesaplanır; `unrealized_try` yalnızca içinde bulunulan dönemde.
 
 ## 4. Canlı olaylar (SSE)
 

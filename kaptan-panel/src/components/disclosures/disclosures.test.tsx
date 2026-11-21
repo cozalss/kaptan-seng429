@@ -9,11 +9,14 @@ import { MOCK_USER } from "@/lib/auth/mock-user";
 import { SessionProvider } from "@/lib/auth/session-context";
 import { DeskStateProvider } from "@/components/shell/desk-state";
 import { renderWithDesk } from "../harness.test-utils";
+import { nav, setSearch } from "../nav.test-utils";
 import { DisclosuresScreen } from "./disclosures-screen";
 
 vi.mock("next/navigation", async () => (await import("../nav.test-utils")).mockNavigation());
 
 afterEach(() => {
+  setSearch("");
+  nav.replace.mockClear();
   stopAllTimers();
   stopLiveTicker();
   __setMockDb(null);

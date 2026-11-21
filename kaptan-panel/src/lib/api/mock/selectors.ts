@@ -471,14 +471,19 @@ export const PREV_SESSION = addDays(ANCHOR_DATE, -3);
 /** GET /disclosures: one Istanbul day (default today on the mock clock), newest first, capped at 500. */
 export function disclosuresOn(
   state: MockState,
-  q: { day?: string; limit?: number; ticker?: string } = {},
+  q: { day?: string; limit?: number; ticker?: string; type?: string; acted?: boolean; scope?: "watchlist" | "mine" } = {},
   realNow: number = Date.now(),
 ): DisclosureListItem[] {
   const istanbulDay = (ms: number) => new Date(ms + 3 * 3_600_000).toISOString().slice(0, 10);
   const day = q.day ?? istanbulDay(nowMs(state, realNow));
   const limit = Math.max(1, Math.min(q.limit ?? 200, MAX_DISCLOSURES));
+  const actedOn = new Set(q.acted ? approvalCards(state, realNow).map((c) => c.disclosure_index) : []);
+  const followed = q.scope ? new Set([...state.watchlist, ...(q.scope === "mine" ? positions(state, realNow).map((p) => p.ticker) : [])]) : null;
   return visibleDisclosures(state)
     .filter((d) => istanbulDay(Date.parse(d.published_at)) === day)
     .filter((d) => !q.ticker || d.stock_codes.includes(q.ticker))
+    .filter((d) => !q.type || d.classification?.event_type === q.type)
+    .filter((d) => !q.acted || actedOn.has(d.disclosure_index))
+    .filter((d) => !followed || d.stock_codes.some((c) => followed.has(c)))
     .slice(0, limit);
 }

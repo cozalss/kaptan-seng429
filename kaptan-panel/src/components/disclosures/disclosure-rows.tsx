@@ -3,6 +3,7 @@ import type { ApprovalCard, DisclosureListItem } from "@/lib/domain";
 import { fmtTime } from "@/lib/format";
 import { href } from "@/lib/nav";
 import { cn } from "@/lib/utils";
+import { TickerLink } from "@/components/company/ticker-link";
 import { plainEvent, shortName } from "@/components/story/plain";
 import { titleTr } from "@/components/story/turkish";
 import { fateOf, groupByHour, tickerOf } from "./disclosure-logic";
@@ -38,7 +39,7 @@ export function Worthwhile({ rows, cardOf, isToday }: { rows: readonly Disclosur
           return (
             <li key={d.disclosure_index} className="ok-worth-row">
               <p className="ok-worth-ticker">
-                {tickerOf(d)} · <time dateTime={d.published_at}>{fmtTime(d.published_at)}</time>
+                {tickerOf(d) ? <TickerLink ticker={tickerOf(d) ?? ""} /> : null} · <time dateTime={d.published_at}>{fmtTime(d.published_at)}</time>
               </p>
               <h3 className="ok-worth-name">{titleTr(shortName(d.company_name))}</h3>
               <p className="ok-worth-said">{plainEvent(card)}</p>
@@ -58,7 +59,7 @@ export function Worthwhile({ rows, cardOf, isToday }: { rows: readonly Disclosur
 }
 
 /** Everything read, cut by the hour: a hairline band per hour over that hour's duyuru. */
-export function DisclosureHours({ rows, label, cardOf }: { rows: readonly DisclosureListItem[]; label: string; cardOf: Cards }) {
+export function DisclosureHours({ rows, label, cardOf, onOpen }: { rows: readonly DisclosureListItem[]; label: string; cardOf: Cards; onOpen?: (index: number) => void }) {
   const groups = groupByHour(rows);
   return (
     <div role="group" aria-label={label}>
@@ -70,7 +71,7 @@ export function DisclosureHours({ rows, label, cardOf }: { rows: readonly Disclo
           </h3>
           <ol>
             {g.rows.map((d) => (
-              <Row key={d.disclosure_index} d={d} card={cardOf.get(d.disclosure_index) ?? null} />
+              <Row key={d.disclosure_index} d={d} card={cardOf.get(d.disclosure_index) ?? null} onOpen={onOpen} />
             ))}
           </ol>
         </section>
@@ -79,7 +80,7 @@ export function DisclosureHours({ rows, label, cardOf }: { rows: readonly Disclo
   );
 }
 
-function Row({ d, card }: { d: DisclosureListItem; card: ApprovalCard | null }) {
+function Row({ d, card, onOpen }: { d: DisclosureListItem; card: ApprovalCard | null; onOpen?: (index: number) => void }) {
   const fate = card ? "useful" : fateOf(d);
   const ticker = tickerOf(d);
   return (
@@ -90,9 +91,18 @@ function Row({ d, card }: { d: DisclosureListItem; card: ApprovalCard | null }) 
       <div className="min-w-0">
         <p className="ok-row-who">
           <span className="ok-row-name">{titleTr(shortName(d.company_name))}</span>
-          {ticker ? <span className="ok-row-ticker">{ticker}</span> : null}
+          {ticker ? (
+            <span className="ok-row-ticker">
+              <TickerLink ticker={ticker} />
+            </span>
+          ) : null}
         </p>
         <p className="ok-row-said">{plainSaid(d)}</p>
+        {onOpen ? (
+          <button type="button" className="ok-open" onClick={() => onOpen(d.disclosure_index)} aria-label={`${titleTr(shortName(d.company_name))}: duyurunun tamamını oku`}>
+            Tamamını oku
+          </button>
+        ) : null}
       </div>
       <div className="ok-row-did">
         <span aria-hidden className="ok-mark" />

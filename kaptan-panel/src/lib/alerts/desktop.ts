@@ -1,3 +1,4 @@
+import { mayShowOnThisComputer } from "@/lib/prefs/desktop-gate";
 import { ALERT_TITLE, shouldNotify, type AlertPermission, type DesktopAlert } from "./alerts";
 
 /**
@@ -75,6 +76,8 @@ function looking(): boolean {
  */
 export function raiseDesktopAlert(alert: DesktopAlert, open: (path: string) => void): boolean {
   if (!shouldNotify({ enabled: wanted(), permission: desktopPermission(), looking: looking() })) return false;
+  // Ayarlar · Bildirimler: this kind may be off for this computer, or it is quiet time (the full stop is never held).
+  if (alert.kind !== "watch" && !mayShowOnThisComputer(alert.kind)) return false; // "watch" has no setting of its own yet
   try {
     const n = new Notification(ALERT_TITLE, { body: alert.body, tag: `kaptan-${alert.kind}`, lang: "tr" });
     n.onclick = () => {

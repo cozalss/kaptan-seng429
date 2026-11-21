@@ -113,7 +113,7 @@ function StartMoney({ onStarted }: { onStarted: () => void }) {
   return (
     <form onSubmit={submit} noValidate className="fr-form" aria-label="Başlangıç parası">
       <MoneyField label="Başlangıç paran" value={draft} onChange={setDraft} error={error} hint="Örneğin 25.000 ya da 1.250,50" large autoFocus />
-      <p className="fr-plain">KAPtan önerilerin büyüklüğünü bu paraya göre hesaplar. Paran bankanda kalır; KAPtan paraya dokunmaz.</p>
+      <p className="fr-plain">KAPtan önerilerin büyüklüğünü bu paraya göre hesaplar. Paran bankanda kalır; KAPtan paraya dokunmaz. Yanlış yazarsan sonra Param’dan değiştirebilirsin.</p>
       {failure ? (
         <p role="alert" className="mf-error mf-error--form">
           {failure}

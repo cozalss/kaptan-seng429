@@ -25,10 +25,9 @@ from psycopg import AsyncConnection
 from kaptan.api.deps import Actor
 from kaptan.api.errors import ApiError
 from kaptan.audit.writer import AuditDraft, append
-from kaptan.brokers import config as broker_config
 from kaptan.brokers.costs import commission_of
-from kaptan.domain.schemas.money import HoldingInput, HoldingSellInput, MoneyInput
-from kaptan.portfolio import ledger
+from kaptan.domain.schemas.money import HoldingInput, HoldingSellInput, MoneyInput, MovementCorrectInput
+from kaptan.portfolio import fee, ledger
 from kaptan.portfolio.ledger import cents
 from kaptan.portfolio.marks import round_to
 from kaptan.portfolio.positions import BOOK, ONE_SQL, position_view
@@ -45,6 +44,19 @@ FUTURE_TIME: Final = "Gelecekteki bir zamanı giremezsin."
 POSITION_NOT_FOUND: Final = "Pozisyon bulunamadı."
 USE_TICKET: Final = "Bu pozisyonu önerinin işlem fişinden sat."
 OVER_QTY: Final = "Elinde olandan fazlasını satamazsın."
+NOT_A_MOVEMENT: Final = "Bu hareketi bulamadım."
+ALREADY_UNDONE: Final = "Bunu zaten geri aldın."
+NO_CHANGE: Final = "Bu zaten böyle yazılı."
+START_NOT_UNDOABLE: Final = (
+    "Başlangıç parasını geri alamazsın; tutarını değiştirebilirsin. "
+    "Hepsini silip yeniden başlamak için 'Baştan başla'yı kullan."
+)
+OVER_CASH_FIX: Final = (
+    "Bu değişiklikle boştaki nakdin eksiye düşerdi. Önce bekleyen alım işlemini kapat ya da başka bir tutar yaz."
+)
+HAS_SALES: Final = "Bu hisseden sattığını kaydettin, o yüzden eklemeyi değiştiremezsin."
+NEED_AMOUNT: Final = "Yeni tutarı yaz."
+NEED_SHARE: Final = "Yeni adedi ve alış fiyatını yaz."
 AUDIT_ACTION: Final = {"start": "money.started", "deposit": "money.deposited", "withdrawal": "money.withdrawn"}
 
 ISSUER_SQL: Final = "SELECT name FROM core.issuers WHERE ticker = %s"
@@ -146,11 +158,12 @@ def _position_id(value: str) -> int:
     return int(tail)
 
 
-def _commission(body: HoldingSellInput, price: Decimal) -> tuple[Decimal, bool]:
-    """What the person typed, else the cost model's estimate (commission + BSMV), flagged estimated."""
+async def _commission(conn: AsyncConnection[Any], body: HoldingSellInput, price: Decimal) -> tuple[Decimal, bool]:
+    """What the person typed, else the cost model's estimate (commission + BSMV, at the person's own rate when
+    they entered one), flagged estimated."""
     if body.commission_try is not None:
         return cents(body.commission_try), False
-    broker, bsmv = commission_of(price * body.qty, broker_config.current().trading.costs)
+    broker, bsmv = commission_of(price * body.qty, (await fee.in_force(conn)).costs)
     return broker + bsmv, True
 
 
@@ -175,7 +188,7 @@ async def sell_holding(
             raise ApiError(409, "use_ticket", USE_TICKET)
         if body.qty > int(pos["qty"]):
             raise ApiError(422, "over_qty", OVER_QTY)
-        commission, estimated = _commission(body, price)
+        commission, estimated = await _commission(conn, body, price)
         await ledger.add_fill(
             conn, side="sell", ticker=pos["ticker"], qty=body.qty, price=price, commission=commission,
             estimated=estimated, filled_at=body.sold_at, now=now, position_id=pid,
@@ -205,4 +218,172 @@ async def sell_holding(
     return position_view(row, now, mark)
 
 
-__all__ = ["BOOK", "MoneyOutcome", "add_holding", "add_money", "money_book", "sell_holding"]
+def _movement_id(value: str) -> int:
+    head, _, tail = value.partition("-")
+    if head != "hareket" or not tail.isdigit():
+        raise ApiError(404, "not_found", NOT_A_MOVEMENT)
+    return int(tail)
+
+
+def _signed(kind: str, amount: Decimal) -> Decimal:
+    return -amount if kind == "withdrawal" else amount
+
+
+def _check_free_cash(book: Any, cash_delta: Decimal) -> None:
+    """A fix may never leave the free cash (cash minus buy tickets waiting to be entered) below zero."""
+    if cash_delta < 0 and book.cash + cash_delta - book.reserved < 0:
+        raise ApiError(422, "over_cash", OVER_CASH_FIX)
+
+
+async def _fixable(conn: AsyncConnection[Any], movement_id: str) -> dict[str, Any]:
+    row = await ledger.original_row(conn, _movement_id(movement_id))
+    if row is None or row["kind"] not in ledger.MOVEMENT_KINDS:
+        raise ApiError(404, "not_found", NOT_A_MOVEMENT)
+    if row["undone"]:
+        raise ApiError(409, "already_undone", ALREADY_UNDONE)
+    return row
+
+
+async def _own_position(conn: AsyncConnection[Any], row: dict[str, Any]) -> dict[str, Any]:
+    async with conn.cursor() as cur:
+        await cur.execute(OWN_POSITION_SQL, (row["position_id"],))
+        pos = await cur.fetchone()
+    if pos is None or pos["origin"] != "own":
+        raise ApiError(404, "not_found", POSITION_NOT_FOUND)
+    if await ledger.hand_sales(conn, int(row["position_id"])):
+        raise ApiError(409, "has_sales", HAS_SALES)
+    return dict(pos)
+
+
+async def _worth(conn: AsyncConnection[Any], ticker: str, qty: int, fallback: Decimal, now: datetime) -> Decimal:
+    mark = (await latest_marks(conn, [ticker], now)).get(ticker)
+    return cents((Decimal(str(mark.price)) if mark is not None else fallback) * qty)
+
+
+async def correct_movement(
+    conn: AsyncConnection[Any], movement_id: str, body: MovementCorrectInput, actor: Actor, *, now: datetime
+) -> dict[str, Any]:
+    """POST /me/money/{id}/correct: the amount of a movement was typed wrong. A new ledger row says which row it
+    corrects and carries the difference, like a deposit (a plus or a minus): never a gain or a loss. 404 not_found,
+    409 already_undone / has_sales, 422 over_cash / no_change / validation."""
+    async with conn.transaction():
+        await ledger.lock(conn)
+        row = await _fixable(conn, movement_id)
+        book = await own_book(conn, now)
+        if row["kind"] == "holding":
+            await _correct_holding(conn, row, body, actor, book, now)
+        else:
+            await _correct_money(conn, row, body, actor, book, now)
+        return await money_book(conn, now)
+
+
+async def _correct_money(
+    conn: AsyncConnection[Any], row: dict[str, Any], body: MovementCorrectInput, actor: Actor, book: Any, now: datetime
+) -> None:
+    if body.amount_try is None:
+        raise ApiError(422, "validation", NEED_AMOUNT)
+    old = Decimal(row["corrected_to"] if row["corrected_to"] is not None else row["amount_try"])
+    new = cents(body.amount_try)
+    if new == old:
+        raise ApiError(422, "no_change", NO_CHANGE)
+    delta = _signed(row["kind"], new) - _signed(row["kind"], old)
+    _check_free_cash(book, delta)
+    await ledger.add_fix(
+        conn, kind="correction", corrects_id=row["id"], occurred_at=now, recorded_at=now, amount_try=new,
+        cash_delta=delta, capital_delta=delta, flow_try=delta, equity_before=book.equity, note=body.note.strip(),
+    )  # fmt: skip
+    payload = {"kind": row["kind"], "old_amount_try": float(old), "new_amount_try": float(new)}
+    await append(conn, [_audit(actor, "money.corrected", f"hareket-{row['id']}", payload, now)], now=now)
+
+
+async def _correct_holding(
+    conn: AsyncConnection[Any], row: dict[str, Any], body: MovementCorrectInput, actor: Actor, book: Any, now: datetime
+) -> None:
+    if body.qty is None or body.avg_cost is None:
+        raise ApiError(422, "validation", NEED_SHARE)
+    if body.bought_on is not None and body.bought_on > istanbul_date(now):
+        raise ApiError(422, "future_date", FUTURE_DAY)
+    pos = await _own_position(conn, row)
+    old_qty, old_avg = int(pos["qty"]), Decimal(str(pos["avg_cost"]))
+    new_avg = Decimal(str(body.avg_cost))
+    if (body.qty, new_avg) == (old_qty, old_avg) and body.bought_on is None:
+        raise ApiError(422, "no_change", NO_CHANGE)
+    old_cost, new_cost = cents(old_avg * old_qty), cents(new_avg * body.qty)
+    worth_new = await _worth(conn, row["ticker"], body.qty, new_avg, now)
+    worth_old = await _worth(conn, row["ticker"], old_qty, old_avg, now)
+    await ledger.add_fix(
+        conn, kind="correction", corrects_id=row["id"], occurred_at=now, recorded_at=now, amount_try=new_cost,
+        cash_delta=Decimal(0), capital_delta=new_cost - old_cost, flow_try=worth_new - worth_old,
+        equity_before=book.equity, ticker=row["ticker"], qty_delta=body.qty - old_qty, price=new_avg,
+        position_id=row["position_id"], new_qty=body.qty,
+    )  # fmt: skip
+    opened = None if body.bought_on is None else datetime.combine(body.bought_on, time(12, 0), IST)
+    async with conn.cursor() as cur:
+        await cur.execute(
+            "UPDATE trading.positions SET qty = %s, avg_cost = %s, last_price = %s,"
+            " opened_at = coalesce(%s, opened_at), planned_exit_date = coalesce(%s, planned_exit_date) WHERE id = %s",
+            (body.qty, float(new_avg), float(new_avg), opened, body.bought_on, pos["id"]),
+        )
+    payload = {
+        "ticker": row["ticker"], "company": pos["company_name"],
+        "old": {"qty": old_qty, "avg_cost": float(old_avg)}, "new": {"qty": body.qty, "avg_cost": float(new_avg)},
+    }  # fmt: skip
+    await append(conn, [_audit(actor, "holding.corrected", f"hareket-{row['id']}", payload, now)], now=now)
+
+
+async def undo_movement(conn: AsyncConnection[Any], movement_id: str, actor: Actor, *, now: datetime) -> dict[str, Any]:
+    """POST /me/money/{id}/undo: "Bunu yanlış girdim". A reversing row, never a delete; not a gain or a loss.
+    404 not_found, 409 already_undone / cannot_undo_start / has_sales, 422 over_cash."""
+    async with conn.transaction():
+        await ledger.lock(conn)
+        row = await _fixable(conn, movement_id)
+        if row["kind"] == "start":
+            raise ApiError(409, "cannot_undo_start", START_NOT_UNDOABLE)
+        book = await own_book(conn, now)
+        if row["kind"] == "holding":
+            await _undo_holding(conn, row, actor, book, now)
+        else:
+            await _undo_money(conn, row, actor, book, now)
+        return await money_book(conn, now)
+
+
+async def _undo_money(conn: AsyncConnection[Any], row: dict[str, Any], actor: Actor, book: Any, now: datetime) -> None:
+    amount = Decimal(row["corrected_to"] if row["corrected_to"] is not None else row["amount_try"])
+    delta = -_signed(row["kind"], amount)
+    _check_free_cash(book, delta)
+    await ledger.add_fix(
+        conn, kind="reversal", corrects_id=row["id"], occurred_at=now, recorded_at=now, amount_try=amount,
+        cash_delta=delta, capital_delta=delta, flow_try=delta, equity_before=book.equity,
+    )  # fmt: skip
+    payload = {"kind": row["kind"], "amount_try": float(amount)}
+    await append(conn, [_audit(actor, "money.undone", f"hareket-{row['id']}", payload, now)], now=now)
+
+
+async def _undo_holding(
+    conn: AsyncConnection[Any], row: dict[str, Any], actor: Actor, book: Any, now: datetime
+) -> None:
+    pos = await _own_position(conn, row)
+    qty, avg = int(pos["qty"]), Decimal(str(pos["avg_cost"]))
+    cost = cents(avg * qty)
+    worth = await _worth(conn, row["ticker"], qty, avg, now)
+    await ledger.add_fix(
+        conn, kind="reversal", corrects_id=row["id"], occurred_at=now, recorded_at=now, amount_try=cost,
+        cash_delta=Decimal(0), capital_delta=-cost, flow_try=-worth, equity_before=book.equity,
+        ticker=row["ticker"], qty_delta=-qty, price=avg, position_id=row["position_id"],
+    )  # fmt: skip
+    async with conn.cursor() as cur:
+        await cur.execute("DELETE FROM trading.positions WHERE id = %s", (pos["id"],))
+    payload = {"ticker": row["ticker"], "company": pos["company_name"], "qty": qty, "avg_cost": float(avg)}
+    await append(conn, [_audit(actor, "holding.undone", f"hareket-{row['id']}", payload, now)], now=now)
+
+
+__all__ = [
+    "BOOK",
+    "MoneyOutcome",
+    "add_holding",
+    "add_money",
+    "correct_movement",
+    "money_book",
+    "sell_holding",
+    "undo_movement",
+]

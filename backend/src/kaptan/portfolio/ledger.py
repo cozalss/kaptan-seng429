@@ -25,44 +25,79 @@ from kaptan.domain.schemas._base import iso_ms
 CENT: Final = Decimal("0.01")
 LOCK_KEY: Final = "trading.book_ledger"
 MoneyKind = Literal["start", "deposit", "withdrawal"]
+#: A row that changes or undoes an earlier one; it is never a movement of its own.
+FIX_KINDS: Final = ("correction", "reversal")
 #: What `GET /me/money` lists: the outside flows (a fill is a ticket's business, not a money movement).
 MOVEMENT_KINDS: Final = ("start", "deposit", "withdrawal", "holding")
 
-STARTED_SQL: Final = "SELECT EXISTS (SELECT 1 FROM trading.book_ledger WHERE kind = 'start') AS started"
+STARTED_SQL: Final = """
+SELECT EXISTS (SELECT 1 FROM trading.book_ledger
+                WHERE kind = 'start' AND book_no = (SELECT max(no) FROM trading.book_epochs)) AS started
+"""
 TOTALS_SQL: Final = """
 SELECT coalesce(bool_or(kind = 'start'), false) AS started, coalesce(sum(cash_delta), 0) AS cash,
        coalesce(sum(capital_delta), 0) AS put_in
-  FROM trading.book_ledger WHERE occurred_at <= %s
+  FROM trading.book_ledger WHERE occurred_at <= %s AND book_no = (SELECT max(no) FROM trading.book_epochs)
 """
 SHARES_SQL: Final = """
-SELECT l.ticker, sum(l.qty_delta)::int AS qty, (array_agg(l.price ORDER BY l.occurred_at DESC, l.id DESC))[1] AS price,
+SELECT l.ticker, sum(l.qty_delta)::int AS qty,
+       (array_agg(l.price ORDER BY l.occurred_at DESC, l.id DESC) FILTER (WHERE l.price IS NOT NULL))[1] AS price,
        i.sector, coalesce(g.group_name, i.group_name) AS group_name
   FROM trading.book_ledger l
   LEFT JOIN core.issuers i ON i.ticker = l.ticker
   LEFT JOIN core.issuer_groups g ON g.ticker = l.ticker
- WHERE l.ticker IS NOT NULL AND l.occurred_at <= %s
+ WHERE l.ticker IS NOT NULL AND l.occurred_at <= %s AND l.book_no = (SELECT max(no) FROM trading.book_epochs)
  GROUP BY l.ticker, i.sector, coalesce(g.group_name, i.group_name)
 HAVING sum(l.qty_delta) > 0
  ORDER BY l.ticker
 """
 FLOWS_SQL: Final = """
 SELECT flow_try, equity_before FROM trading.book_ledger
- WHERE flow_try <> 0 AND occurred_at <= %(until)s AND (%(after)s::timestamptz IS NULL OR occurred_at > %(after)s)
+ WHERE flow_try <> 0 AND book_no = (SELECT max(no) FROM trading.book_epochs)
+   AND occurred_at <= %(until)s AND (%(after)s::timestamptz IS NULL OR occurred_at > %(after)s)
  ORDER BY occurred_at, id
 """
 TRADES_SQL: Final = """
-SELECT count(*) AS n FROM trading.book_ledger WHERE kind IN ('buy', 'sell') AND occurred_at >= %s AND occurred_at < %s
+SELECT count(*) AS n FROM trading.book_ledger
+ WHERE kind IN ('buy', 'sell') AND occurred_at >= %s AND occurred_at < %s
+   AND book_no = (SELECT max(no) FROM trading.book_epochs)
 """
 MOVEMENTS_SQL: Final = """
-SELECT id, kind, amount_try, occurred_at, note FROM trading.book_ledger
- WHERE kind = ANY(%s) ORDER BY occurred_at DESC, id DESC
+SELECT r.id, r.kind, r.amount_try, r.occurred_at, r.note,
+       (SELECT c.amount_try FROM trading.book_ledger c
+         WHERE c.corrects_id = r.id AND c.kind = 'correction' ORDER BY c.id DESC LIMIT 1) AS corrected_to,
+       (SELECT max(c.recorded_at) FROM trading.book_ledger c WHERE c.corrects_id = r.id) AS changed_at,
+       EXISTS (SELECT 1 FROM trading.book_ledger c WHERE c.corrects_id = r.id AND c.kind = 'reversal') AS undone
+  FROM trading.book_ledger r
+ WHERE r.kind = ANY(%s) AND r.book_no = %s ORDER BY r.occurred_at DESC, r.id DESC
 """
+ROW_SQL: Final = """
+SELECT l.*, (SELECT c.amount_try FROM trading.book_ledger c
+              WHERE c.corrects_id = l.id AND c.kind = 'correction' ORDER BY c.id DESC LIMIT 1) AS corrected_to,
+       EXISTS (SELECT 1 FROM trading.book_ledger c WHERE c.corrects_id = l.id AND c.kind = 'reversal') AS undone
+  FROM trading.book_ledger l
+ WHERE l.id = %s AND l.corrects_id IS NULL AND l.book_no = (SELECT max(no) FROM trading.book_epochs)
+"""
+FILL_SQL: Final = """
+SELECT l.id, l.kind, l.ticker, l.qty_delta, l.price, l.commission_try, l.commission_estimated, l.cash_delta,
+       (SELECT jsonb_build_object('qty', c.new_qty, 'price', c.price, 'commission', c.commission_try)
+          FROM trading.book_ledger c WHERE c.corrects_id = l.id AND c.kind = 'correction'
+         ORDER BY c.id DESC LIMIT 1) AS latest,
+       (SELECT coalesce(sum(c.cash_delta), 0) FROM trading.book_ledger c
+         WHERE c.corrects_id = l.id AND c.kind = 'correction') AS cash_fixes
+  FROM trading.book_ledger l WHERE l.ticket_no = %s AND l.kind IN ('buy', 'sell') AND l.corrects_id IS NULL
+"""
+SALES_SQL: Final = """
+SELECT count(*) AS n FROM trading.book_ledger WHERE kind = 'sell' AND position_id = %s AND ticket_no IS NULL
+"""
+CURRENT_SQL: Final = "SELECT max(no) AS no FROM trading.book_epochs"
 INSERT_SQL: Final = """
 INSERT INTO trading.book_ledger (kind, occurred_at, recorded_at, amount_try, cash_delta, capital_delta, flow_try,
-  equity_before, ticker, qty_delta, price, commission_try, commission_estimated, position_id, ticket_no, note)
+  equity_before, ticker, qty_delta, price, commission_try, commission_estimated, position_id, ticket_no, note,
+  book_no, corrects_id, new_qty)
 VALUES (%(kind)s, %(occurred_at)s, %(recorded_at)s, %(amount_try)s, %(cash_delta)s, %(capital_delta)s, %(flow_try)s,
   %(equity_before)s, %(ticker)s, %(qty_delta)s, %(price)s, %(commission_try)s, %(commission_estimated)s,
-  %(position_id)s, %(ticket_no)s, %(note)s)
+  %(position_id)s, %(ticket_no)s, %(note)s, (SELECT max(no) FROM trading.book_epochs), %(corrects_id)s, %(new_qty)s)
 RETURNING id
 """
 
@@ -143,18 +178,65 @@ async def trades_between(conn: AsyncConnection[Any], start: datetime, end: datet
     return int((await _rows(conn, TRADES_SQL, (start, end)))[0]["n"])
 
 
-async def movements(conn: AsyncConnection[Any]) -> list[dict[str, Any]]:
-    """MoneyMovement documents, newest first."""
-    return [
-        {
-            "id": f"hareket-{r['id']}",
-            "kind": r["kind"],
-            "amount_try": float(r["amount_try"]),
-            "occurred_at": iso_ms(r["occurred_at"]),
-            "note": r["note"],
-        }
-        for r in await _rows(conn, MOVEMENTS_SQL, (list(MOVEMENT_KINDS),))
-    ]
+async def current_book_no(conn: AsyncConnection[Any]) -> int:
+    return int((await _rows(conn, CURRENT_SQL, ()))[0]["no"])
+
+
+async def movements(conn: AsyncConnection[Any], book_no: int | None = None) -> list[dict[str, Any]]:
+    """MoneyMovement documents of one book (the current one by default), newest first. A corrected row shows
+    the amount now in force and the one first typed; an undone row stays, marked."""
+    which = book_no if book_no is not None else await current_book_no(conn)
+    out: list[dict[str, Any]] = []
+    for r in await _rows(conn, MOVEMENTS_SQL, (list(MOVEMENT_KINDS), which)):
+        corrected = r["corrected_to"] is not None
+        out.append(
+            {
+                "id": f"hareket-{r['id']}",
+                "kind": r["kind"],
+                "amount_try": float(r["corrected_to"] if corrected else r["amount_try"]),
+                "occurred_at": iso_ms(r["occurred_at"]),
+                "note": r["note"],
+                "status": "undone" if r["undone"] else "corrected" if corrected else "active",
+                "original_amount_try": float(r["amount_try"]) if corrected else None,
+                "changed_at": None if r["changed_at"] is None else iso_ms(r["changed_at"]),
+            }
+        )
+    return out
+
+
+async def original_row(conn: AsyncConnection[Any], row_id: int) -> dict[str, Any] | None:
+    """An original ledger row of the current book (not a correction), with its latest corrected amount and
+    whether it was undone. Call it after `lock()`."""
+    rows = await _rows(conn, ROW_SQL, (row_id,))
+    return rows[0] if rows else None
+
+
+async def fill_of(conn: AsyncConnection[Any], ticket_no: str) -> dict[str, Any] | None:
+    """The ledger row of a ticket's recorded fill, with its values now in force (`qty`, `price`, `commission`)."""
+    rows = await _rows(conn, FILL_SQL, (ticket_no,))
+    if not rows:
+        return None
+    r = rows[0]
+    latest = r["latest"]
+    qty = abs(int(r["qty_delta"]))
+    return {
+        **r,
+        "side": r["kind"],
+        "qty": int(latest["qty"]) if latest else qty,
+        "price": Decimal(str(latest["price"])) if latest else Decimal(r["price"]),
+        "commission": Decimal(str(latest["commission"])) if latest else Decimal(r["commission_try"]),
+        "cash_now": Decimal(r["cash_delta"]) + Decimal(r["cash_fixes"]),
+    }
+
+
+async def hand_sales(conn: AsyncConnection[Any], position_id: int) -> int:
+    """How many sales of a hand-entered holding were recorded."""
+    return int((await _rows(conn, SALES_SQL, (position_id,)))[0]["n"])
+
+
+async def add_fix(conn: AsyncConnection[Any], **fields: Any) -> int:
+    """A `correction` or `reversal` row (the caller computes the differences)."""
+    return await _insert(conn, **fields)
 
 
 async def _insert(conn: AsyncConnection[Any], **fields: Any) -> int:
@@ -170,6 +252,8 @@ async def _insert(conn: AsyncConnection[Any], **fields: Any) -> int:
         "position_id": None,
         "ticket_no": None,
         "note": "",
+        "corrects_id": None,
+        "new_qty": None,
         **fields,
     }
     return int((await _rows(conn, INSERT_SQL, row))[0]["id"])

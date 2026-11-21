@@ -25,11 +25,15 @@ from kaptan.api.routers import (
     audit,
     auth,
     brief,
+    companies,
+    corporate,
     disclosures,
     eval,
     limits,
     personal,
     portfolio,
+    preferences,
+    reports,
     risk,
     runs,
     sse,
@@ -62,7 +66,11 @@ ROUTERS: Final = (
     brief.router,  # backend-only: GET /brief/today|{date} (M3 B1)
     eval.router,  # backend-only: GET /eval/summary, /reports/forward/weekly (M3 B3)
     personal.router,  # backend-only: GET /personal/stage (M3 B3)
+    reports.router,  # GET /reports/track|benchmark|karne|quiet (wave 4 REPORT)
     alerts.router,  # GET /me/alerts, POST /me/alerts/test
+    preferences.router,  # /me/preferences, /me/pause, /me/backup (COMFORT)
+    companies.router,  # /companies/{ticker}, /search, /watchlist
+    corporate.router,  # /me/corporate: dividends, bonus and rights issues, KAP notices (wave 4 CORP)
 )
 
 

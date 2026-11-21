@@ -37,6 +37,15 @@ SELECT d.disclosure_index, d.disclosure_oid, d.stock_codes, d.related_stocks, d.
   FROM core.disclosures d
  WHERE d.published_at >= %(start)s AND d.published_at < %(end)s
    AND (%(ticker)s::text IS NULL OR d.primary_ticker = %(ticker)s OR %(ticker)s = ANY(d.stock_codes))
+   AND (%(etype)s::text IS NULL OR d.classification->>'event_type' = %(etype)s)
+   AND (NOT %(acted)s OR EXISTS (SELECT 1 FROM trading.trade_proposals tp WHERE tp.run_id = d.run_id))
+   AND (%(scope)s::text IS NULL
+        OR (%(scope)s = 'watchlist' AND (d.primary_ticker IN (SELECT ticker FROM core.watchlist)
+                                         OR d.stock_codes && ARRAY(SELECT ticker FROM core.watchlist)))
+        OR (%(scope)s = 'mine' AND (d.primary_ticker IN (SELECT ticker FROM core.watchlist
+                                                          UNION SELECT ticker FROM trading.positions)
+                                    OR d.stock_codes && ARRAY(SELECT ticker FROM core.watchlist
+                                                               UNION SELECT ticker FROM trading.positions))))
  ORDER BY d.published_at DESC, d.disclosure_index DESC
  LIMIT %(limit)s
 """
@@ -79,13 +88,25 @@ def day_bounds(day: date) -> tuple[datetime, datetime]:
 
 
 async def list_disclosures(
-    conn: AsyncConnection[Any], day: date, *, limit: int = 200, ticker: str | None = None
+    conn: AsyncConnection[Any],
+    day: date,
+    *,
+    limit: int = 200,
+    ticker: str | None = None,
+    event_type: str | None = None,
+    acted: bool = False,
+    scope: str | None = None,
 ) -> list[dict[str, Any]]:
+    """`event_type`: what KAPtan thought it was (E1..E4, IGNORE); `acted`: a suggestion came of it;
+    `scope`: 'watchlist' (starred companies) or 'mine' (starred or held)."""
     start, end = day_bounds(day)
     params = {
         "start": start,
         "end": end,
         "ticker": ticker,
+        "etype": event_type,
+        "acted": acted,
+        "scope": scope,
         "limit": max(1, min(limit, MAX_LIMIT)),
     }
     async with conn.cursor() as cur:

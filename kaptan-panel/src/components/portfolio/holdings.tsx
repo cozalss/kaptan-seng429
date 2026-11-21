@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
-import type { Position } from "@/lib/domain";
+import type { DividendTotal, Position } from "@/lib/domain";
 import { fmtInt, fmtSignedPct } from "@/lib/format";
 import { href, ROUTES } from "@/lib/nav";
 import { fmtLira, fmtSignedLira } from "@/lib/solo/words";
@@ -12,6 +12,7 @@ import { Boat } from "@/components/ufuk/boat";
 import { ScreenState } from "@/components/shell/page-frame";
 import { Button } from "@/components/ui/button";
 import { PriceAge } from "@/components/solo/price-age";
+import { TickerLink } from "@/components/company/ticker-link";
 import { SellForm } from "./sell-form";
 import "./own-money.css";
 import { dateWords, exitSentence, waterSplit } from "./param-words";
@@ -22,7 +23,7 @@ import { holdingProgress, istanbulDate, positionReturn } from "./risk-math";
  * and what it is worth; when KAPtan will suggest selling; the voyage so far. The ledger is cut by the
  * water: what is up sits above the line, what is down under it.
  */
-export function Holdings({ positions, today, onChanged }: { positions: readonly Position[]; today: string; onChanged?: () => void }) {
+export function Holdings({ positions, today, onChanged, dividends = [] }: { positions: readonly Position[]; today: string; onChanged?: () => void; dividends?: readonly DividendTotal[] }) {
   if (!positions.length) {
     return (
       <ScreenState
@@ -49,7 +50,7 @@ export function Holdings({ positions, today, onChanged }: { positions: readonly 
       </div>
       <ol aria-label="Elindekiler" className="pm-rows">
         {above.map((p) => (
-          <Holding key={p.id} p={p} today={today} onChanged={onChanged} />
+          <Holding key={p.id} p={p} today={today} onChanged={onChanged} received={dividends.find((d) => d.ticker === p.ticker)?.total_try} />
         ))}
         <li aria-hidden={below.length === 0 ? true : undefined} className="pm-waterline">
           <Boat className="pm-waterline-boat" />
@@ -58,14 +59,14 @@ export function Holdings({ positions, today, onChanged }: { positions: readonly 
           </span>
         </li>
         {below.map((p) => (
-          <Holding key={p.id} p={p} today={today} onChanged={onChanged} />
+          <Holding key={p.id} p={p} today={today} onChanged={onChanged} received={dividends.find((d) => d.ticker === p.ticker)?.total_try} />
         ))}
       </ol>
     </section>
   );
 }
 
-function Holding({ p, today, onChanged }: { p: Position; today: string; onChanged?: () => void }) {
+function Holding({ p, today, onChanged, received }: { p: Position; today: string; onChanged?: () => void; received?: number }) {
   const r = positionReturn(p);
   const own = p.origin === "own";
   const worth = p.qty * p.last_price;
@@ -74,7 +75,7 @@ function Holding({ p, today, onChanged }: { p: Position; today: string; onChange
     <li id={`elinde-${p.ticker}`} className="pm-row">
       <div className="min-w-0">
         <p className="pm-row-ticker">
-          {p.ticker}
+          <TickerLink ticker={p.ticker} />
         </p>
         <h3 className="pm-row-name">
           {own ? (
@@ -88,6 +89,7 @@ function Holding({ p, today, onChanged }: { p: Position; today: string; onChange
         <p className="pm-row-line">
           {fmtInt(p.qty)} adet aldın, {fmtLira(paid)} ödedin.
         </p>
+        {received ? <p className="pm-row-line">Bu hisseden {fmtLira(received, true)} kâr payı aldın.</p> : null}
       </div>
       {own ? <div /> : <Voyage p={p} today={today} />}
       <div className="pm-row-money">

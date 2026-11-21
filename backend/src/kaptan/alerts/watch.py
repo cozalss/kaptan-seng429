@@ -27,9 +27,9 @@ from typing import Any, Final
 
 from redis.exceptions import RedisError
 
+from kaptan.alerts.announce import announce, flush_held
 from kaptan.alerts.config import AlertConfig, alert_config
 from kaptan.alerts.messages import AlertKind, kind_for_event
-from kaptan.alerts.service import notify
 from kaptan.events import bus
 from kaptan.ops.system_status import DOWN_CODES, read_facts, summarize
 from kaptan.settings import Settings
@@ -38,6 +38,7 @@ log = logging.getLogger("kaptan.alerts")
 
 CURSOR_KEY: Final = "kaptan:alerts:cursor"
 DOWN_KEY: Final = "kaptan:alerts:down"
+FEED_CURSOR_KEY: Final = "kaptan:alerts:feed_cursor"
 DOWN_AFTER: Final = timedelta(minutes=15)
 WATCH_GAP: Final = timedelta(minutes=5)
 MAX_EVENT_AGE: Final = timedelta(minutes=30)
@@ -94,6 +95,24 @@ def kinds_in(entries: list[Entry], now: datetime) -> tuple[AlertKind, ...]:
     return out
 
 
+def feed_hits_watchlist(entries: list[Entry], watched: frozenset[str], now: datetime) -> bool:
+    """True when a recent `disclosure` event of the feed names a company on the watchlist (the text never leaves)."""
+    for entry_id, fields in entries:
+        at = entry_time(entry_id)
+        if at is None or now - at > MAX_EVENT_AGE or fields.get("event") != "disclosure":
+            continue
+        try:
+            data = json.loads(fields.get("data", ""))
+        except ValueError:
+            continue
+        if not isinstance(data, dict):
+            continue
+        codes = {data.get("primary_ticker"), *(data.get("stock_codes") or [])}
+        if codes & watched:
+            return True
+    return False
+
+
 def _when(raw: str | None) -> datetime | None:
     try:
         return datetime.fromisoformat(raw) if raw else None
@@ -110,6 +129,7 @@ class AlertWatch:
         self.block_ms = block_ms
         self.stream = bus.stream_key("desk")
         self.cursor: str | None = None
+        self.feed_cursor: str | None = None
 
     async def _start_cursor(self) -> str:
         stored = await self.redis.get(CURSOR_KEY)
@@ -125,10 +145,39 @@ class AlertWatch:
             return ()
         kinds = kinds_in(entries, self.clock())
         for kind in kinds:
-            await notify(self.redis, self.cfg, kind, now=self.clock())
+            await announce(self.pool, self.redis, self.cfg, kind, now=self.clock())
         self.cursor = entries[-1][0]
         await self.redis.set(CURSOR_KEY, self.cursor)
         return kinds
+
+    async def _watched(self) -> frozenset[str]:
+        async with self.pool.connection() as conn:
+            cur = await conn.execute("SELECT ticker FROM core.watchlist")
+            return frozenset(str(r["ticker"]) for r in await cur.fetchall())
+
+    async def read_feed(self) -> bool:
+        """The disclosure feed since the last look; True when a watched company's disclosure was announced.
+
+        The phone only ever gets the generic sentence of the "watch" kind (no company), at most once per 10 minutes.
+        """
+        stream = bus.stream_key("feed")
+        if self.feed_cursor is None:
+            stored = await self.redis.get(FEED_CURSOR_KEY)
+            self.feed_cursor = (
+                stored if stored and bus.is_stream_id(stored) else await bus.latest_id(self.redis, stream)
+            )
+        reply: Any = await self.redis.xread({stream: self.feed_cursor}, count=bus.READ_COUNT)
+        entries: list[Entry] = [(str(i), f or {}) for _key, batch in reply or [] for i, f in batch]
+        if not entries:
+            return False
+        now = self.clock()
+        told = (
+            feed_hits_watchlist(entries, await self._watched(), now)
+            and await announce(self.pool, self.redis, self.cfg, "watch", now=now) == "sent"
+        )
+        self.feed_cursor = entries[-1][0]
+        await self.redis.set(FEED_CURSOR_KEY, self.feed_cursor)
+        return told
 
     async def _down_state(self) -> DownState:
         raw = await self.redis.hgetall(DOWN_KEY)
@@ -151,7 +200,7 @@ class AlertWatch:
         problems = summarize(now, await read_facts(self.pool, self.redis, now))["problems"]
         is_down = any(p["code"] in DOWN_CODES for p in problems)
         state, fire = down_step(now, is_down, await self._down_state())
-        told = fire and await notify(self.redis, self.cfg, "part_down", now=now) == "sent"
+        told = fire and await announce(self.pool, self.redis, self.cfg, "part_down", now=now) == "sent"
         await self._store(replace(state, alerted=True) if told else state)
         return told
 
@@ -184,6 +233,8 @@ async def run_alert_watch(
     while not stop.is_set():
         try:
             await watch.read_events()
+            await flush_held(pool, redis, cfg, now=clock())  # what the quiet hours held back
+            await watch.read_feed()
             # the workers only run with live KAP: without it "the reader is down" is the normal state
             if settings.kap_live and loop.time() >= next_check:
                 next_check = loop.time() + check_every_s

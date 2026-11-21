@@ -9,6 +9,8 @@ import { fmtInt } from "@/lib/format";
 import { istanbulDay } from "@/lib/session-day";
 import { useEventStream } from "@/lib/sse/use-event-stream";
 import { prefersReducedMotion } from "@/lib/utils";
+import Link from "next/link";
+import { ROUTES } from "@/lib/nav";
 import { PageHeader, ScreenState } from "@/components/shell/page-frame";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
@@ -76,7 +78,8 @@ export function AuditScreen() {
 
   return (
     <div className="gc-screen">
-      <PageHeader name="Geçmiş" title={sentence} lead="Olan her şey sırayla buraya yazılır: sen ne yaptın, KAPtan ne yaptı. Bir kayıt sonradan değiştirilirse anlaşılır." />
+      <PageHeader name="Geçmiş" title={sentence} lead="Olan her şey sırayla buraya yazılır: sen ne yaptın, KAPtan ne yaptı. Bir kayıt sonradan değiştirilirse anlaşılır."
+        actions={<Link href={ROUTES.karne} className="inline-flex min-h-11 items-center text-ui font-semibold text-ink underline decoration-rule-ui underline-offset-4 hover:decoration-ink">Aylık ve yıllık karne →</Link>} />
 
       <VerifyBand walk={walk} onVerify={() => void verify()} onShow={showRecord} />
 

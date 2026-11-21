@@ -4,6 +4,14 @@
     POST /auth/refresh  X-KAPtan-CSRF: 1, cookie -> 200 {"access_token"}            (rotates the cookie)
     POST /auth/logout   cookie                   -> 204                              (revokes the family)
     GET  /me            Bearer                   -> 200 Me
+    POST /auth/password Bearer {"current", "new"} -> 200 {"signed_out_others": n}
+    POST /auth/logout-all Bearer                 -> 204                  (every device, this one too)
+
+Password change: the current password is checked first (wrong: 403 `wrong_password`), the new one needs 6..200
+characters, not the public demo word, not the same (422). It is stored as an argon2id hash in
+`auth.credentials` and takes precedence over the installer's `PASSPHRASE_HASH` (kaptan.auth.credentials). Every
+other session is signed out in the same transaction and `auth.password_changed` is audited (no secret in it).
+At most `LOGIN_RATE_PER_MINUTE` tries a minute (429). `auth.signed_out_everywhere` is audited by logout-all.
 
 Unknown fields in the login body (an old client's `role`) are ignored.
 """
@@ -19,9 +27,8 @@ from pydantic import Field
 
 from kaptan.api.deps import CurrentUser, SettingsDep
 from kaptan.api.errors import ApiError, unauthenticated
-from kaptan.audit.writer import AuditDraft, append
-from kaptan.auth import sessions
-from kaptan.auth.passphrase import verify_passphrase
+from kaptan.audit.writer import AuditDraft, append, user_actor
+from kaptan.auth import credentials, sessions
 from kaptan.auth.ratelimit import Limiter
 from kaptan.auth.tokens import create_access_token
 from kaptan.db import Conn
@@ -88,7 +95,7 @@ async def login(
     allowed = await _limiter(request, settings).hit(f"login:{client}")
     if not allowed or not await _overall_limiter(request, settings).hit("login_overall"):
         raise ApiError(429, "rate_limited", "Çok fazla deneme. Bir dakika sonra yeniden dene.")
-    if not verify_passphrase(settings, body.passphrase):
+    if not await credentials.verify_login(conn, settings, body.passphrase):
         await _audit_login_failed(request, conn, client)
         raise unauthenticated(LOGIN_FAILED)
     async with conn.transaction():
@@ -161,3 +168,60 @@ async def logout(request: Request, settings: SettingsDep, conn: Conn) -> Respons
 @router.get("/me", response_model=Me)
 async def me(user: CurrentUser) -> dict[str, str]:
     return user.me()
+
+
+class PasswordBody(KModel):
+    current: str = Field(max_length=200)
+    new: str = Field(max_length=2000)
+
+
+CURRENT_IS_WRONG = "Şimdiki parolan doğru değil."
+
+
+@router.post("/auth/password")
+async def change_password(
+    request: Request, body: Annotated[PasswordBody, Body()], actor: CurrentUser, settings: SettingsDep, conn: Conn
+) -> dict[str, int]:
+    if not await app_limiter(request.app, "password_change", settings.login_rate_per_minute).hit(actor.uid):
+        raise ApiError(429, "rate_limited", "Çok fazla deneme. Bir dakika sonra yeniden dene.")
+    if not await credentials.verify_login(conn, settings, body.current):
+        async with conn.transaction():
+            await append(
+                conn,
+                [AuditDraft(user_actor(actor.uid), "auth.password_change_failed", "session", actor.family)],
+            )
+        raise ApiError(403, "wrong_password", CURRENT_IS_WRONG)
+    problem = credentials.new_password_problem(body.current, body.new)
+    if problem is not None:
+        raise ApiError(422, "weak_password", problem)
+    hashed = await credentials.hash_in_thread(body.new)
+    now = _wall_now()
+    async with conn.transaction():
+        await credentials.store_hash(conn, hashed, now)
+        closed = await sessions.revoke_others(conn, actor.family, now)
+        await append(
+            conn,
+            [
+                AuditDraft(
+                    user_actor(actor.uid), "auth.password_changed", "session", actor.family, {"signed_out": closed}
+                )
+            ],
+        )
+    return {"signed_out_others": closed}
+
+
+@router.post("/auth/logout-all", status_code=204)
+async def logout_all(actor: CurrentUser, settings: SettingsDep, conn: Conn) -> Response:
+    async with conn.transaction():
+        closed = await sessions.revoke_all(conn, _wall_now())
+        await append(
+            conn,
+            [
+                AuditDraft(
+                    user_actor(actor.uid), "auth.signed_out_everywhere", "session", actor.family, {"signed_out": closed}
+                )
+            ],
+        )
+    response = Response(status_code=204)
+    _clear_refresh_cookie(response, settings)
+    return response

@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Final, Literal
 
-AlertKind = Literal["suggestion", "day_halt", "stopped", "part_down", "test"]
+AlertKind = Literal["suggestion", "day_halt", "stopped", "part_down", "test", "watch"]
 
 MESSAGES: Final[Mapping[AlertKind, str]] = {
     "suggestion": "KAPtan: yeni bir önerin var.",
@@ -17,6 +17,7 @@ MESSAGES: Final[Mapping[AlertKind, str]] = {
     "stopped": "KAPtan durduruldu.",
     "part_down": "KAPtan: bir parça çalışmıyor.",
     "test": "KAPtan: deneme bildirimi.",
+    "watch": "KAPtan: izlediğin bir şirketten yeni bildirim var.",
 }
 
 

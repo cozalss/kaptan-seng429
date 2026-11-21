@@ -1,0 +1,214 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Yardım: how it works, the questions, the glossary and the shortcuts, in the page column with hairline rhythm.
+   Also the small "ne demek?" link and the shortcuts sheet.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.yd-screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-chapter);
+}
+.yd-block {
+  min-width: 0;
+  scroll-margin-top: 6rem;
+}
+.yd-text {
+  max-width: 62ch;
+  margin-top: 0.5rem;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.yd-steps {
+  list-style: none;
+  margin-top: 1rem;
+  border-top: 2px solid var(--ink);
+}
+.yd-step {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: 0 1rem;
+  padding-block: 1rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.yd-step-n {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.yd-step-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.yd-faq {
+  margin-top: 1rem;
+  border-top: 2px solid var(--ink);
+}
+.yd-q {
+  border-bottom: 1px solid var(--hairline);
+}
+.yd-q-sum {
+  display: flex;
+  align-items: center;
+  min-height: 3.25rem;
+  padding-block: 0.5rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+}
+.yd-q-sum::-webkit-details-marker {
+  display: none;
+}
+.yd-q-sum::after {
+  content: "+";
+  margin-inline-start: auto;
+  padding-inline-start: 1rem;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.yd-q[open] > .yd-q-sum::after {
+  content: "−";
+}
+.yd-q-sum:hover {
+  background: var(--wash-tint);
+}
+.yd-q-body {
+  padding-bottom: 1rem;
+}
+
+.yd-search {
+  max-width: 28rem;
+  margin-top: 1rem;
+}
+.yd-search-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.yd-count {
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+.yd-gloss {
+  margin-top: 0.5rem;
+  border-top: 2px solid var(--ink);
+}
+.yd-term {
+  display: grid;
+  grid-template-columns: minmax(8rem, 14rem) minmax(0, 1fr);
+  gap: 0.25rem 1.25rem;
+  padding: 0.875rem 0.5rem;
+  border-bottom: 1px solid var(--hairline);
+  scroll-margin-top: 6rem;
+  outline: none;
+}
+.yd-term:target {
+  background: var(--wash-tint-strong);
+  box-shadow: inset 4px 0 0 var(--brand);
+}
+.yd-term-name {
+  font-weight: 600;
+  color: var(--ink);
+}
+.yd-term-text {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+@media (max-width: 639px) {
+  .yd-term {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.yd-shortcuts {
+  list-style: none;
+  margin-top: 0.75rem;
+  border-top: 2px solid var(--ink);
+}
+.yd-shortcut {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+  padding-block: 0.625rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.yd-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 8rem;
+}
+.yd-then {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.yd-key {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding-inline: 0.5rem;
+  border: 2px solid var(--ink);
+  border-bottom-width: 4px;
+  background: var(--panel);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ks-sheet {
+  position: fixed;
+  z-index: 61;
+  top: 50%;
+  left: 50%;
+  width: min(32rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  translate: -50% -50%;
+  padding: 1.5rem;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 30px 80px -24px rgb(10 33 72 / 0.5);
+  outline: none;
+}
+.ks-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* "ne demek?": a quiet underlined link; its hit area is 44px high without moving the line. */
+.what-is {
+  position: relative;
+  margin-inline-start: 0.375rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--wash);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+.what-is::after {
+  content: "";
+  position: absolute;
+  inset: -0.75rem -0.375rem;
+}
+.what-is:hover {
+  color: var(--ink);
+}

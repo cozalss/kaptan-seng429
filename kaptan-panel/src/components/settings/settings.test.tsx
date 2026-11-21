@@ -39,7 +39,7 @@ describe("Ayarlar · sınırlar", () => {
     await u.type(within(form).getByRole("textbox", { name: /Neden/ }), "Oynaklık arttı, riski azaltalım.");
     await u.click(within(form).getByRole("button", { name: "Kaydet" }));
 
-    await waitFor(() => expect(screen.queryByRole("form")).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("form", { name: "Sınırı değiştir" })).toBeNull());
     expect(screen.queryByTestId("limit-pending")).toBeNull();
     expect(await within(screen.getByRole("list", { name: "Geçerli sınırlar" })).findByText("Bir işlemde en fazla paranın %0,4’ü riske girer.")).toBeInTheDocument();
     const history = screen.getByRole("list", { name: "Sınır sürümleri" });
@@ -60,7 +60,7 @@ describe("Ayarlar · sınırlar", () => {
     await u.click(within(form).getByRole("button", { name: "Kaydet" }));
     expect(await within(form).findByRole("alert")).toHaveTextContent(/gevşek olamaz/);
     await u.click(screen.getByRole("button", { name: "Vazgeç: Tek hisseye giden" }));
-    expect(screen.queryByRole("form")).toBeNull();
+    expect(screen.queryByRole("form", { name: "Sınırı değiştir" })).toBeNull();
   });
 
   it("finishes or drops a change whose second step failed", async () => {
@@ -114,6 +114,6 @@ describe("Ayarlar is a live product's settings", () => {
     renderWithDesk(<SettingsScreen />, new MockDb(null));
     await screen.findByRole("list", { name: "Geçerli sınırlar" });
     expect(screen.queryByRole("button", { name: /Senaryo|kurcala|sıfırla/i })).toBeNull();
-    expect(document.body).not.toHaveTextContent(/deneme|senaryo|kurcala/i);
+    expect(document.body).not.toHaveTextContent(/deneme alanı|deneme modu|senaryo|kurcala/i);
   });
 });

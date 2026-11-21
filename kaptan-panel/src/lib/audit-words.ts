@@ -81,6 +81,17 @@ const moneyPhrase = (lead: string): Phrase => (e) => {
   return amount ? `${lead}: ${amount}.` : `${lead}.`;
 };
 
+function moneyCorrected(e: AuditEntry): string {
+  const old = lira(e.payload.old_amount_try);
+  const next = lira(e.payload.new_amount_try);
+  return old && next ? `Parayı düzelttin: ${old} yerine ${next}.` : "Bir para hareketini düzelttin.";
+}
+
+function moneyUndone(e: AuditEntry): string {
+  const amount = lira(e.payload.amount_try);
+  return amount ? `Bir para hareketini geri aldın: ${amount}.` : "Bir para hareketini geri aldın.";
+}
+
 function holdingAdded(e: AuditEntry, what: string): string {
   const qty = str(e.payload.qty);
   const cost = lira(e.payload.avg_cost);
@@ -129,6 +140,20 @@ const PHRASES: Readonly<Record<string, Phrase>> = {
   "money.withdrawn": moneyPhrase("Kasandan para çektin"),
   "holding.added": (e, what) => holdingAdded(e, what),
   "holding.sold": (e, what) => holdingSold(e, what),
+  "holding.corrected": (_e, what) => `${upperFirst(what)} hissesinin kaydını düzelttin.`,
+  "holding.undone": (_e, what) => `${upperFirst(what)} hissesini eklediğini geri aldın.`,
+  "money.corrected": (e) => moneyCorrected(e),
+  "money.undone": (e) => moneyUndone(e),
+  "ticket.corrected": () => "İşlemin gerçekleşen kaydını düzelttin.",
+  "book.reset": () => "Baştan başladın; eski defterin Geçmiş'te duruyor.",
+  "fee.changed": () => "Bankanın komisyon oranını değiştirdin.",
+  "dividend.recorded": (_e, what) => `${upperFirst(what)} kâr payı aldığını kaydettin.`,
+  "dividend.corrected": (_e, what) => `${upperFirst(what)} kâr payı kaydını geri aldın.`,
+  "bonus.recorded": (_e, what) => `${upperFirst(what)} için bedelsiz payların geldiğini kaydettin.`,
+  "bonus.corrected": (_e, what) => `${upperFirst(what)} bedelsiz pay kaydını geri aldın.`,
+  "rights.recorded": (_e, what) => `${upperFirst(what)} için bedelli pay aldığını kaydettin.`,
+  "rights.corrected": (_e, what) => `${upperFirst(what)} bedelli pay kaydını geri aldın.`,
+  "corporate.dismissed": () => "Bir şirket duyurusunu kapattın.",
   "kill_switch.on": (e) => (isPerson(e.actor) ? "Her şeyi durdurdun." : "Paran zirvesinden %5 düştü; KAPtan her şeyi durdurdu."),
   "kill_switch.reset_started": () => "Yeniden başlatmayı istedin.",
   "kill_switch.reset": () => "İşlemleri yeniden başlattın.",
@@ -136,6 +161,15 @@ const PHRASES: Readonly<Record<string, Phrase>> = {
   "auth.login": () => "Giriş yaptın.",
   "auth.logout": () => "Çıkış yaptın.",
   "auth.single_user_waiver": () => "Tek başına onayladın; bu da kayda geçti.",
+  "auth.password_changed": () => "Parolanı değiştirdin.",
+  "auth.password_change_failed": () => "Parola değiştirilmek istendi ama şimdiki parola yanlış girildi.",
+  "auth.signed_out_everywhere": () => "Her yerden çıkış yaptın.",
+  "preferences.paused": () => "Öneri getirmeye ara verdin.",
+  "preferences.resumed": () => "Aranı bitirdin; KAPtan yeniden öneri getiriyor.",
+  "preferences.alerts_changed": () => "Bildirim ayarlarını değiştirdin.",
+  "backup.requested": () => "Hemen yedek alınmasını istedin.",
+  "watchlist.added": (_e, what) => `${upperFirst(what)} şirketini izleme listene ekledin.`,
+  "watchlist.removed": (_e, what) => `${upperFirst(what)} şirketini izleme listenden çıkardın.`,
   "kill_switch.wait_waived": () => "Yeniden başlatma için beklemedin; bu da kayda geçti.",
   "suggestion.held": (_e, what) => `${what} için “Tut” dedin.`,
   "suggestion.skipped": (_e, what) => `${what} önerisini geçtin.`,

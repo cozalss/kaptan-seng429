@@ -36,7 +36,8 @@ ORDER BY a.created_at DESC, a.proposal_id
 
 TICKET_SQL: Final = """
 SELECT t.ticket_no, t.doc, t.entry_status, t.filled_qty, t.avg_price, t.filled_at, t.note, t.marked_at,
-       t.valid_until, t.created_at, t.commission_try, t.commission_estimated, t.late
+       t.valid_until, t.created_at, t.commission_try, t.commission_estimated, t.late,
+       t.commission_rate, t.commission_rate_own, t.corrected_at
 FROM trading.order_tickets t JOIN trading.agent_runs r ON r.run_id = t.run_id
 WHERE r.visible AND (%(no)s::text IS NULL OR t.ticket_no = %(no)s)
   AND (%(run)s::text IS NULL OR t.run_id = %(run)s)
@@ -127,6 +128,9 @@ def ticket_from_row(row: dict[str, Any], now: datetime) -> dict[str, Any]:
             "commission_try": float(row["commission_try"] or 0),
             "commission_estimated": bool(row["commission_estimated"]),
             "late": bool(row["late"]),
+            "commission_rate": None if row["commission_rate"] is None else float(row["commission_rate"]),
+            "commission_rate_own": bool(row["commission_rate_own"]),
+            "corrected": row["corrected_at"] is not None,
         }
     return {**row["doc"], "entry": effective_entry(row["valid_until"], mark, now)}
 

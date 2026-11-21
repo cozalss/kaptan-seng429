@@ -15,6 +15,7 @@ from typing import Annotated, Any
 from fastapi import Depends, Request
 
 from kaptan.api.errors import unauthenticated
+from kaptan.auth.sessions import family_alive
 from kaptan.auth.tokens import InvalidTokenError, decode_access_token
 from kaptan.clock import Clock
 from kaptan.domain.roles import OWNER, Role
@@ -79,6 +80,12 @@ async def current_user(request: Request, settings: SettingsDep) -> Actor:
     except InvalidTokenError as exc:
         raise unauthenticated(SESSION_EXPIRED) from exc
     if claims.uid != OWNER.uid:
+        raise unauthenticated(SESSION_EXPIRED)
+    # "Her yerden çıkış yap" and a changed password must end other devices now, not when their 15 minutes run out.
+    async with request.app.state.pool.connection() as conn:
+        alive = await family_alive(conn, claims.family)
+        await conn.rollback()
+    if not alive:
         raise unauthenticated(SESSION_EXPIRED)
     return Actor(uid=claims.uid, name=claims.name, family=claims.family)
 

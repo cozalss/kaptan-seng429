@@ -20,11 +20,10 @@ from kaptan.approvals.execute import Event, execute_approved, run_audit
 from kaptan.approvals.reads import RiskFlags, card_from_row, card_rows, risk_flags, ticket_from_row, ticket_rows
 from kaptan.approvals.ticket_doc import parse_iso
 from kaptan.audit.writer import append
-from kaptan.brokers import config as broker_config
 from kaptan.brokers.costs import commission_of
 from kaptan.domain.schemas import ApprovalDecision, iso_ms
-from kaptan.domain.schemas.trading import TicketMarkEntered, TicketMarkInput
-from kaptan.portfolio import ledger
+from kaptan.domain.schemas.trading import TicketCorrectInput, TicketMarkEntered, TicketMarkInput
+from kaptan.portfolio import fee, fill_fix, ledger
 from kaptan.portfolio.ledger import cents
 from kaptan.portfolio.positions import open_position
 from kaptan.risk.at_send import check_at_send
@@ -205,29 +204,48 @@ async def add_note(
     return _note_doc(row)
 
 
-def _check_entered(ticket: dict[str, Any], m: TicketMarkEntered) -> None:
-    if m.filled_qty > ticket["qty"]:
+def _check_fill(ticket: dict[str, Any], qty: int, price: float) -> None:
+    """The ticket's own rules for a recorded fill: adet within the ticket, price within its limit."""
+    if qty > ticket["qty"]:
         raise ApiError(422, "over_qty", "Gerçekleşen adet, işlemdeki adetten büyük olamaz.")
     if ticket.get("side", "buy") == "sell":
         # A sell limit is a floor: the average may not fall under it (06 R09 SELL: limit ≥ taban).
-        if m.avg_price < ticket["limit_price"]:
+        if price < ticket["limit_price"]:
             raise ApiError(422, "under_limit", "Satışta ortalama fiyat, yazdığın en düşük fiyatın altında olamaz.")
-    elif m.avg_price > ticket["limit_price"]:
+    elif price > ticket["limit_price"]:
         raise ApiError(422, "over_limit", "Ortalama fiyat, yazdığın en yüksek fiyatı aşamaz.")
     # A fill after `valid_until` is still the person's real fill: it is recorded (flagged late), never refused.
 
 
-def _commission(m: TicketMarkEntered) -> tuple[Decimal, bool]:
-    """What the bank charged, as typed; else the cost model's estimate (commission + BSMV) and `estimated`."""
-    if m.commission_try is not None:
-        return cents(m.commission_try), False
-    broker, bsmv = commission_of(Decimal(str(m.avg_price)) * m.filled_qty, broker_config.current().trading.costs)
-    return broker + bsmv, True
+def _check_entered(ticket: dict[str, Any], m: TicketMarkEntered) -> None:
+    _check_fill(ticket, m.filled_qty, m.avg_price)
+
+
+@dataclass(frozen=True, slots=True)
+class Charged:
+    """The commission of a fill and where it came from."""
+
+    amount: Decimal
+    estimated: bool
+    #: The broker rate an estimate used (None when the person typed the commission).
+    rate: Decimal | None
+    own_rate: bool
+
+
+async def _commission(conn: AsyncConnection[Any], typed: float | None, qty: int, price: float) -> Charged:
+    """What the bank charged, as typed; else the cost model's estimate (commission + BSMV) at the person's own
+    broker rate when they entered one, else the built-in default; `estimated` and the rate say so."""
+    if typed is not None:
+        return Charged(cents(typed), False, None, False)
+    in_force = await fee.in_force(conn)
+    broker, bsmv = commission_of(Decimal(str(price)) * qty, in_force.costs)
+    return Charged(broker + bsmv, True, in_force.rate, in_force.own)
 
 
 MARK_SQL: Final = """
 UPDATE trading.order_tickets SET entry_status = %s, filled_qty = %s, avg_price = %s, filled_at = %s, note = %s,
-  marked_at = %s, commission_try = %s, commission_estimated = %s, late = %s WHERE ticket_no = %s
+  marked_at = %s, commission_try = %s, commission_estimated = %s, late = %s, commission_rate = %s,
+  commission_rate_own = %s WHERE ticket_no = %s
 """
 
 
@@ -245,9 +263,11 @@ async def mark_ticket(
             raise ApiError(409, "already_marked", "Bunu zaten işaretledin.")
         entered = m if isinstance(m, TicketMarkEntered) else None
         commission, estimated, late = Decimal(0), False, False
+        charged = Charged(Decimal(0), False, None, False)
         if entered is not None:
             _check_entered(ticket, entered)
-            commission, estimated = _commission(entered)
+            charged = await _commission(conn, entered.commission_try, entered.filled_qty, entered.avg_price)
+            commission, estimated = charged.amount, charged.estimated
             late = entered.filled_at > parse_iso(ticket["valid_until"])
             await ledger.lock(conn)  # one writer of the book at a time
         note = (m.note or "").strip() or None
@@ -261,13 +281,16 @@ async def mark_ticket(
             "commission_try": float(commission),
             "commission_estimated": estimated,
             "late": late,
+            "commission_rate": None if charged.rate is None else float(charged.rate),
+            "commission_rate_own": charged.own_rate,
+            "corrected": False,
         }
         filled_at = entered.filled_at if entered else None
         async with conn.cursor() as cur:
             await cur.execute(
                 MARK_SQL,
                 (m.mark, entry["filled_qty"], entry["avg_price"], filled_at, note, now, commission, estimated, late,
-                 ticket_no),
+                 entry["commission_rate"], charged.own_rate, ticket_no),
             )  # fmt: skip
         payload: dict[str, Any] = (
             {
@@ -275,6 +298,7 @@ async def mark_ticket(
                 "price": entered.avg_price,
                 "commission_try": float(commission),
                 "commission_estimated": estimated,
+                "commission_rate": entry["commission_rate"],
                 "late": late,
             }
             if entered
@@ -297,5 +321,62 @@ async def mark_ticket(
                 ticket_no=ticket_no,
                 now=now,
             )
+        updated = {**ticket, "entry": entry}
+    return Outcome(updated, [("ticket", updated)])
+
+
+CORRECT_SQL: Final = """
+UPDATE trading.order_tickets SET filled_qty = %s, avg_price = %s, commission_try = %s, commission_estimated = %s,
+  commission_rate = %s, commission_rate_own = %s, corrected_at = %s WHERE ticket_no = %s
+"""
+
+
+async def correct_fill(
+    conn: AsyncConnection[Any], ticket_no: str, c: TicketCorrectInput, actor: Actor, *, now: datetime
+) -> Outcome:
+    """POST /tickets/{ticket_no}/correct: the fill recorded on an entered ticket was typed wrong. The ticket's own
+    rules still hold; cash and the position are recomputed from a correction row, audited `ticket.corrected` with the
+    old and the new adet, price and commission. 404 not_found, 409 not_entered / not_recorded / sold_since,
+    422 over_qty / over_limit / under_limit / sell_qty / no_change / over_cash."""
+    async with conn.transaction():
+        rows = await ticket_rows(conn, ticket_no=ticket_no, lock=True)
+        if not rows:
+            raise ApiError(404, "not_found", NOT_FOUND_TICKET)
+        ticket = ticket_from_row(rows[0], now)
+        if ticket["entry"]["status"] != "entered":
+            raise ApiError(409, "not_entered", "Önce işlemi girdim diye işaretlemelisin.")
+        _check_fill(ticket, c.filled_qty, c.avg_price)
+        await ledger.lock(conn)
+        charged = await _commission(conn, c.commission_try, c.filled_qty, c.avg_price)
+        change = await fill_fix.apply(
+            conn, ticket=ticket, qty=c.filled_qty, price=Decimal(str(c.avg_price)), commission=charged.amount,
+            estimated=charged.estimated, now=now,
+        )  # fmt: skip
+        rate = None if charged.rate is None else float(charged.rate)
+        async with conn.cursor() as cur:
+            await cur.execute(
+                CORRECT_SQL,
+                (c.filled_qty, c.avg_price, charged.amount, charged.estimated, rate, charged.own_rate, now, ticket_no),
+            )  # fmt: skip
+        payload: dict[str, Any] = {
+            "side": ticket.get("side", "buy"),
+            "old": {
+                "qty": change.old_qty, "price": float(change.old_price), "commission_try": float(change.old_commission)
+            },
+            "new": {"qty": c.filled_qty, "price": c.avg_price, "commission_try": float(charged.amount)},
+            "commission_estimated": charged.estimated,
+        }  # fmt: skip
+        draft = run_audit(actor.audit_actor, "ticket.corrected", "order_ticket", ticket_no, payload, ticket["run_id"])
+        await append(conn, [draft], now=now)
+        entry = {
+            **ticket["entry"],
+            "filled_qty": c.filled_qty,
+            "avg_price": c.avg_price,
+            "commission_try": float(charged.amount),
+            "commission_estimated": charged.estimated,
+            "commission_rate": rate,
+            "commission_rate_own": charged.own_rate,
+            "corrected": True,
+        }
         updated = {**ticket, "entry": entry}
     return Outcome(updated, [("ticket", updated)])

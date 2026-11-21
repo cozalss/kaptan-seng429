@@ -3,17 +3,39 @@
 import { useState, useSyncExternalStore } from "react";
 import type { AlertSettings } from "@/lib/domain";
 import type { AlertPermission } from "@/lib/alerts/alerts";
-import { desktopAlertsOn, desktopPermission, subscribeDesktopAlerts, turnOffDesktopAlerts, turnOnDesktopAlerts } from "@/lib/alerts/desktop";
+import {
+  desktopAlertsOn,
+  desktopPermission,
+  subscribeDesktopAlerts,
+  turnOffDesktopAlerts,
+  turnOnDesktopAlerts,
+} from "@/lib/alerts/desktop";
 import { useApiMutation, useApiQuery } from "@/lib/api/react";
 import { Button } from "@/components/ui/button";
-import { ALERTS_LEAD, alertsSentence, channelWords, desktopWords, lastResult, PHONE_SETUP_AFTER, PHONE_SETUP_STEPS, TEST_BUTTON, testOutcome, type LastResult } from "./alerts-words";
+import {
+  ALERTS_LEAD,
+  alertsSentence,
+  channelWords,
+  desktopWords,
+  lastResult,
+  PHONE_SETUP_AFTER,
+  PHONE_SETUP_STEPS,
+  TEST_BUTTON,
+  testOutcome,
+  type LastResult,
+} from "./alerts-words";
 
 /** One string, so the store's snapshot is stable between changes. */
-const desktopSnapshot = () => `${desktopAlertsOn() ? "on" : "off"}|${desktopPermission()}`;
+const desktopSnapshot = () =>
+  `${desktopAlertsOn() ? "on" : "off"}|${desktopPermission()}`;
 const serverSnapshot = () => "off|default";
 
 function useDesktopAlerts(): { on: boolean; permission: AlertPermission } {
-  const [on, permission] = useSyncExternalStore(subscribeDesktopAlerts, desktopSnapshot, serverSnapshot).split("|") as [string, AlertPermission];
+  const [on, permission] = useSyncExternalStore(
+    subscribeDesktopAlerts,
+    desktopSnapshot,
+    serverSnapshot,
+  ).split("|") as [string, AlertPermission];
   return { on: on === "on", permission };
 }
 
@@ -29,22 +51,38 @@ export function AlertsSection() {
   const [tested, setTested] = useState<AlertSettings | null>(null);
   const settings = tested ?? q.data ?? null;
   const anyChannel = Boolean(settings?.ntfy || settings?.email);
-  const outcome: LastResult | null = tested ? testOutcome(tested) : settings ? lastResult(settings) : null;
+  const outcome: LastResult | null = tested
+    ? testOutcome(tested)
+    : settings
+      ? lastResult(settings)
+      : null;
 
   return (
-    <section aria-labelledby="bildirim-ayari" id="bildirim" className="ay-block">
+    <section
+      aria-labelledby="bildirim-ayari"
+      id="bildirim"
+      className="ay-block"
+    >
       <h2 id="bildirim-ayari">
         <span className="pf-name">
           Bildirimler<span className="sr-only">. </span>
         </span>
-        <span className="u-chapter block text-ink">{alertsSentence(desktop.on, settings)}</span>
+        <span className="u-chapter block text-ink">
+          {alertsSentence(desktop.on, settings)}
+        </span>
       </h2>
       <p className="ay-block-lead">{ALERTS_LEAD}</p>
 
       <ul aria-label="Bildirim yolları" className="ay-channels">
         <DesktopRow on={desktop.on} permission={desktop.permission} />
-        <ChannelRow name="Telefon" {...channelWords("ntfy", settings, q.error)} />
-        <ChannelRow name="E-posta" {...channelWords("email", settings, q.error)} />
+        <ChannelRow
+          name="Telefon"
+          {...channelWords("ntfy", settings, q.error)}
+        />
+        <ChannelRow
+          name="E-posta"
+          {...channelWords("email", settings, q.error)}
+        />
       </ul>
 
       {anyChannel ? (
@@ -60,11 +98,17 @@ export function AlertsSection() {
           >
             {test.pending ? "Gönderiliyor…" : TEST_BUTTON}
           </Button>
-          <p className="ay-test-note">Telefonuna ve e-postana gider; bu bilgisayarda görünmez.</p>
+          <p className="ay-test-note">
+            Telefonuna ve e-postana gider; bu bilgisayarda görünmez.
+          </p>
         </div>
       ) : null}
       {/* Always mounted, so the result is read out when it arrives. */}
-      <p role="status" className="ay-result" data-ok={test.error ? "false" : (outcome?.ok ?? true)}>
+      <p
+        role="status"
+        className="ay-result"
+        data-ok={test.error ? "false" : (outcome?.ok ?? true)}
+      >
         {test.error ?? outcome?.text ?? ""}
       </p>
 
@@ -73,7 +117,13 @@ export function AlertsSection() {
   );
 }
 
-function DesktopRow({ on, permission }: { on: boolean; permission: AlertPermission }) {
+function DesktopRow({
+  on,
+  permission,
+}: {
+  on: boolean;
+  permission: AlertPermission;
+}) {
   const [busy, setBusy] = useState(false);
   const words = desktopWords(on, permission);
   const press = async () => {
@@ -90,7 +140,14 @@ function DesktopRow({ on, permission }: { on: boolean; permission: AlertPermissi
         <p className="ay-channel-detail">{words.detail}</p>
       </div>
       {words.action ? (
-        <Button variant="secondary" className="ay-channel-act" aria-label={`${words.action}: bu bilgisayarın bildirimleri`} pending={busy} disabled={busy} onClick={() => void press()}>
+        <Button
+          variant="secondary"
+          className="ay-channel-act"
+          aria-label={`${words.action}: bu bilgisayarın bildirimleri`}
+          pending={busy}
+          disabled={busy}
+          onClick={() => void press()}
+        >
           {words.action}
         </Button>
       ) : null}
@@ -98,7 +155,15 @@ function DesktopRow({ on, permission }: { on: boolean; permission: AlertPermissi
   );
 }
 
-function ChannelRow({ name, state, detail }: { name: string; state: string; detail: string | null }) {
+function ChannelRow({
+  name,
+  state,
+  detail,
+}: {
+  name: string;
+  state: string;
+  detail: string | null;
+}) {
   return (
     <li className="ay-channel">
       <h3 className="ay-title">{name}</h3>

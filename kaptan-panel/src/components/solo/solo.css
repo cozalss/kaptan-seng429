@@ -21,7 +21,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --solo-c1: #3d7ad6;
     --solo-c2: #d4642a;
     --solo-c3: #1a9a72;
@@ -35,24 +35,24 @@
 
 /* Night: the wordmark in paper ink; filled buttons stay saturated with white words. */
 @media (prefers-color-scheme: dark) {
-  .solo-wordmark {
+  :root:not([data-theme="light"]) .solo-wordmark {
     color: var(--ink);
   }
-  .bg-brand.border-brand:not(:disabled) {
+  :root:not([data-theme="light"]) .bg-brand.border-brand:not(:disabled) {
     background-color: #3d6bd0;
     border-color: #3d6bd0;
     color: #ffffff;
   }
-  .bg-brand.border-brand:not(:disabled):hover {
+  :root:not([data-theme="light"]) .bg-brand.border-brand:not(:disabled):hover {
     background-color: #5281e3;
     border-color: #5281e3;
   }
-  .bg-north.border-north:not(:disabled) {
+  :root:not([data-theme="light"]) .bg-north.border-north:not(:disabled) {
     background-color: #c4392f;
     border-color: #c4392f;
     color: #ffffff;
   }
-  .bg-north.border-north:not(:disabled):hover {
+  :root:not([data-theme="light"]) .bg-north.border-north:not(:disabled):hover {
     background-color: #d84a40;
     border-color: #d84a40;
   }

@@ -1,5 +1,6 @@
 "use client";
 
+import { TickerLink } from "@/components/company/ticker-link";
 import { memo, useMemo } from "react";
 import type { AuditEntry } from "@/lib/domain";
 import { actorParts } from "@/lib/actors";
@@ -57,7 +58,9 @@ function Sentence({ entry }: { entry: AuditEntry }) {
   return (
     <>
       {text.slice(0, at)}
-      <code className="code">{company.text}</code>
+      <code className="code">
+        <TickerLink ticker={company.text} />
+      </code>
       {text.slice(at + company.text.length)}
     </>
   );

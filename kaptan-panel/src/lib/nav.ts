@@ -11,7 +11,9 @@ export const ROUTES = {
   portfoy: "/portfoy",
   bildirimler: "/bildirimler",
   gecmis: "/gecmis",
+  karne: "/gecmis/karne",
   ayarlar: "/ayarlar",
+  yardim: "/yardim",
   login: "/login",
 } as const;
 
@@ -21,6 +23,8 @@ export const HOME = ROUTES.benim;
 /** Build links instead of concatenating strings in screens. */
 export const href = {
   proposal: (proposalId: string) => `${ROUTES.oneri}/${encodeURIComponent(proposalId)}`,
+  /** A company's page (`/hisse/THYAO`). */
+  company: (ticker: string) => `/hisse/${encodeURIComponent(ticker)}`,
 } as const;
 
 export type NavKey = "benim" | "portfoy" | "bildirimler" | "gecmis";
@@ -61,6 +65,7 @@ export const LEGACY_REDIRECTS: ReadonlyArray<{ source: string; destination: stri
 /** Which nav item is current for a path (an Öneri belongs to Ana sayfa); null outside the nav (Ayarlar). */
 export function activeNavHref(pathname: string): string | null {
   if (pathname === ROUTES.benim || pathname.startsWith(`${ROUTES.oneri}/`)) return ROUTES.benim;
+  if (pathname.startsWith(`${ROUTES.gecmis}/`)) return ROUTES.gecmis;
   return NAV_ITEMS.find((i) => i.href === pathname)?.href ?? null;
 }
 

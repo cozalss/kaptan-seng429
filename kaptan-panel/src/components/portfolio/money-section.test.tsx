@@ -75,7 +75,7 @@ describe("MoneySection", () => {
   });
 
   it("shows the five newest movements and the rest behind one button", async () => {
-    const movements = Array.from({ length: 7 }, (_, i) => ({ id: `m${i}`, kind: "deposit" as const, amount_try: 100 + i, occurred_at: "2027-01-05T09:00:00.000Z", note: "" }));
+    const movements = Array.from({ length: 7 }, (_, i) => ({ id: `m${i}`, kind: "deposit" as const, amount_try: 100 + i, occurred_at: "2027-01-05T09:00:00.000Z", note: "", status: "active" as const, original_amount_try: null, changed_at: null }));
     const u = user();
     renderWithApi(<MoneySection book={book({ cash: 1, put_in: 1, movements })} onChanged={() => undefined} />, mockApi({ fresh: true }));
     expect(within(screen.getByRole("list")).getAllByRole("listitem")).toHaveLength(5);

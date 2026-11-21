@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { answerByLine, shortName } from "@/components/story/plain";
 import type { Answer } from "./decide-logic";
+import { TickerLink } from "@/components/company/ticker-link";
 import { InkSeal } from "./seal";
 import { navigateWithTransition } from "./view-transition";
 
@@ -81,7 +82,11 @@ export const SuggestionObject = forwardRef<HTMLHeadingElement, {
           <span className={cn("oneri-verb", sharesVerb && "oneri-verb-shared")}>{verb}</span>{" "}
           <span className="oneri-object-who">
             <span className="oneri-object-company">{company ?? s.symbol} hissesi</span>{" "}
-            {company ? <span className="oneri-object-symbol">{s.symbol}</span> : null}
+            {company ? (
+              <span className="oneri-object-symbol">
+                <TickerLink ticker={s.symbol} />
+              </span>
+            ) : null}
           </span>
         </h3>
         <p className="oneri-object-why">{s.reason_short}</p>

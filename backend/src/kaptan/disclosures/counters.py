@@ -76,6 +76,7 @@ DEFERRED_REASON_TR: Final = {
     "daily_reserved": "Günlük okuma sınırı doldu; kalanlar yarın okunacak.",
     "llm_daily_cap": "Yapay zekâ sağlayıcılarının bugünkü ücretsiz kotası doldu.",
     "waiting_for_money": "Başlangıç paranı girene kadar KAPtan bildirimleri yorumlamaz.",
+    "paused": "Ara verdin: KAPtan bildirimleri okuyor ve saklıyor, ama ara bitene kadar değerlendirmiyor.",
 }
 
 

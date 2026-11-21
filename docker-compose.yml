@@ -60,6 +60,8 @@ x-app-env: &app-env
   RAG_INDEX_ON_INGEST: "true"
   # The nightly audit anchor is also written outside Docker (scheduler mounts the backup folder).
   AUDIT_ANCHOR_FILE: /yedek/audit-anchors.jsonl
+  # The backup folder as the person chose it in kur.ps1 (a Windows path): only shown in Ayarlar, never opened.
+  KAPTAN_BACKUP_DIR: ${KAPTAN_BACKUP_DIR:-}
 
 x-app: &app
   image: ${KAPTAN_BACKEND_IMAGE:-kaptan-backend:local}

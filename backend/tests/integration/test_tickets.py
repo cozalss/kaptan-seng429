@@ -122,6 +122,7 @@ async def test_entered_mark_opens_a_personal_position(api: httpx.AsyncClient, mi
         "price": 48.32,
         "commission_try": entry["commission_try"],
         "commission_estimated": True,
+        "commission_rate": 0.0005,
         "late": False,
     }
 

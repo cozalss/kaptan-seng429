@@ -1,8 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { headers } from "next/headers";
 import { connection } from "next/server";
 import "./globals.css";
 import "@/components/ufuk/ufuk.css";
+import "@/lib/prefs/look.css";
+import { LOOK_SCRIPT } from "@/lib/prefs/look-script";
 
 /*
  * Self-hosted, subset to Latin + Turkish (OFL, see src/app/fonts/OFL.txt). Inter carries
@@ -48,8 +51,14 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Rendered per request: a static page could not carry the CSP nonce (src/proxy.ts) on its scripts.
   await connection();
+  // The remembered theme and text size are put on <html> before the first paint (lib/prefs/look-script.ts); the
+  // script carries the same nonce as Next's own (src/proxy.ts).
+  const nonce = /'nonce-([^']+)'/.exec((await headers()).get("content-security-policy") ?? "")?.[1];
   return (
-    <html lang="tr" className={`${bodoni.variable} ${inter.variable} antialiased`}>
+    <html lang="tr" className={`${bodoni.variable} ${inter.variable} antialiased`} suppressHydrationWarning>
+      <head>
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: LOOK_SCRIPT }} />
+      </head>
       <body>{children}</body>
     </html>
   );

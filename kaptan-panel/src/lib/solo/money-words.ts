@@ -47,6 +47,13 @@ export function movementSentence(m: Pick<MoneyMovement, "kind" | "amount_try" | 
   return `${movementDay(m.occurred_at, nowMs)}: ${movementWhat(m)}`;
 }
 
+/** What happened to a movement afterwards, in plain words; null while it stands as typed. */
+export function movementStatusNote(m: Pick<MoneyMovement, "status" | "original_amount_try">): string | null {
+  if (m.status === "undone") return "Geri alındı.";
+  if (m.status === "corrected") return m.original_amount_try === null ? "Düzeltildi." : `Düzeltildi. İlk yazdığın: ${fmtMoney(m.original_amount_try)}.`;
+  return null;
+}
+
 /** From this Istanbul minute on, yesterday's price is "last evening's" (the market closes at 18:00). */
 const EVENING_MIN = 17 * 60 + 30;
 

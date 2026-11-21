@@ -16,11 +16,17 @@ import { Button } from "@/components/ui/button";
 import { ErrorState, Skeleton } from "@/components/ui/primitives";
 import { useDecisions } from "@/components/proposal/use-decisions";
 import { Activity } from "./activity";
+import { CorporatePrompt } from "./corporate-prompt";
 import { AllocationPanel } from "./allocation";
+import { BenchmarkLine } from "./benchmark-line";
 import { FirstRun } from "./first-run";
 import { MoneyHero } from "./money-hero";
+import { MorningBrief } from "./morning-brief";
+import { PauseNotice } from "./pause-notice";
 import { ConfirmAction, StoppedBanner, useStopRestart } from "./stop-panel";
 import { Suggestions, type OrderFigures } from "./suggestions";
+import { WhyQuiet } from "./why-quiet";
+import { WatchStrip } from "@/components/watchlist/watch-strip";
 
 /**
  * The home, one calm scene for one person, in reading order on every screen: the money and how it
@@ -97,7 +103,12 @@ export function SoloHome() {
           {stopped ? <StoppedBanner risk={data.risk} pending={controls.restartPending} error={controls.restartError} onRestart={controls.onRestart} /> : null}
         </div>
       ) : null}
+      <PauseNotice />
       <MoneyHero overview={overview} todayPct={data.risk.daily_pnl_pct} positions={data.positions} name={realName(session.name)} />
+      <div className="pb-12 empty:hidden">
+        <MorningBrief />
+        <BenchmarkLine className="u-page pt-4" />
+      </div>
       <div className="home-sheet u-page">
         <Suggestions
           suggestions={suggestions}
@@ -109,11 +120,14 @@ export function SoloHome() {
           today={data.counters ? { read: data.counters.total, toCrew: data.counters.processed } : null}
           decisions={decisions}
         />
+        {suggestions.length === 0 && !stopped ? <WhyQuiet /> : null}
+        <CorporatePrompt onChanged={() => void q.refetch()} />
       </div>
       <div className="home-band u-page">
         <AllocationPanel allocations={data.overview.allocations} cash={data.overview.cash} total={data.overview.equity_now} />
       </div>
       <div className="home-band u-page !pt-0">
+        <WatchStrip />
         <Activity items={activity} />
       </div>
       {stopped ? null : <StopBand pending={controls.stopPending} error={controls.stopError} onStop={controls.onStop} />}

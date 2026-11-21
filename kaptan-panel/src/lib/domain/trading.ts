@@ -218,8 +218,23 @@ export const TicketEntry = z.object({
   commission_estimated: z.boolean(),
   /** True when the fill was recorded after `valid_until`: it is still your real fill, the book must match the bank. */
   late: z.boolean().default(false),
+  /** The broker commission rate an ESTIMATED commission used (a fraction, 0.002 = binde 2); null when you typed it. */
+  commission_rate: z.number().nonnegative().nullable().default(null),
+  /** True when that rate is yours (Ayarlar), false when it is KAPtan's built-in one. */
+  commission_rate_own: z.boolean().default(false),
+  /** The fill was fixed after it was first recorded. */
+  corrected: z.boolean().default(false),
 });
 export type TicketEntry = z.infer<typeof TicketEntry>;
+
+/** POST /tickets/{ticket_no}/correct: what the bank really did on a fill you recorded wrong. */
+export const TicketCorrectInput = z.object({
+  filled_qty: z.number().int().positive("Adet pozitif olmalı"),
+  avg_price: z.number().positive("Fiyat pozitif olmalı"),
+  /** Left out, the commission is estimated again (and says so). */
+  commission_try: z.number().nonnegative("Komisyon eksi olamaz").optional(),
+});
+export type TicketCorrectInput = z.infer<typeof TicketCorrectInput>;
 
 /** POST /tickets/{ticket_no}/mark — "girildi / dolmadı / iptal". */
 export const TicketMarkInput = z.discriminatedUnion("mark", [
