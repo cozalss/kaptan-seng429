@@ -66,9 +66,7 @@ def _checkpoint_tables() -> None:
     for version, statement in enumerate(BasePostgresSaver.MIGRATIONS):
         bind.exec_driver_sql(statement.replace(" CONCURRENTLY", ""))
         # setup() records every version, 0 included (0 = checkpoint_migrations itself).
-        bind.exec_driver_sql(
-            f"INSERT INTO checkpoint_migrations (v) VALUES ({int(version)}) ON CONFLICT DO NOTHING"
-        )
+        bind.exec_driver_sql(f"INSERT INTO checkpoint_migrations (v) VALUES ({int(version)}) ON CONFLICT DO NOTHING")
     bind.exec_driver_sql("RESET search_path")
 
 
