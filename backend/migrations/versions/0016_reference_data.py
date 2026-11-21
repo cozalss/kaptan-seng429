@@ -256,7 +256,7 @@ GRANT SELECT ON core.disclosures, core.prices_daily, core.prices_daily_adj, core
   core.market_calendar, core.events, core.universe_daily, core.fundamentals_pit, core.event_returns_dev
   TO dev_ro;
 REVOKE ALL ON core.event_returns FROM dev_ro;
-"""  # noqa: S608 - DDL; KINDS and MARKETS are module constants
+"""
 
 DOWN = """
 REVOKE ALL ON core.event_returns_dev, core.disclosures, core.prices_daily, core.prices_daily_adj,
