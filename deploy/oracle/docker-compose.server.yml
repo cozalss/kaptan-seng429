@@ -1,0 +1,14 @@
+# Sunucu (Oracle Cloud, Tailscale) için ekler. Ana docker-compose.yml'nin üstüne biner:
+#   docker compose -f docker-compose.yml -f deploy/oracle/docker-compose.server.yml ...
+# kur-sunucu.sh bunu .env içindeki COMPOSE_FILE ile otomatik açar; elle bir şey yazman gerekmez.
+#
+# Panel yalnız 127.0.0.1:3100'de kalır (ana dosyadaki gibi). Dışarıya `tailscale serve` HTTPS ile açar, bu yüzden
+# tarayıcı https://<makine>.<tailnet>.ts.net adresinden gelir ve Secure __Host- çerezi çalışır.
+# KAPTAN_PUBLIC_ORIGIN bu adresin kendisidir (kur-sunucu.sh .env'ye yazar); boşsa derleme başlamaz.
+#
+# Neden yalnız `api`: ALLOWED_ORIGINS'i yalnız API kontrol eder (auth.py CSRF, sse.py). Öbür servisler okumaz.
+# COOKIE_SECURE true kalır (ana dosyada), HSTS_MAX_AGE_S 0 kalır.
+services:
+  api:
+    environment:
+      ALLOWED_ORIGINS: ${KAPTAN_PUBLIC_ORIGIN:?KAPTAN_PUBLIC_ORIGIN yok. kur-sunucu.sh çalıştır}
