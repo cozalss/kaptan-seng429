@@ -75,7 +75,7 @@ const AGENT_LIST = [
     name: 'Risk Kapısı',
     meta: 'Girdi: öneri · Çıktı: aynen / küçült / reddet',
     description:
-      'Her öneriyi 16 kuraldan (R01–R16) geçirir: bir işlemde paranın en çok %0,5’i riske girer, tek bir payda en çok %10’u durur; gün içinde −⁠%1’de yeni emir durur, zirveden −⁠%5’te acil durdurma bekleyen emirleri iptal eder.',
+      'Her öneriyi 16 kuraldan (R01–R16) geçirir: bir işlemde paranın en çok %0,5’i riske girer, tek bir payda en çok %10’u durur. Otomatik fren yoktur: paran düşse bile ne yapacağına sen karar verirsin.',
     notDoes: 'Bir öneriyi asla büyütmez; elindeki payları satmaz.',
   },
 ];

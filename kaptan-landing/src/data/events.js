@@ -76,8 +76,7 @@ export const EVENT_FILTERS = /* @__PURE__ */ freezeAll([
     effect: 'Bir öneriyi yalnızca küçültür ya da reddeder.',
   },
   { id: 'islem-riski', name: 'İşlem başına risk', condition: 'Paranın %0,5’i risk; tek payda ≤ %10.', effect: 'Büyüklük sınırlanır.' },
-  { id: 'gunluk-kayip', name: 'Günlük kayıp', condition: 'Gün içinde −%1.', effect: 'Yeni emir durur.' },
-  { id: 'kill-switch', name: 'Acil durdurma', condition: 'Zirveden −%5.', effect: 'Bekleyen emirler iptal edilir; elindeki paylar satılmaz.' },
+  { id: 'karar-sende', name: 'Karar sende', condition: 'Paran düşse bile.', effect: 'Otomatik fren yok: ne yapacağına sen karar verirsin.' },
 ]);
 
 /** Ön eleme's three gates, in the order the brief names them. `key` is the screenGates() input. */

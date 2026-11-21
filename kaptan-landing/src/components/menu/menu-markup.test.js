@@ -68,8 +68,7 @@ describe('#olaylar: filters and honesty', () => {
       'R01–R16',
       'yalnızca küçültür ya da reddeder',
       'paranın en çok %0,5’i riske girer, tek bir payda en çok %10’u durur',
-      '−⁠%1’e düşerse yeni emir durur',
-      '−⁠%5’te acil durdurma bekleyen emirleri iptal eder; elindeki paylar satılmaz',
+      'otomatik fren yok: paran düşse bile ne yapacağına sen karar verirsin',
     ].forEach((fact) => expect(filters).toContain(fact));
   });
 
