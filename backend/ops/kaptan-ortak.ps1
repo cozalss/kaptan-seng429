@@ -74,3 +74,40 @@ function Test-Url([string]$Url) {
         return $false
     }
 }
+
+function Enable-DockerAutoStart([string]$Dir = (Join-Path $env:APPDATA 'Docker')) {
+    # Docker Desktop açılışta (Windows'a girince) başlasın: yoksa yeniden başlatmadan sonra KAPtan ölü kalır.
+    # Ayar dosyasında "AutoStart": true olur (Docker Desktop 4.x: settings-store.json; eski sürüm: settings.json).
+    # Önce yedeği alınır, dosya JSON olarak okunur ve yalnız bu anahtar değişir; başka anahtar ellenmez.
+    # Dönüş: 'zaten' (açıktı) | 'acildi' (şimdi açıldı) | 'yok' (ayar dosyası yok) | 'hata' (dosya okunamadı/yazılamadı).
+    $file = $null
+    foreach ($name in 'settings-store.json', 'settings.json') {
+        $candidate = Join-Path $Dir $name
+        if (Test-Path -LiteralPath $candidate) { $file = $candidate; break }
+    }
+    if (-not $file) { return 'yok' }
+    try {
+        $text = [IO.File]::ReadAllText($file)
+        $doc = $text | ConvertFrom-Json
+        if ($doc.PSObject.Properties['AutoStart'] -and $doc.AutoStart -eq $true) { return 'zaten' }
+        if ($doc.PSObject.Properties['AutoStart']) { $doc.AutoStart = $true }
+        else { Add-Member -InputObject $doc -MemberType NoteProperty -Name 'AutoStart' -Value $true }
+        $backup = "$file.kaptan-yedek"
+        if (-not (Test-Path -LiteralPath $backup)) { Copy-Item -LiteralPath $file -Destination $backup }
+        $json = $doc | ConvertTo-Json -Depth 32
+        $temp = "$file.kaptan-yeni"
+        [IO.File]::WriteAllText($temp, $json, (New-Object Text.UTF8Encoding $false))
+        Move-Item -LiteralPath $temp -Destination $file -Force
+        return 'acildi'
+    } catch {
+        return 'hata'
+    }
+}
+
+function Confirm-DockerAutoStart {
+    switch (Enable-DockerAutoStart) {
+        'acildi' { Say 'Docker Desktop artık Windows açılınca kendiliğinden başlayacak; KAPtan da onunla birlikte kalkar.' }
+        'yok' { Say 'Not: Docker Desktop ayar dosyasını bulamadım. Docker Desktop > Settings > General > "Start Docker Desktop when you sign in" kutusunu işaretle.' }
+        'hata' { Say 'Not: Docker Desktop ayar dosyası okunamadı. Docker Desktop > Settings > General > "Start Docker Desktop when you sign in" kutusunu işaretle.' }
+    }
+}

@@ -9,6 +9,7 @@ param([switch]$Guncelle, [switch]$TarayiciAcma)
 $ReadyMinutes = 5
 
 Assert-DockerRunning
+Confirm-DockerAutoStart
 Assert-Installed
 
 Say 'KAPtan başlıyor...'

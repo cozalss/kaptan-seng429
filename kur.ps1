@@ -13,7 +13,8 @@ $MaxPasswordLength = 200
 $ProviderKeys = @('GEMINI_API_KEY', 'DEEPSEEK_API_KEY', 'GROQ_API_KEY')
 $GeneratedSecrets = @{ JWT_SECRET = 64; POSTGRES_PASSWORD = 40; KAPTAN_APP_PASSWORD = 40; REDIS_PASSWORD = 40 }
 $AlertNames = @(
-    'ALERT_NTFY_TOPIC', 'ALERT_SMTP_HOST', 'ALERT_SMTP_PORT', 'ALERT_SMTP_USER', 'ALERT_SMTP_PASSWORD', 'ALERT_SMTP_TO'
+    'ALERT_NTFY_TOPIC', 'ALERT_SMTP_HOST', 'ALERT_SMTP_PORT', 'ALERT_SMTP_USER', 'ALERT_SMTP_PASSWORD', 'ALERT_SMTP_TO',
+    'ALERT_TELEGRAM_BOT_TOKEN'
 )
 $OrderedNames = @(
     'JWT_SECRET', 'PASSPHRASE_HASH', 'POSTGRES_PASSWORD', 'KAPTAN_APP_PASSWORD', 'REDIS_PASSWORD',
@@ -163,6 +164,17 @@ function Read-EmailSettings($Current) {
     return @{ ALERT_SMTP_HOST = $hostName; ALERT_SMTP_PORT = $port; ALERT_SMTP_USER = $user; ALERT_SMTP_PASSWORD = $password; ALERT_SMTP_TO = $to }
 }
 
+function Read-TelegramToken($Current) {
+    # İsteğe bağlı: bot kodu Ayarlar'dan da yapıştırılabilir. Enter: eskisini koru (ya da boş bırak). Kod görünmez, yazılmaz.
+    $kept = $Current['ALERT_TELEGRAM_BOT_TOKEN']
+    Say ''
+    Say 'Telegram (isteğe bağlı). Bot kodun yoksa Enter''a bas; sonra Ayarlar > Telegram bölümünden de ekleyebilirsin.'
+    $token = (Read-Hidden 'Telegram bot kodu (görünmez, Enter: geç)').Trim()
+    if (-not $token) { return $kept }
+    if ($token -notmatch '^[0-9]{6,12}:[A-Za-z0-9_-]{30,60}$') { Say 'Bu bir bot koduna benzemiyor. Telegram ayarı değişmedi.'; return $kept }
+    return $token
+}
+
 function Get-AlertSettings($Current) {
     # Deneme kurulumunda (-PasswordFromStdin) hiçbir şey sorulmaz ve bildirim açılmaz; var olan değerler korunur.
     $result = @{}
@@ -173,6 +185,7 @@ function Get-AlertSettings($Current) {
     $result['ALERT_NTFY_TOPIC'] = Get-PhoneTopic $Current
     $mail = Read-EmailSettings $Current
     foreach ($name in $mail.Keys) { $result[$name] = $mail[$name] }
+    $result['ALERT_TELEGRAM_BOT_TOKEN'] = Read-TelegramToken $Current
     return $result
 }
 
@@ -243,6 +256,7 @@ function Restart-IfRunning {
 }
 
 Assert-DockerRunning
+Confirm-DockerAutoStart
 
 $current = Read-EnvFile $EnvPath
 $isFirstRun = -not $current['JWT_SECRET']
