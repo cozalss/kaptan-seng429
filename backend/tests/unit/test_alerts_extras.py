@@ -10,7 +10,7 @@ from pathlib import Path
 from kaptan.alerts.messages import MESSAGES
 from kaptan.alerts.prefs import decide, default_prefs, with_defaults
 from kaptan.alerts.price import is_hit, level_for
-from kaptan.alerts.watch import feed_hits_watchlist, kinds_in
+from kaptan.alerts.watch import feed_hits_watchlist, feed_indexes, kinds_in
 from kaptan.ops.backup_list import STALE_AFTER_DAYS, backup_list, taken_at, warning_for
 from kaptan.reports.weekly import week_of
 
@@ -50,6 +50,18 @@ def test_a_disclosure_of_a_muted_watched_company_is_not_announced() -> None:
     entries = [_entry("disclosure", {"primary_ticker": "THYAO", "stock_codes": ["THYAO"]})]
     assert feed_hits_watchlist(entries, frozenset({"THYAO"}), NOW)
     assert not feed_hits_watchlist(entries, frozenset(), NOW)
+
+
+def test_the_feed_gives_the_numbers_of_recent_disclosure_events_only() -> None:
+    old = NOW - timedelta(hours=2)
+    entries = [
+        _entry("disclosure", {"disclosure_index": 7, "primary_ticker": "THYAO"}),
+        _entry("disclosure", {"disclosure_index": 8}, at=old),  # too old to announce
+        _entry("counters", {"total": 3}),  # not a disclosure
+        _entry("disclosure", {"primary_ticker": "THYAO"}),  # no number
+        _entry("disclosure", {"disclosure_index": True}),
+    ]
+    assert feed_indexes(entries, NOW) == [7]
 
 
 def test_old_documents_get_the_new_kinds_and_an_empty_mute_list() -> None:

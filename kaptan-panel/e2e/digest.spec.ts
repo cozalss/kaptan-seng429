@@ -9,10 +9,11 @@ test.describe("Önemli duyurular", () => {
     await loginApi(page);
     await page.goto("/benim");
     await expect(page.getByRole("heading", { name: "Bugün önemli duyurular" })).toBeVisible();
-    await page.getByRole("link", { name: /Hepsini gör|Önemli duyurulara git/ }).click();
+    await page.locator(".dg-card").getByRole("link", { name: /Hepsini gör|Önemli duyurulara git/ }).click();
     await expect(page).toHaveURL(/\/onemli$/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Önemli duyurular");
     await expect(page.getByRole("link", { name: /KAP’ta aç/ }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /Duyuruyu aç/ }).first()).toBeVisible();
     expect(errors).toEqual([]);
   });
 
@@ -37,7 +38,7 @@ test.describe("Önemli duyurular", () => {
     await seedMock(page, {});
     await loginApi(page);
     await page.goto("/bildirimler");
-    await page.getByRole("link", { name: /önemli duyurularına bak/ }).click();
+    await page.getByRole("link", { name: /Tüm şirketler/ }).click();
     await expect(page).toHaveURL(/\/onemli$/);
   });
 });

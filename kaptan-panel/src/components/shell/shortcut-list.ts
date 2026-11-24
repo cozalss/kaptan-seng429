@@ -24,6 +24,11 @@ export const SHORTCUTS: readonly Shortcut[] = [
     keys: ["g", key],
     label: v.label,
   })),
+  { keys: ["j"], label: "Duyuru listesinde sonrakine geç (Okunanlar, ana sayfa)" },
+  { keys: ["k"], label: "Duyuru listesinde öncekine geç" },
+  { keys: ["a"], label: "Seçili duyuru: Yapılacak" },
+  { keys: ["s"], label: "Seçili duyuru: Sonra oku" },
+  { keys: ["d"], label: "Seçili duyuru: Tamam" },
   { keys: ["?"], label: "Bu listeyi göster" },
 ];
 

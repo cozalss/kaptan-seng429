@@ -5,7 +5,7 @@ import { useApiQuery } from "@/lib/api/react";
 import { fmtDateTime } from "@/lib/format";
 import "./price-alerts.css";
 
-export const CHANNEL_WORDS = { ntfy: "Telefon", email: "E-posta" } as const;
+export const CHANNEL_WORDS = { ntfy: "Telefon", email: "E-posta", telegram: "Telegram" } as const;
 
 export function historySentence(
   items: readonly AlertHistoryItem[] | null,

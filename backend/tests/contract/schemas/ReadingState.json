@@ -12,6 +12,11 @@
    "minimum": 0,
    "maximum": 9007199254740991
   },
+  "unread_other": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
   "unread_indexes": {
    "type": "array",
    "items": {
@@ -27,13 +32,47 @@
     "exclusiveMinimum": 0,
     "maximum": 9007199254740991
    }
+  },
+  "triage": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "disclosure_index": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991
+     },
+     "state": {
+      "type": "string",
+      "enum": [
+       "yapilacak",
+       "sonra",
+       "tamam"
+      ]
+     }
+    },
+    "required": [
+     "disclosure_index",
+     "state"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "act_count": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
   }
  },
  "required": [
   "read_through",
   "unread",
+  "unread_other",
   "unread_indexes",
-  "saved_indexes"
+  "saved_indexes",
+  "triage",
+  "act_count"
  ],
  "additionalProperties": false
 }

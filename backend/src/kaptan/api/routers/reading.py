@@ -1,9 +1,13 @@
 """Reading marks and the two-company compare (agent READ, wave 5).
 
-    GET    /me/reading                 -> ReadingState  unread count (starred or held companies, not noise, published
-                                          since "hepsini okundu say" and not opened), the newest unread indexes
-                                          (<= 500) and the saved indexes
-    POST   /me/reading/read-all        -> ReadingState  everything up to now counts as read
+    GET    /me/reading                 -> ReadingState  unread = important (kaptan.signal) disclosures of starred or
+                                          held companies, published since "hepsini okundu say", not opened, not put in a
+                                          triage state; `unread_other` counts the important ones of other companies;
+                                          the newest unread indexes (<= 500), the saved ("sonra") indexes, `triage`
+                                          (state per disclosure) and `act_count` ("yapilacak")
+    POST   /me/reading/read-all        -> ReadingState  body {"important": bool} (optional, default false): noise and
+                                          archive-only disclosures are read from the start, so the plain call clears
+                                          nothing that counts; with `important` true everything up to now counts as read
     PUT    /me/reading/read-through    -> ReadingState  "Geri al": the mark goes back to `read_through` (only
                                           backwards; 422 `validation` for a time after now)
     PUT    /me/reading/read/{index}    -> ReadingState  one disclosure was opened (404 `not_found`)
@@ -42,9 +46,13 @@ async def state(user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
     return await reading_state(conn, clock.now())
 
 
+class ReadAllBody(KModel):
+    important: bool = False
+
+
 @router.post("/me/reading/read-all", response_model=ReadingState)
-async def everything_read(user: CurrentUser, conn: Conn, clock: ClockDep) -> Any:
-    await read_all(conn, now=clock.now())
+async def everything_read(user: CurrentUser, conn: Conn, clock: ClockDep, body: ReadAllBody | None = None) -> Any:
+    await read_all(conn, now=clock.now(), important=body is not None and body.important)
     return await reading_state(conn, clock.now())
 
 

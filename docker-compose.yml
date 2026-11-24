@@ -45,6 +45,11 @@ x-app-env: &app-env
   ALERT_SMTP_USER: ${ALERT_SMTP_USER:-}
   ALERT_SMTP_PASSWORD: ${ALERT_SMTP_PASSWORD:-}
   ALERT_SMTP_TO: ${ALERT_SMTP_TO:-}
+  ALERT_TELEGRAM_BOT_TOKEN: ${ALERT_TELEGRAM_BOT_TOKEN:-}
+  # Bulut takibi (cloud-watcher/): a Cloudflare Worker follows KAP while this computer is off. Both empty = off.
+  # cloud-watcher\kur-bulut.ps1 writes them into .env.
+  CLOUD_WATCHER_URL: ${CLOUD_WATCHER_URL:-}
+  CLOUD_SYNC_SECRET: ${CLOUD_SYNC_SECRET:-}
   # The browser reaches the panel at these two names: localhost is a secure context, so the Secure __Host-
   # refresh cookie works over plain http (Chrome, Edge and Firefox; Safari is not verified).
   COOKIE_SECURE: "true"

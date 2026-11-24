@@ -1,7 +1,9 @@
 import type { DisclosureListItem } from "@/lib/domain";
-import type { ReadingState } from "@/lib/domain/reading";
+import type { ReadingState, TriageStateName } from "@/lib/domain/reading";
 import { ApiError, type KaptanApi } from "../types";
 import type { MockCtx } from "./guard";
+import { signalOf } from "./digest";
+import { createSignals } from "./signals";
 import * as sel from "./selectors";
 
 /**
@@ -13,7 +15,10 @@ export interface MockReading {
   /** ISO time; null = the start of the double's own day. */
   readThrough: string | null;
   opened: number[];
+  /** Legacy "sonra oku" stars; the triage state "sonra" is the same thing. */
   saved: number[];
+  /** Where the person put important disclosures: act / read later / done. */
+  triage?: Record<string, TriageStateName>;
 }
 
 export function initialReading(): MockReading {
@@ -22,30 +27,66 @@ export function initialReading(): MockReading {
 
 const MAX_UNREAD = 500;
 
-export function createReading(ctx: MockCtx): Pick<KaptanApi, "readingState" | "readAll" | "restoreReadThrough" | "markRead" | "setSaved" | "savedDisclosures"> {
+export function createReading(ctx: MockCtx): Pick<KaptanApi, "readingState" | "readAll" | "restoreReadThrough" | "markRead" | "setSaved" | "savedDisclosures" | "setTriage" | "signals" | "signal"> {
   const { db, me, ok } = ctx;
   const mark = (): MockReading => db.snapshot.reading ?? initialReading();
   const write = (next: MockReading) => db.update((s) => ({ ...s, reading: next }));
   const exists = (index: number) => sel.visibleDisclosures(db.snapshot).some((d) => d.disclosure_index === index);
 
+  const triageMap = (): Record<string, TriageStateName> => ({
+    ...Object.fromEntries(mark().saved.map((i) => [String(i), "sonra" as const])),
+    ...(mark().triage ?? {}),
+  });
+  const handled = (i: number, m: MockReading) => m.opened.includes(i) || String(i) in triageMap();
+
   const state = (): ReadingState => {
     const m = mark();
     const through = m.readThrough ?? `${ctx.now().slice(0, 10)}T00:00:00.000Z`;
-    const mine = new Set([...db.snapshot.watchlist, ...sel.positions(db.snapshot).map((p) => p.ticker)]);
-    const unread = sel
+    const held = new Set(sel.positions(db.snapshot).map((p) => p.ticker));
+    const watched = new Set(db.snapshot.watchlist);
+    const cards = new Map(sel.approvalCards(db.snapshot).map((c) => [c.disclosure_index, c] as const));
+    // Unread = IMPORTANT (the digest's meaning) and mine; important ones of other companies are counted apart.
+    const important = sel
       .visibleDisclosures(db.snapshot)
-      .filter((d) => !d.is_noise && d.published_at > through && !m.opened.includes(d.disclosure_index) && d.stock_codes.some((c) => mine.has(c)))
-      .map((d) => d.disclosure_index);
-    return { read_through: through, unread: unread.length, unread_indexes: unread.slice(0, MAX_UNREAD), saved_indexes: m.saved };
+      .filter((d) => d.published_at > through && !handled(d.disclosure_index, m))
+      .flatMap((d) => {
+        const sig = signalOf(d, held, watched, cards);
+        return sig ? [sig] : [];
+      });
+    const mine = important.filter((s) => s.mine !== null).map((s) => s.disclosure_index);
+    const triage = Object.entries(triageMap()).map(([i, st]) => ({ disclosure_index: Number(i), state: st }));
+    return {
+      read_through: through,
+      unread: mine.length,
+      unread_other: important.length - mine.length,
+      unread_indexes: mine.slice(0, MAX_UNREAD),
+      saved_indexes: triage.filter((t) => t.state === "sonra").map((t) => t.disclosure_index),
+      triage,
+      act_count: triage.filter((t) => t.state === "yapilacak").length,
+    };
   };
+  const signals = createSignals(ctx, () => triageMap());
 
   return {
+    ...signals,
+    async setTriage(index, next) {
+      me();
+      if (next !== null && !exists(index)) throw new ApiError(404, "not_found", "Bu bildirimi bulamadım.");
+      const m = mark();
+      const triage = { ...(m.triage ?? {}) };
+      delete triage[String(index)];
+      if (next !== null) triage[String(index)] = next;
+      const opened = next !== null && !m.opened.includes(index) ? [...m.opened, index] : m.opened;
+      write({ ...m, saved: m.saved.filter((i) => i !== index), triage, opened });
+      return ok(state(), 40);
+    },
     async readingState() {
       me();
       return ok(state(), 60);
     },
-    async readAll() {
+    async readAll(important) {
       me();
+      if (!important) return ok(state(), 60); // noise and archive-only are read from the start: nothing that counts
       // Like the API: opened marks under the previous mark are no longer needed; the newer ones stay, so an
       // undo never brings back what was already opened.
       const m = mark();
@@ -71,19 +112,14 @@ export function createReading(ctx: MockCtx): Pick<KaptanApi, "readingState" | "r
     },
     async setSaved(index, saved) {
       me();
-      const m = mark();
-      if (saved) {
-        if (!exists(index)) throw new ApiError(404, "not_found", "Bu bildirimi bulamadım.");
-        if (!m.saved.includes(index)) write({ ...m, saved: [index, ...m.saved] });
-      } else {
-        write({ ...m, saved: m.saved.filter((i) => i !== index) });
-      }
+      if (saved) return this.setTriage(index, "sonra");
+      if (triageMap()[String(index)] === "sonra") return this.setTriage(index, null);
       return ok(state(), 40);
     },
     async savedDisclosures() {
       me();
       const all = sel.visibleDisclosures(db.snapshot);
-      const rows = mark().saved.flatMap((i) => all.filter((d) => d.disclosure_index === i));
+      const rows = state().saved_indexes.flatMap((i) => all.filter((d) => d.disclosure_index === i));
       return ok<DisclosureListItem[]>(rows, 80);
     },
   };

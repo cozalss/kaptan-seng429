@@ -42,7 +42,9 @@ from kaptan.api.routers import (
     reports,
     risk,
     runs,
+    signals,
     sse,
+    telegram,
     tickets,
 )
 from kaptan.brokers import config as broker_config
@@ -79,10 +81,12 @@ ROUTERS: Final = (
     companies.router,  # /companies/{ticker}, /search, /watchlist
     digest.router,  # /me/digest (agent INFO)
     agenda.router,  # /me/calendar, /market/strip (wave 5 HOME)
+    telegram.router,  # /me/telegram (wave 6 TELEGRAM)
     reading.router,  # /me/reading, /compare (wave 5 READ)
     insights.router,  # /me/insights/*, /me/notes (wave 5 PARAM)
     corporate.router,  # /me/corporate: dividends, bonus and rights issues, KAP notices (wave 4 CORP)
     imports.router,  # /me/import: statement upload, preview, apply (wave 5 IMPORT)
+    signals.router,  # /me/signals, /me/triage: one meaning of important (wave 6 SIGNAL)
 )
 
 

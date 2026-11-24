@@ -62,9 +62,11 @@ Hepsi `/api/v1` altında, JSON, Bearer ile. Saatler ISO-8601 UTC; para TL, oranl
 | 1c | GET | `/companies/{ticker}?period=1m\|3m\|1y\|all` | — | `Company` (404 `not_found`) |
 | 1d | GET | `/search?q=` | — | `SearchResult` (Türkçe harfler katlanır; 2 harften azı boş) |
 | 1e | GET/PUT/DELETE | `/watchlist`, `/watchlist/{ticker}` | — | `WatchItem[]` (en çok 50, 409 `watchlist_full`; `watchlist.added/removed` denetlenir) |
-| 1f | GET | `/me/reading` | — | `ReadingState` (okunmamış sayısı: izlenen/elindeki şirketler, gürültü hariç; `unread_indexes` ≤ 500, `saved_indexes`) |
-| 1g | POST/PUT | `/me/reading/read-all`, `/me/reading/read/{index}`, `/me/reading/read-through` | `{read_through}` (yalnızca read-through) | `ReadingState` ("Hepsini okundu say", tek duyuru açıldı; 404; "Geri al": işaret yalnızca geri gider, gelecek an 422) |
+| 1f | GET | `/me/reading` | — | `ReadingState` (okunmamış = ÖNEMLİ duyuru (`/me/signals` ile aynı anlam) ve izlenen/elindeki şirket; gürültü ve arşiv-yalnız baştan okunmuş sayılır; `unread_other` başka şirketlerin önemlileri; `unread_indexes` ≤ 500, `saved_indexes` (= triage `sonra`), `triage[]`, `act_count`) |
+| 1g | POST/PUT | `/me/reading/read-all`, `/me/reading/read/{index}`, `/me/reading/read-through` | `{important?}` (read-all), `{read_through}` (read-through) | `ReadingState` (düz read-all sayılan hiçbir şeyi silmez; `{important:true}` önemlileri de okundu sayar, "Geri al" ile; tek duyuru açıldı; 404; "Geri al": işaret yalnızca geri gider, gelecek an 422) |
 | 1h | GET/PUT/DELETE | `/me/reading/saved`, `/me/reading/saved/{index}` | — | `DisclosureListItem[]` / `ReadingState` (sonra oku; denetim kaydı yok, para değil) |
+| 1h2 | GET | `/me/signals?day=`, `/me/signals/{index}` | — | `SignalList` / `SignalItem` (TEK "önemli" anlamı: özet satırı `line_tr`, `tone` olumlu/olumsuz/notr/belirsiz, `so_what_tr`, `suggestion_tr` (son çalıştırmadan), `mine` held>watched, `panel_path` (duyuruyu çekmecede açar), `triage`; önce benimkiler; `day` bozuksa 422, bilinmeyen index 404) |
+| 1h3 | PUT/DELETE | `/me/triage/{index}` | `{state: yapilacak\|sonra\|tamam}` | `ReadingState` (üç durum; `sonra` = eski "sonra oku" yıldızı; 404, geçersiz durum 422; denetim kaydı yok, para değil) |
 | 1i | GET | `/compare?a=&b=&period=` | — | `Compare` (iki şirket: fiyat çizgisi, istatistik, 90 günlük KAP sayıları; 404, 422 aynı kod) |
 | 2 | GET | `/approvals?status=pending\|all` | — | `ApprovalCard[]` |
 | 3 | POST | `/approvals/{proposal_id}/decision` | `ApprovalDecision` | `ApprovalCard` |
@@ -230,9 +232,14 @@ Panelin "KAPtan gerçekten çalışıyor mu?" sorusu. Şemalar `src/lib/domain/s
 | GET | `/me/price-alerts` | `PriceAlert[]` (bekleyenler önce; `current_price` null = fiyat yok) |
 | POST | `/me/price-alerts` | `{ticker, direction: above\|below, level \| preset_pct: 5\|10}` → liste; denetim `price_alert.created`; `404` bilinmeyen kod, `409 no_price` / `alerts_full` (30), `422 already_passed` / `validation` |
 | DELETE | `/me/price-alerts/{id}` | liste; denetim `price_alert.removed`; `404` |
-| GET | `/me/alerts/history` | `AlertHistoryItem[]` = `{at, channel: ntfy\|email, ok, text}` son 100 gönderim; konu adı, adres, hisse, tutar yok |
+| GET | `/me/alerts/history` | `AlertHistoryItem[]` = `{at, channel: ntfy\|email\|telegram, ok, text}` son 100 gönderim; konu adı, adres, hisse, tutar yok |
 | GET | `/me/weekly?at=YYYY-MM-DD` | `WeeklySummary` (Pazartesi–Pazar haftası; varsayılan bu hafta); `422` bozuk tarih |
 | PUT | `/me/alerts/preferences` | `AlertPrefs` artık `price`, `weekly` (varsayılan açık) ve `muted: string[]` (en çok 50 kod) taşır; susturulan şirketin önerisi ve izlenen bildirimi dışarı haber vermez |
+| GET | `/me/telegram` | `TelegramStatus` = `{configured, token_from_env, bot_username, paired, pairing_open, pairing_expires_at, level: less\|normal\|more, daily_cap 1..50, silent_until, last_sent_at, cloud_on, cloud_synced_at, cloud_message_at, cloud_kap: ok\|blocked\|error\|unknown\|null, cloud_error}`; bot kodu hiç dönmez. `cloud_*` = Bulut takibi (Cloudflare Worker, `CLOUD_WATCHER_URL` + `CLOUD_SYNC_SECRET` doluysa); adres ve gizli anahtar hiç dönmez |
+| PUT | `/me/telegram` | `TelegramStatus` (gövde `{token?, level?, daily_cap?}`; kod Telegram'a `getMe` ile sorulur: `422 validation` bozuk ya da çalışmayan kod, `409 conflict` kod `.env`'den geliyorsa; Geçmiş'e `telegram.changed`) |
+| POST | `/me/telegram/pair` | `TelegramPair` = `{pair_link: https://t.me/<bot>?start=<kod>, expires_at}` (tek kullanımlık kod, 15 dk, yalnız özeti saklanır; `409 conflict` kod yoksa; `telegram.pairing_started`) |
+| DELETE | `/me/telegram` | `TelegramStatus` (kod, sohbet ve bağlantı kodu silinir; `telegram.unlinked`) |
+| POST | `/me/telegram/sample` | `TelegramStatus` (bağlı sohbete açıkça işaretli bir örnek mesaj; `409 conflict` bağlı değilse, `429 rate_limited` dakikada bir, `502 send_failed`) |
 | POST | `/auth/password` | `{signed_out_others}` (gövde `{current, new}`; `403 wrong_password`, `422 weak_password`/validation: en az 6, en çok 200 karakter, `kaptan2026` ve eskisiyle aynısı yok; `429` dakikada `LOGIN_RATE_PER_MINUTE`. Diğer oturumlar kapanır, bu kalır) |
 | POST | `/auth/logout-all` | `204` (bu cihaz dahil her oturum kapanır; erişim belirteçleri hemen geçersiz olur) |
 
@@ -259,7 +266,7 @@ Panelin "KAPtan gerçekten çalışıyor mu?" sorusu. Şemalar `src/lib/domain/s
 | GET | `/reports/benchmark?from=&to=` | `Benchmark` (paran ve BIST 100, aynı günlerde) |
 | GET | `/reports/karne?period=month\|year&at=2026-11\|2026` | `Karne` (varsayılan: bu ay; `422` bozuk dönem) |
 | GET | `/reports/quiet?day=` | `QuietDay` ("neden öneri yok?" için günün gerçek sayıları) |
-| GET | `/me/digest?day=` | `Digest` (günün önemli KAP duyuruları, TÜM şirketlerden; bilgi, öneri değil: geri alım, yönetici/ana ortak alımı-satımı, yeni iş/ihale, finansal sonuç, kâr payı, sermaye, birleşme/bölünme, SPK tedbiri; KAP konu adına göre seçilir, model yok; sınıflanamayan yok. Varsayılan gün bugün, borsa kapalıysa son işlem günü ve `note`; elindeki, sonra izlediğin şirketler önde; evren dışı şirkette `outside_note`; `day` bozuksa `422`) |
+| GET | `/me/digest?day=` | `Digest` (günün önemli KAP duyuruları, TÜM şirketlerden; bilgi, öneri değil: geri alım, yönetici/ana ortak alımı-satımı, yeni iş/ihale, finansal sonuç, kâr payı, sermaye, birleşme/bölünme, SPK tedbiri; KAP konu adına göre seçilir, model yok; sınıflanamayan yok. Varsayılan gün bugün, borsa kapalıysa son işlem günü ve `note`; elindeki, sonra izlediğin şirketler önde; evren dışı şirkette `outside_note`; `day` bozuksa `422`); her öğede `tone`, `so_what_tr`, `suggestion_tr`, `panel_path` ve `line` artık `/me/signals` ile aynı cümle) |
 | GET | `/me/calendar?days=` | `Calendar` (elindeki ve izlediğin hisselerin yaklaşan günleri: KAP bildiriminden kâr payı ödeme/hak günü ve genel kurul, geçen yılın rapor günü `approximate`, Merkez Bankası faiz kararı günleri; `notes` neyi göstermediğini söyler; `days` 1-120, varsayılan 60, dışı `422`) |
 | GET | `/market/strip` | `MarketStrip` (BIST 100 son kayıtlı kapanış ve günlük değişim, borsa açık/kapalı ve sonraki açılış günü, Merkez Bankası dolar kuru; kayıtlı olmayan değer `null`) |
 
@@ -327,7 +334,7 @@ kullanıcı başına dakikada `MUTATION_RATE_PER_MINUTE` (60): aşımda `429 {"d
 
 | Yöntem | Yol | Yanıt |
 |---|---|---|
-| GET | `/brief/today` | `MorningBrief` (bugün = sunucu saatinin İstanbul günü) |
+| GET | `/brief/today` | `MorningBrief` (bugün = sunucu saatinin İstanbul günü; `important_disclosures` ve `signals[]` yalnız ÖNEMLİ duyurular: benimkiler önde (elimdekiler, sonra izlediklerim), sonra en yeni 5 başkası; her birinde satır, ton, öneri; `missed_note_tr` bilgisayar kapalıyken kaçırılanlar notu, ısı atışı bilmiyorsa null; özet cümlesi "önemli bir duyuru yok" der) |
 | GET | `/brief/{date}` | `MorningBrief` (`YYYY-MM-DD`) |
 
 `MorningBrief` = `date`, `generated_at`, `important_disclosures`, `orders_for_open`, `pending_approvals`, `open_positions`,

@@ -30,9 +30,11 @@ from redis.exceptions import RedisError
 from kaptan.alerts.announce import announce, flush_held, read_prefs
 from kaptan.alerts.config import AlertConfig, alert_config
 from kaptan.alerts.messages import AlertKind, kind_for_event
+from kaptan.alerts.telegram import resolve_target
 from kaptan.events import bus
 from kaptan.ops.system_status import DOWN_CODES, read_facts, summarize
 from kaptan.settings import Settings
+from kaptan.signal import Signal, describe
 
 log = logging.getLogger("kaptan.alerts")
 
@@ -99,8 +101,9 @@ def kinds_in(entries: list[Entry], now: datetime, muted: frozenset[str] = frozen
     return out
 
 
-def feed_hits_watchlist(entries: list[Entry], watched: frozenset[str], now: datetime) -> bool:
-    """True when a recent `disclosure` event of the feed names a company on the watchlist (the text never leaves)."""
+def feed_indexes(entries: list[Entry], now: datetime) -> list[int]:
+    """The disclosure numbers of the recent `disclosure` events of the feed (oldest first)."""
+    out: list[int] = []
     for entry_id, fields in entries:
         at = entry_time(entry_id)
         if at is None or now - at > MAX_EVENT_AGE or fields.get("event") != "disclosure":
@@ -109,10 +112,24 @@ def feed_hits_watchlist(entries: list[Entry], watched: frozenset[str], now: date
             data = json.loads(fields.get("data", ""))
         except ValueError:
             continue
-        if not isinstance(data, dict):
+        index = data.get("disclosure_index") if isinstance(data, dict) else None
+        if isinstance(index, int) and not isinstance(index, bool) and index > 0:
+            out.append(index)
+    return out
+
+
+def feed_hits_watchlist(entries: list[Entry], watched: frozenset[str], now: datetime) -> bool:
+    """True when a recent `disclosure` event of the feed names a company in `watched` (pure; the loop itself now
+    asks `AlertWatch.mine_hits`, which also needs the disclosure to be important and counts held stocks)."""
+    for entry_id, fields in entries:
+        at = entry_time(entry_id)
+        if at is None or now - at > MAX_EVENT_AGE or fields.get("event") != "disclosure":
             continue
-        codes = {data.get("primary_ticker"), *(data.get("stock_codes") or [])}
-        if codes & watched:
+        try:
+            data = json.loads(fields.get("data", ""))
+        except ValueError:
+            continue
+        if isinstance(data, dict) and {data.get("primary_ticker"), *(data.get("stock_codes") or [])} & watched:
             return True
     return False
 
@@ -134,6 +151,7 @@ class AlertWatch:
         self.stream = bus.stream_key("desk")
         self.cursor: str | None = None
         self.feed_cursor: str | None = None
+        self.last_hits: list[Signal] = []
 
     async def _start_cursor(self) -> str:
         stored = await self.redis.get(CURSOR_KEY)
@@ -154,15 +172,26 @@ class AlertWatch:
         await self.redis.set(CURSOR_KEY, self.cursor)
         return kinds
 
-    async def _watched(self) -> frozenset[str]:
+    async def mine_hits(self, entries: list[Entry], muted: frozenset[str], now: datetime) -> list[Signal]:
+        """The important disclosures of the feed that are mine: a held stock counts even when it is not on the
+        watchlist, and held wins over watched (`Signal.mine`). Noise and archive-only never are important."""
+        indexes = feed_indexes(entries, now)
+        if not indexes:
+            return []
+        hits: list[Signal] = []
         async with self.pool.connection() as conn:
-            cur = await conn.execute("SELECT ticker FROM core.watchlist")
-            return frozenset(str(r["ticker"]) for r in await cur.fetchall())
+            for index in indexes:
+                signal = await describe(conn, index, now)
+                if signal and signal.important and signal.mine and signal.ticker not in muted:
+                    hits.append(signal)
+            await conn.rollback()
+        return hits
 
     async def read_feed(self) -> bool:
-        """The disclosure feed since the last look; True when a watched company's disclosure was announced.
+        """The disclosure feed since the last look; True when an important disclosure of mine was announced.
 
-        The phone only ever gets the generic sentence of the "watch" kind (no company), at most once per 10 minutes.
+        The phone only ever gets the generic sentence of the "watch" kind (no company), at most once per 10 minutes;
+        `last_hits` keeps what was found for the desktop notification and the other channels.
         """
         stream = bus.stream_key("feed")
         if self.feed_cursor is None:
@@ -176,10 +205,8 @@ class AlertWatch:
             return False
         now = self.clock()
         muted = frozenset((await read_prefs(self.pool))["muted"])
-        told = (
-            feed_hits_watchlist(entries, await self._watched() - muted, now)
-            and await announce(self.pool, self.redis, self.cfg, "watch", now=now) == "sent"
-        )
+        self.last_hits = await self.mine_hits(entries, muted, now)
+        told = bool(self.last_hits) and await announce(self.pool, self.redis, self.cfg, "watch", now=now) == "sent"
         self.feed_cursor = entries[-1][0]
         await self.redis.set(FEED_CURSOR_KEY, self.feed_cursor)
         return told
@@ -224,19 +251,19 @@ async def run_alert_watch(
     clock: Clock = lambda: datetime.now(UTC),
     check_every_s: float = CHECK_EVERY_S,
 ) -> None:
-    """Until `stop`. Returns at once when no channel is configured. Never raises (except cancellation)."""
-    cfg = alert_config(settings)
-    if cfg.invalid:
-        log.warning("alert settings are wrong, channel(s) off: %s", ", ".join(cfg.invalid))
-    if not cfg.channels:
-        log.info("alerts are off: no channel is configured")
-        return
-    log.info("alert watch started: %s", ", ".join(cfg.channels))
-    watch = AlertWatch(cfg, pool, redis, clock)
+    """Until `stop`. Never raises (except cancellation)."""
+    base = alert_config(settings)
+    if base.invalid:
+        log.warning("alert settings are wrong, channel(s) off: %s", ", ".join(base.invalid))
+    # Telegram can be paired at any time (Ayarlar), so the loop always runs; with no channel it announces nothing.
+    log.info("alert watch started: %s", ", ".join(base.channels) or "no channel yet")
+    watch = AlertWatch(base, pool, redis, clock)
     loop = asyncio.get_running_loop()
     next_check = loop.time()
     while not stop.is_set():
         try:
+            cfg = replace(base, telegram=await resolve_target(settings, pool))
+            watch.cfg = cfg
             await watch.read_events()
             await flush_held(pool, redis, cfg, now=clock())  # what the quiet hours held back
             await watch.read_feed()

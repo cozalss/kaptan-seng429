@@ -19,7 +19,8 @@ from kaptan.alerts.messages import AlertKind
 from kaptan.text.turkish import IST
 
 HELD_KEY: Final = "kaptan:alerts:held"
-#: A held message older than this is dropped: it would report something long over.
+#: A held message older than this is not sent any more (it would report something long over); it is carried into
+#: the next morning note instead of being dropped (kaptan.alerts.announce.take_carried).
 HELD_MAX_AGE_H: Final = 24
 #: The alert kind (kaptan.alerts.messages) -> the preference topic the person sees.
 TOPIC_OF: Final[dict[str, str]] = {

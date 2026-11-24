@@ -22,6 +22,7 @@ import { settingsSentence, PLAIN_LIMITS, valueOf } from "./limits-logic";
 import { PriceAlertsSection } from "./price-alerts-section";
 import { RestoreSection } from "./restore-section";
 import { SystemSection } from "./system-section";
+import { TelegramSection } from "./telegram-section";
 
 /** /ayarlar: your limits and what each means for you, how KAPtan reaches you and whether it is working, how it works, and your account. */
 export function SettingsScreen() {
@@ -39,6 +40,7 @@ export function SettingsScreen() {
         <AlertsSection />
         <SystemSection />
       </div>
+      <TelegramSection />
       <AlertPrefsSection />
       <PriceAlertsSection />
       <MutedSection />

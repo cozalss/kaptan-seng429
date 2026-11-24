@@ -8,6 +8,7 @@ from pydantic import Field
 
 from kaptan.domain.schemas._base import IsoDate, IsoDateTime, KModel, NonNegInt
 from kaptan.domain.schemas.disclosure import DisclosureListItem
+from kaptan.domain.schemas.signal import SignalItem
 from kaptan.domain.schemas.trading import ApprovalCard, Order, PnlPoint, Position
 
 SAMPLE_LABEL: Final = "örnek değer · gerçek sonuç değil"
@@ -39,6 +40,10 @@ class MorningBrief(KModel):
     restriction_changes: list[RestrictionChange]
     summary_tr: str
     is_sample: bool
+    #: The same important disclosures with line, tone, so-what and suggestion (mine first).
+    signals: list[SignalItem] = Field(default_factory=list)
+    #: "Bilgisayar kapalıyken kaçırdıkların" note when the heartbeat knows of a gap, else null.
+    missed_note_tr: str | None = None
 
 
 class PerClass(KModel):

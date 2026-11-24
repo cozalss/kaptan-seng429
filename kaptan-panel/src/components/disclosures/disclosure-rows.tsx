@@ -5,6 +5,8 @@ import { href } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 import { TickerLink } from "@/components/company/ticker-link";
 import { NewMark, SaveStar } from "@/components/reading/save-star";
+import { ToneChip } from "@/components/signal/signal-bits";
+import type { SignalItem } from "@/lib/domain/signal";
 import { plainEvent, shortName } from "@/components/story/plain";
 import { titleTr } from "@/components/story/turkish";
 import { fateOf, groupByHour, tickerOf } from "./disclosure-logic";
@@ -50,7 +52,7 @@ export function Worthwhile({ rows, cardOf, isToday }: { rows: readonly Disclosur
 }
 
 /** Everything read, cut by the hour: a hairline band per hour over that hour's duyuru. */
-export function DisclosureHours({ rows, label, cardOf, onOpen }: { rows: readonly DisclosureListItem[]; label: string; cardOf: Cards; onOpen?: (index: number) => void }) {
+export function DisclosureHours({ rows, label, cardOf, signalOf, onOpen }: { rows: readonly DisclosureListItem[]; label: string; cardOf: Cards; signalOf?: ReadonlyMap<number, SignalItem>; onOpen?: (index: number) => void }) {
   const groups = groupByHour(rows);
   return (
     <div role="group" aria-label={label}>
@@ -62,7 +64,7 @@ export function DisclosureHours({ rows, label, cardOf, onOpen }: { rows: readonl
           </h3>
           <ol>
             {g.rows.map((d) => (
-              <Row key={d.disclosure_index} d={d} card={cardOf.get(d.disclosure_index) ?? null} onOpen={onOpen} />
+              <Row key={d.disclosure_index} d={d} card={cardOf.get(d.disclosure_index) ?? null} signal={signalOf?.get(d.disclosure_index) ?? null} onOpen={onOpen} />
             ))}
           </ol>
         </section>
@@ -71,7 +73,7 @@ export function DisclosureHours({ rows, label, cardOf, onOpen }: { rows: readonl
   );
 }
 
-function Row({ d, card, onOpen }: { d: DisclosureListItem; card: ApprovalCard | null; onOpen?: (index: number) => void }) {
+function Row({ d, card, signal, onOpen }: { d: DisclosureListItem; card: ApprovalCard | null; signal: SignalItem | null; onOpen?: (index: number) => void }) {
   const fate = card ? "useful" : fateOf(d);
   const ticker = tickerOf(d);
   return (
@@ -89,7 +91,13 @@ function Row({ d, card, onOpen }: { d: DisclosureListItem; card: ApprovalCard | 
             </span>
           ) : null}
         </p>
-        <p className="ok-row-said">{plainSaid(d)}</p>
+        <p className="ok-row-said">{signal ? signal.line_tr : plainSaid(d)}</p>
+        {signal ? (
+          <p className="sg-meta">
+            <ToneChip tone={signal.tone} />
+            {signal.suggestion_tr ? <span className="sg-suggest">{signal.suggestion_tr}</span> : null}
+          </p>
+        ) : null}
         <div className="rd-row-tools">
           <SaveStar index={d.disclosure_index} label={titleTr(shortName(d.company_name))} />
           {onOpen ? (

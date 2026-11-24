@@ -9,6 +9,8 @@ import { titleTr } from "@/components/story/turkish";
 import { shortName } from "@/components/story/plain";
 import { TickerLink } from "@/components/company/ticker-link";
 import { Button } from "@/components/ui/button";
+import { ToneChip, TriageButtons } from "@/components/signal/signal-bits";
+import "@/components/signal/signal.css";
 import { tickerOf } from "./disclosure-logic";
 import { kapUrl, plainSaid, whatKaptanDid } from "./reading-words";
 import { TYPE_LABEL, TYPES, type TypeFilter } from "./filters";
@@ -23,6 +25,8 @@ const NUMBER_FORMAT = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 2 
 export function ReadingDrawer({ index, onClose }: { index: number; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const q = useApiQuery((api) => api.disclosureReading(index), [index]);
+  const sig = useApiQuery((api) => api.signal(index).catch(() => null), [index]);
+  const s = sig.data;
   useEffect(() => {
     const el = ref.current;
     if (el && !el.open) el.showModal();
@@ -42,7 +46,19 @@ export function ReadingDrawer({ index, onClose }: { index: number; onClose: () =
             {tickerOf(d) ? <TickerLink ticker={tickerOf(d) ?? ""} /> : null} · <time dateTime={d.published_at}>{fmtDateTime(d.published_at)}</time>
           </p>
           <h2 className="u-chapter text-ink">{titleTr(shortName(d.company_name))}</h2>
-          <p className="ok-drawer-said">{plainSaid(d)}</p>
+          {s?.important ? (
+            <div className="sg-drawer" data-testid="drawer-signal">
+              <p className="sg-line">{s.line_tr}</p>
+              <p className="sg-meta">
+                <ToneChip tone={s.tone} />
+                {s.suggestion_tr ? <span className="sg-suggest">{s.suggestion_tr}</span> : null}
+              </p>
+              {s.so_what_tr ? <p className="sg-sowhat">{s.so_what_tr}</p> : null}
+              <TriageButtons index={s.disclosure_index} label={s.ticker ?? s.company_name} />
+            </div>
+          ) : (
+            <p className="ok-drawer-said">{plainSaid(d)}</p>
+          )}
           <dl className="ok-drawer-facts">
             <dt>KAPtan ne sandı?</dt>
             <dd>{type && (TYPES as readonly string[]).includes(type) ? TYPE_LABEL[type as TypeFilter] : "Para kararı gerektirmeyen bir haber"}</dd>
@@ -81,7 +97,7 @@ export function ReadingDrawer({ index, onClose }: { index: number; onClose: () =
           ))}
           {url ? (
             <a href={url} target="_blank" rel="noopener noreferrer" className="ok-kap">
-              KAP’ta aç <span aria-hidden>↗</span>
+              Resmî sayfa: KAP’ta aç <span aria-hidden>↗</span>
             </a>
           ) : null}
         </article>

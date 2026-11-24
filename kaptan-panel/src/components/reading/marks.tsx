@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useApi } from "@/lib/api/react";
 import { errorMessage, type KaptanApi } from "@/lib/api/types";
-import type { ReadingState } from "@/lib/domain/reading";
+import type { ReadingState, TriageStateName } from "@/lib/domain/reading";
 
 /** Fired after any change to the marks, so every copy of the unread number asks the server again. */
 export const READING_CHANGED = "kaptan:reading-changed";
@@ -59,8 +59,12 @@ export interface ReadingMarks {
   isSaved: (index: number) => boolean;
   isUnread: (index: number) => boolean;
   toggleSaved: (index: number) => Promise<void>;
+  /** Where the person put this disclosure (act / read later / done), or null. "Sonra oku" is the same as saved. */
+  triageOf: (index: number) => TriageStateName | null;
+  /** Put a disclosure in a state; the same state again takes it out. */
+  setTriage: (index: number, state: TriageStateName | null) => Promise<void>;
   open: (index: number) => Promise<void>;
-  readAll: () => Promise<void>;
+  readAll: (important?: boolean) => Promise<void>;
   /** After "Hepsini okundu say": puts the earlier mark back. Null when there is nothing to undo. */
   undoReadAll: (() => Promise<void>) | null;
   error: string | null;
@@ -91,17 +95,20 @@ export function ReadingMarksProvider({ children }: { children: ReactNode }) {
   const value = useMemo<ReadingMarks>(() => {
     const saved = new Set(state?.saved_indexes ?? []);
     const unread = new Set(state?.unread_indexes ?? []);
+    const triage = new Map((state?.triage ?? []).map((t) => [t.disclosure_index, t.state] as const));
     return {
       state,
       isSaved: (i) => saved.has(i),
       isUnread: (i) => unread.has(i),
       toggleSaved: async (i) => void (await apply((a) => a.setSaved(i, !saved.has(i)))),
+      triageOf: (i) => triage.get(i) ?? null,
+      setTriage: async (i, next) => void (await apply((a) => a.setTriage(i, triage.get(i) === next ? null : next))),
       open: async (i) => {
         if (unread.has(i)) await apply((a) => a.markRead(i));
       },
-      readAll: async () => {
+      readAll: async (important = false) => {
         const before = state?.read_through ?? null;
-        if (await apply((a) => a.readAll())) setUndoTo(before);
+        if (await apply((a) => a.readAll(important)) && important) setUndoTo(before);
       },
       undoReadAll: undoTo
         ? async () => {

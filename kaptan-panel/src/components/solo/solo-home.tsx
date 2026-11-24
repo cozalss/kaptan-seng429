@@ -27,6 +27,7 @@ import { WatchStrip } from "@/components/watchlist/watch-strip";
 import { MarketStrip } from "@/components/agenda/market-strip";
 import { UpcomingCard } from "@/components/agenda/upcoming-card";
 import { DigestCard } from "@/components/digest/digest-card";
+import { SignalStrip } from "@/components/signal/signal-strip";
 
 /**
  * The home, one calm scene for one person, in reading order on every screen: the money and how it
@@ -101,6 +102,8 @@ export function SoloHome() {
           <ErrorState message={q.error} onRetry={() => void q.refetch()} />
         </div>
       ) : null}
+      <SignalStrip />
+      <DigestCard />
       <div className="u-page empty:hidden">
         <MarketStrip />
       </div>
@@ -126,7 +129,6 @@ export function SoloHome() {
         <AllocationPanel allocations={data.overview.allocations} cash={data.overview.cash} total={data.overview.equity_now} />
       </div>
       <div className="home-band u-page !pt-0">
-        <DigestCard />
         <UpcomingCard />
         <WatchStrip />
         <Activity items={activity} />

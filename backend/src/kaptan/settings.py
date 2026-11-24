@@ -84,6 +84,13 @@ class Settings(BaseSettings):
     alert_smtp_user: str | None = None
     alert_smtp_password: SecretStr | None = None
     alert_smtp_to: str | None = None
+    #: Telegram bot token (kaptan.telegram). Optional: the token can also be pasted in Ayarlar and is then kept in
+    #: the database. Never logged, never returned.
+    alert_telegram_bot_token: SecretStr | None = None
+    #: The Cloudflare Worker that follows KAP while this computer is off (cloud-watcher/, kaptan.cloud). Off unless BOTH
+    #: are set; then the Worker is the only sender of disclosure messages to Telegram. Never logged, never returned.
+    cloud_watcher_url: str | None = None
+    cloud_sync_secret: SecretStr | None = None
     #: The Windows folder the backups go to (KAPTAN_BACKUP_DIR of the install), only to tell the person where it is.
     kaptan_backup_dir: str | None = None
     #: Where the API sees that folder (mounted read-only): only to LIST the backups in Ayarlar.
@@ -287,6 +294,13 @@ def redis_has_password(url: SecretStr) -> bool:
         return bool(urlsplit(url.get_secret_value()).password)
     except ValueError:
         return False
+
+
+def cloud_watcher_on(settings: Settings) -> bool:
+    """The Cloudflare Worker is configured (URL and secret both set): it owns Telegram's disclosure messages."""
+    secret = settings.cloud_sync_secret
+    url = (settings.cloud_watcher_url or "").strip()
+    return url.startswith("https://") and secret is not None and bool(secret.get_secret_value().strip())
 
 
 def has_llm_provider(settings: Settings) -> bool:

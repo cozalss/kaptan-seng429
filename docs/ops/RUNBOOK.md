@@ -82,8 +82,12 @@ ile sen başlatırsın.
 
 Bilgisayar açılınca KAPtan'ın kendiliğinden gelmesi için bir kez:
 
-1. **Docker Desktop Windows ile açılsın:** Docker Desktop → Settings → General → *Start Docker Desktop when you
-   sign in to your computer*.
+1. **Docker Desktop Windows ile açılsın:** `kur.cmd` ve `baslat.cmd` bunu senin yerine yapar: Docker Desktop'ın ayar
+   dosyasında (`%APPDATA%\Docker\settings-store.json`; eski sürümlerde `settings.json`) `"AutoStart": true` yazar.
+   Önce dosyanın yedeğini alır (`.kaptan-yedek`), dosyayı JSON olarak okur ve yalnız bu anahtarı değiştirir. Elle
+   yapmak istersen: Docker Desktop → Settings → General → *Start Docker Desktop when you sign in to your computer*.
+   `baslat.cmd` Docker Desktop kapalıysa onu açar ve motor hazır olana dek bekler. Konteynerler zaten
+   `restart: unless-stopped` ile ayağa kalkar: Docker açılınca KAPtan da kendiliğinden gelir.
 2. **Bilgisayar uyumasın:** Windows Ayarları → Sistem → Güç ve pil → *Prize takılıyken uyku: Hiçbir zaman*.
    Dizüstüyse kapak kapanınca ne olacağını da Denetim Masası → Güç Seçenekleri'nden ayarla.
 3. Docker Desktop oturum açmadan başlamaz. Bilgisayar yeniden başlayınca oturum açman gerekir.
@@ -137,6 +141,49 @@ Bu iki yolun hiçbiri bu turda gerçek bir telefona ya da posta kutusuna ulaşan
 Yalnız şunu gördüm: konu adı üretiliyor, doğru biçimde (31 karakter), var olan korunuyor, istenirse yenisi
 üretiliyor **[denendi: sahte yanıtlarla, betiğin kendisiyle]**. Anahtarsız denemede bildirim kapalıydı ve durum
 yanıtı bunu doğru söyledi (`ntfy: false`, `email: false`) **[denendi]**.
+
+### Telegram'dan takip
+
+Telefonuna **Telegram** ile haber vermek en az zahmetli yoldur: bilgisayarın dışarıya açılması gerekmez (KAPtan
+yalnız Telegram'a bağlanır, kimse KAPtan'a bağlanmaz), buton basabilirsin. Mesajda şirketin adı ve tek satırlık bir
+açıklama olur; paran, adedin ya da kârın **asla** yazılmaz. Bot ücretsizdir. Telegram sohbetleri uçtan uca şifreli
+değildir: mesajda yalnız duyuru özeti vardır.
+
+Bir kez (Ayarlar → Telegram, dört adım):
+
+1. Telegram'da **@BotFather**'ı aç, `/newbot` yaz, bir ad seç. Sana uzun bir **bot kodu** verir.
+2. Bot kodunu Ayarlar'daki kutuya yapıştır, **Kaydet**. Kod yalnız bu bilgisayardaki veritabanında durur
+   (uygulama hesabı dışında kimse okuyamaz) ve bir daha ekranda gösterilmez. İstersen `.env` içine
+   `ALERT_TELEGRAM_BOT_TOKEN` olarak da yazabilirsin; o varsa Ayarlar'dan değiştirilemez.
+3. **Bağla**'ya bas: tek kullanımlık, 15 dakika geçerli bir bağlantı çıkar.
+4. Bağlantıya telefonundan dokun, Telegram'da **Start**'a bas. Yalnız bu sohbet dinlenir; başka bir sohbetten gelen
+   her şey yok sayılır ve kayda geçer.
+
+Sonra her gün:
+
+- **Anlık mesaj:** yalnız önemli *ve* senin hissen olan duyurular. Bir şirketten en fazla yarım saatte bir mesaj
+  gelir (art arda gelenler tek mesajda toplanır), günde en fazla 8 (Ayarlar'dan değişir). Fazlası ve sessiz saatlerde
+  gelenler **sabah mesajına** kalır, hiçbiri kaybolmaz.
+- **Sabah mesajı** (işlem günlerinde 08:45): "Dün akşamdan beri senin hisselerinde…" ve "Günün öne çıkanları". Önemli
+  bir şey yoksa bunu açıkça yazar. Hafta sonu ve tatilden önce son iş günü akşamı kısa bir özet gelir; Pazartesi sabahı
+  onu tekrarlamaz.
+- **Bilgisayar kapalı kaldıysa:** açılınca "KAPtan 7 saat kapalıydı; bu sürede senin hisselerinde 2 önemli duyuru
+  oldu:" ve satırlar (yarım saatten uzun boşluklarda).
+- **Öneri hazır olunca:** "KAPtan: THYAO için al önerisi hazır" ve bir satır neden. Onay düğmesi **yoktur**: onaylamak
+  para hareketidir, uygulamada yapılır.
+- **Düğmeler:** Okudum, Sonra oku, Aç (KAP sayfası), Bu şirketi sustur.
+- **Komutlar:** `/ayar` (az, normal, çok), `/sessiz` (sabah mesajına kadar anlık mesaj yok), `/durum` (bugünün sayıları).
+
+**Bulut takibi (isteğe bağlı):** bilgisayar kapalıyken de bu mesajların gelmesi için `.\cloud-watcher\kur-bulut.ps1`
+çalıştır (Cloudflare hesabı, e-posta yeter, kart yok; ayrıntı ve ücretsiz sınırlar `cloud-watcher/README.md`). Kurulunca
+`.env`'ye `CLOUD_WATCHER_URL` ve `CLOUD_SYNC_SECRET` yazılır. O zaman **tek gönderici bulutur**: anlık mesajlar, sabah
+mesajı ve "kapalıydı" mesajı buluttan gelir, bu bilgisayar Telegram'ı dinlemez (webhook ile `getUpdates` bir arada
+olamaz) ve yalnız öneri mesajlarını yollar. Telegram'dan bastığın düğmeler KAPtan açılınca okundu/sonra/susturma olarak
+uygulanır. Geri almak için `.env`'den bu iki satırı sil ve `docker compose up -d api scheduler`; webhook'u kaldırmak için
+`https://api.telegram.org/bot<kod>/deleteWebhook` adresini bir kez aç.
+  Bunlar yalnız mesajları keser; KAPtan çalışmaya devam eder.
+
+Bu özellik gerçek bir bot kodu olmadan tam denenemedi; neyin denendiği ve neyin denenemediği teslim notundadır.
 
 ## 6. Yedek ve geri dönüş
 

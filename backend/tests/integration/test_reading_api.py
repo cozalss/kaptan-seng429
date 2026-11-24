@@ -118,7 +118,7 @@ async def test_read_all_can_be_undone(client: httpx.AsyncClient, data: None, own
     await client.put(f"/api/v1/watchlist/{T1}", headers=h)
     await client.put(f"/api/v1/me/reading/read/{IDX}", headers=h)
     later = datetime(2030, 4, 10, tzinfo=UTC)
-    await read_all(owner_pg, now=later)
+    await read_all(owner_pg, now=later, important=True)
     assert (await reading_state(owner_pg, later))["unread"] == 0
     # "Geri al": the mark goes back; the one already opened stays read.
     await restore_through(owner_pg, datetime(2030, 1, 1, tzinfo=UTC), now=later)

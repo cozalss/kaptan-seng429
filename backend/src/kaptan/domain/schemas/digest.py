@@ -23,6 +23,10 @@ class DigestItem(KModel):
     why: Literal["held", "watched"] | None
     outside_list: bool
     outside_note: str | None
+    tone: Literal["olumlu", "olumsuz", "notr", "belirsiz"]
+    so_what_tr: str | None
+    suggestion_tr: str | None
+    panel_path: str
 
 
 class DigestKindCount(KModel):

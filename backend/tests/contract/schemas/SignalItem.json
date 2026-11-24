@@ -1,0 +1,110 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "disclosure_index": {
+   "type": "integer",
+   "exclusiveMinimum": 0,
+   "maximum": 9007199254740991
+  },
+  "ticker": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "company_name": {
+   "type": "string"
+  },
+  "published_at": {
+   "type": "string",
+   "format": "date-time",
+   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+  },
+  "kind": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "important": {
+   "type": "boolean"
+  },
+  "mine": {
+   "anyOf": [
+    {
+     "type": "string",
+     "enum": [
+      "held",
+      "watched"
+     ]
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "line_tr": {
+   "type": "string"
+  },
+  "tone": {
+   "type": "string",
+   "enum": [
+    "olumlu",
+    "olumsuz",
+    "notr",
+    "belirsiz"
+   ]
+  },
+  "so_what_tr": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "suggestion_tr": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "kap_url": {
+   "type": "string"
+  },
+  "panel_path": {
+   "type": "string"
+  },
+  "triage": {
+   "anyOf": [
+    {
+     "type": "string",
+     "enum": [
+      "yapilacak",
+      "sonra",
+      "tamam"
+     ]
+    },
+    {
+     "type": "null"
+    }
+   ]
+  }
+ },
+ "required": [
+  "disclosure_index",
+  "ticker",
+  "company_name",
+  "published_at",
+  "kind",
+  "important",
+  "mine",
+  "line_tr",
+  "tone",
+  "so_what_tr",
+  "suggestion_tr",
+  "kap_url",
+  "panel_path",
+  "triage"
+ ],
+ "additionalProperties": false
+}

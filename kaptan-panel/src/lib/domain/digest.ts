@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { IsoDate, IsoDateTime, Ticker } from "./common";
+import { SignalTone } from "./signal";
 
 /**
  * The day's important disclosures (GET /me/digest?day=). Mirrored in backend/src/kaptan/domain/schemas/digest.py.
@@ -27,6 +28,12 @@ export const DigestItem = z.object({
   outside_list: z.boolean(),
   /** The plain tag for that (KAPtan gives no suggestion, or analyses it because you watch it). */
   outside_note: z.string().nullable(),
+  /** The same tone, so-what and suggestion as everywhere else (see signal.ts). */
+  tone: SignalTone,
+  so_what_tr: z.string().nullable(),
+  suggestion_tr: z.string().nullable(),
+  /** Opens this disclosure in the reading drawer. */
+  panel_path: z.string(),
 });
 export type DigestItem = z.infer<typeof DigestItem>;
 

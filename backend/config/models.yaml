@@ -69,6 +69,8 @@ default_chain: [gemini, deepseek, groq]
 agents:
   classifier: {chain: [groq, gemini, deepseek], max_output_tokens: 600}
   reader: {max_output_tokens: 1500}
+  # one-line summary of an important disclosure (kaptan.signal): the free tiers only, never the paid DeepSeek
+  liner: {chain: [gemini, groq], max_output_tokens: 300}
   materiality: {max_output_tokens: 900}
   evidence: {max_output_tokens: 1000}
   skeptic: {chain: [groq, gemini, deepseek], max_output_tokens: 900}

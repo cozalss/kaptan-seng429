@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from pydantic import SecretStr, ValidationError
 
-from kaptan.alerts.announce import announce, flush_held
+from kaptan.alerts.announce import CARRIED_KEY, announce, flush_held, take_carried
 from kaptan.alerts.config import AlertConfig, NtfyTarget
 from kaptan.alerts.prefs import HELD_KEY, decide, default_prefs, in_quiet, with_defaults
 from kaptan.auth.credentials import new_password_problem
@@ -81,6 +81,14 @@ class FakeRedis:
         self.held: dict[str, str] = {}
         self.slots: set[str] = set()
         self.state: dict[str, str] = {}
+        self.carried: dict[str, int] = {}
+
+    async def hincrby(self, key: str, field: str, amount: int = 1) -> int:
+        self.carried[field] = self.carried.get(field, 0) + amount
+        return self.carried[field]
+
+    async def delete(self, *keys: str) -> None:
+        self.carried.clear()
 
     async def hset(self, key: str, field: Any = None, value: Any = None, mapping: Any = None) -> None:
         if key == HELD_KEY:
@@ -89,6 +97,8 @@ class FakeRedis:
             self.state.update(mapping or {field: value})
 
     async def hgetall(self, key: str) -> dict[str, str]:
+        if key == CARRIED_KEY:
+            return {k: str(v) for k, v in self.carried.items()}
         return dict(self.held) if key == HELD_KEY else dict(self.state)
 
     async def hdel(self, key: str, *fields: str) -> None:
@@ -165,11 +175,12 @@ async def test_the_test_message_is_never_held_and_an_off_kind_is_not_sent() -> N
     assert len(sent) == 1
 
 
-async def test_a_stale_held_message_is_dropped() -> None:
+async def test_a_stale_held_message_is_not_sent_but_carried_into_the_next_morning_note() -> None:
     redis = FakeRedis()
     redis.held["suggestion"] = (MORNING_END - timedelta(hours=30)).isoformat()
     assert await flush_held(Pool(None), redis, CFG, now=MORNING_END) == ()
-    assert redis.held == {}
+    assert redis.held == {} and redis.carried == {"suggestion": 1}  # not dropped silently
+    assert await take_carried(redis) == 1 and await take_carried(redis) == 0
 
 
 async def test_unreadable_preferences_fall_back_to_the_defaults() -> None:

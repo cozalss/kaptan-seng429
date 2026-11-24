@@ -23,4 +23,6 @@ export * from "./price-alerts";
 export * from "./restore";
 export * from "./weekly";
 export * from "./reading";
+export * from "./signal";
 export * from "./imports";
+export * from "./telegram";

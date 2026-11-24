@@ -49,7 +49,8 @@ from kaptan.prices.calendar import (
     istanbul_date,
     session_close,
 )
-from kaptan.settings import ConfigError, Settings, get_settings
+from kaptan.settings import ConfigError, Settings, cloud_watcher_on, get_settings
+from kaptan.telegram.runner import run_telegram
 
 log = logging.getLogger("kaptan.workers.scheduler")
 
@@ -147,7 +148,25 @@ async def job_tedbir(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
 async def job_morning_brief(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
     from kaptan.brief.store import run_morning_brief
 
-    return await run_morning_brief(conn, day, now, live_marks=ctx.settings.prices_live)
+    return await run_morning_brief(conn, day, now, live_marks=ctx.settings.prices_live, redis=ctx.redis)
+
+
+async def job_signal_lines(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
+    """One cheap model call for each thin, important disclosure of a held or watched stock (kaptan.signal.llm).
+    Nothing waits for it: the rule-made line is already shown. No model key or no quota: nothing happens."""
+    from kaptan.llm.factory import build_live_provider
+    from kaptan.llm.usage import sync_usage
+    from kaptan.settings import has_llm_provider
+    from kaptan.signal.llm import enrich_recent
+
+    if not has_llm_provider(ctx.settings):
+        return {"lines": 0, "skipped": "no model configured"}
+    async with ctx.http() as http:
+        provider = build_live_provider(ctx.settings, redis=ctx.redis, http=http)
+        stored = await enrich_recent(conn, provider, now)
+        await conn.commit()
+        await sync_usage(conn, provider)
+    return {"lines": stored}
 
 
 async def job_quotes(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
@@ -172,11 +191,72 @@ async def job_price_alerts(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any
 
 async def job_weekly_summary(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
     """Friday evening: the phone gets one generic sentence; the page is in the app (/hafta)."""
+    from dataclasses import replace
+
     from kaptan.alerts.announce import announce
     from kaptan.alerts.config import alert_config
+    from kaptan.settings import cloud_watcher_on
 
-    outcome = await announce(ctx.pool, ctx.redis, alert_config(ctx.settings), "weekly", now=now)
+    cfg = alert_config(ctx.settings)
+    if cloud_watcher_on(ctx.settings):  # the Worker's weekend summary replaces the generic Telegram sentence
+        cfg = replace(cfg, telegram=None)
+    outcome = await announce(ctx.pool, ctx.redis, cfg, "weekly", now=now)
     return {"outcome": outcome}
+
+
+async def job_cloud_sync(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
+    """Every 10 minutes (and at start): tell the Cloudflare Worker the held and watched tickers, then apply what
+    the person pressed on the phone while this computer was off. Off unless CLOUD_WATCHER_URL and CLOUD_SYNC_SECRET
+    are both set."""
+    from kaptan.cloud.actions import pull_actions
+    from kaptan.cloud.sync import sync_once
+    from kaptan.settings import cloud_watcher_on
+
+    if not cloud_watcher_on(ctx.settings):
+        return {"skipped": "cloud watcher not configured"}
+    await conn.rollback()  # no transaction stays open across a request
+    synced = await sync_once(ctx.settings, ctx.pool, ctx.redis, now)
+    pulled = await pull_actions(ctx.settings, ctx.pool, now) if synced["ok"] else {"applied": 0, "left": 0}
+    return {"synced": synced["ok"], **pulled}
+
+
+async def _telegram_parts(conn: Any, ctx: Ctx) -> tuple[Any, dict[str, Any], frozenset[str]] | None:
+    from kaptan.alerts.announce import read_prefs
+    from kaptan.telegram import store as tg_store
+    from kaptan.telegram.runner import make_api
+
+    api = await make_api(ctx.settings, ctx.pool)
+    state = await tg_store.get_state(conn)
+    if api is None or state.get("chat_id") is None:
+        return None
+    return api, state, frozenset((await read_prefs(ctx.pool))["muted"])
+
+
+async def job_telegram_morning(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
+    """08:45 on trading days: the one morning message to Telegram (nothing when no phone is paired)."""
+    if cloud_watcher_on(ctx.settings):
+        return {"sent": False, "reason": "the cloud watcher sends it"}
+    from kaptan.alerts.announce import take_carried
+    from kaptan.telegram.morning import send_morning
+
+    parts = await _telegram_parts(conn, ctx)
+    if parts is None:
+        return {"sent": False, "reason": "not paired"}
+    api, state, muted = parts
+    return {"sent": await send_morning(conn, api, state, muted, now, carried_notes=await take_carried(ctx.redis))}
+
+
+async def job_telegram_weekend(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
+    """18:30 on the last trading day before a closed day: a short summary instead of silence over the weekend."""
+    if cloud_watcher_on(ctx.settings):
+        return {"sent": False, "reason": "the cloud watcher sends it"}
+    from kaptan.telegram.morning import send_weekend
+
+    parts = await _telegram_parts(conn, ctx)
+    if parts is None:
+        return {"sent": False, "reason": "not paired"}
+    api, state, muted = parts
+    return {"sent": await send_weekend(conn, api, state, muted, now)}
 
 
 async def job_fx_rates(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
@@ -307,9 +387,13 @@ JOBS: Final[tuple[Job, ...]] = (
     Job("universe", job_universe, at=time(8, 30), days="trading", timeout_s=10 * 60),
     Job("tedbir_sync", job_tedbir, every_min=30, days="daily", timeout_s=10 * 60),
     Job("morning_brief", job_morning_brief, at=time(8, 45), days="trading", timeout_s=5 * 60),
+    Job("signal_lines", job_signal_lines, every_min=10, days="daily", timeout_s=3 * 60, own_tx=True),
+    Job("cloud_sync", job_cloud_sync, every_min=10, days="daily", timeout_s=2 * 60, own_tx=True),
+    Job("telegram_morning", job_telegram_morning, at=time(8, 45), days="trading", after="morning_brief", timeout_s=120),
     Job("quotes", job_quotes, every_min=4, in_session=True, timeout_s=3 * 60),
     Job("price_alerts", job_price_alerts, every_min=4, in_session=True, after="quotes", timeout_s=3 * 60, own_tx=True),
     Job("weekly_summary", job_weekly_summary, at=time(18, 0), days="friday", timeout_s=5 * 60),
+    Job("telegram_weekend", job_telegram_weekend, at=time(18, 30), days="trading", timeout_s=120),
     Job("fx_rates", job_fx_rates, at=time(17, 0), days="trading", timeout_s=5 * 60),
     Job("eod_prices", job_eod_prices, at=time(18, 30), days="trading", timeout_s=60 * 60),
     Job("exits", job_exits, at=time(18, 30), days="trading", after="eod_prices", timeout_s=10 * 60, own_tx=True),
@@ -528,6 +612,8 @@ async def run_worker(settings: Settings, stop: asyncio.Event | None = None) -> i
     running: dict[str, asyncio.Task[RunResult]] = {}
     # phone/e-mail alerts: one long-running side task, only here (one replica, behind the leader lock)
     alert_task = asyncio.create_task(run_alert_watch(settings, pool, redis, stop), name="alert-watch")
+    # Telegram: long polling for the buttons + the half-minute tick (instant messages, "was off" message)
+    telegram_task = asyncio.create_task(run_telegram(settings, pool, redis, stop), name="telegram")
     try:
         log.info("scheduler started: %d jobs, Europe/Istanbul", len(JOBS))
         while not stop.is_set():
@@ -541,7 +627,8 @@ async def run_worker(settings: Settings, stop: asyncio.Event | None = None) -> i
             await asyncio.gather(*running.values(), return_exceptions=True)
     finally:
         alert_task.cancel()
-        await asyncio.gather(alert_task, return_exceptions=True)
+        telegram_task.cancel()
+        await asyncio.gather(alert_task, telegram_task, return_exceptions=True)
         for task in running.values():
             task.cancel()
         await asyncio.gather(*running.values(), return_exceptions=True)

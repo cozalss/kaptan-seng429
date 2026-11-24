@@ -18,6 +18,7 @@ import { createMoney } from "./money";
 import { createReports } from "./reports";
 import { createSolo } from "./solo";
 import { createStatus } from "./status";
+import { createTelegram } from "./telegram";
 import { executeApproved, startLiveTicker } from "./scenarios";
 import * as sel from "./selectors";
 
@@ -49,6 +50,7 @@ export function createMockApi(opts: MockApiOptions = {}): KaptanApi {
     ...createImports(ctx),
     ...createInsights(ctx),
     ...createStatus(ctx),
+    ...createTelegram(ctx),
     ...createComfort(ctx),
     ...createAlertsMore(ctx),
     ...createReports(ctx),

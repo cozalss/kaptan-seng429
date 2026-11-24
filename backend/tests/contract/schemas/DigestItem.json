@@ -67,6 +67,30 @@
     "string",
     "null"
    ]
+  },
+  "tone": {
+   "type": "string",
+   "enum": [
+    "olumlu",
+    "olumsuz",
+    "notr",
+    "belirsiz"
+   ]
+  },
+  "so_what_tr": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "suggestion_tr": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "panel_path": {
+   "type": "string"
   }
  },
  "required": [
@@ -80,7 +104,11 @@
   "source_url",
   "why",
   "outside_list",
-  "outside_note"
+  "outside_note",
+  "tone",
+  "so_what_tr",
+  "suggestion_tr",
+  "panel_path"
  ],
  "additionalProperties": false
 }

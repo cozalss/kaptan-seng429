@@ -5,7 +5,9 @@ import { Company, DisclosureReading, SearchResult, WatchItem } from "@/lib/compa
 import { Compare, ReadingState } from "@/lib/domain/reading";
 import { Calendar, MarketStrip } from "@/lib/domain/agenda";
 import { Digest } from "@/lib/domain/digest";
+import { SignalItem, SignalList } from "@/lib/domain/signal";
 import { AlertSettings, SystemStatus } from "@/lib/domain/system";
+import { TelegramPair, TelegramStatus } from "@/lib/domain/telegram";
 import { CorporateBook, NoticeAnswer } from "@/lib/domain/corporate";
 import { Allocation, ClosedTrades, DividendIncome, HoldingNotes, ReturnStats, Versus } from "@/lib/domain/insights";
 import { AlertHistoryItem, PriceAlert } from "@/lib/domain/price-alerts";
@@ -151,7 +153,11 @@ export function createHttpApi(): KaptanApi {
     watch: (ticker) => request(z.array(WatchItem), `/watchlist/${id(ticker)}`, { method: "PUT" }),
     unwatch: (ticker) => request(z.array(WatchItem), `/watchlist/${id(ticker)}`, { method: "DELETE" }),
     readingState: () => request(ReadingState, "/me/reading"),
-    readAll: () => request(ReadingState, "/me/reading/read-all", post()),
+    readAll: (important) => request(ReadingState, "/me/reading/read-all", post(important ? { important: true } : undefined)),
+    signals: (day) => request(SignalList, `/me/signals${qs({ day })}`),
+    signal: (index) => request(SignalItem, `/me/signals/${index}`),
+    setTriage: (index, state) =>
+      request(ReadingState, `/me/triage/${index}`, state === null ? { method: "DELETE" } : { method: "PUT", body: JSON.stringify({ state }) }),
     restoreReadThrough: (through) => request(ReadingState, "/me/reading/read-through", { method: "PUT", body: JSON.stringify({ read_through: through }) }),
     markRead: (index) => request(ReadingState, `/me/reading/read/${index}`, { method: "PUT" }),
     setSaved: (index, saved) => request(ReadingState, `/me/reading/saved/${index}`, { method: saved ? "PUT" : "DELETE" }),
@@ -224,6 +230,11 @@ export function createHttpApi(): KaptanApi {
     systemStatus: () => request(SystemStatus, "/system/status"),
     alertSettings: () => request(AlertSettings, "/me/alerts"),
     testAlerts: () => request(AlertSettings, "/me/alerts/test", post()),
+    telegramStatus: () => request(TelegramStatus, "/me/telegram"),
+    saveTelegram: (input) => request(TelegramStatus, "/me/telegram", { method: "PUT", body: JSON.stringify(input) }),
+    pairTelegram: () => request(TelegramPair, "/me/telegram/pair", post()),
+    unlinkTelegram: () => request(TelegramStatus, "/me/telegram", { method: "DELETE" }),
+    sendTelegramSample: () => request(TelegramStatus, "/me/telegram/sample", post()),
     preferences: () => request(Preferences, "/me/preferences"),
     saveAlertPrefs: (prefs) => request(Preferences, "/me/alerts/preferences", { method: "PUT", body: JSON.stringify(prefs) }),
     startPause: (input) => request(Preferences, "/me/pause", post(input)),

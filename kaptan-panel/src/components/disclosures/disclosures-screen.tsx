@@ -15,7 +15,6 @@ import { istanbulDay, sessionView } from "@/lib/session-day";
 import { useEventStream } from "@/lib/sse/use-event-stream";
 import { nextTradingDay, prevTradingDay } from "@/lib/time";
 import { PageHeader, ScreenState } from "@/components/shell/page-frame";
-import { Term } from "@/components/story/term";
 import { useDesk } from "@/components/shell/desk-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
@@ -27,7 +26,11 @@ import { ReadingDrawer } from "./reading-drawer";
 import { ReadingMarksProvider, useReadingMarks } from "@/components/reading/marks";
 import { ReadingBar } from "@/components/reading/reading-bar";
 import { SavedList } from "@/components/reading/saved-list";
-import { DisclosureHours, Worthwhile } from "./disclosure-rows";
+import { DisclosureHours } from "./disclosure-rows";
+import { SignalRow, useSignalKeys } from "@/components/signal/signal-bits";
+import { ListenButton } from "@/components/signal/listen-button";
+import { listenLines, SHORTCUT_HELP } from "@/lib/signal/signal";
+import type { SignalItem } from "@/lib/domain/signal";
 import { readingSentence, waitingNote, type FunnelCounts, type WaitingNote } from "./reading-words";
 
 /** Rows at first; "tane daha göster" adds as many again. */
@@ -70,6 +73,8 @@ function DisclosuresBody() {
   const narrowed = isNarrowed(filters);
   const marks = useReadingMarks();
   const [savedView, setSavedView] = useState(false);
+  // Closed by default; a link that already carries filters opens it, and the person's own toggle wins after that.
+  const [filtersOpen, setFiltersOpen] = useState(() => isNarrowed(fromAddress));
   const openIndex = filters.open;
   const markOpened = marks?.open;
   useEffect(() => {
@@ -90,6 +95,14 @@ function DisclosuresBody() {
   // The day's exact total (the list stops at MAX_DISCLOSURES): GET /disclosures/counters?day=.
   const exact = useApiQuery((api) => (day ? api.counters(day) : Promise.resolve(null)), [day]);
   const cards = useApiQuery((api) => api.listApprovals("all"), []);
+  // The one meaning of "important" (same list as /onemli and the home strip), mine first.
+  const sig = useApiQuery((api) => (day ? api.signals(day) : Promise.resolve(null)), [day]);
+  const signalOf = useMemo(() => new Map<number, SignalItem>((sig.data?.items ?? []).map((s) => [s.disclosure_index, s] as const)), [sig.data]);
+  const important = useMemo(() => (sig.data?.items ?? []).filter((s) => marks?.triageOf(s.disclosure_index) !== "tamam"), [sig.data, marks]);
+  const focused = useSignalKeys(
+    important.map((s) => s.disclosure_index),
+    (open) => setFilters({ ...filters, open }),
+  );
   useEventStream("feed", {
     counters: () => {
       if (day !== today) return;
@@ -127,7 +140,6 @@ function DisclosuresBody() {
         (!needle || (tickerOf(d) ?? "").includes(needle) || d.company_name.toLocaleUpperCase("tr-TR").includes(needle)),
     );
   }, [q.data, search, filter, cardOf]);
-  const worthwhile = useMemo(() => (q.data ?? []).filter((d) => cardOf.has(d.disclosure_index)), [q.data, cardOf]);
   const capped = (q.data?.length ?? 0) >= MAX_DISCLOSURES;
 
   const pickDay = (next: string) => {
@@ -144,7 +156,7 @@ function DisclosuresBody() {
         title={sentence}
         lead={
           <p>
-            Bildirim ya da duyuru, borsadaki bir şirketin yasa gereği herkese açıkladığı haberdir; <Term word="KAP">KAP</Term> adlı resmî sitede yayımlanır. KAPtan hepsini senin yerine okur. <Link href="/onemli" className="underline underline-offset-4">Günün önemli duyurularına bak.</Link> <Link href="/takvim" className="underline underline-offset-4">Yaklaşan tarihler için takvime bak.</Link>
+            Önemli olanlar önde; gerisini KAPtan senin yerine okur. <Link href="/onemli" className="underline underline-offset-4">Tüm şirketler</Link> · <Link href="/takvim" className="underline underline-offset-4">Takvim</Link>
           </p>
         }
       />
@@ -160,10 +172,49 @@ function DisclosuresBody() {
 
       {!savedView && !q.data && !q.error ? <FunnelLoading /> : null}
 
+      {!savedView && sig.data ? (
+        <section aria-labelledby="onemli-liste" className="sg-strip" data-testid="onemli-liste">
+          <div className="sg-head">
+            <h2 id="onemli-liste" className="u-caption">
+              Önemli duyurular {important.length ? `(${fmtInt(important.length)})` : ""}
+            </h2>
+            <ListenButton lines={listenLines(important.slice(0, 8))} />
+          </div>
+          {important.length === 0 ? (
+            <p className="sg-quiet" role="status">
+              {day === today ? "Bugün önemli bir duyuru yok." : "O gün önemli bir duyuru yoktu."}
+            </p>
+          ) : (
+            <ul className="sg-list" aria-label="Önemli duyurular">
+              {important.map((s) => (
+                <SignalRow key={s.disclosure_index} item={s} focused={focused === s.disclosure_index} />
+              ))}
+            </ul>
+          )}
+          <details className="sg-hint max-sm:hidden">
+            <summary>Klavye kısayolları</summary>
+            <dl className="sg-shortcuts">
+              {SHORTCUT_HELP.map((h) => (
+                <div key={h.keys} className="contents">
+                  <dt><kbd>{h.keys}</kbd></dt>
+                  <dd>{h.does}</dd>
+                </div>
+              ))}
+            </dl>
+          </details>
+        </section>
+      ) : null}
+
       {!savedView && counts && q.data ? (
         <>
-          <FilterBar key={filtersToQuery({ ...filters, open: null })} filters={filters} today={today} onChange={(next) => { setShown(PAGE); setFilters(next); }} />
-          <Funnel counts={counts} filter={filter} onFilter={(f) => { setFilter(f); setShown(PAGE); }} />
+          <details className="sg-filters" data-testid="filtreler" open={filtersOpen} onToggle={(e) => setFiltersOpen(e.currentTarget.open)}>
+            <summary>
+              <span>Filtreler ve günün özeti</span>
+              <span aria-hidden>▾</span>
+            </summary>
+            <FilterBar key={filtersToQuery({ ...filters, open: null })} filters={filters} today={today} onChange={(next) => { setShown(PAGE); setFilters(next); }} />
+            <Funnel counts={counts} filter={filter} onFilter={(f) => { setFilter(f); setShown(PAGE); }} />
+          </details>
           <WaitingLines
             note={waitingNote({
               deferred: exact.data ? deferredCount(exact.data) : 0,
@@ -188,7 +239,6 @@ function DisclosuresBody() {
             </ScreenState>
           ) : (
             <>
-              {filter === "all" && !search.trim() && worthwhile.length ? <Worthwhile rows={worthwhile} cardOf={cardOf} isToday={day === today} /> : null}
               <section aria-labelledby="bildirim-listesi" className="ok-all">
                 <div className="ok-all-head">
                   <h2 id="bildirim-listesi" className="u-chapter text-ink">
@@ -209,7 +259,7 @@ function DisclosuresBody() {
                 </div>
                 {rows.length ? (
                   <>
-                    <DisclosureHours rows={rows.slice(0, shown)} label="Bildirim listesi" cardOf={cardOf} onOpen={(open) => setFilters({ ...filters, open })} />
+                    <DisclosureHours rows={rows.slice(0, shown)} label="Bildirim listesi" cardOf={cardOf} signalOf={signalOf} onOpen={(open) => setFilters({ ...filters, open })} />
                     {rows.length > shown ? (
                       <div className="ok-more">
                         <p className="text-dense text-muted tabular-nums">

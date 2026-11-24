@@ -23,7 +23,7 @@ test.describe("Takvim and the market strip", () => {
     await seedMock(page, {});
     await loginApi(page);
     await page.goto("/bildirimler");
-    await page.getByRole("link", { name: /takvime bak/ }).click();
+    await page.locator(".ok-screen").getByRole("link", { name: "Takvim", exact: true }).click();
     await expect(page).toHaveURL(/\/takvim$/);
   });
 });

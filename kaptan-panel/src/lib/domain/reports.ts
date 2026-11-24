@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { IsoDate, IsoDateTime } from "./common";
 import { DisclosureListItem } from "./disclosure";
+import { SignalItem } from "./signal";
 import { ApprovalCard, Order, PnlPoint, Position } from "./trading";
 
 /* ── Morning brief, 08:45 (_KANONIK, 04 §12, US-42) ───────────────────── */
@@ -20,6 +21,10 @@ export const MorningBrief = z.object({
   /** LLM-generated, unverified ("LLM üretimi, doğrulanmamış"). */
   summary_tr: z.string(),
   is_sample: z.boolean(),
+  /** The same important disclosures with line, tone, so-what and suggestion (mine first). */
+  signals: z.array(SignalItem),
+  /** "Bilgisayar kapalıyken kaçırdıkların" note when the heartbeat knows of a gap. */
+  missed_note_tr: z.string().nullable(),
 });
 export type MorningBrief = z.infer<typeof MorningBrief>;
 

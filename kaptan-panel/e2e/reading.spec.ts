@@ -9,12 +9,12 @@ test("a duyuru can be saved for later, found under Kaydedilenler and taken off a
   await page.goto("/bildirimler");
   const bar = page.getByRole("group", { name: "Okuma durumun" });
   await expect(bar).toBeVisible();
-  await expect(bar.getByRole("button", { name: /Kaydedilenler \(0\)/ })).toBeVisible();
+  await expect(bar.getByRole("button", { name: /Sonra oku \(0\)/ })).toBeVisible();
 
   await page.getByRole("button", { name: /sonra okumak için kaydet/ }).first().click();
-  await expect(bar.getByRole("button", { name: /Kaydedilenler \(1\)/ })).toBeVisible();
+  await expect(bar.getByRole("button", { name: /Sonra oku \(1\)/ })).toBeVisible();
 
-  await bar.getByRole("button", { name: /Kaydedilenler/ }).click();
+  await bar.getByRole("button", { name: /Sonra oku \(/ }).click();
   const saved = page.getByRole("group", { name: "Kaydedilen duyurular" });
   await expect(saved).toBeVisible();
   await saved.getByRole("button", { name: /işareti kaldır/ }).click();
@@ -28,8 +28,8 @@ test("opening a new duyuru of your companies lowers the unread count by one", as
   const badge = page.getByText(/^\d+ okunmamış duyuru$/);
   await expect(badge).toHaveCount(1);
   const before = Number((await badge.textContent())?.replace(/\D/g, ""));
-  const row = page.getByRole("listitem").filter({ has: page.locator(".rd-new") }).first();
-  await row.getByRole("button", { name: /duyurunun tamamını oku/ }).click();
+  const row = page.locator(".sg-row").filter({ has: page.locator(".rd-new") }).first();
+  await row.getByRole("link", { name: /duyuruyu aç/ }).click();
   await page.getByRole("dialog", { name: "Duyurunun tamamı" }).press("Escape");
   await expect(page.getByText(`${before - 1} okunmamış duyuru`, { exact: true })).toHaveCount(1);
 });
@@ -39,9 +39,9 @@ test("Hepsini okundu say clears the unread count in the bar and the badge", asyn
   await page.goto("/bildirimler");
   const bar = page.getByRole("group", { name: "Okuma durumun" });
   await expect(bar).toBeVisible();
-  const clear = bar.getByRole("button", { name: "Hepsini okundu say" });
+  const clear = bar.getByRole("button", { name: "Önemlileri de okundu say" });
   if (await clear.isEnabled()) await clear.click();
-  await expect(bar.getByText("Şirketlerindeki her duyuruyu gördün.")).toBeVisible();
+  await expect(bar.getByText("Önemli her duyuruya baktın.")).toBeVisible();
   await expect(page.getByText(/okunmamış duyuru/)).toHaveCount(0);
 });
 
@@ -52,9 +52,9 @@ test("Hepsini okundu say can be undone, and the badge and the page show the same
   const badge = page.getByText(/^\d+ okunmamış duyuru$/);
   await expect(badge).toHaveCount(1);
   const before = Number((await badge.textContent())?.replace(/\D/g, ""));
-  await expect(bar.getByText(new RegExp(`şirketlerde ${before.toLocaleString("tr-TR")} okunmamış duyuru var`))).toBeVisible();
-  await bar.getByRole("button", { name: "Hepsini okundu say" }).click();
-  await expect(bar.getByText("Şirketlerindeki her duyuruyu gördün.")).toBeVisible();
+  await expect(bar.getByText(new RegExp(`${before.toLocaleString("tr-TR")} önemli duyuru bekliyor`))).toBeVisible();
+  await bar.getByRole("button", { name: "Önemlileri de okundu say" }).click();
+  await expect(bar.getByText("Önemli her duyuruya baktın.")).toBeVisible();
   await bar.getByRole("button", { name: "Geri al" }).click();
   await expect(page.getByText(`${before.toLocaleString("tr-TR")} okunmamış duyuru`, { exact: true })).toHaveCount(1);
   await expect(bar.getByRole("button", { name: "Geri al" })).toHaveCount(0);

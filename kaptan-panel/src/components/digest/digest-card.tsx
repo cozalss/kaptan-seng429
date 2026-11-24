@@ -11,21 +11,23 @@ import { DigestRow } from "./digest-row";
 const SHOWN = 5;
 
 /**
- * "Bugün önemli duyurular": the first five of the day's digest (yours first), and the way to all of them.
- * Information, not a suggestion. Quiet and honest when nothing stands out or the market is closed.
+ * "Bugün önemli duyurular": directly under the strip "Senin hisselerinde bugün". The strip already shows every
+ * important disclosure of your companies, so this card lists only the others (no item twice), the first five, and
+ * the way to all of them. Information, not a suggestion. Quiet and honest when nothing stands out.
  */
 export function DigestCard() {
   const q = useApiQuery((api) => api.digest(), []);
   const d = q.data;
   if (!d) return null;
-  const top = d.items.slice(0, SHOWN);
-  const quiet = quietLine(d);
+  const others = d.items.filter((i) => i.why === null);
+  const top = others.slice(0, SHOWN);
+  const quiet = others.length === 0 ? quietLine({ ...d, total: 0 }) : d.note;
   return (
-    <section aria-labelledby="onemli-duyurular" className="dg-card">
+    <section aria-labelledby="onemli-duyurular" className="dg-card u-page">
       <h2 id="onemli-duyurular" className="u-caption">
         Bugün önemli duyurular
       </h2>
-      {quiet ? <p className="text-body text-ink-soft">{quiet}</p> : null}
+      {quiet ? <p className="text-body text-ink-soft">{others.length === 0 && d.items.length > 0 ? "Başka şirketlerde dikkat çeken duyuru yok." : quiet}</p> : null}
       {top.length > 0 ? (
         <ul className="dg-list">
           {top.map((i) => (
@@ -34,7 +36,7 @@ export function DigestCard() {
         </ul>
       ) : null}
       <Link href={ROUTES.onemli} className="dg-link">
-        {d.total > top.length ? `Hepsini gör (${d.total}) →` : "Önemli duyurulara git →"}
+        {others.length > top.length ? `Hepsini gör (${d.total}) →` : "Önemli duyurulara git →"}
       </Link>
     </section>
   );

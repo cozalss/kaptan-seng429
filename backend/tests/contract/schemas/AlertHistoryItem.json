@@ -11,7 +11,8 @@
    "type": "string",
    "enum": [
     "ntfy",
-    "email"
+    "email",
+    "telegram"
    ]
   },
   "ok": {

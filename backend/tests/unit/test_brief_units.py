@@ -8,10 +8,12 @@ from typing import Any
 from kaptan.brief.build import date_tr, last_close, risk_warnings, summary_text
 
 
-def _doc(**counts: int) -> dict[str, Any]:
+def _doc(mine: int = 0, **counts: int) -> dict[str, Any]:
     keys = ("open_positions", "expiring_today", "orders_for_open", "pending_approvals", "restriction_changes",
             "important_disclosures")  # fmt: skip
-    return {k: [{}] * counts.get(k, 0) for k in keys}
+    doc: dict[str, Any] = {k: [{}] * counts.get(k, 0) for k in keys}
+    doc["signals"] = [{"mine": "held" if i < mine else None} for i in range(counts.get("important_disclosures", 0))]
+    return doc
 
 
 def test_date_and_last_close() -> None:
@@ -47,7 +49,7 @@ def test_summary_text_is_plain_and_stable() -> None:
         "Elinde 3 hisse var, bugün satış günü gelen: 1. "
         "Önceki borsa gününde (19 Ekim 2026 Pazartesi) paran %0,42 arttı; "
         "toplam 1.004.200 TL, en yüksek seviyesinden %1,1 aşağıda. "
-        "Son kapanıştan bu yana KAPtan'ın önemli bulduğu bildirim gelmedi."
+        "Son kapanıştan bu yana önemli bir duyuru yok: bugün bakman gereken bir şey yok."
     )
     assert not any(b in text.lower() for b in BANNED)
 
@@ -56,10 +58,12 @@ def test_summary_of_an_empty_install_says_only_what_exists() -> None:
     bare = summary_text(date(2026, 10, 20), _doc(), None, None)
     assert bare == (
         "20 Ekim 2026 Salı sabah özeti. Onayını bekleyen öneri yok. Elinde KAPtan'ın bildiği hisse yok. "
-        "Son kapanıştan bu yana KAPtan'ın önemli bulduğu bildirim gelmedi."
+        "Son kapanıştan bu yana önemli bir duyuru yok: bugün bakman gereken bir şey yok."
     )
     said = summary_text(
         date(2026, 10, 20), _doc(restriction_changes=2, important_disclosures=4), {"regime": "normal"}, None
     )
     assert "durdur" not in said
-    assert "işlem kısıtı: 2." in said and "4 KAP bildirimi geldi." in said
+    assert "işlem kısıtı: 2." in said and "4 önemli duyuru var; hiçbiri senin hisselerinde değil." in said
+    mine = summary_text(date(2026, 10, 20), _doc(mine=2, important_disclosures=4), None, None)
+    assert "4 önemli duyuru var; 2 tanesi senin hisselerinde." in mine

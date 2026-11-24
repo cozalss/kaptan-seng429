@@ -46,7 +46,7 @@ export const PriceAlertEvent = z.object({
 });
 export type PriceAlertEvent = z.infer<typeof PriceAlertEvent>;
 
-export const AlertChannel = z.enum(["ntfy", "email"]);
+export const AlertChannel = z.enum(["ntfy", "email", "telegram"]);
 
 /** One message that went out (or failed) on a phone or e-mail channel: when, where and the fixed sentence. */
 export const AlertHistoryItem = z.object({

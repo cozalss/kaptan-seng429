@@ -2,7 +2,8 @@
 
 Deterministic, no LLM: the same database and `now` give the same document. A MorningBrief JSON document
 (domain/schemas/reports.py) with:
-- important_disclosures: visible KAP rows that became known since the last session's close (not noise);
+- important_disclosures / signals: the important disclosures (`kaptan.signal`) since the last session's close: all
+  of mine (held first), then the newest few others, each with its line, tone and suggestion;
 - orders_for_open: orders waiting for today's open (none on a running system: KAPtan places no order; the field
   stays so the document keeps its shape);
 - pending_approvals / open_positions / expiring_today (planned exit date = today);
@@ -21,13 +22,16 @@ from typing import Any, Final
 from psycopg import AsyncConnection
 
 from kaptan.approvals.reads import _order_doc, list_cards
-from kaptan.disclosures.listing import LIST_ITEM_COLUMNS, list_item
+from kaptan.brief.missed import missed_note
+from kaptan.disclosures.listing import LIST_ITEM_COLUMNS, list_item, to_item
 from kaptan.domain.schemas._base import iso_ms
 from kaptan.domain.schemas.reports import MorningBrief
 from kaptan.portfolio.pnl import LIVE_STRATEGY
 from kaptan.portfolio.positions import list_positions
 from kaptan.prices.calendar import IST, CalendarRangeError, close_known_at, prev_session
 from kaptan.rules.format import fmt_int, fmt_pct, fmt_try
+from kaptan.signal import Signal, signals_between
+from kaptan.signal.docs import item_doc, mine_first, triage_map
 
 MAX_DISCLOSURES: Final = 30
 MAX_RESTRICTIONS: Final = 50
@@ -36,11 +40,12 @@ MONTHS_TR: Final = (
 )  # fmt: skip
 WEEKDAYS_TR: Final = ("Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar")
 
+MAX_OTHERS: Final = 5
+NOTHING_IMPORTANT: Final = "Son kapanıştan bu yana önemli bir duyuru yok: bugün bakman gereken bir şey yok."
 DISCLOSURES_SQL: Final = f"""
 SELECT {LIST_ITEM_COLUMNS} FROM core.disclosures
- WHERE visible AND NOT is_noise AND available_at > %(since)s AND available_at <= %(now)s
+ WHERE disclosure_index = ANY(%(ids)s)
  ORDER BY available_at DESC, disclosure_index DESC
- LIMIT %(n)s
 """  # noqa: S608 - constant column list, every value is bound
 ORDERS_SQL: Final = """
 SELECT o.id, o.client_order_id, o.proposal_id, o.run_id, o.ticker, o.company_name, o.side, o.order_type,
@@ -70,6 +75,13 @@ SELECT ticker, kind, 'removed' AS change, (end_date + 1)::timestamp AT TIME ZONE
 ORDER BY at DESC, ticker, kind
 LIMIT %(n)s
 """
+
+
+async def brief_signals(conn: AsyncConnection[Any], since: datetime, now: datetime) -> list[Signal]:
+    """The important disclosures since the last close: all of mine (held first), then the newest few others."""
+    ranked = mine_first(await signals_between(conn, since, now, now=now))
+    mine = [s for s in ranked if s.mine]
+    return [*mine, *[s for s in ranked if not s.mine][:MAX_OTHERS]][:MAX_DISCLOSURES]
 
 
 async def _all(conn: AsyncConnection[Any], sql: str, params: Any) -> list[dict[str, Any]]:
@@ -137,22 +149,29 @@ def summary_text(day: date, doc: dict[str, Any], risk: dict[str, Any] | None, pn
     n_res = len(doc["restriction_changes"])
     if n_res:
         parts.append(f"Bir hisseye getirilen ya da kalkan işlem kısıtı: {fmt_int(n_res)}.")
+    n_mine = sum(1 for s in doc["signals"] if s["mine"])
     n_disc = len(doc["important_disclosures"])
-    parts.append(
-        f"Son kapanıştan bu yana {fmt_int(n_disc)} KAP bildirimi geldi."
-        if n_disc
-        else "Son kapanıştan bu yana KAPtan'ın önemli bulduğu bildirim gelmedi."
-    )
+    if not n_disc:
+        parts.append(NOTHING_IMPORTANT)
+    elif n_mine:
+        parts.append(
+            f"Son kapanıştan bu yana {fmt_int(n_disc)} önemli duyuru var; {fmt_int(n_mine)} tanesi senin hisselerinde."
+        )
+    else:
+        parts.append(f"Son kapanıştan bu yana {fmt_int(n_disc)} önemli duyuru var; hiçbiri senin hisselerinde değil.")
     return " ".join(parts)
 
 
 async def build_brief(
-    conn: AsyncConnection[Any], day: date, now: datetime, *, live_marks: bool = False
+    conn: AsyncConnection[Any], day: date, now: datetime, *, live_marks: bool = False, redis: Any = None
 ) -> dict[str, Any]:
-    """The MorningBrief of `day` as of `now` (validated; JSON-ready)."""
+    """The MorningBrief of `day` as of `now` (validated; JSON-ready). `redis`: only the real morning run passes it
+    (reading the carried-over count clears it)."""
     since = last_close(day)
     since_day = since.astimezone(IST).date()
-    disclosures = await _all(conn, DISCLOSURES_SQL, {"since": since, "now": now, "n": MAX_DISCLOSURES})
+    signals = await brief_signals(conn, since, now)
+    disclosures = await _all(conn, DISCLOSURES_SQL, {"ids": [s.disclosure_index for s in signals]})
+    triage = await triage_map(conn)
     orders = await _all(conn, ORDERS_SQL, {"now": now})
     cards = [c for c in await list_cards(conn, now=now) if c["status"] == "pending"]
     positions = await list_positions(conn, now, live=live_marks)
@@ -168,7 +187,9 @@ async def build_brief(
     doc: dict[str, Any] = {
         "date": day.isoformat(),
         "generated_at": iso_ms(now),
-        "important_disclosures": [list_item(r) for r in disclosures],
+        "important_disclosures": [list_item(to_item(r)) for r in disclosures],
+        "signals": [item_doc(s, triage) for s in signals],
+        "missed_note_tr": await missed_note(conn, now, redis=redis),
         "orders_for_open": [_order_doc(r) for r in orders],
         "pending_approvals": cards,
         "open_positions": positions,

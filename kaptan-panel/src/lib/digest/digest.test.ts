@@ -14,6 +14,10 @@ const item = (n: number, kind: DigestItem["kind"], why: DigestItem["why"] = null
   why,
   outside_list: false,
   outside_note: null,
+  tone: "belirsiz",
+  so_what_tr: null,
+  suggestion_tr: null,
+  panel_path: `/bildirimler?bildirim=${n}`,
 });
 
 const digest = (total: number, over: Partial<Digest> = {}): Digest => ({

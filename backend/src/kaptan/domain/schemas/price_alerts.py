@@ -54,7 +54,7 @@ class PriceAlertEvent(KModel):
 
 class AlertHistoryItem(KModel):
     at: IsoDateTime
-    channel: Literal["ntfy", "email"]
+    channel: Literal["ntfy", "email", "telegram"]
     ok: bool
     text: str
 

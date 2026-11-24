@@ -15,6 +15,10 @@ const item: DigestItem = {
   why: null,
   outside_list: true,
   outside_note: "KAPtan bu hisseye öneri vermez (işlem hacmi düşük)",
+  tone: "belirsiz",
+  so_what_tr: null,
+  suggestion_tr: null,
+  panel_path: "/bildirimler?gun=2026-11-20&bildirim=42",
 };
 
 describe("DigestRow", () => {

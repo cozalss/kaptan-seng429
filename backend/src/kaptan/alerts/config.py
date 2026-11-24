@@ -12,14 +12,14 @@ from __future__ import annotations
 import ipaddress
 import re
 from dataclasses import dataclass
-from typing import Final, Literal
+from typing import Any, Final, Literal
 from urllib.parse import urlsplit
 
 from pydantic import SecretStr
 
 from kaptan.settings import Settings
 
-Channel = Literal["ntfy", "email"]
+Channel = Literal["ntfy", "email", "telegram"]
 
 DEFAULT_NTFY_SERVER: Final = "https://ntfy.sh"
 DEFAULT_SMTP_PORT: Final = 587
@@ -55,6 +55,8 @@ class AlertConfig:
     smtp: SmtpTarget | None
     #: Channels somebody tried to set up and got wrong (they stay off).
     invalid: tuple[Channel, ...]
+    #: The paired Telegram chat (kaptan.alerts.telegram.resolve_target); not in `alert_config`, which reads no database.
+    telegram: Any = None
 
     @property
     def channels(self) -> tuple[Channel, ...]:
@@ -63,6 +65,8 @@ class AlertConfig:
             on = (*on, "ntfy")
         if self.smtp is not None:
             on = (*on, "email")
+        if self.telegram is not None:
+            on = (*on, "telegram")
         return on
 
 

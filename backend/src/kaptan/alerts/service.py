@@ -23,6 +23,7 @@ from kaptan.alerts.channels import AlertSendError, send_email, send_ntfy
 from kaptan.alerts.config import AlertConfig, Channel
 from kaptan.alerts.history import record_history
 from kaptan.alerts.messages import AlertKind, message_for
+from kaptan.alerts.telegram import COVERED_KINDS, send_telegram
 from kaptan.domain.schemas._base import iso_ms
 
 log = logging.getLogger("kaptan.alerts")
@@ -35,16 +36,18 @@ RETRY_WAIT_S: float = 2.0
 RATE_PREFIX: Final = "kaptan:alerts:rate:"
 STATE_KEY: Final = "kaptan:alerts:state"
 LAST_SENT: Final = "last_sent_at"
-ERROR_FIELD: Final[Mapping[Channel, str]] = {"ntfy": "error_ntfy", "email": "error_email"}
+ERROR_FIELD: Final[Mapping[Channel, str]] = {"ntfy": "error_ntfy", "email": "error_email", "telegram": "error_telegram"}
 
 SEND_FAILED_TR: Final[Mapping[Channel, str]] = {
     "ntfy": "Telefon bildirimi gönderilemedi.",
     "email": "E-posta gönderilemedi.",
+    "telegram": "Telegram mesajı gönderilemedi.",
 }
 BOTH_FAILED_TR: Final = "Telefon bildirimi ve e-posta gönderilemedi."
 WRONG_SETTING_TR: Final[Mapping[Channel, str]] = {
     "ntfy": "Telefon bildirimi ayarı hatalı; kurulumu yeniden çalıştır.",
     "email": "E-posta bildirimi ayarı hatalı; kurulumu yeniden çalıştır.",
+    "telegram": "Telegram ayarı hatalı; Ayarlar'dan yeniden bağla.",
 }
 
 Outcome = Literal["off", "rate_limited", "sent", "failed"]
@@ -63,6 +66,9 @@ def senders_for(cfg: AlertConfig) -> dict[Channel, Sender]:
     if cfg.smtp is not None:
         smtp = cfg.smtp
         out["email"] = lambda text: send_email(smtp, text)
+    if cfg.telegram is not None:
+        tg = cfg.telegram
+        out["telegram"] = lambda text: send_telegram(tg, text)
     return out
 
 
@@ -109,7 +115,11 @@ async def send_now(
     pool: Any = None,
 ) -> Outcome:
     """Send without asking the limit (the caller took the slot). Never raises."""
-    targets = {c: s for c, s in (senders_for(cfg) if senders is None else senders).items() if c in cfg.channels}
+    targets = {
+        c: s
+        for c, s in (senders_for(cfg) if senders is None else senders).items()
+        if c in cfg.channels and not (c == "telegram" and kind in COVERED_KINDS)
+    }
     if not targets:
         return "off"
     text = message_for(kind)

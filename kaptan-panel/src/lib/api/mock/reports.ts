@@ -4,6 +4,7 @@ import { addDays, isTradingDay } from "@/lib/time";
 import type { KaptanApi } from "../types";
 import type { MockCtx } from "./guard";
 import { periodMoney } from "./period-money";
+import { signalOf } from "./digest";
 import * as sel from "./selectors";
 
 /**
@@ -244,18 +245,40 @@ export function createReports(ctx: MockCtx): Reports {
       if (morning?.date === day) return ok(morning, 60);
       const cards = sel.approvalCards(db.snapshot).filter((c) => c.status === "pending" && !c.run_id.startsWith("run-hist"));
       const builtAt = `${day}T05:45:00.000Z`;
+      // The brief lists the important disclosures of the day (mine first, then a few others), like the server.
+      const held = new Set(sel.positions(db.snapshot).map((p) => p.ticker));
+      const watched = new Set(db.snapshot.watchlist);
+      const byIndex = new Map(sel.approvalCards(db.snapshot).map((c) => [c.disclosure_index, c] as const));
+      const all = sel
+        .disclosuresOn(db.snapshot, { day, limit: 500 })
+        .flatMap((d) => {
+          const s = signalOf(d, held, watched, byIndex);
+          return s ? [s] : [];
+        })
+        .sort((a, b) => (a.mine === "held" ? 0 : a.mine === "watched" ? 1 : 2) - (b.mine === "held" ? 0 : b.mine === "watched" ? 1 : 2));
+      const mineSignals = all.filter((s) => s.mine !== null);
+      const signals = [...mineSignals, ...all.filter((s) => s.mine === null).slice(0, 5)];
+      const important = sel.disclosuresOn(db.snapshot, { day, limit: 500 }).filter((d) => signals.some((s) => s.disclosure_index === d.disclosure_index));
+      const important_sentence =
+        signals.length === 0
+          ? "Son kapanıştan bu yana önemli bir duyuru yok: bugün bakman gereken bir şey yok."
+          : mineSignals.length > 0
+            ? `Son kapanıştan bu yana ${fmtInt(signals.length)} önemli duyuru var; ${fmtInt(mineSignals.length)} tanesi senin hisselerinde.`
+            : `Son kapanıştan bu yana ${fmtInt(signals.length)} önemli duyuru var; hiçbiri senin hisselerinde değil.`;
       const brief: MorningBrief = {
         date: day,
         generated_at: Date.parse(builtAt) < Date.parse(now()) ? builtAt : now(),
-        important_disclosures: [],
+        important_disclosures: important,
         orders_for_open: [],
         pending_approvals: cards,
         open_positions: [],
         expiring_today: [],
         risk_warnings: [],
         restriction_changes: [],
-        summary_tr: `${cards.length > 0 ? `Onayını bekleyen ${fmtInt(cards.length)} öneri var.` : "Onayını bekleyen öneri yok."} ${book.positions.length ? `Elinde ${fmtInt(book.positions.length)} hisse var.` : "Elinde KAPtan'ın bildiği hisse yok."}`,
+        summary_tr: `${cards.length > 0 ? `Onayını bekleyen ${fmtInt(cards.length)} öneri var.` : "Onayını bekleyen öneri yok."} ${book.positions.length ? `Elinde ${fmtInt(book.positions.length)} hisse var.` : "Elinde KAPtan'ın bildiği hisse yok."} ${important_sentence}`,
         is_sample: false,
+        signals,
+        missed_note_tr: null,
       };
       morning = brief;
       return ok(brief, 60);

@@ -1,0 +1,48 @@
+/* The important disclosures: home strip, Okunanlar rows, brief, triage and "Dinle". Tokens from globals.css only. */
+.sg-strip { display: grid; gap: var(--space-3); padding-block: var(--space-4) var(--space-5); border-bottom: 2px solid var(--ink); }
+.sg-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); }
+.sg-list { display: grid; gap: 0; }
+.sg-row { position: relative; display: grid; gap: var(--space-1); padding: var(--space-3) var(--space-2); border-top: 1px solid var(--hairline); touch-action: pan-y; transition: translate var(--dur-quick) var(--ease-ink); }
+.sg-row[data-focused="true"] { outline: 3px solid var(--brand); outline-offset: -3px; background: var(--wash-tint); }
+.sg-who { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); font-weight: 600; color: var(--ink); }
+.sg-company { font-weight: 400; color: var(--ink-soft); }
+.sg-line { color: var(--ink); font-size: 1.0625rem; max-width: 62ch; }
+.sg-sowhat { color: var(--ink-soft); font-size: 0.9375rem; max-width: 62ch; }
+.sg-suggest { font-size: 0.9375rem; font-weight: 600; color: var(--brand); }
+.sg-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-3); }
+/* A tone is told by its word and its mark, never by colour alone. */
+.sg-tone { display: inline-flex; align-items: center; gap: var(--space-1); padding: 0 var(--space-1_5); border: 1.5px solid currentColor; font-size: 0.8125rem; font-weight: 700; line-height: 1.6; }
+.sg-tone--olumlu { color: var(--gain); }
+.sg-tone--olumsuz { color: var(--loss); }
+.sg-tone--notr, .sg-tone--belirsiz { color: var(--ink-soft); }
+.sg-tone--belirsiz { border-style: dotted; }
+.sg-mine { padding: 0 var(--space-1_5); background: var(--ink); color: var(--paper); font-size: 0.8125rem; font-weight: 600; }
+.sg-open { min-height: 2.75rem; display: inline-flex; align-items: center; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--rule-ui); }
+.sg-open:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.sg-triage { display: inline-flex; flex-wrap: wrap; gap: var(--space-1); }
+.sg-tri { min-height: 2.75rem; padding: 0 var(--space-3); border: 1.5px solid var(--rule-soft); background: transparent; color: var(--ink); font-size: 0.9375rem; font-weight: 600; }
+.sg-tri[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.sg-tri:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .sg-tri:hover:not([aria-pressed="true"]) { background: var(--wash-tint); } }
+.sg-quiet { font-size: 1.1875rem; font-weight: 600; color: var(--ink); }
+.sg-more { color: var(--ink-soft); font-size: 0.9375rem; }
+.sg-more a, .sg-hint a { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; font-weight: 600; }
+.sg-hint { color: var(--ink-soft); font-size: 0.875rem; }
+.sg-hint kbd { padding: 0 var(--space-1); border: 1px solid var(--rule-soft); font: inherit; font-weight: 700; }
+.sg-listen { display: inline-flex; gap: var(--space-2); }
+.sg-note { margin-top: var(--space-2); max-width: 62ch; color: var(--ink-soft); font-size: 0.9375rem; }
+.sg-shortcuts { display: grid; grid-template-columns: auto 1fr; gap: var(--space-1) var(--space-4); }
+.sg-shortcuts dt kbd { font-weight: 700; }
+
+/* Okunanlar: the filters sit in one closed row; the header is one line. */
+.sg-filters { border-bottom: 1px solid var(--hairline); }
+.sg-filters > summary { display: flex; align-items: center; justify-content: space-between; min-height: 2.75rem; cursor: pointer; font-weight: 600; color: var(--ink); list-style: none; }
+.sg-filters > summary::-webkit-details-marker { display: none; }
+.sg-filters > summary:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.sg-filters[open] > summary { border-bottom: 1px solid var(--hairline); }
+
+@media (max-width: 640px) {
+  .sg-tri { flex: 1 1 0; padding: 0 var(--space-2); }
+  .sg-triage { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .sg-row { transition: none; } }

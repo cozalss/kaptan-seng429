@@ -27,7 +27,10 @@ import type {
 } from "@/lib/domain";
 import type { Calendar, MarketStrip } from "@/lib/domain/agenda";
 import type { Digest } from "@/lib/domain/digest";
+import type { SignalItem, SignalList } from "@/lib/domain/signal";
+import type { TriageStateName } from "@/lib/domain/reading";
 import type { AlertSettings, SystemStatus } from "@/lib/domain/system";
+import type { TelegramInput, TelegramPair, TelegramStatus } from "@/lib/domain/telegram";
 import type { BonusInput, CorporateBook, DividendInput, NoticeAnswer, RightsInput } from "@/lib/domain/corporate";
 import type { ImportApplyRequest, ImportPreview, ImportRequest, ImportResult, ImportSources, ImportTable } from "@/lib/domain/imports";
 import type { AlertHistoryItem, PriceAlert, PriceAlertInput } from "@/lib/domain/price-alerts";
@@ -76,8 +79,17 @@ export interface KaptanApi {
   unwatch(ticker: string): Promise<WatchItem[]>;
   /** GET /me/reading: unread count (starred or held companies), unread and saved indexes. */
   readingState(): Promise<ReadingState>;
-  /** POST /me/reading/read-all: "Hepsini okundu say". */
-  readAll(): Promise<ReadingState>;
+  /**
+   * POST /me/reading/read-all: "Hepsini okundu say". Noise and archive-only disclosures are read from the start, so
+   * the plain call clears nothing that counts; `important` true also clears the important ones (with a "Geri al").
+   */
+  readAll(important?: boolean): Promise<ReadingState>;
+  /** GET /me/signals?day=: the important disclosures of a day (default today / last trading day), mine first. */
+  signals(day?: string): Promise<SignalList>;
+  /** GET /me/signals/{index}: one disclosure's line, tone, so-what and suggestion. */
+  signal(index: number): Promise<SignalItem>;
+  /** PUT /me/triage/{index} (state) or DELETE (null): act / read later / done. */
+  setTriage(index: number, state: TriageStateName | null): Promise<ReadingState>;
   /** PUT /me/reading/read-through: the "Geri al" of "Hepsini okundu say"; the mark goes back (never forward). */
   restoreReadThrough(readThrough: string): Promise<ReadingState>;
   /** PUT /me/reading/read/{index}: one disclosure was opened. */
@@ -216,6 +228,16 @@ export interface KaptanApi {
   alertSettings(): Promise<AlertSettings>;
   /** POST /me/alerts/test: one test message through every channel that is set up (one a minute). */
   testAlerts(): Promise<AlertSettings>;
+  /** GET /me/telegram: is a phone connected to KAPtan through Telegram, and how many messages it gets. Never the bot code. */
+  telegramStatus(): Promise<TelegramStatus>;
+  /** PUT /me/telegram: the bot code (checked with Telegram), the Daha az / Normal / Daha çok level, the daily limit. */
+  saveTelegram(input: TelegramInput): Promise<TelegramStatus>;
+  /** POST /me/telegram/pair: the one-time link to tap on the phone (15 minutes). */
+  pairTelegram(): Promise<TelegramPair>;
+  /** DELETE /me/telegram: forget the bot code and the phone ("Bağlantıyı kaldır"). */
+  unlinkTelegram(): Promise<TelegramStatus>;
+  /** POST /me/telegram/sample: one clearly marked example message to the phone (one a minute). */
+  sendTelegramSample(): Promise<TelegramStatus>;
 
   // personal settings
   /** GET /me/preferences: Tatil modu and which alert goes where, with the quiet hours. */

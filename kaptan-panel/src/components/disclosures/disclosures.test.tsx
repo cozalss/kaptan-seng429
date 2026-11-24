@@ -26,7 +26,7 @@ describe("Okunanlar", () => {
   it("opens with the day's sentence, explains a bildirim, and shows what became of each", async () => {
     renderWithDesk(<DisclosuresScreen />);
     expect(await screen.findByRole("heading", { level: 1, name: /^Okunanlar\.\s*Bugün [\d.]+ duyuru okudum, \d+’(i|si|sı|ü|u|yı) işine yarayabilir\.$/ })).toBeInTheDocument();
-    expect(screen.getByText(/^Bildirim ya da duyuru, borsadaki bir şirketin yasa gereği/, { selector: "p" })).toBeInTheDocument();
+    expect(screen.getByText(/^Önemli olanlar önde/, { selector: "p" })).toBeInTheDocument();
     const stages = screen.getByRole("list", { name: "Okumanın aşamaları" });
     expect(within(stages).getAllByRole("listitem")).toHaveLength(4);
 
@@ -78,11 +78,20 @@ describe("Okunanlar", () => {
     expect(await screen.findByRole("group", { name: "Bildirim listesi" })).toBeInTheDocument();
   });
 
-  it("shows the suggestions first, each with the way to it", async () => {
+  it("shows the important ones first, each with its line, tone and the way into the drawer", async () => {
     renderWithDesk(<DisclosuresScreen />);
-    const worth = await screen.findByRole("region", { name: "Bugün işine yarayabilecekler" });
-    expect(within(worth).getAllByRole("heading", { level: 3 }).length).toBeGreaterThan(0);
-    expect(within(worth).getAllByRole("link", { name: /^Neden öneriyorum\?/ })[0]).toHaveAttribute("href", expect.stringMatching(/^\/oneri\//));
+    const important = await screen.findByRole("region", { name: /Önemli duyurular/ });
+    const rows = within(important).getAllByRole("listitem");
+    expect(rows.length).toBeGreaterThan(0);
+    expect(within(important).getAllByRole("link", { name: /duyuruyu aç/ })[0]).toHaveAttribute("href", expect.stringMatching(/^\/bildirimler\?gun=\d{4}-\d{2}-\d{2}&bildirim=\d+$/));
+    expect(within(important).getAllByRole("button", { name: "Tamam" }).length).toBe(rows.length);
+  });
+
+  it("keeps the filters in one closed row", async () => {
+    renderWithDesk(<DisclosuresScreen />);
+    await screen.findByRole("group", { name: "Bildirim listesi" });
+    const filters = screen.getByTestId("filtreler");
+    expect(filters).not.toHaveAttribute("open");
   });
 
   it("steps back one trading day and speaks in the past", async () => {

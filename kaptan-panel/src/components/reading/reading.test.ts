@@ -78,7 +78,8 @@ describe("the double's reading marks", () => {
       const after = await a.markRead(one);
       expect(after.unread).toBe(before.unread - 1);
     }
-    expect((await a.readAll()).unread).toBe(0);
+    expect((await a.readAll()).unread).toBe(before.unread - (one === undefined ? 0 : 1)); // the plain call clears nothing that counts
+    expect((await a.readAll(true)).unread).toBe(0);
   });
 
   it("undoes read-all: the mark goes back, an opened one stays read", async () => {

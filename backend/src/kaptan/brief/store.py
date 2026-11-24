@@ -32,10 +32,10 @@ async def get_brief(conn: AsyncConnection[Any], day: date) -> dict[str, Any] | N
 
 
 async def run_morning_brief(
-    conn: AsyncConnection[Any], day: date, now: datetime, *, live_marks: bool = False
+    conn: AsyncConnection[Any], day: date, now: datetime, *, live_marks: bool = False, redis: Any = None
 ) -> dict[str, Any]:
     """Build and store `day`'s brief (idempotent: a re-run replaces it). Returns a small summary."""
-    doc = await build_brief(conn, day, now, live_marks=live_marks)
+    doc = await build_brief(conn, day, now, live_marks=live_marks, redis=redis)
     await save_brief(conn, day, now, doc)
     return {
         "date": doc["date"],

@@ -22,5 +22,6 @@ from kaptan.domain.schemas.price_alerts import *  # noqa: F403
 from kaptan.domain.schemas.reports import *  # noqa: F403
 from kaptan.domain.schemas.rules import *  # noqa: F403
 from kaptan.domain.schemas.run import *  # noqa: F403
+from kaptan.domain.schemas.telegram import *  # noqa: F403
 from kaptan.domain.schemas.trading import *  # noqa: F403
 from kaptan.domain.schemas.user import *  # noqa: F403

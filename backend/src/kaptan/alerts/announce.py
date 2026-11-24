@@ -23,6 +23,7 @@ from kaptan.domain.schemas._base import iso_ms
 
 log = logging.getLogger("kaptan.alerts")
 
+CARRIED_KEY: Final = "kaptan:alerts:carried"
 HELD_KINDS: Final[tuple[AlertKind, ...]] = ("suggestion", "part_down", "watch", "price", "weekly")
 
 
@@ -80,7 +81,10 @@ async def flush_held(
         if raw is None:
             continue
         await redis.hdel(HELD_KEY, kind)
-        if _stale(raw, now) or decide(prefs, kind, now) != "send":
+        if _stale(raw, now):  # not dropped: the next morning note says how many waited (see `take_carried`)
+            await redis.hincrby(CARRIED_KEY, kind, 1)
+            continue
+        if decide(prefs, kind, now) != "send":
             continue
         await notify(redis, cfg, kind, now=now, senders=senders, pool=pool)
         sent = (*sent, kind)
@@ -93,3 +97,16 @@ def _stale(raw: str, now: datetime) -> bool:
     except ValueError:
         return True
     return (now - at).total_seconds() > HELD_MAX_AGE_H * 3600
+
+
+async def take_carried(redis: Any) -> int:
+    """How many held messages were too old to send (kinds counted together); reading it clears the count.
+
+    The morning Telegram message and the morning brief mention them ("sessiz saatlerde N bildirim kalmıştı")."""
+    try:
+        raw: Mapping[str, str] = await redis.hgetall(CARRIED_KEY)
+        if raw:
+            await redis.delete(CARRIED_KEY)
+        return sum(int(v) for v in raw.values())
+    except (RedisError, OSError, ValueError):
+        return 0

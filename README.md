@@ -40,6 +40,15 @@ adedi ve komisyonu KAPtan'a yazarsın; paran ve kazancın bu kayıtlardan hesapl
 
 Her adım değiştirilemez bir kayda yazılır. "Bu hisseyi neden aldık?" sorusunun cevabı hep oradadır.
 
+## Telegram'dan takip
+
+Telefonunda KAP'ı izlemek için bilgisayarı dışarıya açmana gerek yok: KAPtan yalnız Telegram'a bağlanır. Ayarlar →
+Telegram'da dört adım (BotFather'dan bot kodu al, yapıştır, **Bağla**, çıkan bağlantıya telefondan dokun) yeter. Sonra:
+senin hissen olan önemli duyurular tek satırlık açıklamayla anında gelir (şirket başına en fazla yarım saatte bir,
+günde en fazla 8), gerisi her işlem günü 08:45'te tek bir sabah mesajında toplanır, "önemli bir şey yok" da açıkça
+yazılır. Bilgisayar kapalı kaldıysa açılınca ne kaçırdığını yazar. Mesajda para, adet ya da kâr olmaz; onay
+düğmesi de yoktur, kararı uygulamada verirsin. Ayrıntı: [`docs/ops/RUNBOOK.md`](docs/ops/RUNBOOK.md).
+
 ## Ekranlar
 
 Tek uygulama, tek kullanıcı. Üstte menü yok; altta ya da yanda sekmeler yok, her ekran bir cümleyle açılır.

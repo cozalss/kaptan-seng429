@@ -208,3 +208,90 @@ for (const width of [360, 1440]) {
     expect(result.violations.map((v) => `${v.id}: ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);
   });
 }
+
+/** Wave 6 (SIGNAL): the home strip, the triage buttons on Okunanlar and the reading drawer, light and dark. */
+for (const width of [360, 1440]) {
+  for (const scheme of ["light", "dark"] as const) {
+    test.describe(`axe signal @${width} ${scheme}`, () => {
+      test.beforeEach(async ({ page }) => {
+        await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
+        await page.emulateMedia({ colorScheme: scheme });
+        await seedMock(page, {});
+        await loginApi(page);
+      });
+
+      test("the home strip", async ({ page }) => {
+        await page.goto("/benim");
+        await expect(page.getByTestId("senin-hisselerinde").locator("[data-signal-index]").first()).toBeVisible();
+        await expectNoViolations(page);
+      });
+
+      test("Okunanlar, important list with a state chosen and the filters open", async ({ page }) => {
+        await page.goto("/bildirimler");
+        const list = page.getByTestId("onemli-liste");
+        await list.getByRole("button", { name: "Yapılacak" }).first().click();
+        await page.getByTestId("filtreler").getByText("Filtreler ve günün özeti").click();
+        await expectNoViolations(page);
+      });
+
+      test("the reading drawer with the signal and the triage buttons", async ({ page }) => {
+        await page.goto("/benim");
+        await page.getByTestId("senin-hisselerinde").getByRole("link", { name: /duyuruyu aç/ }).first().click();
+        await expect(page.getByRole("dialog", { name: "Duyurunun tamamı" }).getByTestId("drawer-signal")).toBeVisible();
+        await expectNoViolations(page);
+      });
+    });
+  }
+}
+
+/** Wave 6 (TELEGRAM): Ayarlar · Telegram with the link waiting and connected, light and dark. */
+for (const width of [360, 1440]) {
+  for (const scheme of ["light", "dark"] as const) {
+    test.describe(`axe telegram @${width} ${scheme}`, () => {
+      test.beforeEach(async ({ page }) => {
+        await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
+        await page.emulateMedia({ colorScheme: scheme });
+        await loginApi(page);
+        await page.goto("/ayarlar");
+        await expect(page.locator("#telegram")).toBeVisible();
+      });
+
+      test("the steps, the link waiting for the phone", async ({ page }) => {
+        const s = page.locator("#telegram");
+        await s.getByRole("textbox", { name: "Bot kodu" }).fill("123456789:AAFakeTokenForTestsOnly_0123456789abcd");
+        await s.getByRole("button", { name: "Kaydet" }).click();
+        await s.getByRole("button", { name: "Bağla", exact: true }).click();
+        await expect(s.getByRole("link", { name: "Telegram’da aç" })).toBeVisible();
+        await expectNoViolations(page);
+      });
+
+      test("connected, with the level and the buttons", async ({ page }) => {
+        const s = page.locator("#telegram");
+        await s.getByRole("textbox", { name: "Bot kodu" }).fill("123456789:AAFakeTokenForTestsOnly_0123456789abcd");
+        await s.getByRole("button", { name: "Kaydet" }).click();
+        await s.getByRole("button", { name: "Bağla", exact: true }).click();
+        await expect(s.getByText(/^Bağlı/)).toBeVisible({ timeout: 15_000 });
+        await expectNoViolations(page);
+      });
+
+      test("cloud watcher on, with a warning", async ({ page }) => {
+        test.skip(process.env.E2E_API === "1", "the cloud state comes from the server's .env in API mode");
+        await page.addInitScript(() => {
+          window.sessionStorage.setItem("kaptan-mock-cloud", "1");
+          window.sessionStorage.setItem("kaptan-mock-cloud-kap", "blocked");
+        });
+        await page.goto("/ayarlar");
+        await expect(page.locator("#telegram").getByTestId("cloud-on")).toBeVisible();
+        await expectNoViolations(page);
+      });
+
+      test("cloud watcher off, setup steps open", async ({ page }) => {
+        test.skip(process.env.E2E_API === "1", "the cloud state comes from the server's .env in API mode");
+        const off = page.locator("#telegram").getByTestId("cloud-off");
+        await off.getByText("Bilgisayar kapalıyken de haber almak ister misin?").click();
+        await expect(off.getByRole("list", { name: "Bulut takibini kurmak için üç adım" })).toBeVisible();
+        await expectNoViolations(page);
+      });
+    });
+  }
+}

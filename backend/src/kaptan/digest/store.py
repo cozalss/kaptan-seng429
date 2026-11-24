@@ -120,6 +120,25 @@ async def _tickers(conn: AsyncConnection[Any], sql: str) -> set[str]:
     return {str(r["ticker"]) for r in await fetch_all(conn, sql)}
 
 
+async def _with_signals(
+    conn: AsyncConnection[Any], items: list[dict[str, Any]], start: datetime, end: datetime, now: datetime
+) -> list[dict[str, Any]]:
+    """Every item carries the signal's own line, tone, so-what and suggestion (one meaning, one wording)."""
+    from kaptan.signal import signals_between  # local: kaptan.signal reads this module's SQL
+
+    by_index = {s.disclosure_index: s for s in await signals_between(conn, start, end, now=now)}
+    out = []
+    for item in items:
+        sig = by_index.get(item["disclosure_index"])
+        if sig is None:
+            out.append({**item, "tone": "belirsiz", "so_what_tr": None, "suggestion_tr": None,
+                        "panel_path": f"/bildirimler?bildirim={item['disclosure_index']}"})  # fmt: skip
+            continue
+        out.append({**item, "line": sig.line_tr, "tone": sig.tone, "so_what_tr": sig.so_what_tr,
+                    "suggestion_tr": sig.suggestion_tr, "panel_path": sig.panel_path})  # fmt: skip
+    return out
+
+
 async def digest(conn: AsyncConnection[Any], now: datetime, day: date | None = None) -> dict[str, Any]:
     today = istanbul_date(now)
     fell_back = False
@@ -130,6 +149,7 @@ async def digest(conn: AsyncConnection[Any], now: datetime, day: date | None = N
     items = build_items(
         rows, await _tickers(conn, HELD_SQL), await _tickers(conn, WATCH_SQL), await _tickers(conn, ISSUER_SQL)
     )
+    items = await _with_signals(conn, items, start, end, now)
     open_day = is_trading_day(day)
     counts = {k: sum(1 for i in items if i["kind"] == k) for k in KIND_ORDER}
     return {
