@@ -1,0 +1,173 @@
+{
+ "version": "subject_map.v1",
+ "routes": {
+  "devre kesici uygulanması": "noise",
+  "finansal rapor": "E4",
+  "geri alınan paylara ilişkin bildirim": "E1",
+  "haber ve söylentilere ilişkin açıklama": "llm",
+  "ihale süreci sonucu": "E3",
+  "pay alım satım bildirimi": "E2",
+  "pay bazında devre kesici bildirimi": "noise",
+  "pay geri alımına ilişkin bildirim": "E1",
+  "payların geri alınmasına ilişkin bildirim": "E1",
+  "sermaye artırımı azaltımı işlemlerine ilişkin bildirim": "llm",
+  "sermaye piyasası kurulu tedbir kararı": "avoid:spk_tedbir",
+  "yeni iş ilişkisi": "E3",
+  "özel durum açıklaması genel": "llm"
+ },
+ "route_kinds": {
+  "E1": "buyback",
+  "E3": "contract",
+  "E4": "earnings",
+  "avoid:spk_tedbir": "restriction"
+ },
+ "subject_lines": {
+  "birleşme işlemlerine ilişkin bildirim": [
+   "merger",
+   "Birleşme işlemiyle ilgili bildirim yayımladı."
+  ],
+  "bölünme işlemlerine ilişkin bildirim": [
+   "merger",
+   "Bölünme işlemiyle ilgili bildirim yayımladı."
+  ],
+  "kar payı avansı ödemesi işlemlerine ilişkin bildirim": [
+   "dividend",
+   "Kâr payı avansı ödemesiyle ilgili bildirim yayımladı."
+  ],
+  "kar payı dağıtım işlemlerine ilişkin bildirim": [
+   "dividend",
+   "Kâr payı dağıtımıyla ilgili bildirim yayımladı."
+  ],
+  "sermaye artırımı azaltımı işlemlerine ilişkin bildirim": [
+   "capital",
+   "Sermaye artırımı ya da azaltımıyla ilgili bildirim yayımladı."
+  ],
+  "sermaye artırımı veya azaltımı bildirimi": [
+   "capital",
+   "Sermaye artırımı ya da azaltımıyla ilgili bildirim yayımladı."
+  ]
+ },
+ "kind_order": [
+  "restriction",
+  "insider",
+  "contract",
+  "earnings",
+  "dividend",
+  "capital",
+  "merger",
+  "buyback"
+ ],
+ "kind_titles": {
+  "restriction": "SPK tedbiri",
+  "insider": "Yönetici ve ana ortak işlemleri",
+  "contract": "Yeni iş ve ihale",
+  "earnings": "Finansal sonuçlar",
+  "dividend": "Kâr payı",
+  "capital": "Sermaye artırımı ve azaltımı",
+  "merger": "Birleşme ve bölünme",
+  "buyback": "Kendi hissesini geri alanlar"
+ },
+ "quarter_words": {
+  "1": "ilk çeyrek",
+  "2": "ikinci çeyrek",
+  "3": "üçüncü çeyrek"
+ },
+ "earnings_unknown_line": "Finansal tablolarını açıkladı.",
+ "lines": {
+  "buyback": {
+   "line": "Kendi hissesini geri alacağını ya da aldığını bildirdi; tutar okunamadı.",
+   "tone": "olumlu",
+   "so_what": "Şirket kendi hissesini alıyor; bu genelde fiyatı destekler. Yapman gereken bir şey yok."
+  },
+  "insider_buy": {
+   "line": "Yönetici ya da büyük ortak hisse aldı.",
+   "tone": "olumlu",
+   "so_what": "İçeriden alım genelde şirkete güvenin işareti sayılır; tek başına karar için yetmez."
+  },
+  "insider_sell": {
+   "line": "Yönetici ya da büyük ortak hisse sattı.",
+   "tone": "olumsuz",
+   "so_what": "Bu şirket için dikkat işareti; neden sattığı duyuruda yazıyor olabilir, bir bak."
+  },
+  "insider_sell_held": {
+   "line": "Yönetici ya da büyük ortak hisse sattı.",
+   "tone": "olumsuz",
+   "so_what": "Elindeki hisse için dikkat işareti; neden sattığı duyuruda yazıyor olabilir, bir bak."
+  },
+  "contract": {
+   "line": "Yeni bir iş anlaşması bildirdi.",
+   "tone": "belirsiz",
+   "so_what": null
+  },
+  "tender": {
+   "line": "Bir ihale süreci ya da sonucu bildirdi.",
+   "tone": "belirsiz",
+   "so_what": null
+  },
+  "earnings_unknown": {
+   "line": "Finansal tablolarını açıkladı.",
+   "tone": "belirsiz",
+   "so_what": null
+  },
+  "capital_bedelsiz": {
+   "line": "Bedelsiz sermaye artırımı bildirdi: elindeki hisse sayısı artar, toplam değer aynı kalır.",
+   "tone": "notr",
+   "so_what": "Hisse sayın artar ama şirketin değeri değişmez; fiyat buna göre düşer."
+  },
+  "capital_bedelli": {
+   "line": "Bedelli sermaye artırımı bildirdi: yeni pay almak için para yatırmak gerekir.",
+   "tone": "notr",
+   "so_what": "Pay almak istersen para yatırman gerekir; almazsan payın oranı küçülür."
+  },
+  "capital_other": {
+   "line": "Sermaye artırımı ya da azaltımıyla ilgili bildirim yayımladı.",
+   "tone": "belirsiz",
+   "so_what": null
+  },
+  "dividend": {
+   "line": "Kâr payı dağıtımıyla ilgili bildirim yayımladı.",
+   "tone": "olumlu",
+   "so_what": "Kâr payı, şirketin kazancını ortaklarıyla paylaşmasıdır; tutarı ve tarihi duyuruda."
+  },
+  "merger": {
+   "line": "Birleşme işlemiyle ilgili bildirim yayımladı.",
+   "tone": "belirsiz",
+   "so_what": null
+  },
+  "restriction": {
+   "line": "SPK bu hisse için tedbir kararı yayımladı; işlem kısıtı olabilir.",
+   "tone": "olumsuz",
+   "so_what": "İşlem kısıtı olabilir; alıp satmadan önce duyuruya bak."
+  }
+ },
+ "norm_vectors": [
+  [
+   "Pay  Satış Bilgi Formu",
+   "pay satış bilgi formu"
+  ],
+  [
+   "İhale Süreci / Sonucu",
+   "ihale süreci sonucu"
+  ],
+  [
+   "Özel Durum Açıklaması (Genel)",
+   "özel durum açıklaması genel"
+  ],
+  [
+   "KAR PAYI DAĞITIM İŞLEMLERİNE İLİŞKİN BİLDİRİM",
+   "kar payı dağıtım işlemlerine ilişkin bildirim"
+  ],
+  [
+   "Sermaye Artırımı - Azaltımı İşlemlerine İlişkin Bildirim",
+   "sermaye artırımı azaltımı işlemlerine ilişkin bildirim"
+  ],
+  [
+   "Işık  ve   ışık: İ-I ı-i",
+   "ışık ve ışık i ı ı i"
+  ],
+  [
+   "​Pay Alım Satım Bildirimi‏",
+   "pay alım satım bildirimi"
+  ]
+ ]
+}

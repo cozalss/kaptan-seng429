@@ -1,0 +1,19 @@
+{
+  "name": "kaptan-cloud-watcher",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "KAPtan bulut takibi: bilgisayar kapalıyken Telegram'a KAP duyurusu ve sabah özeti gönderen Cloudflare Worker.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.9.2",
+    "@cloudflare/workers-types": "^5.20261123.1",
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.0.0"
+  }
+}

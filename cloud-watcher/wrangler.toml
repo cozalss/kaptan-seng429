@@ -1,0 +1,18 @@
+name = "kaptan-bulut"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+workers_dev = true
+
+# One cron trigger (the free plan allows 5 per account). Every 2 minutes: 720 runs a day, far below 100 000 requests/day.
+[triggers]
+crons = ["*/2 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kaptan-bulut"
+# kur-bulut.ps1 writes the real id here (an id is not a secret).
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[observability]
+enabled = false

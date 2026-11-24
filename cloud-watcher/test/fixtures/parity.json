@@ -1,0 +1,1817 @@
+{
+ "source": "list_main_2026-10-16.json",
+ "rows": [
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Yatırım Kuruluşu Varant - Sertifika - Senetlerine İlişkin Bildirim",
+     "stockCode": "TBY, TEBYT",
+     "relatedStocks": "BNPPI",
+     "companyTitle": "TEB YATIRIM MENKUL DEĞERLER A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 08:44:39",
+     "disclosureIndex": 1682801,
+     "summary": "GUNLUK VARANT ALIM SATIM",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682801,
+   "ticker": "TBY",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Payların Geri Alınmasına İlişkin Bildirim",
+     "stockCode": "KARTN",
+     "relatedStocks": null,
+     "companyTitle": "KARTONSAN KARTON SANAYİ VE TİCARET A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 08:50:31",
+     "disclosureIndex": 1682802,
+     "summary": "15.10.2026 Tarihli Pay Geri Alım İşlemleri",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": "4028328da0b8438901a13e1929c171d1"
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682802,
+   "ticker": "KARTN",
+   "route": "E1",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Payların Geri Alınmasına İlişkin Bildirim",
+     "stockCode": "GENTS",
+     "relatedStocks": null,
+     "companyTitle": "GENTAŞ DEKORATİF YÜZEYLER SANAYİ VE TİCARET A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 08:50:34",
+     "disclosureIndex": 1682803,
+     "summary": "15 Ekim 2026 Tarihli Pay Geri Alım İşlemleri",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": "4028328ca0b8418501a13ac351d74e7a"
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682803,
+   "ticker": "GENTS",
+   "route": "E1",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "BAHKM",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 08:59:00",
+     "disclosureIndex": 1682805,
+     "summary": "Pay Alım Satım Bildirimi\n",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682805,
+   "ticker": "BAHKM",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "INVEO",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 08:59:12",
+     "disclosureIndex": 1682806,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682806,
+   "ticker": "INVEO",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "PSGYO",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 08:59:23",
+     "disclosureIndex": 1682807,
+     "summary": "Pay Alım Satım Bildirimi\n",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682807,
+   "ticker": "PSGYO",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "OZKGY",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 08:59:35",
+     "disclosureIndex": 1682808,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682808,
+   "ticker": "OZKGY",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "CEMAS",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 08:59:48",
+     "disclosureIndex": 1682809,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682809,
+   "ticker": "CEMAS",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "PSGYO",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 08:59:58",
+     "disclosureIndex": 1682810,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682810,
+   "ticker": "PSGYO",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "EFOR",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:00:19",
+     "disclosureIndex": 1682811,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682811,
+   "ticker": "EFOR",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faiz İçeren)",
+     "stockCode": "LIDFA",
+     "relatedStocks": null,
+     "companyTitle": "LİDER FAKTORİNG A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 09:00:27",
+     "disclosureIndex": 1682812,
+     "summary": "TRFLDFKE2628 ISIN Kodlu Bono Kupon ve İtfa Ödemesi\n",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": "4028328da0b8438a01a13feb8f1c49d9"
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682812,
+   "ticker": "LIDFA",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "ARSAN",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:00:32",
+     "disclosureIndex": 1682813,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682813,
+   "ticker": "ARSAN",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "MAGEN",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:00:44",
+     "disclosureIndex": 1682814,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682814,
+   "ticker": "MAGEN",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "MAGEN",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:00:56",
+     "disclosureIndex": 1682815,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682815,
+   "ticker": "MAGEN",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "EGEGY",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:01:06",
+     "disclosureIndex": 1682816,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682816,
+   "ticker": "EGEGY",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "LOGO",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:01:17",
+     "disclosureIndex": 1682817,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682817,
+   "ticker": "LOGO",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "AHSGY",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:01:26",
+     "disclosureIndex": 1682818,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682818,
+   "ticker": "AHSGY",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "FRIGO",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:01:41",
+     "disclosureIndex": 1682819,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682819,
+   "ticker": "FRIGO",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "ETYAT",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:01:50",
+     "disclosureIndex": 1682820,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682820,
+   "ticker": "ETYAT",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "EMKEL",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:01:58",
+     "disclosureIndex": 1682821,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682821,
+   "ticker": "EMKEL",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "EUYO",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:02:08",
+     "disclosureIndex": 1682822,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682822,
+   "ticker": "EUYO",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "DAGI",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:02:16",
+     "disclosureIndex": 1682823,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682823,
+   "ticker": "DAGI",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "PRZMA",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:02:24",
+     "disclosureIndex": 1682824,
+     "summary": "Pay Alım Satım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682824,
+   "ticker": "PRZMA",
+   "route": "E2",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Kamuyu Aydınlatma Platformu Duyurusu",
+     "stockCode": null,
+     "relatedStocks": "AC7, BOH, DAGI, DHI, ERCB, ETYAT, FRIGO, GLRYH, GSDHO, IZENR, MAC, MAGEN, PA1, POF, PPO, RALYH, TUCLK",
+     "companyTitle": "KAMUYU AYDINLATMA PLATFORMU",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 09:03:03",
+     "disclosureIndex": 1682825,
+     "summary": "Özel Durumlar Tebliği'nin 12-(4). maddesi gereğince yapılan açıklama",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682825,
+   "ticker": "AC7",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Özel Durum Açıklaması (Genel)",
+     "stockCode": "IEYHO",
+     "relatedStocks": "CEMAS",
+     "companyTitle": "IŞIKLAR ENERJİ VE YAPI HOLDİNG A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 09:13:06",
+     "disclosureIndex": 1682828,
+     "summary": "İştirakimiz in Çemaş Pay Alışı",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682828,
+   "ticker": "IEYHO",
+   "route": "llm",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faiz İçeren)",
+     "stockCode": "ISFAK",
+     "relatedStocks": null,
+     "companyTitle": "İŞ FAKTORİNG A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 09:24:21",
+     "disclosureIndex": 1682829,
+     "summary": "Nitelikli Yatırımcıya Borçlanma Aracı İhracı",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682829,
+   "ticker": "ISFAK",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faiz İçeren)",
+     "stockCode": "AKM, AKMEN",
+     "relatedStocks": null,
+     "companyTitle": "AK YATIRIM MENKUL DEĞERLER A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 09:27:34",
+     "disclosureIndex": 1682830,
+     "summary": "Nitelikli Yatırımcıya Borçlanma Aracı İhracı",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682830,
+   "ticker": "AKM",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Payların Geri Alınmasına İlişkin Bildirim",
+     "stockCode": "MEYSU",
+     "relatedStocks": null,
+     "companyTitle": "MEYSU GIDA SANAYİ VE TİCARET A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 09:28:05",
+     "disclosureIndex": 1682831,
+     "summary": "15.10.2026 Tarihli Pay Alım İşlemleri hk.",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": "4028328da0b8438901a138fe2eb44187"
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682831,
+   "ticker": "MEYSU",
+   "route": "E1",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Özel Durum Açıklaması (Genel)",
+     "stockCode": "THYAO",
+     "relatedStocks": null,
+     "companyTitle": "TÜRK HAVA YOLLARI A.O.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 09:35:22",
+     "disclosureIndex": 1682832,
+     "summary": "CFM International ile LEAP-1B Motor Mutabakat Zaptı",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682832,
+   "ticker": "THYAO",
+   "route": "llm",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Özel Durum Açıklaması (Genel)",
+     "stockCode": "GLYHO",
+     "relatedStocks": null,
+     "companyTitle": "GLOBAL YATIRIM HOLDİNG A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 09:35:33",
+     "disclosureIndex": 1682833,
+     "summary": "GLYHO hisselerine ilişkin Pay Satış Bilgi Formu hk",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682833,
+   "ticker": "GLYHO",
+   "route": "llm",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": "SARKY",
+     "relatedStocks": "DMSAS",
+     "companyTitle": "SARKUYSAN ELEKTROLİTİK BAKIR SANAYİ VE TİCARET A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 09:39:55",
+     "disclosureIndex": 1682835,
+     "summary": "DMSAS Payları Alımı Hakkında",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682835,
+   "ticker": "DMSAS",
+   "route": "E2",
+   "important": true,
+   "kind": "insider",
+   "line": "Yönetici ya da büyük ortak hisse aldı.",
+   "tone": "olumlu",
+   "so_what": "İçeriden alım genelde şirkete güvenin işareti sayılır; tek başına karar için yetmez."
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Yatırım Kuruluşu Varant - Sertifika - Senetlerine İlişkin Bildirim",
+     "stockCode": "UNLUS, UNS",
+     "relatedStocks": "GSIPD",
+     "companyTitle": "ÜNLÜ MENKUL DEĞERLER A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 09:40:42",
+     "disclosureIndex": 1682836,
+     "summary": "Goldman Sachs International Varant Alım Satım İşlem Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682836,
+   "ticker": "UNLUS",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Yatırım Kuruluşu Varant - Sertifika - Senetlerine İlişkin Bildirim",
+     "stockCode": "ISMEN, IYM",
+     "relatedStocks": null,
+     "companyTitle": "İŞ YATIRIM MENKUL DEĞERLER A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 09:50:17",
+     "disclosureIndex": 1682837,
+     "summary": "İş Yatırım Aracı Kuruluş Varantlarının İtfa Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682837,
+   "ticker": "ISMEN",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Özel Durum Açıklaması (Genel)",
+     "stockCode": "GRNYO",
+     "relatedStocks": null,
+     "companyTitle": "GARANTİ YATIRIM ORTAKLIĞI A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 09:54:13",
+     "disclosureIndex": 1682838,
+     "summary": "Paylarının BİAŞ'ta oluşan ağırlıklı ortalama fiyatının, pay başına net aktif değerinin 2 katını aşması hakkında.",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682838,
+   "ticker": "GRNYO",
+   "route": "llm",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faizsiz)",
+     "stockCode": "DKVRL",
+     "relatedStocks": "ADA",
+     "companyTitle": "DK VARLIK KİRALAMA A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 09:55:30",
+     "disclosureIndex": 1682839,
+     "summary": "TRDDKVRK2717 ISIN Kodlu Kira Sertifikası İhracının Nitelikli Yatırımcıya Satışının Tamamlanması Hk.",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682839,
+   "ticker": "DKVRL",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faizsiz)",
+     "stockCode": "EKTVK",
+     "relatedStocks": "EKT",
+     "companyTitle": "EMLAK KATILIM VARLIK KİRALAMA A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 09:57:57",
+     "disclosureIndex": 1682840,
+     "summary": "TRDEVKS127A2 ISIN Kodlu Kira Sertifikası İhracının Nitelikli Yatırımcıya Satışının Tamamlanması Hk.",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682840,
+   "ticker": "EKTVK",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Bazında Devre Kesici Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "ADGYO",
+     "companyTitle": "BORSA İSTANBUL BISTECH DEVRE KESİCİ UYGULAMASI",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 10:00:03",
+     "disclosureIndex": 1682841,
+     "summary": "ADGYO.E işlem sırasında Pay Bazında Devre Kesici Uygulaması devreye girmiştir",
+     "year": null,
+     "period": null,
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682841,
+   "ticker": "ADGYO",
+   "route": "noise",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Bazında Devre Kesici Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "OZGYO",
+     "companyTitle": "BORSA İSTANBUL BISTECH DEVRE KESİCİ UYGULAMASI",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 10:00:05",
+     "disclosureIndex": 1682842,
+     "summary": "OZGYO.E işlem sırasında Pay Bazında Devre Kesici Uygulaması devreye girmiştir",
+     "year": null,
+     "period": null,
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682842,
+   "ticker": "OZGYO",
+   "route": "noise",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Bazında Devre Kesici Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "NETCD",
+     "companyTitle": "BORSA İSTANBUL BISTECH DEVRE KESİCİ UYGULAMASI",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 10:00:06",
+     "disclosureIndex": 1682843,
+     "summary": "NETCD.E işlem sırasında Pay Bazında Devre Kesici Uygulaması devreye girmiştir",
+     "year": null,
+     "period": null,
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682843,
+   "ticker": "NETCD",
+   "route": "noise",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Bazında Devre Kesici Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "UFUK",
+     "companyTitle": "BORSA İSTANBUL BISTECH DEVRE KESİCİ UYGULAMASI",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 10:00:07",
+     "disclosureIndex": 1682844,
+     "summary": "UFUK.E işlem sırasında Pay Bazında Devre Kesici Uygulaması devreye girmiştir",
+     "year": null,
+     "period": null,
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682844,
+   "ticker": "UFUK",
+   "route": "noise",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Bazında Devre Kesici Bildirimi",
+     "stockCode": null,
+     "relatedStocks": "PLTUR",
+     "companyTitle": "BORSA İSTANBUL BISTECH DEVRE KESİCİ UYGULAMASI",
+     "disclosureClass": "DUY",
+     "publishDate": "16.10.2026 10:00:08",
+     "disclosureIndex": 1682845,
+     "summary": "PLTUR.E işlem sırasında Pay Bazında Devre Kesici Uygulaması devreye girmiştir",
+     "year": null,
+     "period": null,
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682845,
+   "ticker": "PLTUR",
+   "route": "noise",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Özel Durum Açıklaması (Genel)",
+     "stockCode": "GEREL",
+     "relatedStocks": null,
+     "companyTitle": "GERSAN ELEKTRİK TİCARET VE SANAYİ A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 10:02:48",
+     "disclosureIndex": 1682859,
+     "summary": "Yenilenebilir Enerji Kaynaklarına Yatırım Yapılması Hakkında ",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682859,
+   "ticker": "GEREL",
+   "route": "llm",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faiz İçeren)",
+     "stockCode": "GARAN, TGB",
+     "relatedStocks": null,
+     "companyTitle": "TÜRKİYE GARANTİ BANKASI A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 10:11:33",
+     "disclosureIndex": 1682927,
+     "summary": "Yurtdışı Piyasalara Tahvil İhracı SPK Onayı",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682927,
+   "ticker": "GARAN",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faiz İçeren)",
+     "stockCode": "GARAN, TGB",
+     "relatedStocks": null,
+     "companyTitle": "TÜRKİYE GARANTİ BANKASI A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 10:13:42",
+     "disclosureIndex": 1682931,
+     "summary": "Yurtdışı Piyasalara Tahvil İhracı SPK Onayı",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682931,
+   "ticker": "GARAN",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Özel Durum Açıklaması (Genel)",
+     "stockCode": "OSTIM",
+     "relatedStocks": null,
+     "companyTitle": "OSTİM ENDÜSTRİYEL YATIRIMLAR VE İŞLETME A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 10:17:06",
+     "disclosureIndex": 1682935,
+     "summary": "Yönetim Kurulu Üyeleri ve Üst Düzey Yöneticilerin Sorumluluk Sigortası Hakkında",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682935,
+   "ticker": "OSTIM",
+   "route": "llm",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faiz İçeren)",
+     "stockCode": "MNGFA",
+     "relatedStocks": null,
+     "companyTitle": "MNG FAKTORİNG A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 10:20:14",
+     "disclosureIndex": 1682939,
+     "summary": "TRFMNGFE2613 Isın Kodlu Borçlanma Aracı İtfası",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": "4028328ca0b8418601a13fc0c7d66127"
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682939,
+   "ticker": "MNGFA",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Şirket Genel Bilgi Formu",
+     "stockCode": "KLN, KLNMA",
+     "relatedStocks": null,
+     "companyTitle": "TÜRKİYE KALKINMA VE YATIRIM BANKASI A.Ş.",
+     "disclosureClass": "DG",
+     "publishDate": "16.10.2026 10:22:59",
+     "disclosureIndex": 1682944,
+     "summary": null,
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682944,
+   "ticker": "KLN",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faizsiz)",
+     "stockCode": "TFNVK",
+     "relatedStocks": null,
+     "companyTitle": "TF VARLIK KİRALAMA A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 10:31:09",
+     "disclosureIndex": 1682949,
+     "summary": "6.Tertip Kira Sertifikası Satışının Tamamlanması hk.",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682949,
+   "ticker": "TFNVK",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Şirket Genel Bilgi Formu",
+     "stockCode": "TFNVK",
+     "relatedStocks": null,
+     "companyTitle": "TF VARLIK KİRALAMA A.Ş.",
+     "disclosureClass": "DG",
+     "publishDate": "16.10.2026 10:34:46",
+     "disclosureIndex": 1682957,
+     "summary": null,
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682957,
+   "ticker": "TFNVK",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Özel Durum Açıklaması (Genel)",
+     "stockCode": "OYAYO",
+     "relatedStocks": null,
+     "companyTitle": "OYAK YATIRIM ORTAKLIĞI A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 10:34:48",
+     "disclosureIndex": 1682958,
+     "summary": "Paylarının BİAŞ'ta oluşan ağırlıklı ortalama fiyatının, pay başına net aktif değerinin 2 katını aşması hakkında.",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682958,
+   "ticker": "OYAYO",
+   "route": "llm",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Tertip İhraç Belgesi",
+     "stockCode": "HLVKS",
+     "relatedStocks": "PYCLL",
+     "companyTitle": "HALK VARLIK KİRALAMA A.Ş.",
+     "disclosureClass": "DG",
+     "publishDate": "16.10.2026 10:44:37",
+     "disclosureIndex": 1682965,
+     "summary": "Paycell 4.Tertip İhraç Belgesi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682965,
+   "ticker": "HLVKS",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faizsiz)",
+     "stockCode": "DVRLK",
+     "relatedStocks": "DYBNK",
+     "companyTitle": "D VARLIK KİRALAMA A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 11:07:22",
+     "disclosureIndex": 1682974,
+     "summary": "TRDDVRLE2615 ISIN Kodlu Kira Sertifikası İhracının Kupon ve Anapara Ödemesi Hk.",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": "4028328ca0b8418601a13fbb23c760bf"
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682974,
+   "ticker": "DVRLK",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Yeni İş İlişkisi",
+     "stockCode": "CGCAM",
+     "relatedStocks": null,
+     "companyTitle": "ÇAĞDAŞ CAM SANAYİ VE TİCARET A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 11:22:12",
+     "disclosureIndex": 1682993,
+     "summary": "Cam Siparişi Alınması Hk.",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682993,
+   "ticker": "CGCAM",
+   "route": "E3",
+   "important": true,
+   "kind": "contract",
+   "line": "Yeni bir iş anlaşması bildirdi.",
+   "tone": "belirsiz",
+   "so_what": null
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faiz İçeren)",
+     "stockCode": "KNTFA",
+     "relatedStocks": null,
+     "companyTitle": "KENT FİNANS FAKTORİNG A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 11:25:09",
+     "disclosureIndex": 1682996,
+     "summary": "\t\nFinansman Bonosu ve Kupon Ödemesi Hk.",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": "4028328da0b8438901a13fd39a2f07fa"
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1682996,
+   "ticker": "KNTFA",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Tertip İhraç Belgesi",
+     "stockCode": "HLVKS",
+     "relatedStocks": "SUPER",
+     "companyTitle": "HALK VARLIK KİRALAMA A.Ş.",
+     "disclosureClass": "DG",
+     "publishDate": "16.10.2026 11:33:35",
+     "disclosureIndex": 1683007,
+     "summary": "Turkcell Superonline 2.Tertip İhraç Belgesi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683007,
+   "ticker": "HLVKS",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faiz İçeren)",
+     "stockCode": "ESCAR",
+     "relatedStocks": null,
+     "companyTitle": "ESCAR FİLO KİRALAMA HİZMETLERİ A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 11:39:50",
+     "disclosureIndex": 1683026,
+     "summary": "TRFESCR72710 ISIN Kodlu Bononun 1. Kupon Ödemesi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": "4028328ca0b8418601a13fe5ea72624b"
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683026,
+   "ticker": "ESCAR",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Şirket Genel Bilgi Formu",
+     "stockCode": "BIGTK",
+     "relatedStocks": null,
+     "companyTitle": "BİG MEDYA TEKNOLOJİ A.Ş.",
+     "disclosureClass": "DG",
+     "publishDate": "16.10.2026 11:42:38",
+     "disclosureIndex": 1683030,
+     "summary": null,
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683030,
+   "ticker": "BIGTK",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Hak Kullanım Süreç İptal Bildirimi",
+     "stockCode": "QYHOL",
+     "relatedStocks": null,
+     "companyTitle": "Q YATIRIM HOLDİNG A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 11:45:34",
+     "disclosureIndex": 1683033,
+     "summary": "Borçlanma Aracı İhraç Başvurusunun Geri Çekilmesi Hakkında",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": "4028328ca0b8418601a13fd698b952ae"
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683033,
+   "ticker": "QYHOL",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faizsiz)",
+     "stockCode": "HDFVK",
+     "relatedStocks": null,
+     "companyTitle": "HEDEF VARLIK KİRALAMA A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 11:55:52",
+     "disclosureIndex": 1683039,
+     "summary": "İnfinia-Gerçekleşmeyen İtfa/Getiri Ödemesi Hk.",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": "4028328d9ec11d41019edfa3e265360c"
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683039,
+   "ticker": "HDFVK",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Payların Geri Alınmasına İlişkin Bildirim",
+     "stockCode": "DOFRB",
+     "relatedStocks": null,
+     "companyTitle": "DOF ROBOTİK SANAYİ A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 12:00:43",
+     "disclosureIndex": 1683042,
+     "summary": "16.10.2026 Tarihli Pay Geri Alım İşlemleri",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": "4028328da0b8438a01a139ffe91f1925"
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683042,
+   "ticker": "DOFRB",
+   "route": "E1",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Şirket Genel Bilgi Formu",
+     "stockCode": "ORCAY",
+     "relatedStocks": null,
+     "companyTitle": "ORÇAY ORTAKÖY ÇAY SANAYİ VE TİCARET A.Ş.",
+     "disclosureClass": "DG",
+     "publishDate": "16.10.2026 12:03:44",
+     "disclosureIndex": 1683043,
+     "summary": null,
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683043,
+   "ticker": "ORCAY",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Dışında Sermaye Piyasası Aracı İşlemlerine İlişkin Bildirim (Faizsiz)",
+     "stockCode": "HLVKS",
+     "relatedStocks": "EKGYO",
+     "companyTitle": "HALK VARLIK KİRALAMA A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 12:23:58",
+     "disclosureIndex": 1683054,
+     "summary": "Yurtiçi Kira Sertifikası İtfa ve Getiri Ödemesi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": "4028328c9f52dc40019f6b5d71a57fd2"
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683054,
+   "ticker": "HLVKS",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Şirket Genel Bilgi Formu",
+     "stockCode": "TURSG",
+     "relatedStocks": null,
+     "companyTitle": "TÜRKİYE SİGORTA A.Ş.",
+     "disclosureClass": "DG",
+     "publishDate": "16.10.2026 12:33:38",
+     "disclosureIndex": 1683056,
+     "summary": null,
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683056,
+   "ticker": "TURSG",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Kurumsal Yönetim Bilgi Formu (Güncelleme) - Yönetim Kurulu-1",
+     "stockCode": "TURSG",
+     "relatedStocks": null,
+     "companyTitle": "TÜRKİYE SİGORTA A.Ş.",
+     "disclosureClass": "DG",
+     "publishDate": "16.10.2026 12:33:52",
+     "disclosureIndex": 1683057,
+     "summary": "Kurumsal Yönetim Bilgi Formu Güncelleme",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683057,
+   "ticker": "TURSG",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Özel Durum Açıklaması (Genel)",
+     "stockCode": "VSNMD",
+     "relatedStocks": null,
+     "companyTitle": "VİŞNE MADENCİLİK ÜRETİM SANAYİ VE TİCARET A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 12:56:17",
+     "disclosureIndex": 1683066,
+     "summary": "Gündoğan Şubesi İl Müdürlüğü Uygunluk Yazısı Başvurusu Hakkında",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683066,
+   "ticker": "VSNMD",
+   "route": "llm",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Özel Durum Açıklaması (Genel)",
+     "stockCode": "VESTL",
+     "relatedStocks": "VESBE",
+     "companyTitle": "VESTEL ELEKTRONİK SANAYİ VE TİCARET A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 13:01:40",
+     "disclosureIndex": 1683067,
+     "summary": "Üst Yönetim Değişikliği Hakkında",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683067,
+   "ticker": "VESTL",
+   "route": "llm",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Payların Geri Alınmasına İlişkin Bildirim",
+     "stockCode": "SAHOL",
+     "relatedStocks": null,
+     "companyTitle": "HACI ÖMER SABANCI HOLDİNG A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 13:02:00",
+     "disclosureIndex": 1683068,
+     "summary": "Pay Geri Alım Programı Başlatılması",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683068,
+   "ticker": "SAHOL",
+   "route": "E1",
+   "important": true,
+   "kind": "buyback",
+   "line": "Kendi hissesini geri alacağını ya da aldığını bildirdi; tutar okunamadı.",
+   "tone": "olumlu",
+   "so_what": "Şirket kendi hissesini alıyor; bu genelde fiyatı destekler. Yapman gereken bir şey yok."
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Yatırım Kuruluşu Varant - Sertifika - Senetlerine İlişkin Bildirim",
+     "stockCode": "ISMEN, IYM",
+     "relatedStocks": null,
+     "companyTitle": "İŞ YATIRIM MENKUL DEĞERLER A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 13:08:19",
+     "disclosureIndex": 1683070,
+     "summary": "İş Yatırım Sertifika ve Varant Alım Satım İşlemleri ",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683070,
+   "ticker": "ISMEN",
+   "route": "archive_only",
+   "important": false
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "İhale Süreci / Sonucu",
+     "stockCode": "TMSN",
+     "relatedStocks": null,
+     "companyTitle": "TÜMOSAN MOTOR VE TRAKTÖR SANAYİ A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 18:13:56",
+     "disclosureIndex": 1683277,
+     "summary": "İhale Sonucu Hakkında",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683277,
+   "ticker": "TMSN",
+   "route": "E3",
+   "important": true,
+   "kind": "contract",
+   "line": "Bir ihale süreci ya da sonucu bildirdi.",
+   "tone": "belirsiz",
+   "so_what": null
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": "TRALT",
+     "relatedStocks": null,
+     "companyTitle": "TÜRK ALTIN İŞLETMELERİ A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 18:16:59",
+     "disclosureIndex": 1683285,
+     "summary": "TR Doğal Enerji Kaynakları Araştırma ve Üretim A.Ş. Paylarında Alım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683285,
+   "ticker": "TRALT",
+   "route": "E2",
+   "important": true,
+   "kind": "insider",
+   "line": "Yönetici ya da büyük ortak hisse aldı.",
+   "tone": "olumlu",
+   "so_what": "İçeriden alım genelde şirkete güvenin işareti sayılır; tek başına karar için yetmez."
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Pay Alım Satım Bildirimi",
+     "stockCode": "TRALT",
+     "relatedStocks": null,
+     "companyTitle": "TÜRK ALTIN İŞLETMELERİ A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 18:17:28",
+     "disclosureIndex": 1683288,
+     "summary": "TR Anadolu Metal Madencilik İşletmeleri A.Ş. Paylarında Alım Bildirimi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683288,
+   "ticker": "TRALT",
+   "route": "E2",
+   "important": true,
+   "kind": "insider",
+   "line": "Yönetici ya da büyük ortak hisse aldı.",
+   "tone": "olumlu",
+   "so_what": "İçeriden alım genelde şirkete güvenin işareti sayılır; tek başına karar için yetmez."
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Payların Geri Alınmasına İlişkin Bildirim",
+     "stockCode": "ALKLC",
+     "relatedStocks": null,
+     "companyTitle": "ALTINKILIÇ GIDA VE SÜT SANAYİ TİCARET A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 18:21:36",
+     "disclosureIndex": 1683297,
+     "summary": "Pay Geri Alım Programı Başlatılması Hakkında",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683297,
+   "ticker": "ALKLC",
+   "route": "E1",
+   "important": true,
+   "kind": "buyback",
+   "line": "Kendi hissesini geri alacağını ya da aldığını bildirdi; tutar okunamadı.",
+   "tone": "olumlu",
+   "so_what": "Şirket kendi hissesini alıyor; bu genelde fiyatı destekler. Yapman gereken bir şey yok."
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "İhale Süreci / Sonucu",
+     "stockCode": "TMSN",
+     "relatedStocks": null,
+     "companyTitle": "TÜMOSAN MOTOR VE TRAKTÖR SANAYİ A.Ş.",
+     "disclosureClass": "ODA",
+     "publishDate": "16.10.2026 19:46:38",
+     "disclosureIndex": 1683352,
+     "summary": "İhale bedeline ilişkin önceki açıklamada sehven yapılan maddi hata düzeltmesi",
+     "year": null,
+     "period": "HZ",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683352,
+   "ticker": "TMSN",
+   "route": "E3",
+   "important": true,
+   "kind": "contract",
+   "line": "Bir ihale süreci ya da sonucu bildirdi.",
+   "tone": "belirsiz",
+   "so_what": null
+  },
+  {
+   "item": {
+    "disclosureBasic": {
+     "title": "Finansal Rapor",
+     "stockCode": "MILKS",
+     "relatedStocks": null,
+     "companyTitle": "MİLK ACADEMY SÜT ÜRÜNLERİ SANAYİ VE TİCARET A.Ş.",
+     "disclosureClass": "FR",
+     "publishDate": "16.10.2026 20:00:06",
+     "disclosureIndex": 1683354,
+     "summary": null,
+     "year": 2026,
+     "period": "3AB",
+     "relatedDisclosureOid": null
+    },
+    "disclosureDetail": {
+     "relatedDisclosureIndex": null
+    }
+   },
+   "index": 1683354,
+   "ticker": "MILKS",
+   "route": "E4",
+   "important": true,
+   "kind": "earnings",
+   "line": "Finansal tablolarını açıkladı.",
+   "tone": "belirsiz",
+   "so_what": null
+  }
+ ]
+}
