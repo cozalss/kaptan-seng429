@@ -37,6 +37,8 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Final
 
+import psycopg
+
 from kaptan.evidence.holdout import E_CODES
 from kaptan.ingest import repo as kap_repo
 from kaptan.ingest.detail_fetcher import reason_from
@@ -254,7 +256,10 @@ async def step_prices(pool: Any, fetch: FetchPrices, plan: Plan, now: datetime, 
                 # Yahoo's adjusted bars of a share are never read while İş Yatırım answers: half the rows.
                 keep = fetched if code == XU100 or not fetched.raw else replace(fetched, adjusted=())
                 report = await store_fetched(conn, keep, now)
-            except SourceError as exc:
+            except (SourceError, psycopg.DataError, psycopg.IntegrityError) as exc:
+                # A row the schema refuses (e.g. a reverse split's factor above corporate_actions' bound): the
+                # whole code is rolled back and stays failed, never half-stored bars without their actions.
+                await conn.rollback()
                 log.warning("prices %s: %s", code, exc)
                 await kap_repo.mark_run(conn, PRICES_JOB, key, "failed", error=str(exc))
                 await conn.commit()

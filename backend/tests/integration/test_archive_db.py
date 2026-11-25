@@ -28,7 +28,7 @@ from kaptan.llm.registry import default_models
 from kaptan.prices.calendar import IST, is_trading_day
 from kaptan.prices.http import SourceError
 from kaptan.prices.ingest import Fetched
-from kaptan.prices.models import DailyBar
+from kaptan.prices.models import CorporateAction, DailyBar
 from kaptan.reading.marks import unread_signals
 from kaptan.reference.ticker_history import add_rename
 from kaptan.settings import Settings
@@ -69,6 +69,7 @@ class Prices:
         self.calls: list[str] = []
         self.fail: set[str] = set()
         self.empty: set[str] = set()
+        self.refused_by_db: set[str] = set()
 
     async def __call__(self, t: str, start: date, end: date, sources: tuple[Any, ...]) -> Fetched:
         self.calls.append(t)
@@ -87,6 +88,9 @@ class Prices:
         )
         if t == "XU100":
             return Fetched(t, (), adjusted, (), 0, None)
+        if t in self.refused_by_db:  # a reverse split: the factor is above what core.corporate_actions accepts
+            odd = CorporateAction(t, date(2020, 6, 1), "other", Decimal("2.15"), "isyatirim", note="factor > 1")
+            return Fetched(t, tuple(bars), adjusted, (odd,), 0, None)
         return Fetched(t, tuple(bars), adjusted, (), 0, None)
 
 
@@ -280,6 +284,29 @@ async def test_a_price_history_is_done_only_for_the_span_it_was_asked_for(
     earlier = Plan(D0 - timedelta(days=730), D0, steps=("prices",))
     await run_archive(apool, kap, prices, earlier, now=NOW)
     assert sorted(prices.calls) == first  # an earlier start asks every code again instead of skipping it
+
+
+async def test_a_code_the_database_refuses_is_a_failed_code_not_a_crash(
+    apool: AsyncConnectionPool[DictConn],
+) -> None:
+    kap, prices = Kap(), Prices()
+    await run_archive(apool, kap, prices, Plan(D0, D0, steps=("disclosures",)), now=NOW)
+    await run_archive(apool, kap, prices, Plan(D0, D0, steps=("prices",)), now=NOW)
+    codes = [c for c in prices.calls if c != "XU100"]
+    assert len(codes) >= 2
+    bad = codes[0]
+    async with apool.connection() as conn:
+        await conn.execute("DELETE FROM ops.ingestion_runs WHERE job = 'archive_prices'")
+        await conn.execute("DELETE FROM core.prices_daily WHERE d < '2021-01-01' AND ticker = %s", (bad,))
+        await conn.commit()
+    prices.calls.clear()
+    prices.refused_by_db = {bad}
+    result = await run_archive(apool, kap, prices, Plan(D0, D0, steps=("prices",)), now=NOW)
+    assert result.prices_failed == [bad] and set(codes[1:]) <= set(result.prices_fetched)
+    stored = await _one(
+        apool, "SELECT count(*) AS n FROM core.prices_daily WHERE ticker = %s AND d < '2021-01-01'", bad
+    )
+    assert stored["n"] == 0  # nothing half-stored: no bars without their corporate actions
 
 
 async def test_only_the_index_keeps_yahoos_adjusted_rows(apool: AsyncConnectionPool[DictConn]) -> None:
