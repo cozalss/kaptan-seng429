@@ -1,0 +1,66 @@
+/* The Ctrl+K palette: ink on paper, one list, the picked row marked by an ink bar (never colour alone). */
+.cp-command {
+  display: grid;
+  gap: var(--space-2);
+}
+.cp-label {
+  font-size: var(--text-dense);
+  font-weight: 600;
+  color: var(--ink);
+}
+.cp-input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0 var(--space-3);
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--text-body);
+}
+.cp-input:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+.cp-status {
+  min-height: 1.25rem;
+  font-size: var(--text-dense);
+  color: var(--ink-soft);
+}
+.cp-list {
+  max-height: min(55vh, 26rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.cp-group [cmdk-group-heading] {
+  padding: var(--space-3) var(--space-1) var(--space-1);
+  font-size: var(--text-dense);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+.cp-item {
+  display: grid;
+  gap: var(--space-0_5);
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--dur-quick) var(--ease-ink);
+}
+.cp-item[data-selected="true"] {
+  background: var(--wash-tint);
+  border-left-color: var(--ink);
+}
+.cp-title {
+  font-weight: 600;
+  color: var(--ink);
+}
+.cp-sub {
+  font-size: var(--text-dense);
+  color: var(--ink-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cp-item {
+    transition: none;
+  }
+}

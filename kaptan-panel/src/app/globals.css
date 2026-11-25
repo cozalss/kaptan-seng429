@@ -88,6 +88,13 @@
   /* A paper tooth over large surfaces: printed, not flat. Barely there, gone under a washout. */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .07 0 0 0 0 .08 0 0 0 0 .14 0 0 0 .55 -.2'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
 
+  /* Three printed textures beside the grain, all drawn from the ink so both themes follow by themselves.
+     Static: none of them moves. Hatch = what is still empty (a bar's unfilled part); halftone = the dots of
+     a newspaper photo, on the ink sea; ruled = notebook lines behind a quiet empty state. */
+  --hatch: repeating-linear-gradient(135deg, color-mix(in oklab, var(--ink) 14%, transparent) 0 1px, transparent 1px 5px);
+  --halftone: radial-gradient(circle at center, rgb(255 255 255 / 0.07) 0 0.75px, transparent 1.1px) 0 0 / 6px 6px;
+  --ruled: repeating-linear-gradient(180deg, transparent 0 calc(1.75rem - 1px), color-mix(in oklab, var(--ink) 7%, transparent) calc(1.75rem - 1px) 1.75rem);
+
   /* Ink marks */
   --ink-line: 2px;
   --shadow-ink: 3px 3px 0 var(--ink);

@@ -2,16 +2,21 @@
 
 import "./search.css";
 
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SearchResult } from "@/lib/company/company";
+import { Icon } from "@/components/ui/icon";
 import { useApi } from "@/lib/api/react";
 import { errorMessage } from "@/lib/api/types";
-import { MIN_QUERY, opensSearch, pageRows, rowsOf, TYPING_PAUSE_MS } from "./search-logic";
+import { MIN_QUERY, opensPalette, opensSearch, pageRows, rowsOf, TYPING_PAUSE_MS } from "./search-logic";
+
+/** The Ctrl+K palette and cmdk come over the wire only the first time it opens. */
+const CommandPalette = dynamic(() => import("./command-palette"), { ssr: false });
 
 /**
  * One search for the whole app: a company by ticker or name (Turkish letters meet: "turk hava", "ISIK"), a
- * disclosure by its words. Opens with the button, "/" or Ctrl+K; Enter jumps to the first result, the arrows
+ * disclosure by its words. Opens with the button or "/" (Ctrl+K opens the palette); Enter jumps to the first result, the arrows
  * move between results, Escape closes.
  */
 export function SearchBox() {
@@ -23,6 +28,8 @@ export function SearchBox() {
   const [result, setResult] = useState<SearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  // null until the first Ctrl+K: the palette is not even loaded before.
+  const [palette, setPalette] = useState<boolean | null>(null);
 
   const open = useCallback(() => {
     if (dialog.current && !dialog.current.open) dialog.current.showModal();
@@ -32,6 +39,12 @@ export function SearchBox() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (opensPalette(e)) {
+        e.preventDefault();
+        if (dialog.current?.open) dialog.current.close();
+        setPalette(true);
+        return;
+      }
       if (!opensSearch({ key: e.key, ctrlKey: e.ctrlKey, metaKey: e.metaKey, target: e.target instanceof HTMLElement ? e.target : null })) return;
       e.preventDefault();
       open();
@@ -86,11 +99,8 @@ export function SearchBox() {
 
   return (
     <>
-      <button type="button" className="sr-trigger" onClick={open} aria-label="Ara: şirket ya da duyuru (/)" aria-keyshortcuts="/ Control+K">
-        <svg aria-hidden viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={1.75}>
-          <circle cx="10.5" cy="10.5" r="6.25" />
-          <path d="M15.5 15.5 21 21" />
-        </svg>
+      <button type="button" className="sr-trigger" onClick={open} aria-label="Ara: şirket ya da duyuru (/)" aria-keyshortcuts="/">
+        <Icon name="search" />
         <span className="sr-trigger-text">Ara</span>
         <kbd aria-hidden className="sr-kbd">/</kbd>
       </button>
@@ -138,6 +148,7 @@ export function SearchBox() {
           Kapat (Esc)
         </button>
       </dialog>
+      {palette !== null ? <CommandPalette open={palette} onOpenChange={setPalette} /> : null}
     </>
   );
 }

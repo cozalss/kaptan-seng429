@@ -15,6 +15,7 @@ import { titleTr } from "@/lib/solo/words";
 import { shortName } from "@/components/story/plain";
 import { BlockHead } from "./block-head";
 import { outsideSummary } from "./learned-words";
+import { useListMotion } from "@/components/ui/use-list-motion";
 
 const SHOWN = 6;
 const TONE_WORD: Readonly<Record<SignalTone, string>> = { olumlu: "Olumlu", olumsuz: "Olumsuz", notr: "Nötr", belirsiz: "Belirsiz" };
@@ -26,6 +27,7 @@ const TONE_WORD: Readonly<Record<SignalTone, string>> = { olumlu: "Olumlu", olum
  */
 export function HomeHighlights() {
   const q = useApiQuery((api) => api.digest(), []);
+  const motion = useListMotion<HTMLUListElement>();
   const d = q.data;
   if (!d) return null;
   const others = d.items.filter((i) => i.why === null);
@@ -49,7 +51,7 @@ export function HomeHighlights() {
       {top.length === 0 ? (
         <p className="hm-quiet">{d.items.length > 0 ? "Başka şirketlerde dikkat çeken duyuru yok." : "Bugün dikkat çeken bir duyuru yok."}</p>
       ) : (
-        <ul className="hm-hl-list">
+        <ul ref={motion} className="hm-hl-list">
           {top.map((i) => (
             <Row key={i.disclosure_index} item={i} />
           ))}

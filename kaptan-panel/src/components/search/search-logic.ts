@@ -15,6 +15,7 @@ export interface SearchRow {
 /** The screens, so a word like "önemli", "takvim" or "yardım" finds a page too. Shown before companies. */
 const PAGES: readonly { to: string; title: string; sub: string; words: string }[] = [
   { to: ROUTES.benim, title: "Ana sayfa", sub: "Bugünkü kararların ve paran", words: "ana sayfa bugün öneri karar" },
+  { to: ROUTES.oneriler, title: "Öneriye düşenler", sub: "Her öneri, ne yaptığın ve sonucu", words: "öneriler öneri sonuç uysaydın onay" },
   { to: ROUTES.portfoy, title: "Param", sub: "Elindekiler, nakit, para ekle ve çek", words: "param portföy elindekiler nakit para ekle çek döküm" },
   { to: ROUTES.bildirimler, title: "Okunanlar", sub: "Şirketlerinin KAP duyuruları", words: "okunanlar bildirim duyuru kap okunmamış" },
   { to: ROUTES.onemli, title: "Önemli duyurular", sub: "Günün açık ve önemli KAP duyuruları", words: "önemli duyurular günün kap özet" },
@@ -37,6 +38,16 @@ export function pageRows(query: string): SearchRow[] {
     sub: p.sub,
     kind: "page",
   }));
+}
+
+/** Every screen, for the palette before anything is typed. Pure. */
+export function allPageRows(): SearchRow[] {
+  return PAGES.map((p) => ({ key: `p-${p.to}`, to: p.to, title: p.title, sub: p.sub, kind: "page" }));
+}
+
+/** Ctrl or Cmd + K, anywhere: the command palette. Checked before `opensSearch`. Pure. */
+export function opensPalette(e: { key: string; ctrlKey: boolean; metaKey: boolean }): boolean {
+  return (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k";
 }
 
 export const MIN_QUERY = 2;

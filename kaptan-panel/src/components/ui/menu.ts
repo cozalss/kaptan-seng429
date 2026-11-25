@@ -6,4 +6,4 @@ export const MENU_CONTENT =
   "z-50 min-w-[180px] overflow-hidden border-2 border-ink bg-panel py-1 shadow-[var(--shadow-ink)] origin-[var(--radix-dropdown-menu-content-transform-origin)] data-[state=open]:animate-[menu-in_160ms_var(--ease-out-expo)] data-[state=closed]:animate-[fade-out_100ms_var(--ease-out-expo)]";
 
 /** A plain menu row: a 46px target, washed when highlighted by pointer or keys. */
-export const MENU_ITEM = "block cursor-pointer px-4 py-3 text-ui text-ink outline-none data-[highlighted]:bg-wash-tint";
+export const MENU_ITEM = "flex items-center gap-3 cursor-pointer px-4 py-3 text-ui text-ink outline-none data-[highlighted]:bg-wash-tint";

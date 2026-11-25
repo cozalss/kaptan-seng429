@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { foldTr } from "@/lib/company/fold";
-import { pageRows } from "./search-logic";
+import { allPageRows, opensPalette, pageRows } from "./search-logic";
 
 describe("page results in the search", () => {
   it("folds Turkish letters so plain typing finds a page", () => {
@@ -23,5 +23,21 @@ describe("page results in the search", () => {
 
   it("does not answer a company code with a page", () => {
     expect(pageRows("THYAO")).toEqual([]);
+  });
+});
+
+describe("the Ctrl+K palette", () => {
+  it("opens on Ctrl or Cmd + K only", () => {
+    expect(opensPalette({ key: "k", ctrlKey: true, metaKey: false })).toBe(true);
+    expect(opensPalette({ key: "K", ctrlKey: false, metaKey: true })).toBe(true);
+    expect(opensPalette({ key: "k", ctrlKey: false, metaKey: false })).toBe(false);
+    expect(opensPalette({ key: "/", ctrlKey: true, metaKey: false })).toBe(false);
+  });
+
+  it("lists every screen before anything is typed, Öneriler among them", () => {
+    const rows = allPageRows();
+    expect(rows.every((r) => r.kind === "page")).toBe(true);
+    expect(rows.map((r) => r.to)).toContain("/oneriler");
+    expect(pageRows("öneri").map((r) => r.to)).toContain("/oneriler");
   });
 });

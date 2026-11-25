@@ -16,6 +16,7 @@ import type { Decisions } from "@/components/proposal/use-decisions";
 import { shortName } from "@/components/story/plain";
 import "@/components/proposal/oneri.css";
 import "@/components/ufuk/ufuk.css";
+import { useListMotion } from "@/components/ui/use-list-motion";
 
 export type { OrderFigures };
 
@@ -226,10 +227,11 @@ function SwipeStack({ next, previous, children, ...rest }: { next: () => void; p
 }
 
 function Queue({ queue, facts, errors, onPick }: { queue: readonly Suggestion[]; facts: (s: Suggestion) => ObjectFacts; errors: Readonly<Record<string, string>>; onPick: (id: string) => void }) {
+  const motion = useListMotion<HTMLOListElement>();
   return (
     <div className="oneri-queue">
       <h3 className="u-caption">Sırada {fmtInt(queue.length)} öneri daha</h3>
-      <ol aria-label="Sırada bekleyen öneriler">
+      <ol ref={motion} aria-label="Sırada bekleyen öneriler">
         {queue.map((s) => {
           const f = facts(s);
           const verb = ACTION_WORD[s.action];

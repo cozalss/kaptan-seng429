@@ -30,13 +30,25 @@ test("search finds a company by a Turkish-folded name, opens its page, and starr
   expect(errors).toEqual([]);
 });
 
-test("Ctrl+K opens the search from anywhere, Escape closes it, an unknown code says so", async ({ page }) => {
+test("Ctrl+K opens the palette from anywhere, it goes to a page, Escape closes it, an unknown code says so", async ({ page }) => {
+  const errors = trackErrors(page);
   await loginApi(page);
   await page.goto("/portfoy");
   await page.keyboard.press("Control+k");
+  const box = page.getByRole("combobox", { name: "Sayfa, şirket ya da duyuru" });
+  await expect(box).toBeFocused();
+  await expect(page.getByRole("option", { name: /Öneriye düşenler/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(box).toBeHidden();
+  await page.keyboard.press("Control+k");
+  await box.fill("takvim");
+  await expect(page.getByRole("option").first()).toContainText("Takvim");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/takvim$/);
+  await page.keyboard.press("/");
   await expect(page.getByRole("searchbox")).toBeFocused();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("searchbox")).toBeHidden();
+  expect(errors).toEqual([]);
   await page.goto("/hisse/QQQQQ");
   await expect(page.getByText("QQQQQ diye bir şirket bulamadım.")).toBeVisible();
 });

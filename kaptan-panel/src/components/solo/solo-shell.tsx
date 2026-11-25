@@ -19,6 +19,7 @@ import { logout } from "@/components/shell/session-actions";
 import { openShortcuts, Shortcuts } from "@/components/shell/shortcuts";
 import { PrefsSync } from "@/lib/prefs/prefs-sync";
 import { UnreachableScreen } from "@/components/shell/unreachable";
+import { Icon } from "@/components/ui/icon";
 import { MENU_CONTENT, MENU_ITEM } from "@/components/ui/menu";
 import { SkeletonLines } from "@/components/ui/primitives";
 import { notify, Toaster } from "@/components/ui/toast";
@@ -174,12 +175,16 @@ function SoloHeader({ pathname }: { pathname: string }) {
   );
 }
 
-/** Drawn for the bottom bar only: a person looking for a screen by its shape. */
+/** Drawn for the bottom bar only: a person looking for a screen by its shape. Home keeps the boat; the rest share the ink set. */
 const TAB_ICON: Readonly<Record<NavKey, ReactNode>> = {
-  benim: <path d="M3 16.5c2 1 16 1 18-.5l-2 3.5a1 1 0 0 1-.9.5H6a1 1 0 0 1-.8-.4ZM12 16V3.5l6 11M12 4l-5.5 10.5H12" />,
-  portfoy: <path d="M3.5 4h17v16h-17ZM13.5 4v16M13.5 11h7M3.5 14h10" />,
-  bildirimler: <path d="M6 3.5h9l4 4V20.5H6ZM14.5 3.5V8H19M9 12h7M9 15.5h7" />,
-  gecmis: <path d="M4 12a8 8 0 1 0 2.6-5.9L4 8.5M4 4v4.5h4.5M12 7.5V12l3 2" />,
+  benim: (
+    <svg aria-hidden viewBox="0 0 24 24" className="nav-link__icon">
+      <path d="M3 16.5c2 1 16 1 18-.5l-2 3.5a1 1 0 0 1-.9.5H6a1 1 0 0 1-.8-.4ZM12 16V3.5l6 11M12 4l-5.5 10.5H12" />
+    </svg>
+  ),
+  portfoy: <Icon name="wallet" size={24} className="nav-link__icon" />,
+  bildirimler: <Icon name="news" size={24} className="nav-link__icon" />,
+  gecmis: <Icon name="history" size={24} className="nav-link__icon" />,
 };
 
 function MainNav({ pathname }: { pathname: string }) {
@@ -191,9 +196,7 @@ function MainNav({ pathname }: { pathname: string }) {
           <li key={item.key}>
             <Link href={item.href} aria-current={item.href === active ? "page" : undefined} className="nav-link">
               {item.href === active ? <span aria-hidden className="nav-flag" /> : null}
-              <svg aria-hidden viewBox="0 0 24 24" className="nav-link__icon">
-                {TAB_ICON[item.key]}
-              </svg>
+              {TAB_ICON[item.key]}
               {item.label}
               {item.key === "bildirimler" ? <UnreadBadge /> : null}
             </Link>
@@ -225,28 +228,31 @@ function AccountMenu() {
         className="group inline-flex h-11 items-center gap-2 pr-1 pl-1 transition-colors duration-[var(--dur-quick)] hover:bg-wash-tint focus-visible:outline-3 focus-visible:outline-offset-0 focus-visible:outline-brand data-[state=open]:bg-wash-tint"
       >
         <span aria-hidden className="grid size-9 place-items-center rounded-full border-2 border-ink text-ink">
-          <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={1.75}>
-            <circle cx="12" cy="8.5" r="3.75" />
-            <path d="M5 20c.8-3.9 3.5-6 7-6s6.2 2.1 7 6" />
-          </svg>
+          <Icon name="person" />
         </span>
         <span className="hidden text-[15px] leading-tight font-medium text-ink lg:block">Hesabım</span>
-        <svg aria-hidden viewBox="0 0 10 10" className="size-2.5 text-ink transition-transform duration-[var(--dur-quick)] group-data-[state=open]:rotate-180" fill="none" stroke="currentColor" strokeWidth={1.75}>
-          <path d="M2 4l3 3 3-3" />
-        </svg>
+        <Icon name="chevron" size={14} className="text-ink transition-transform duration-[var(--dur-quick)] group-data-[state=open]:rotate-180" />
       </M.Trigger>
       <M.Portal>
         <M.Content side="bottom" align="end" sideOffset={8} className={cn(MENU_CONTENT, "w-[220px]")}>
           <M.Item asChild className={MENU_ITEM}>
-            <Link href={ROUTES.ayarlar}>Ayarlar</Link>
+            <Link href={ROUTES.ayarlar}>
+              <Icon name="settings" size={18} />
+              Ayarlar
+            </Link>
           </M.Item>
           <M.Item asChild className={MENU_ITEM}>
-            <Link href={ROUTES.yardim}>Yardım</Link>
+            <Link href={ROUTES.yardim}>
+              <Icon name="help" size={18} />
+              Yardım
+            </Link>
           </M.Item>
           <M.Item className={MENU_ITEM} onSelect={openShortcuts}>
+            <Icon name="keyboard" size={18} />
             Klavye kısayolları
           </M.Item>
           <M.Item className={MENU_ITEM} disabled={leaving} onSelect={signOut}>
+            <Icon name="logout" size={18} />
             {leaving ? "Çıkılıyor…" : "Çıkış"}
           </M.Item>
         </M.Content>

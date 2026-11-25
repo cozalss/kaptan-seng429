@@ -1,18 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { MouseEvent } from "react";
+import { navigateWithTransition } from "@/components/proposal/view-transition";
 import { fmtSignedFigurePct, fmtTime } from "@/lib/format";
 import { href } from "@/lib/nav";
 import { dayLabel, titleTr } from "@/lib/solo/words";
 import { shortName } from "@/components/story/plain";
 import { Boat } from "@/components/ufuk/boat";
 import { ratioScale, STATE_WORD, type SuggestedRow } from "./suggested-words";
+import { useListMotion } from "@/components/ui/use-list-motion";
 
 /** The rows of "Öneriye düşenler": each opens its proposal. Shared by the home block and /oneriler. */
 export function SuggestedList({ rows, label }: { rows: readonly SuggestedRow[]; label: string }) {
   const scale = ratioScale(rows);
+  const motion = useListMotion<HTMLUListElement>();
   return (
-    <ul className="hm-sg-list" aria-label={label}>
+    <ul ref={motion} className="hm-sg-list" aria-label={label}>
       {rows.map((r) => (
         <li key={r.id}>
           <SuggestedItem row={r} scale={scale} />
@@ -23,8 +28,17 @@ export function SuggestedList({ rows, label }: { rows: readonly SuggestedRow[]; 
 }
 
 function SuggestedItem({ row: r, scale }: { row: SuggestedRow; scale: number }) {
+  const router = useRouter();
+  const to = href.proposal(r.id);
+  // A plain click carries the row's AL/SAT across into the proposal's big verb; a new tab or the keyboard's
+  // modifiers keep the ordinary link.
+  const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const verb = e.currentTarget.querySelector<HTMLElement>(".hm-sg-verb");
+    if (navigateWithTransition(() => router.push(to), verb)) e.preventDefault();
+  };
   return (
-    <Link href={href.proposal(r.id)} className="hm-sg-row" data-state={r.state}>
+    <Link href={to} onClick={onClick} className="hm-sg-row" data-state={r.state}>
       <span className="hm-sg-when">
         <span className="hm-sg-day">{dayLabel(r.at)}</span>
         <span className="hm-sg-time">{fmtTime(r.at)}</span>

@@ -12,6 +12,7 @@ import { ROUTES } from "@/lib/nav";
 import { listenLines, NOTHING_MINE, otherCount, stripItems } from "@/lib/signal/signal";
 import { ListenButton } from "./listen-button";
 import { SignalRow, useSignalKeys } from "./signal-bits";
+import { useListMotion } from "@/components/ui/use-list-motion";
 
 /** At most this many of mine on the home; the rest are one tap away in Okunanlar. */
 export const STRIP_MAX = 5;
@@ -34,6 +35,7 @@ export function SignalStrip({ limit = STRIP_MAX, compact = false, onMine }: { li
  * mine are one "Hepsi" link away. `onMine` hears how many of mine are still open (after a Tamam too).
  */
 function StripBody({ limit, compact, onMine }: { limit: number; compact: boolean; onMine?: (count: number) => void }) {
+  const motion = useListMotion<HTMLUListElement>();
   const router = useRouter();
   const marks = useReadingMarks();
   const q = useApiQuery((api) => api.signals(), []);
@@ -73,7 +75,7 @@ function StripBody({ limit, compact, onMine }: { limit: number; compact: boolean
           {NOTHING_MINE}
         </p>
       ) : (
-        <ul className="sg-list" aria-label="Senin hisselerindeki önemli duyurular">
+        <ul ref={motion} className="sg-list" aria-label="Senin hisselerindeki önemli duyurular">
           {shown.map((s) => (
             <SignalRow key={s.disclosure_index} item={s} focused={focused === s.disclosure_index} />
           ))}
