@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { isReachable, signIn } from "@/lib/api/client";
 import { errorMessage, isUnreachable } from "@/lib/api/types";
 import { HOME, safeNext } from "@/lib/nav";
+import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
 import { Wordmark } from "@/components/brand/marks";
 import { Boat } from "@/components/ufuk/boat";
@@ -49,6 +50,8 @@ export function SoloLoginForm({ next }: { next: string | null }) {
   const [passphrase, setPassphrase] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  // Until React runs here, typing would be wiped and a press lost (or sent by the browser itself).
+  const ready = useHydrated();
 
   const fail = (msg: string) => {
     setError(msg);
@@ -89,6 +92,7 @@ export function SoloLoginForm({ next }: { next: string | null }) {
           autoCapitalize="none"
           spellCheck={false}
           autoFocus
+          readOnly={!ready}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? ERROR_ID : undefined}
           value={passphrase}
@@ -105,7 +109,7 @@ export function SoloLoginForm({ next }: { next: string | null }) {
           </p>
         ) : null}
       </div>
-      <Button type="submit" variant="primary" size="lg" className="w-full text-[16px]" pending={pending} disabled={pending}>
+      <Button type="submit" variant="primary" size="lg" className="w-full text-[16px]" pending={pending} disabled={pending || !ready}>
         {pending ? "Giriş yapılıyor…" : "Giriş yap"}
       </Button>
     </form>

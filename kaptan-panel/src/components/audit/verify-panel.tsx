@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import type { AuditEntry } from "@/lib/domain";
 import { auditSentence } from "@/lib/audit-words";
 import { fmtDateTime, fmtInt, fmtTime } from "@/lib/format";
+import { useHydrated } from "@/lib/use-hydrated";
 import { prefersReducedMotion } from "@/lib/utils";
 import { Band } from "@/components/shell/page-frame";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import type { Walk } from "./chain-walk";
  */
 export function VerifyBand({ walk, onVerify, onShow }: { walk: Walk; onVerify: () => void; onShow: (pos: number) => void }) {
   const walking = walk.phase === "walking";
+  const ready = useHydrated();
   const box = useRef<HTMLDivElement | null>(null);
   const done = walk.phase === "done";
   // On a phone the verdict may land below the fold: bring it into view once the check ends.
@@ -36,7 +38,7 @@ export function VerifyBand({ walk, onVerify, onShow }: { walk: Walk; onVerify: (
           ) : null}
           {walk.phase === "walking" || walk.phase === "done" ? <Count walk={walk} /> : null}
         </div>
-        <Button variant={done ? "secondary" : "primary"} size="lg" pending={walking} disabled={walking} onClick={onVerify} className="gc-verify-btn">
+        <Button variant={done ? "secondary" : "primary"} size="lg" pending={walking} disabled={walking || !ready} onClick={onVerify} className="gc-verify-btn">
           {walking ? "Bakıyorum…" : "Kayıtlar sağlam mı?"}
         </Button>
       </div>
