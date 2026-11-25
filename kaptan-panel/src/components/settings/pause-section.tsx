@@ -13,6 +13,7 @@ import { fmtDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { WhatIs } from "@/components/help/what-is";
+import { announceSettingsChanged } from "./settings-events";
 import "./comfort.css";
 
 type Start = { days: number } | { until: string };
@@ -35,11 +36,17 @@ export function PauseSection() {
 
   const begin = async (input: Start) => {
     const done = await start.run(input);
-    if (done) setNow(done);
+    if (done) {
+      setNow(done);
+      announceSettingsChanged();
+    }
   };
   const resume = async () => {
     const done = await stop.run();
-    if (done) setNow(done);
+    if (done) {
+      setNow(done);
+      announceSettingsChanged();
+    }
   };
 
   return (

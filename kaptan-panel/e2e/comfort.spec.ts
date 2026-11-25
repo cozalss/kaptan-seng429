@@ -1,12 +1,12 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { loginApi, PASSPHRASE, trackErrors } from "./helpers";
+import { loginApi, PASSPHRASE, trackErrors, gotoAyarlar, openFolds } from "./helpers";
 
 /** Settings that fit the person's life: pause, alerts, backup, look and feel, help, shortcuts, password. */
 
 async function sections(page: Page) {
   await loginApi(page);
-  await page.goto("/ayarlar");
+  await gotoAyarlar(page);
   await expect(page.getByRole("heading", { level: 2, name: /Tatil modu/ })).toBeVisible();
 }
 
@@ -45,6 +45,7 @@ test("alert preferences are saved at once and still there after a reload", async
   await page.getByRole("checkbox", { name: "Sessiz saatler" }).check();
   await expect(page.getByLabel("Başlangıç")).toBeEnabled();
   await page.reload();
+  await openFolds(page);
   await expect(page.getByRole("checkbox", { name: "İzlediğin şirket: telefon ve e-posta" })).not.toBeChecked();
   await expect(page.getByRole("checkbox", { name: "Sessiz saatler" })).toBeChecked();
 });
@@ -67,6 +68,7 @@ test("the look is remembered and set before the page paints", async ({ page }) =
   // On a new load the attributes are there at "commit", before any script of the app has run.
   await page.goto("/ayarlar", { waitUntil: "commit" });
   await page.waitForFunction(() => document.documentElement.dataset.theme === "dark" && document.documentElement.dataset.text === "xlarge");
+  await openFolds(page);
   await expect(page.getByLabel("Koyu", { exact: true })).toBeChecked();
   const paper = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--paper").trim());
   expect(paper).toBe("#0b0f1d");
@@ -84,7 +86,7 @@ for (const [theme, text] of [["Açık", "Çok büyük"], ["Koyu", "Çok büyük"
   test(`no sideways scroll and no axe violations at 360 px, ${theme}, ${text}`, async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await loginApi(page);
-    await page.goto("/ayarlar");
+    await gotoAyarlar(page);
     await expect(page.getByRole("heading", { level: 2, name: /Tatil modu/ })).toBeVisible();
     await page.getByLabel(theme, { exact: true }).check();
     await page.getByLabel(text, { exact: true }).check();
@@ -94,7 +96,7 @@ for (const [theme, text] of [["Açık", "Çok büyük"], ["Koyu", "Çok büyük"
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow, `${path} scrolls sideways`).toBeLessThanOrEqual(0);
     }
-    await page.goto("/ayarlar");
+    await gotoAyarlar(page);
     await page.waitForTimeout(900);
     const result = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
     expect(result.violations.map((v) => `${v.id}: ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);

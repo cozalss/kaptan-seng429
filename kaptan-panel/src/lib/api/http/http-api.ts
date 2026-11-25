@@ -7,7 +7,7 @@ import { Calendar, MarketStrip } from "@/lib/domain/agenda";
 import { Digest } from "@/lib/domain/digest";
 import { SignalItem, SignalList } from "@/lib/domain/signal";
 import { AlertSettings, SystemStatus } from "@/lib/domain/system";
-import { TelegramPair, TelegramStatus } from "@/lib/domain/telegram";
+import { SettingsReset, TelegramPair, TelegramStatus } from "@/lib/domain/telegram";
 import { CorporateBook, NoticeAnswer } from "@/lib/domain/corporate";
 import { Allocation, ClosedTrades, DividendIncome, HoldingNotes, ReturnStats, Versus } from "@/lib/domain/insights";
 import { AlertHistoryItem, PriceAlert } from "@/lib/domain/price-alerts";
@@ -239,6 +239,7 @@ export function createHttpApi(): KaptanApi {
     saveAlertPrefs: (prefs) => request(Preferences, "/me/alerts/preferences", { method: "PUT", body: JSON.stringify(prefs) }),
     startPause: (input) => request(Preferences, "/me/pause", post(input)),
     endPause: () => request(Preferences, "/me/pause/resume", post()),
+    resetSettings: () => request(SettingsReset, "/me/settings/reset", post()),
     backupStatus: () => request(BackupStatus, "/me/backup"),
     runBackup: () => request(BackupStatus, "/me/backup/run", post()),
     backupList: () => request(BackupList, "/me/backup/list"),

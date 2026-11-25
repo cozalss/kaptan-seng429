@@ -7,6 +7,8 @@ import { errorMessage } from "@/lib/api/types";
 import { defaultAlertPrefs, TOPIC_WORDS } from "@/lib/prefs/alert-defaults";
 import { rememberAlertPrefs } from "@/lib/prefs/desktop-gate";
 import { WhatIs } from "@/components/help/what-is";
+import { announceSettingsChanged } from "./settings-events";
+import { AdvancedFold } from "./settings-group";
 import "./comfort.css";
 
 type Saved = "idle" | "saving" | "saved" | "error";
@@ -36,6 +38,7 @@ export function AlertPrefsSection() {
       const done = await api.saveAlertPrefs(next);
       if (mine !== seq.current) return;
       rememberAlertPrefs(done.alerts);
+      announceSettingsChanged();
       setSaved("saved");
       setProblem(null);
     } catch (e) {
@@ -71,13 +74,13 @@ export function AlertPrefsSection() {
           Hangi bildirim nereye<span className="sr-only">. </span>
         </span>
         <span className="u-chapter block text-ink">
-          Her haberi ayrı ayrı aç ya da kapat.
+          Hangi haber nereye gelsin?
         </span>
       </h2>
       {shown ? (
         <>
           <ul aria-label="Bildirim türleri" className="ay-channels">
-            {ALERT_TOPICS.map((topic) => (
+            {ALERT_TOPICS.filter((t) => t !== "weekly").map((topic) => (
               <li key={topic} className="cf-kind">
                 <div className="min-w-0">
                   <h3 className="ay-channel-state">
@@ -92,18 +95,34 @@ export function AlertPrefsSection() {
                     on={shown.kinds[topic].phone}
                     onChange={() => toggle(topic, "phone")}
                   />
-                  {topic === "weekly" ? null : (
-                    <Check
-                      label="Bu bilgisayar"
-                      aria={`${TOPIC_WORDS[topic].name}: bu bilgisayar`}
-                      on={shown.kinds[topic].desktop}
-                      onChange={() => toggle(topic, "desktop")}
-                    />
-                  )}
+                  <Check
+                    label="Bu bilgisayar"
+                    aria={`${TOPIC_WORDS[topic].name}: bu bilgisayar`}
+                    on={shown.kinds[topic].desktop}
+                    onChange={() => toggle(topic, "desktop")}
+                  />
                 </div>
               </li>
             ))}
           </ul>
+          <AdvancedFold>
+            <ul aria-label="Haftalık özet" className="ay-channels">
+              <li className="cf-kind">
+                <div className="min-w-0">
+                  <h3 className="ay-channel-state">{TOPIC_WORDS.weekly.name}</h3>
+                  <p className="ay-channel-detail">{TOPIC_WORDS.weekly.when}</p>
+                </div>
+                <div className="cf-checks">
+                  <Check
+                    label="Telefon ve e-posta"
+                    aria={`${TOPIC_WORDS.weekly.name}: telefon ve e-posta`}
+                    on={shown.kinds.weekly.phone}
+                    onChange={() => toggle("weekly", "phone")}
+                  />
+                </div>
+              </li>
+            </ul>
+          </AdvancedFold>
           <fieldset className="cf-quiet">
             <legend className="ay-channel-state">
               Sessiz saatler <WhatIs term="sessiz-saatler" />
@@ -143,9 +162,8 @@ export function AlertPrefsSection() {
               />
             </div>
             <p className="ay-channel-detail">
-              Saatler İstanbul saatidir. Bu saatlerde telefonuna ve e-postana
-              bildirim gitmez; bekleyenler bitince gönderilir. Bu bilgisayarda sessiz
-              saatlerde bildirim hiç çıkmaz; öneri ana sayfanda seni bekler.
+              Saatler İstanbul saatidir. Bu saatlerde telefonuna haber gitmez, bekleyenler
+              bitince gelir. Bu bilgisayarda hiç bildirim çıkmaz; öneri ana sayfanda seni bekler.
             </p>
           </fieldset>
         </>

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { go, loginApi, mainNav, seedMock, trackErrors } from "./helpers";
+import { go, loginApi, mainNav, seedMock, trackErrors, gotoAyarlar } from "./helpers";
 
 /** The part of Ayarlar the person reads to learn whether KAPtan works and can reach them. */
 const system = (p: import("@playwright/test").Page) => p.getByRole("region", { name: /^Sistem/ });
@@ -10,7 +10,7 @@ test.describe("KAPtan tells the truth about itself", () => {
     const errors = trackErrors(page);
     await seedMock(page, {});
     await loginApi(page);
-    await page.goto("/ayarlar");
+    await gotoAyarlar(page);
     await expect(system(page).getByText("KAPtan çalışıyor.")).toBeVisible();
     await expect(system(page).getByText(/Son bakış \d\d:\d\d\./)).toBeVisible();
     await expect(page.getByTestId("system-line")).toHaveCount(0);
@@ -37,7 +37,7 @@ test.describe("KAPtan tells the truth about itself", () => {
   test("several problems: the line names the most important one, Ayarlar lists them all", async ({ page }) => {
     await seedMock(page, { problems: ["agents_down", "backup_stale"] });
     await loginApi(page);
-    await page.goto("/ayarlar");
+    await gotoAyarlar(page);
     await expect(page.getByTestId("system-line")).toContainText("KAPtan bildirimleri okuyor ama şu an değerlendirmiyor.");
     await expect(page.getByTestId("system-line")).not.toContainText("yedek");
     const list = system(page).getByRole("list", { name: "KAPtan’ın söyledikleri" });
@@ -50,7 +50,7 @@ test.describe("alerts", () => {
   test("nothing set up: the three plain steps, no test button, desktop alerts off until asked", async ({ page }) => {
     await seedMock(page, {});
     await loginApi(page);
-    await page.goto("/ayarlar");
+    await gotoAyarlar(page);
     const block = alerts(page);
     await expect(block.getByRole("heading", { name: /Sana henüz haber veremiyorum\./ })).toBeVisible();
     await expect(block.getByRole("list").filter({ hasText: "kur.cmd" }).getByRole("listitem")).toHaveCount(3);
@@ -61,7 +61,7 @@ test.describe("alerts", () => {
   test("a phone is set up: the test goes out, and a second press within the minute is answered in words", async ({ page }) => {
     await seedMock(page, { alerts: { ntfy: true } });
     await loginApi(page);
-    await page.goto("/ayarlar");
+    await gotoAyarlar(page);
     const block = alerts(page);
     await expect(block.getByText("Telefonundaki ntfy uygulamasına bildirim gider.")).toBeVisible();
     await block.getByRole("button", { name: "Deneme bildirimi gönder" }).click();
@@ -74,7 +74,7 @@ test.describe("alerts", () => {
   test("the test fails: the reason is shown and nothing breaks", async ({ page }) => {
     await seedMock(page, { alerts: { ntfy: true, failing: true } });
     await loginApi(page);
-    await page.goto("/ayarlar");
+    await gotoAyarlar(page);
     await alerts(page).getByRole("button", { name: "Deneme bildirimi gönder" }).click();
     await expect(alerts(page).getByText("Telefon bildirimi gönderilemedi.")).toBeVisible();
   });
@@ -95,7 +95,7 @@ test.describe("alerts", () => {
     });
     await seedMock(page, {});
     await loginApi(page);
-    await page.goto("/ayarlar");
+    await gotoAyarlar(page);
     await expect(alerts(page).getByText("Kapalı.")).toBeVisible();
     expect(await page.evaluate(() => (window as unknown as { __asked: string[] }).__asked)).toEqual([]);
     await alerts(page).getByRole("button", { name: /Bu bilgisayarda aç/ }).click();

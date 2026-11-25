@@ -313,6 +313,7 @@ PHRASES: Final[dict[str, Phrase]] = {
     "preferences.paused": lambda _e, _x: "Öneri getirmeye ara verdin.",
     "preferences.resumed": lambda _e, _x: "Aranı bitirdin; KAPtan yeniden öneri getiriyor.",
     "preferences.alerts_changed": lambda _e, _x: "Bildirim ayarlarını değiştirdin.",
+    "settings.reset": lambda _e, _x: "Ayarları varsayılana döndürdün.",
     "backup.requested": lambda _e, _x: "Hemen yedek alınmasını istedin.",
     "watchlist.added": lambda _e, what: f"{_upper_first(what)} şirketini izleme listene ekledin.",
     "watchlist.removed": lambda _e, what: f"{_upper_first(what)} şirketini izleme listenden çıkardın.",

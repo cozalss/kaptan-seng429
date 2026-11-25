@@ -1,0 +1,327 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "preferences": {
+   "type": "object",
+   "properties": {
+    "pause": {
+     "type": "object",
+     "properties": {
+      "active": {
+       "type": "boolean"
+      },
+      "until": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "since": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date-time",
+         "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      }
+     },
+     "required": [
+      "active",
+      "until",
+      "since"
+     ],
+     "additionalProperties": false
+    },
+    "alerts": {
+     "type": "object",
+     "properties": {
+      "kinds": {
+       "type": "object",
+       "properties": {
+        "suggestion": {
+         "type": "object",
+         "properties": {
+          "phone": {
+           "type": "boolean"
+          },
+          "desktop": {
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "phone",
+          "desktop"
+         ],
+         "additionalProperties": false
+        },
+        "part_down": {
+         "type": "object",
+         "properties": {
+          "phone": {
+           "type": "boolean"
+          },
+          "desktop": {
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "phone",
+          "desktop"
+         ],
+         "additionalProperties": false
+        },
+        "watched": {
+         "type": "object",
+         "properties": {
+          "phone": {
+           "type": "boolean"
+          },
+          "desktop": {
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "phone",
+          "desktop"
+         ],
+         "additionalProperties": false
+        },
+        "price": {
+         "type": "object",
+         "properties": {
+          "phone": {
+           "type": "boolean"
+          },
+          "desktop": {
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "phone",
+          "desktop"
+         ],
+         "additionalProperties": false
+        },
+        "weekly": {
+         "type": "object",
+         "properties": {
+          "phone": {
+           "type": "boolean"
+          },
+          "desktop": {
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "phone",
+          "desktop"
+         ],
+         "additionalProperties": false
+        }
+       },
+       "required": [
+        "suggestion",
+        "part_down",
+        "watched",
+        "price",
+        "weekly"
+       ],
+       "additionalProperties": false
+      },
+      "quiet": {
+       "type": "object",
+       "properties": {
+        "on": {
+         "type": "boolean"
+        },
+        "start": {
+         "type": "string",
+         "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+        },
+        "end": {
+         "type": "string",
+         "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+        }
+       },
+       "required": [
+        "on",
+        "start",
+        "end"
+       ],
+       "additionalProperties": false
+      },
+      "muted": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      }
+     },
+     "required": [
+      "kinds",
+      "quiet",
+      "muted"
+     ],
+     "additionalProperties": false
+    }
+   },
+   "required": [
+    "pause",
+    "alerts"
+   ],
+   "additionalProperties": false
+  },
+  "telegram": {
+   "type": "object",
+   "properties": {
+    "configured": {
+     "type": "boolean"
+    },
+    "token_from_env": {
+     "type": "boolean"
+    },
+    "bot_username": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "paired": {
+     "type": "boolean"
+    },
+    "pairing_open": {
+     "type": "boolean"
+    },
+    "pairing_expires_at": {
+     "anyOf": [
+      {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "level": {
+     "type": "string",
+     "enum": [
+      "less",
+      "normal",
+      "more"
+     ]
+    },
+    "daily_cap": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 50
+    },
+    "silent_until": {
+     "anyOf": [
+      {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "last_sent_at": {
+     "anyOf": [
+      {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "cloud_on": {
+     "type": "boolean"
+    },
+    "cloud_synced_at": {
+     "anyOf": [
+      {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "cloud_message_at": {
+     "anyOf": [
+      {
+       "type": "string",
+       "format": "date-time",
+       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "cloud_kap": {
+     "anyOf": [
+      {
+       "type": "string",
+       "enum": [
+        "ok",
+        "blocked",
+        "error",
+        "unknown"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "cloud_error": {
+     "type": "boolean"
+    }
+   },
+   "required": [
+    "configured",
+    "token_from_env",
+    "bot_username",
+    "paired",
+    "pairing_open",
+    "pairing_expires_at",
+    "level",
+    "daily_cap",
+    "silent_until",
+    "last_sent_at",
+    "cloud_on",
+    "cloud_synced_at",
+    "cloud_message_at",
+    "cloud_kap",
+    "cloud_error"
+   ],
+   "additionalProperties": false
+  }
+ },
+ "required": [
+  "preferences",
+  "telegram"
+ ],
+ "additionalProperties": false
+}

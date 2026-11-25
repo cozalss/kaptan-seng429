@@ -1,4 +1,6 @@
-import type { TelegramLevel, TelegramStatus } from "@/lib/domain/telegram";
+import type { SettingsReset, TelegramLevel, TelegramStatus } from "@/lib/domain/telegram";
+import { defaultAlertPrefs } from "@/lib/prefs/alert-defaults";
+import { comfortOf, preferences } from "./comfort";
 import { ApiError, type KaptanApi } from "../types";
 import type { MockCtx } from "./guard";
 import { userActor } from "./guard";
@@ -88,7 +90,7 @@ function view(t: MockTelegram, nowReal: number): TelegramStatus {
 
 export function createTelegram(
   ctx: MockCtx,
-): Pick<KaptanApi, "telegramStatus" | "saveTelegram" | "pairTelegram" | "unlinkTelegram" | "sendTelegramSample"> {
+): Pick<KaptanApi, "telegramStatus" | "saveTelegram" | "pairTelegram" | "unlinkTelegram" | "sendTelegramSample" | "resetSettings"> {
   const { db, ok, me } = ctx;
   const write = (fn: (t: MockTelegram) => MockTelegram) =>
     db.update((s) => ({ ...s, telegram: fn(telegramOf(s)) }));
@@ -136,6 +138,19 @@ export function createTelegram(
       write(() => initialTelegram());
       db.audit(userActor(a), "telegram.unlinked", "telegram", "link", {});
       return ok(view(initialTelegram(), Date.now()), 120);
+    },
+    async resetSettings(): Promise<SettingsReset> {
+      const a = me();
+      write((x) => ({ ...x, level: "normal", daily_cap: 8 }));
+      db.update((s) => ({
+        ...s,
+        comfort: { ...comfortOf(s), alerts: defaultAlertPrefs(), pauseUntil: null, pauseSince: null },
+      }));
+      db.audit(userActor(a), "settings.reset", "settings", "all", {});
+      return ok(
+        { preferences: preferences(comfortOf(db.snapshot), db.nowIso()), telegram: view(telegramOf(db.snapshot), Date.now()) },
+        160,
+      );
     },
     async sendTelegramSample() {
       me();

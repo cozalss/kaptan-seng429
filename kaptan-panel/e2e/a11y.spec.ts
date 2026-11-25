@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { loginApi, seedMock, type MockSeed } from "./helpers";
+import { loginApi, seedMock, type MockSeed, gotoAyarlar, visit } from "./helpers";
 import { SCREENS } from "./screens";
 
 async function expectNoViolations(page: Page) {
@@ -33,7 +33,7 @@ for (const width of [320, 390, 1440]) {
     for (const s of SCREENS) {
       test(s.path, async ({ page }) => {
         await loginApi(page);
-        await page.goto(s.path);
+        await visit(page, s.path);
         await s.ready(page);
         await expectNoViolations(page);
       });
@@ -157,7 +157,7 @@ for (const width of [360, 1440]) {
         await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
         await seedMock(page, st.seed);
         await loginApi(page);
-        await page.goto(st.path);
+        await visit(page, st.path);
         await st.ready(page);
         await expectNoViolations(page);
       });
@@ -252,7 +252,7 @@ for (const width of [360, 1440]) {
         await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
         await page.emulateMedia({ colorScheme: scheme });
         await loginApi(page);
-        await page.goto("/ayarlar");
+        await gotoAyarlar(page);
         await expect(page.locator("#telegram")).toBeVisible();
       });
 
@@ -280,7 +280,7 @@ for (const width of [360, 1440]) {
           window.sessionStorage.setItem("kaptan-mock-cloud", "1");
           window.sessionStorage.setItem("kaptan-mock-cloud-kap", "blocked");
         });
-        await page.goto("/ayarlar");
+        await gotoAyarlar(page);
         await expect(page.locator("#telegram").getByTestId("cloud-on")).toBeVisible();
         await expectNoViolations(page);
       });

@@ -2,11 +2,11 @@ import type { TelegramLevel, TelegramStatus } from "@/lib/domain/telegram";
 
 /** The words of Ayarlar · Telegram, in one place so tests can read them. No "durdur": nothing here stops KAPtan. */
 export const TELEGRAM_LEAD =
-  "Önemli duyurular telefonuna şirketin adı ve tek satırlık bir açıklamayla gelir. Paranı, adedini ya da kârını hiç yazmam. Bilgisayar kapalıyken haber veremem; açılınca kaç saat kapalı kaldığımı ve o sürede ne olduğunu yazarım.";
+  "Önemli duyurular telefonuna şirketin adı ve tek satırlık bir açıklamayla gelir. Paranı hiç yazmam. Bilgisayar kapalıyken haber veremem, açılınca ne olduğunu yazarım.";
 
 /** With the cloud watcher on, the computer being off is no longer the problem: the cloud sends the messages. */
 export const TELEGRAM_LEAD_CLOUD =
-  "Önemli duyurular telefonuna şirketin adı ve tek satırlık bir açıklamayla gelir. Paranı, adedini ya da kârını hiç yazmam. Bilgisayarın kapalıyken de duyuruları ve sabah özetini bulut gönderir.";
+  "Önemli duyurular telefonuna şirketin adı ve tek satırlık bir açıklamayla gelir. Paranı hiç yazmam. Bilgisayarın kapalıyken de bulut gönderir.";
 
 export const TELEGRAM_STEPS = {
   one: "Telegram’da @BotFather’ı aç ve /newbot yaz. Bir ad seçince sana uzun bir bot kodu verir.",

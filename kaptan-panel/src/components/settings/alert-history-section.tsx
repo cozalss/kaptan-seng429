@@ -37,9 +37,8 @@ export function AlertHistorySection() {
         </span>
       </h2>
       <p className="ay-block-lead">
-        Telefonuna ve e-postana ne zaman, hangi yoldan ne gönderildiği. Mesajlar
-        hep aynı kısa cümlelerdir; hisse adı, tutar ve konu adı burada da
-        yazmaz. Bu bilgisayardaki bildirimler listede yok.
+        Telefonuna ve e-postana ne zaman, hangi yoldan ne gönderildiği. Bu
+        bilgisayardaki bildirimler listede yok.
       </p>
       {items && items.length > 0 ? (
         <ul aria-label="Gönderilen bildirimler" className="ay-channels">

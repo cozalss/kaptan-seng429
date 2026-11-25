@@ -183,6 +183,7 @@ const PHRASES: Readonly<Record<string, Phrase>> = {
   "preferences.paused": () => "Öneri getirmeye ara verdin.",
   "preferences.resumed": () => "Aranı bitirdin; KAPtan yeniden öneri getiriyor.",
   "preferences.alerts_changed": () => "Bildirim ayarlarını değiştirdin.",
+  "settings.reset": () => "Ayarları varsayılana döndürdün.",
   "backup.requested": () => "Hemen yedek alınmasını istedin.",
   "watchlist.added": (_e, what) => `${upperFirst(what)} şirketini izleme listene ekledin.`,
   "watchlist.removed": (_e, what) => `${upperFirst(what)} şirketini izleme listenden çıkardın.`,

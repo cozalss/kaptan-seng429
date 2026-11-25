@@ -1,12 +1,12 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { loginApi, trackErrors } from "./helpers";
+import { loginApi, trackErrors, gotoAyarlar, openFolds } from "./helpers";
 
 /** Price alerts, alert history, muted companies, the backup list and the weekly summary. */
 
 async function settings(page: Page) {
   await loginApi(page);
-  await page.goto("/ayarlar");
+  await gotoAyarlar(page);
   await expect(page.getByRole("heading", { level: 2, name: /Fiyat uyarıları/ })).toBeVisible();
 }
 
@@ -38,7 +38,7 @@ test("the company page has a price alert button that makes one for that share", 
   await dialog.getByRole("button", { name: "Uyarı kur" }).click();
   await expect(dialog.getByText(/Uyarı kuruldu/)).toBeVisible();
   await dialog.getByRole("button", { name: "Tamam" }).click();
-  await page.goto("/ayarlar");
+  await gotoAyarlar(page);
   await expect(page.getByRole("list", { name: "Fiyat uyarıların" })).toContainText("Yüzde 10 düşerse");
 });
 
@@ -49,6 +49,7 @@ test("a muted company is saved at once and still muted after a reload", async ({
   await page.getByRole("button", { name: "Sustur", exact: true }).click();
   await expect(page.getByRole("list", { name: "Susturduğun şirketler" })).toContainText("ORNCM");
   await page.reload();
+  await openFolds(page);
   await expect(page.getByRole("list", { name: "Susturduğun şirketler" })).toContainText("ORNCM");
   await page.getByRole("button", { name: "ORNCM şirketinin sesini aç" }).click();
   await expect(page.getByText("Hiçbir şirketi susturmadın.")).toBeVisible();

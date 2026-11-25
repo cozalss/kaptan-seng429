@@ -7,6 +7,7 @@ import { errorMessage } from "@/lib/api/types";
 import { defaultAlertPrefs } from "@/lib/prefs/alert-defaults";
 import { rememberAlertPrefs } from "@/lib/prefs/desktop-gate";
 import { Button } from "@/components/ui/button";
+import { announceSettingsChanged } from "./settings-events";
 import { PlainField } from "@/components/solo/plain-field";
 import "./price-alerts.css";
 import { useSearchParams } from "next/navigation";
@@ -53,6 +54,7 @@ export function MutedSection() {
       const done = await api.saveAlertPrefs(doc);
       setPrefs(done.alerts);
       rememberAlertPrefs(done.alerts);
+      announceSettingsChanged();
       setCode("");
       setTried(false);
     } catch (e) {
@@ -91,10 +93,8 @@ export function MutedSection() {
         <span className="u-chapter block text-ink">{mutedSentence(muted)}</span>
       </h2>
       <p className="ay-block-lead">
-        Susturduğun şirket için telefonuna, e-postana ve bu bilgisayara bildirim
-        gitmez: ne öneri ne de izlediğin şirketin yeni bildirimi. Öneriyi yine
-        ana sayfanda görürsün. Kendi kurduğun fiyat uyarıları susturmadan
-        etkilenmez.
+        Susturduğun şirket için hiçbir bildirim gitmez; öneriyi yine ana sayfanda
+        görürsün. Kendi kurduğun fiyat uyarıları etkilenmez.
       </p>
       {muted && muted.length > 0 ? (
         <ul aria-label="Susturduğun şirketler" className="pa-chips">

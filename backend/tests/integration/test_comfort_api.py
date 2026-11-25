@@ -37,6 +37,7 @@ RESET = (
     "UPDATE ops.preferences SET pause_until = NULL, pause_since = NULL, alerts = NULL",
     "UPDATE ops.backup_request SET requested_at = NULL, started_at = NULL, finished_at = NULL, ok = NULL",
     "DELETE FROM ops.job_runs WHERE trigger = 'manual'",
+    "UPDATE ops.telegram SET level = 'normal', daily_cap = 8, chat_id = NULL",
 )
 
 
@@ -156,6 +157,41 @@ async def test_alert_preferences_round_trip(clean: httpx.AsyncClient, migrated: 
     assert "preferences.alerts_changed" in await _audit_actions(migrated)
 
 
+async def test_settings_reset_puts_the_settings_back_and_touches_nothing_else(
+    clean: httpx.AsyncClient, migrated: Settings
+) -> None:
+    h = bearer((await login(clean))["access_token"])
+    prefs = (await clean.get(f"{API}/me/preferences", headers=h)).json()["alerts"]
+    changed = {**prefs, "quiet": {"on": True, "start": "23:00", "end": "07:30"}, "muted": ["THYAO"]}
+    changed["kinds"] = {**prefs["kinds"], "part_down": {"phone": False, "desktop": False}}
+    assert (await clean.put(f"{API}/me/alerts/preferences", json=changed, headers=h)).status_code == 200
+    assert (await clean.post(f"{API}/me/pause", json={"days": 3}, headers=h)).status_code == 200
+    assert (
+        await clean.put(f"{API}/me/telegram", json={"level": "more", "daily_cap": 20}, headers=h)
+    ).status_code == 200
+    await _sql(migrated, "UPDATE ops.telegram SET chat_id = 4242")  # a paired phone
+    limits_before = await _sql(migrated, "SELECT count(*) AS n FROM audit.audit_log WHERE action LIKE 'limits.%'")
+
+    res = await clean.post(f"{API}/me/settings/reset", headers=h)
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert_matches("SettingsReset", body)
+    assert body["preferences"]["alerts"] == (await clean.get(f"{API}/me/preferences", headers=h)).json()["alerts"]
+    assert body["preferences"]["alerts"]["quiet"]["on"] is False and body["preferences"]["alerts"]["muted"] == []
+    assert body["preferences"]["alerts"]["kinds"]["part_down"] == {"phone": True, "desktop": True}
+    assert body["preferences"]["pause"]["active"] is False
+    assert (body["telegram"]["level"], body["telegram"]["daily_cap"], body["telegram"]["paired"]) == ("normal", 8, True)
+    stored = await _sql(migrated, "SELECT alerts, chat_id FROM ops.preferences, ops.telegram")
+    assert stored[0]["alerts"] is None and stored[0]["chat_id"] == 4242  # still paired
+    assert (
+        await _sql(migrated, "SELECT count(*) AS n FROM audit.audit_log WHERE action LIKE 'limits.%'") == limits_before
+    )
+    assert (await _audit_actions(migrated)).count("settings.reset") == 1
+    again = await clean.post(f"{API}/me/settings/reset", headers=h)  # already default: still fine, one more record
+    assert again.status_code == 200
+    assert (await _audit_actions(migrated)).count("settings.reset") == 2
+
+
 async def test_backup_box_asks_once_and_shows_the_result(clean: httpx.AsyncClient, migrated: Settings) -> None:
     h = bearer((await login(clean))["access_token"])
     first = (await clean.get(f"{API}/me/backup", headers=h)).json()
@@ -183,6 +219,7 @@ async def test_everything_needs_a_session(clean: httpx.AsyncClient) -> None:
     calls = (
         ("GET", "/me/preferences"),
         ("POST", "/me/pause"),
+        ("POST", "/me/settings/reset"),
         ("GET", "/me/backup"),
         ("POST", "/me/backup/run"),
         ("POST", "/auth/logout-all"),

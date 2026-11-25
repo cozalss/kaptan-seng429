@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { IsoDateTime } from "./common";
+import { Preferences } from "./preferences";
 
 /**
  * Telegram (Ayarlar · Telegram): follow KAP from the phone. Backend: kaptan.telegram.service,
@@ -45,3 +46,7 @@ export type TelegramInput = { token?: string; level?: TelegramLevel; daily_cap?:
 /** POST /me/telegram/pair: the one-time link to tap on the phone. */
 export const TelegramPair = z.object({ pair_link: z.string(), expires_at: IsoDateTime });
 export type TelegramPair = z.infer<typeof TelegramPair>;
+
+/** POST /me/settings/reset ("Ayarları sıfırla"): the settings as they are now, back at their defaults. */
+export const SettingsReset = z.object({ preferences: Preferences, telegram: TelegramStatus });
+export type SettingsReset = z.infer<typeof SettingsReset>;

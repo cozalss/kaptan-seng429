@@ -8,7 +8,7 @@ import { locative } from "@/components/story/turkish";
  * channel is doing, and what the last message came to.
  */
 export const ALERTS_LEAD =
-  "Yeni bir önerin olduğunda ya da KAPtan’ın bir parçası çalışmadığında haber veririm. Mesajda hisse adı da tutar da yazmaz: kararın kimseyle paylaşılmaz.";
+  "Yeni bir önerin olduğunda ya da KAPtan’ın bir parçası çalışmadığında haber veririm. Telefona ve e-postaya giden mesajda hisse adı da tutar da yazmaz.";
 
 /** The installer's file, and the app the phone needs. The steps below must match what the installer says. */
 export const INSTALLER_FILE = "kur.cmd";

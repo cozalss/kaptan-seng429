@@ -58,6 +58,39 @@ export async function openSettings(page: Page) {
   await page.getByRole("button", { name: "Hesabım" }).click();
   await page.getByRole("menuitem", { name: "Ayarlar" }).click();
   await expect(page).toHaveURL(/\/ayarlar$/);
+  await openFolds(page);
+}
+
+/**
+ * Ayarlar keeps its four groups (and each group's "Gelişmiş" part) folded behind a button. Open every fold that is
+ * on screen, as the person would, until none is left (a fold can appear only once its group is open and loaded).
+ */
+export async function openFolds(page: Page) {
+  const groups = page.locator('[data-fold="group"]');
+  await groups.first().waitFor();
+  for (let pass = 0; pass < 4; pass++) {
+    const closed = page.locator('[data-fold]:visible[aria-expanded="false"]');
+    const n = await closed.count();
+    if (n === 0) {
+      if (pass > 0) break;
+      await page.waitForTimeout(400);
+      continue;
+    }
+    for (let i = 0; i < n; i++) await closed.first().click();
+    await page.waitForTimeout(500);
+  }
+}
+
+/** Go to /ayarlar with every fold open. */
+export async function gotoAyarlar(page: Page) {
+  await page.goto("/ayarlar");
+  await openFolds(page);
+}
+
+/** `page.goto`, and on Ayarlar the folds open. */
+export async function visit(page: Page, path: string) {
+  await page.goto(path);
+  if (path.startsWith("/ayarlar")) await openFolds(page);
 }
 
 /** What a browser test may put into the test double before the first load (status.ts, state.ts). */

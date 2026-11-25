@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { go, loginApi, mainNav, openSettings, PASSPHRASE, trackErrors } from "./helpers";
+import { go, loginApi, mainNav, openSettings, PASSPHRASE, trackErrors, visit } from "./helpers";
 import { SCREENS } from "./screens";
 
 /**
@@ -45,7 +45,7 @@ test("Kayıtlar sağlam mı? walks the chain and says yes; Ayarlar has no way to
 
   await openSettings(page);
   await expect(page.getByRole("list", { name: "Geçerli sınırlar" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /kurcala|senaryo|sıfırla/i })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /kurcala|senaryo|günü sıfırla|veriyi sıfırla/i })).toHaveCount(0);
 });
 
 test("a login page never shows or suggests a password", async ({ page }) => {
@@ -84,7 +84,7 @@ for (const s of SCREENS) {
   test(`${s.path}: fits a 360 px phone, and its text has no banned word`, async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 780 });
     await loginApi(page);
-    await page.goto(s.path);
+    await visit(page, s.path);
     await s.ready(page);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);

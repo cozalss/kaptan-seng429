@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { loginApi, trackErrors } from "./helpers";
+import { loginApi, trackErrors, gotoAyarlar, openFolds } from "./helpers";
 
 /** Ayarlar · Telegram: four steps, the pairing, the level, the message to the phone, and removing the link. */
 
@@ -8,7 +8,7 @@ const TOKEN = "123456789:AAFakeTokenForTestsOnly_0123456789abcd";
 
 async function telegram(page: Page) {
   await loginApi(page);
-  await page.goto("/ayarlar");
+  await gotoAyarlar(page);
   await expect(page.getByRole("heading", { level: 2, name: /Telegram/ })).toBeVisible();
 }
 
@@ -33,6 +33,7 @@ test("the four steps, a wrong code, then pairing through the link", async ({ pag
   await expect(open).toHaveAttribute("href", /^https:\/\/t\.me\/kaptan_mock_bot\?start=\w{8,}$/);
 
   await expect(section.getByText(/^Bağlı \(@kaptan_mock_bot\)/)).toBeVisible({ timeout: 15_000 });
+  await section.getByRole("button", { name: "Gelişmiş" }).click();
   await section.getByRole("radio", { name: "Daha az" }).click();
   await expect(section.getByRole("radio", { name: "Daha az" })).toBeChecked();
   await expect(section.getByText(/Yalnızca elindeki hisselerin/)).toBeVisible();
@@ -40,6 +41,7 @@ test("the four steps, a wrong code, then pairing through the link", async ({ pag
   await expect(section.getByText("Günde en fazla 5 anlık mesaj. Fazlası sabah mesajına kalır.")).toBeVisible();
 
   await page.reload();
+  await openFolds(page);
   await expect(page.locator("#telegram").getByRole("radio", { name: "Daha az" })).toBeChecked();
   expect(errors).toEqual([]);
 });

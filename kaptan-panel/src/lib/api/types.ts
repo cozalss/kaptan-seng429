@@ -30,7 +30,7 @@ import type { Digest } from "@/lib/domain/digest";
 import type { SignalItem, SignalList } from "@/lib/domain/signal";
 import type { TriageStateName } from "@/lib/domain/reading";
 import type { AlertSettings, SystemStatus } from "@/lib/domain/system";
-import type { TelegramInput, TelegramPair, TelegramStatus } from "@/lib/domain/telegram";
+import type { SettingsReset, TelegramInput, TelegramPair, TelegramStatus } from "@/lib/domain/telegram";
 import type { BonusInput, CorporateBook, DividendInput, NoticeAnswer, RightsInput } from "@/lib/domain/corporate";
 import type { ImportApplyRequest, ImportPreview, ImportRequest, ImportResult, ImportSources, ImportTable } from "@/lib/domain/imports";
 import type { AlertHistoryItem, PriceAlert, PriceAlertInput } from "@/lib/domain/price-alerts";
@@ -248,6 +248,8 @@ export interface KaptanApi {
   startPause(input: PauseInput): Promise<Preferences>;
   /** POST /me/pause/resume: "Şimdi devam et". */
   endPause(): Promise<Preferences>;
+  /** POST /me/settings/reset: alert kinds, quiet hours, mute list, pause and Telegram level/cap back to the defaults. Nothing else. */
+  resetSettings(): Promise<SettingsReset>;
   /** GET /me/backup: the last backup and whether one is being taken. */
   backupStatus(): Promise<BackupStatus>;
   /** POST /me/backup/run: "Şimdi yedek al". */

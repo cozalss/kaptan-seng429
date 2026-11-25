@@ -7,6 +7,7 @@ from typing import Annotated, Literal
 from pydantic import Field
 
 from kaptan.domain.schemas._base import IsoDateTime, KModel
+from kaptan.domain.schemas.preferences import Preferences
 
 TelegramLevel = Literal["less", "normal", "more"]
 CloudKap = Literal["ok", "blocked", "error", "unknown"]
@@ -41,3 +42,10 @@ class TelegramInput(KModel):
 class TelegramPair(KModel):
     pair_link: str
     expires_at: IsoDateTime
+
+
+class SettingsReset(KModel):
+    """POST /me/settings/reset: the settings as they are now, back at their defaults."""
+
+    preferences: Preferences
+    telegram: TelegramStatus

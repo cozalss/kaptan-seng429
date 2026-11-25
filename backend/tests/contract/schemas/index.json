@@ -193,6 +193,7 @@
  "RunSummary",
  "RunTrace",
  "SearchResult",
+ "SettingsReset",
  "Sha256Hex",
  "SignalItem",
  "SignalList",

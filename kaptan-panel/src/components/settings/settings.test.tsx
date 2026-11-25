@@ -10,6 +10,11 @@ vi.mock("next/navigation", async () => (await import("../nav.test-utils")).mockN
 
 const user = () => userEvent.setup({ delay: null });
 
+/** Ayarlar keeps each group folded behind "Değiştir"; the tests open the one they need. */
+async function openGroup(u: ReturnType<typeof user>, name: string) {
+  await u.click(await screen.findByRole("button", { name: `${name}: değiştir` }));
+}
+
 afterEach(() => {
   stopAllTimers();
   stopLiveTicker();
@@ -22,13 +27,14 @@ describe("Ayarlar · sınırlar", () => {
   it("shows the limits as sentences and changes one in a single action", async () => {
     const u = user();
     const { db } = renderWithDesk(<SettingsScreen />, new MockDb(null));
+    await openGroup(u, "Param ve sınırlar");
     const active = await screen.findByRole("list", { name: "Geçerli sınırlar" });
     expect(within(active).getByText("Bir işlemde en fazla paranın %0,5’i riske girer.")).toBeInTheDocument();
     expect(within(active).getByText("Aynı anda en fazla 10 farklı hisse elinde olur.")).toBeInTheDocument();
     expect(within(active).queryByText(/her şey durur/)).toBeNull();
     // What it comes to for you, in lira, from the real money.
     expect(await within(active).findByText(/^Bugünkü paranla: bir işlemde .* ₺ kadar\.$/)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1, name: /^Ayarlar\.\s*Paranı 6 sınır koruyor\.$/ })).toBeInTheDocument();
+    expect(await screen.findByTestId("ozet-para-sinir")).toHaveTextContent("6 sınır seni koruyor");
 
     await u.click(screen.getByRole("button", { name: "Değiştir: Bir işlemin riski" }));
     const form = screen.getByRole("form", { name: "Sınırı değiştir" });
@@ -52,6 +58,7 @@ describe("Ayarlar · sınırlar", () => {
   it("shows a refused change's reason in the form", async () => {
     const u = user();
     renderWithDesk(<SettingsScreen />, new MockDb(null));
+    await openGroup(u, "Param ve sınırlar");
     await u.click(await screen.findByRole("button", { name: "Değiştir: Tek hisseye giden" }));
     const form = screen.getByRole("form", { name: "Sınırı değiştir" });
     const value = within(form).getByRole("textbox", { name: /yeni değer/ });
@@ -74,6 +81,7 @@ describe("Ayarlar · sınırlar", () => {
       limitVersions: [...s.limitVersions, { ...first, version: 2, status: "proposed", proposed_by: by, decided_by: null, values: first.values.map((v) => (v.key === "max_position_pct" ? { ...v, value: 0.08 } : v)) }],
     }));
     renderWithDesk(<SettingsScreen />, db);
+    await openGroup(u, "Param ve sınırlar");
     const pending = await screen.findByTestId("limit-pending");
     expect(pending).toHaveTextContent("Yarım kalan değişiklik");
     await u.click(within(pending).getByRole("button", { name: "Uygula" }));
@@ -83,6 +91,7 @@ describe("Ayarlar · sınırlar", () => {
   it("says what is missing when the form is sent too early, and counts the reason", async () => {
     const u = user();
     renderWithDesk(<SettingsScreen />, new MockDb(null));
+    await openGroup(u, "Param ve sınırlar");
     await u.click(await screen.findByRole("button", { name: "Değiştir: Bir işlemin riski" }));
     const form = screen.getByRole("form", { name: "Sınırı değiştir" });
     const reason = within(form).getByRole("textbox", { name: "Neden?" });
@@ -101,6 +110,7 @@ describe("Ayarlar · hesap", () => {
     window.addEventListener("kaptan:how-it-works", opened);
     vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 204 })));
     renderWithDesk(<SettingsScreen />, new MockDb(null));
+    await openGroup(u, "Hesap ve yedek");
     await u.click(await screen.findByRole("button", { name: "Yeniden göster" }));
     expect(opened).toHaveBeenCalledTimes(1);
     window.removeEventListener("kaptan:how-it-works", opened);
@@ -111,10 +121,12 @@ describe("Ayarlar · hesap", () => {
 });
 
 describe("Ayarlar is a live product's settings", () => {
-  it("has no scenarios, no tamper test and no reset", async () => {
+  it("has no scenarios, no tamper test and no reset of the day", async () => {
+    const u = user();
     renderWithDesk(<SettingsScreen />, new MockDb(null));
+    await openGroup(u, "Param ve sınırlar");
     await screen.findByRole("list", { name: "Geçerli sınırlar" });
-    expect(screen.queryByRole("button", { name: /Senaryo|kurcala|sıfırla/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Senaryo|kurcala|günü sıfırla|veriyi sıfırla/i })).toBeNull();
     expect(document.body).not.toHaveTextContent(/deneme alanı|deneme modu|senaryo|kurcala/i);
   });
 });

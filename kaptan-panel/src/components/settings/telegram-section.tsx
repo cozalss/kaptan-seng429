@@ -27,6 +27,8 @@ import {
   telegramSentence,
   UNLINK_BUTTON,
 } from "./telegram-words";
+import { announceSettingsChanged } from "./settings-events";
+import { AdvancedFold } from "./settings-group";
 import "./price-alerts.css";
 
 const POLL_MS = 3000;
@@ -40,7 +42,10 @@ export function TelegramSection() {
   const q = useApiQuery((api) => api.telegramStatus(), []);
   // What an action just answered wins until the next look at the server brings a newer answer.
   const [local, setLocal] = useState<{ base: TelegramStatus | undefined; value: TelegramStatus } | null>(null);
-  const setStatus = (value: TelegramStatus) => setLocal({ base: q.data, value });
+  const setStatus = (value: TelegramStatus) => {
+    setLocal({ base: q.data, value });
+    announceSettingsChanged();
+  };
   const s = local && local.base === q.data ? local.value : (q.data ?? null);
   const [note, setNote] = useState<string | null>(null);
 
@@ -221,6 +226,7 @@ function Connected({
       <p className="ay-channel-detail">
         Bağlı{status.bot_username ? ` (@${status.bot_username})` : ""}. {CONNECTED_DETAIL}
       </p>
+      <AdvancedFold>
       <fieldset className="cf-seg mt-5">
         <legend className="cf-label">Kaç mesaj gelsin?</legend>
         <div className="cf-seg-row">
@@ -257,6 +263,7 @@ function Connected({
         ))}
       </select>
       <p className="ay-channel-detail">{capSentence(status.daily_cap)}</p>
+      </AdvancedFold>
       <div className="ay-test">
         <Button variant="secondary" pending={sample.pending} disabled={sample.pending} onClick={() => void send()}>
           {SAMPLE_BUTTON}

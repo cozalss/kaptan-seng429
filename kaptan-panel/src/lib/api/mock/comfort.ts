@@ -56,7 +56,7 @@ const RUN_MS = 1_800;
 const MIN_PASSWORD = 6;
 const MAX_PASSWORD = 200;
 
-function preferences(c: MockComfort, nowIso: string): Preferences {
+export function preferences(c: MockComfort, nowIso: string): Preferences {
   const active =
     c.pauseUntil !== null && Date.parse(c.pauseUntil) > Date.parse(nowIso);
   return {
