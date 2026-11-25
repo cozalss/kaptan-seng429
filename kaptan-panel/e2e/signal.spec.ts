@@ -44,6 +44,24 @@ test.describe("Senin hisselerinde bugün", () => {
     await expect(drawer.getByRole("button", { name: "Tamam", exact: true })).toHaveAttribute("aria-pressed", "true");
   });
 
+  test("Tamam takes an item off the strip and the toast's Geri al brings it back, also after a reload", async ({ page }) => {
+    await seedMock(page, {});
+    await loginApi(page);
+    await page.goto("/benim");
+    const strip = page.getByTestId("senin-hisselerinde");
+    const first = strip.locator("[data-signal-index]").first();
+    await expect(first).toBeVisible();
+    const id = (await first.getAttribute("data-signal-index")) ?? "";
+    const row = strip.locator(`[data-signal-index="${id}"]`);
+    await row.getByRole("button", { name: "Tamam", exact: true }).click();
+    await expect(row).toHaveCount(0);
+    await page.getByRole("button", { name: "Geri al" }).click();
+    await expect(row).toBeVisible();
+    await expect(row.getByRole("button", { name: "Tamam", exact: true })).toHaveAttribute("aria-pressed", "false");
+    await page.reload();
+    await expect(strip.locator(`[data-signal-index="${id}"]`)).toBeVisible();
+  });
+
   test("with nothing of mine it says so in words and counts the others", async ({ page }) => {
     await seedMock(page, { fresh: false });
     await loginApi(page);

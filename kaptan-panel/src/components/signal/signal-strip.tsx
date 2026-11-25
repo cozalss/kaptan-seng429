@@ -4,8 +4,9 @@ import "./signal.css";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
-import { ReadingMarksProvider, useReadingMarks } from "@/components/reading/marks";
+import { useCallback, useEffect, useMemo, useRef, type RefObject } from "react";
+import { ReadingMarksProvider, useReadingMarks, type OnDone } from "@/components/reading/marks";
+import { notify } from "@/components/ui/toast";
 import { useApiQuery } from "@/lib/api/react";
 import { fmtInt } from "@/lib/format";
 import { ROUTES } from "@/lib/nav";
@@ -23,9 +24,16 @@ export const STRIP_MAX = 5;
  * it says so in words (that sentence alone ends the daily check) and says how many others exist elsewhere.
  */
 export function SignalStrip({ limit = STRIP_MAX, compact = false, onMine }: { limit?: number; compact?: boolean; onMine?: (count: number) => void } = {}) {
+  /** The shown items' names, so the toast can say which one left. */
+  const namesRef = useRef<ReadonlyMap<number, string>>(new Map());
+  // "Tamam" takes the item off the strip: a toast keeps the way back open for a while.
+  const onDone = useCallback<OnDone>((index, undo) => {
+    const name = namesRef.current.get(index) ?? "Duyuru";
+    notify.event(`${name} listeden çıktı.`, undefined, { label: "Geri al", onClick: () => void undo() });
+  }, []);
   return (
-    <ReadingMarksProvider>
-      <StripBody limit={limit} compact={compact} onMine={onMine} />
+    <ReadingMarksProvider onDone={onDone}>
+      <StripBody limit={limit} compact={compact} onMine={onMine} namesRef={namesRef} />
     </ReadingMarksProvider>
   );
 }
@@ -34,7 +42,7 @@ export function SignalStrip({ limit = STRIP_MAX, compact = false, onMine }: { li
  * `compact` (the home): the others are the next block's job, so their line is left out, and the rest of
  * mine are one "Hepsi" link away. `onMine` hears how many of mine are still open (after a Tamam too).
  */
-function StripBody({ limit, compact, onMine }: { limit: number; compact: boolean; onMine?: (count: number) => void }) {
+function StripBody({ limit, compact, onMine, namesRef }: { limit: number; compact: boolean; onMine?: (count: number) => void; namesRef: RefObject<ReadonlyMap<number, string>> }) {
   const motion = useListMotion<HTMLUListElement>();
   const router = useRouter();
   const marks = useReadingMarks();
@@ -43,6 +51,9 @@ function StripBody({ limit, compact, onMine }: { limit: number; compact: boolean
   const mine = useMemo(() => stripItems(list).filter((i) => marks?.triageOf(i.disclosure_index) !== "tamam"), [list, marks]);
   const shown = useMemo(() => mine.slice(0, limit), [mine, limit]);
   const known = list !== null;
+  useEffect(() => {
+    namesRef.current = new Map(stripItems(list).map((i) => [i.disclosure_index, i.ticker ?? i.company_name] as const));
+  }, [list, namesRef]);
   useEffect(() => {
     if (known) onMine?.(mine.length);
   }, [known, mine.length, onMine]);

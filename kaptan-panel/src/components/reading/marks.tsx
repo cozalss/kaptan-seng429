@@ -12,6 +12,12 @@ export const READING_STATE = "kaptan:reading-state";
 
 const POLL_MS = 60_000;
 
+/**
+ * Counts the changes sent from this tab. A read asked before a change can answer after it with the server's
+ * older picture (a Tamam'd item would come back); a read is shared only if no change was sent meanwhile.
+ */
+let writes = 0;
+
 /** Hands a fresh answer to every listener (and to the caller's own copy). */
 export function shareReadingState(state: ReadingState): void {
   window.dispatchEvent(new CustomEvent<ReadingState>(READING_STATE, { detail: state }));
@@ -27,10 +33,11 @@ export function useReadingState(): { state: ReadingState | null; error: string |
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    const asked = writes;
     try {
       const next = await api.readingState();
       setError(null);
-      shareReadingState(next);
+      if (asked === writes) shareReadingState(next);
     } catch (e) {
       setError(errorMessage(e));
     }
@@ -72,8 +79,14 @@ export interface ReadingMarks {
 
 const Ctx = createContext<ReadingMarks | null>(null);
 
-/** The person's marks (saved, unread) for one screen; every star and the counter read the same copy. */
-export function ReadingMarksProvider({ children }: { children: ReactNode }) {
+/** Heard after a disclosure was put in "Tamam": `undo` puts back the state it had before (none, Yapılacak or Sonra oku). */
+export type OnDone = (index: number, undo: () => Promise<void>) => void;
+
+/**
+ * The person's marks (saved, unread) for one screen; every star and the counter read the same copy. `onDone` is for
+ * a screen where "Tamam" takes the item away (the home strip): it can offer the way back.
+ */
+export function ReadingMarksProvider({ children, onDone }: { children: ReactNode; onDone?: OnDone }) {
   const api = useApi();
   const shared = useReadingState();
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +96,7 @@ export function ReadingMarksProvider({ children }: { children: ReactNode }) {
 
   const apply = useCallback(async (call: (a: KaptanApi) => Promise<ReadingState>): Promise<boolean> => {
     setError(null);
+    writes += 1;
     try {
       shareReadingState(await call(api));
       return true;
@@ -102,7 +116,14 @@ export function ReadingMarksProvider({ children }: { children: ReactNode }) {
       isUnread: (i) => unread.has(i),
       toggleSaved: async (i) => void (await apply((a) => a.setSaved(i, !saved.has(i)))),
       triageOf: (i) => triage.get(i) ?? null,
-      setTriage: async (i, next) => void (await apply((a) => a.setTriage(i, triage.get(i) === next ? null : next))),
+      setTriage: async (i, next) => {
+        const before = triage.get(i) ?? null;
+        const target = before === next ? null : next;
+        // `before` is kept here, not read again at undo time: by then the copy already says "tamam".
+        if ((await apply((a) => a.setTriage(i, target))) && target === "tamam" && before !== "tamam") {
+          onDone?.(i, async () => void (await apply((a) => a.setTriage(i, before))));
+        }
+      },
       open: async (i) => {
         if (unread.has(i)) await apply((a) => a.markRead(i));
       },
@@ -117,7 +138,7 @@ export function ReadingMarksProvider({ children }: { children: ReactNode }) {
         : null,
       error: error ?? shared.error,
     };
-  }, [state, error, shared.error, undoTo, apply]);
+  }, [state, error, shared.error, undoTo, apply, onDone]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
