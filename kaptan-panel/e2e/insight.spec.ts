@@ -25,7 +25,7 @@ test("search finds a company by a Turkish-folded name, opens its page, and starr
   await page.reload();
   await expect(page.getByRole("button", { name: /İzliyorsun/ })).toBeVisible();
 
-  await go(page, "Ana sayfa", /\/benim$/);
+  await go(page, "Param", /\/portfoy$/);
   await expect(page.getByRole("region", { name: "İzlediklerim" })).toContainText("ORNYZ");
   expect(errors).toEqual([]);
 });

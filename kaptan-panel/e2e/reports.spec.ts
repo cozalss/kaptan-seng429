@@ -3,12 +3,14 @@ import { go, loginApi, mainNav, seedMock, trackErrors } from "./helpers";
 
 /** KAPtan ne kadar tuttu, Karne, the morning line and the benchmark: all from the test double, all honest. */
 test.describe("Karne and the track record", () => {
-  test("the home shows 'Bu sabah' and the benchmark sentence", async ({ page }) => {
+  test("the home opens 'Bu sabah' on a press; Param shows the benchmark sentence", async ({ page }) => {
     const errors = trackErrors(page);
     await seedMock(page, {});
     await loginApi(page);
     await page.goto("/benim");
+    await page.getByRole("button", { name: "Sabah özetini aç" }).click();
     await expect(page.getByTestId("bu-sabah")).toContainText("Bu sabah");
+    await page.goto("/portfoy");
     await expect(page.getByTestId("benchmark-line")).toContainText(/aynı sürede BIST 100 %3,2 arttı/);
     expect(errors).toEqual([]);
   });

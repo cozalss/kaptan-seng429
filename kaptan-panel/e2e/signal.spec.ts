@@ -4,7 +4,7 @@ import { loginApi, seedMock, trackErrors } from "./helpers";
 /** One meaning of "important": the home strip, Okunanlar, triage, the drawer and the keys (test double). */
 test.describe("Senin hisselerinde bugün", () => {
   for (const [name, width, height] of [["phone", 390, 844], ["desktop", 1440, 900]] as const) {
-    test(`the strip is the first thing on the home (${name})`, async ({ page }) => {
+    test(`the strip follows the decisions, and the highlights hold none of its items (${name})`, async ({ page }) => {
       const errors = trackErrors(page);
       await page.setViewportSize({ width, height });
       await seedMock(page, {});
@@ -13,10 +13,13 @@ test.describe("Senin hisselerinde bugün", () => {
       const strip = page.getByTestId("senin-hisselerinde");
       await expect(strip).toBeVisible();
       await expect(strip.getByRole("heading", { name: "Senin hisselerinde bugün" })).toBeVisible();
+      // Order on the home: the day's sentence, the decisions, then my companies' news.
+      const decisionsTop = await page.getByRole("region", { name: "Öneriler" }).evaluate((el) => el.getBoundingClientRect().top);
       const top = await strip.evaluate((el) => el.getBoundingClientRect().top);
-      expect(top).toBeLessThan(height / 2);
-      // the card under it is the next block, and shows none of the strip's items
-      const card = page.getByRole("heading", { name: "Bugün önemli duyurular" });
+      expect(top).toBeGreaterThan(decisionsTop);
+      expect(height).toBeGreaterThan(0);
+      // the highlights show none of the strip's items
+      const card = page.getByRole("heading", { name: "Günün öne çıkanları" });
       await expect(card).toBeVisible();
       const stripIds = await strip.locator("[data-signal-index]").evaluateAll((els) => els.map((e) => e.getAttribute("data-signal-index")));
       const cardLinks = await page.locator(".dg-card a[href*='bildirim=']").evaluateAll((els) => els.map((e) => e.getAttribute("href") ?? ""));
@@ -45,15 +48,19 @@ test.describe("Senin hisselerinde bugün", () => {
     await seedMock(page, { fresh: false });
     await loginApi(page);
     await page.goto("/benim");
-    // mark every item of mine done: the strip then shows the explicit quiet sentence
+    // mark every item of mine done (the home shows three at a time; the next one steps up)
     const strip = page.getByTestId("senin-hisselerinde");
     await expect(strip).toBeVisible();
-    const n = await strip.locator("[data-signal-index]").count();
-    for (let i = 0; i < n; i++) {
+    const more = strip.getByRole("link", { name: /^Hepsi \(\d+\)/ });
+    const total = (await more.count()) ? Number((await more.textContent())?.match(/\d+/)?.[0]) : await strip.locator("[data-signal-index]").count();
+    for (let i = 0; i < total; i++) {
+      const before = await page.locator("[data-signal-index]").first().getAttribute("data-signal-index");
       await strip.getByRole("button", { name: "Tamam", exact: true }).first().click();
-      await expect(strip.locator("[data-signal-index]")).toHaveCount(n - i - 1);
+      if (i < total - 1) await expect(page.locator("[data-signal-index]").first()).not.toHaveAttribute("data-signal-index", before ?? "");
     }
-    await expect(strip.getByText("Bugün senin hisselerinde önemli bir şey yok.")).toBeVisible();
+    // The empty strip leaves the home; the header says it in words instead.
+    await expect(strip).toHaveCount(0);
+    await expect(page.getByText(/Hisselerinde önemli bir duyuru yok\.|Senin hisselerinde bugün önemli bir şey yok\./)).toBeVisible();
   });
 });
 
@@ -113,6 +120,7 @@ test("the morning brief lists the important items with their lines", async ({ pa
   await seedMock(page, {});
   await loginApi(page);
   await page.goto("/benim");
+  await page.getByRole("button", { name: "Sabah özetini aç" }).click();
   const brief = page.getByTestId("bu-sabah");
   await expect(brief).toBeVisible();
   await expect(brief.getByTestId("brief-signals").or(brief.getByTestId("brief-nothing"))).toBeVisible();

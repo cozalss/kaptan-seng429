@@ -1,6 +1,8 @@
 "use client";
 
+import { useId, useState } from "react";
 import { useApiQuery } from "@/lib/api/react";
+import type { KaptanApi } from "@/lib/api/types";
 import { fmtInt, fmtTime } from "@/lib/format";
 import { keepFigures } from "@/components/story/num";
 import Link from "next/link";
@@ -24,13 +26,38 @@ export function sinceMorningSentence(morning: number, now: number): string | nul
  * "Bu sabah": the morning brief in its own plain sentences, calm and short. When none was built yet
  * (the API answers 404 and the client turns it into null) or the request fails, nothing shows.
  */
-export function MorningBrief({ proposalsNow }: { proposalsNow?: number }) {
+export function MorningBrief({ proposalsNow, collapsible = false }: { proposalsNow?: number; collapsible?: boolean }) {
   const q = useApiQuery((api) => api.briefToday(), []);
+  const [open, setOpen] = useState(false);
+  const panel = useId();
   const brief = q.data;
   if (!brief || brief.summary_tr.trim() === "") return null;
+  if (collapsible) {
+    // The home: the header's sentence already answers the morning's question; the brief is one press away.
+    return (
+      <div className="hm-brief">
+        <button type="button" className="hm-brief-toggle" aria-expanded={open} aria-controls={panel} onClick={() => setOpen((v) => !v)}>
+          <svg aria-hidden viewBox="0 0 10 10" className="hm-brief-chevron" fill="currentColor">
+            <path d="M3 1.5 7.5 5 3 8.5Z" />
+          </svg>
+          {open ? "Sabah özetini kapat" : "Sabah özetini aç"}
+          <span className="hm-brief-time">saat {fmtTime(brief.generated_at)}</span>
+        </button>
+        <div id={panel} hidden={!open}>
+          {open ? <BriefBody brief={brief} proposalsNow={proposalsNow} inline /> : null}
+        </div>
+      </div>
+    );
+  }
+  return <BriefBody brief={brief} proposalsNow={proposalsNow} />;
+}
+
+type Brief = NonNullable<Awaited<ReturnType<KaptanApi["briefToday"]>>>;
+
+function BriefBody({ brief, proposalsNow, inline = false }: { brief: Brief; proposalsNow?: number; inline?: boolean }) {
   const since = proposalsNow === undefined ? null : sinceMorningSentence(brief.pending_approvals.length, proposalsNow);
   return (
-    <section aria-labelledby="bu-sabah" className="home-band u-page !pt-10 !pb-0 sm:!pt-14" data-testid="bu-sabah">
+    <section aria-labelledby="bu-sabah" className={inline ? "hm-brief-panel" : "home-band u-page !pt-10 !pb-0 sm:!pt-14"} data-testid="bu-sabah">
       <h2 id="bu-sabah" className="u-caption text-ink-soft">
         Bu sabah
       </h2>

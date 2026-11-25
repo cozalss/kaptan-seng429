@@ -15,17 +15,17 @@ const SHOWN = 5;
  * important disclosure of your companies, so this card lists only the others (no item twice), the first five, and
  * the way to all of them. Information, not a suggestion. Quiet and honest when nothing stands out.
  */
-export function DigestCard() {
+export function DigestCard({ limit = SHOWN, title = "Bugün önemli duyurular" }: { limit?: number; title?: string } = {}) {
   const q = useApiQuery((api) => api.digest(), []);
   const d = q.data;
   if (!d) return null;
   const others = d.items.filter((i) => i.why === null);
-  const top = others.slice(0, SHOWN);
+  const top = others.slice(0, limit);
   const quiet = others.length === 0 ? quietLine({ ...d, total: 0 }) : d.note;
   return (
     <section aria-labelledby="onemli-duyurular" className="dg-card u-page">
       <h2 id="onemli-duyurular" className="u-caption">
-        Bugün önemli duyurular
+        {title}
       </h2>
       {quiet ? <p className="text-body text-ink-soft">{others.length === 0 && d.items.length > 0 ? "Başka şirketlerde dikkat çeken duyuru yok." : quiet}</p> : null}
       {top.length > 0 ? (

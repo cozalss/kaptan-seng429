@@ -387,6 +387,16 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The second line of a queued decision: why, in KAPtan's short words. */
+.oneri-queue-why {
+  display: block;
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--ink-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .oneri-queue-error {
   color: var(--north);
   font-weight: 600;

@@ -295,3 +295,23 @@ for (const width of [360, 1440]) {
     });
   }
 }
+
+/** The home (redesign): axe from the smallest phone to desktop, light and dark, with the morning brief open. */
+for (const width of [320, 390, 768, 1440]) {
+  for (const scheme of ["light", "dark"] as const) {
+    test(`axe home @${width} ${scheme}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: width < 500 ? 844 : 900 });
+      await page.emulateMedia({ colorScheme: scheme });
+      await seedMock(page, {});
+      await loginApi(page);
+      await page.goto("/benim");
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.getByTestId("senin-hisselerinde").locator("[data-signal-index]").first()).toBeVisible();
+      await page.getByRole("button", { name: "Sabah özetini aç" }).click();
+      await expect(page.getByTestId("bu-sabah")).toBeVisible();
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow).toBeLessThanOrEqual(0);
+      await expectNoViolations(page);
+    });
+  }
+}

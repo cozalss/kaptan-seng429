@@ -29,10 +29,11 @@ const MOOD_INK: Readonly<Record<DaySentence["mood"], string>> = { up: "text-gain
 /**
  * The thesis of /benim, full bleed, no card: one sentence about today, the total under it, and
  * the money's line as a horizon where the starting amount is the waterline and the boat sits on
- * today. The line rises in the sky beside the words. The sea below carries the plain facts a
+ * today. The line rises in the sky beside the words. `bare` (Param): no greeting, sentence or total (the
+ * page has its own), only a small heading over the line. The sea below carries the plain facts a
  * person checks next, and the decisions overlap it.
  */
-export function MoneyHero({ overview, todayPct, positions, name }: { overview: Overview; todayPct: number | null; positions: readonly Position[]; name: string | null }) {
+export function MoneyHero({ overview, todayPct, positions, name, bare = false }: { overview: Overview; todayPct: number | null; positions: readonly Position[]; name: string | null; bare?: boolean }) {
   const series = overview.equity_series;
   const [period, setPeriod] = useState<Period>("Tümü");
   const [tableOpen, setTableOpen] = useState(false);
@@ -51,6 +52,11 @@ export function MoneyHero({ overview, todayPct, positions, name }: { overview: O
         <div className={cn("hz-top", isFlat(points) && "hz-top--short")}>
           <HeroPlot key={period} points={points} capitalStart={overview.capital_start} marks={marks} flat={isFlat(points)} />
           <div className="hz-head u-page">
+            {bare ? (
+              <h2 id="paran-baslik" data-hz-words className="u-caption w-fit pt-2">
+                Paran gün gün
+              </h2>
+            ) : (
             <div className="w-fit max-w-full">
               <DayLine name={name} now={now} />
               <h1 id="paran-baslik" data-hz-words tabIndex={-1} data-route-focus="" className="u-sentence u-sentence--hero mt-3 text-ink outline-none sm:mt-4">
@@ -81,6 +87,7 @@ export function MoneyHero({ overview, todayPct, positions, name }: { overview: O
                 ) : null}
               </div>
             </div>
+            )}
           </div>
         </div>
         <div className="hz-sea">

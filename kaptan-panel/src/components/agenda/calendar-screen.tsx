@@ -9,6 +9,7 @@ import { useNow } from "@/lib/clock";
 import { istanbulDay } from "@/lib/session-day";
 import { PageHeader, ScreenState } from "@/components/shell/page-frame";
 import { EventRow } from "./event-row";
+import { MarketStrip } from "./market-strip";
 
 const RANGES = [14, 30, 60, 120] as const;
 
@@ -43,6 +44,7 @@ export function CalendarScreen() {
           </div>
         }
       />
+      <MarketStrip className="mb-6" />
       {q.error && !cal ? (
         <ScreenState kind="error" title="Takvimi şu an açamadım." onRetry={q.refetch}>
           {q.error}

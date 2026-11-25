@@ -13,7 +13,7 @@ test("login → home → approve → sees what to enter → copies → Girdim �
   const errors = trackErrors(page);
   await login(page);
 
-  await expect(page.getByRole("heading", { level: 1, name: /Paran bugün/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /^Bugün \d+ kararın var\.$/ })).toBeVisible();
   await expect(page.getByTestId("toplam-para")).toContainText("₺");
   const suggestions = page.getByRole("region", { name: "Öneriler" });
   await expect(suggestions).toBeVisible();
@@ -33,7 +33,6 @@ test("login → home → approve → sees what to enter → copies → Girdim �
   await expect(slip).toContainText("Tanesi en fazla");
   await expect(slip).toContainText("Toplam yaklaşık");
   await expect(slip).toContainText(/içinde gir|açılır/);
-  await expect(page.getByTestId("son-islemler")).toContainText(`${symbol} alımını onayladın`);
   await expect(page.getByRole("button", { name: label })).toHaveCount(0);
 
   // Copy what to type into the bank's app.
@@ -46,6 +45,8 @@ test("login → home → approve → sees what to enter → copies → Girdim �
   // It is also waiting in Param, the same order.
   await go(page, "Param", /\/portfoy$/);
   await expect(page.getByRole("heading", { level: 1, name: "Param" })).toBeVisible();
+  // Son işlemler moved from the home to Param.
+  await expect(page.getByTestId("son-islemler")).toContainText(`${symbol} alımını onayladın`);
   await expect(page.getByRole("heading", { name: /^Bankana gireceklerin/ })).toBeVisible();
   await expect(page.getByRole("group", { name: /^Bankana gireceğin işlem/ }).first()).toContainText(symbol);
 

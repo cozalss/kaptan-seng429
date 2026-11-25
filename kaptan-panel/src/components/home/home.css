@@ -1,0 +1,546 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   The home (/benim): one "today" header, the money on its ink sea, then the decisions, my companies'
+   news and the day's highlights. Tokens from globals.css only. Rhythm: blocks are --hm-gap apart,
+   the inside of a block steps in --space-2 / --space-4. One accent (the sea); gain and loss only on
+   the day's figure, always with a mark and a sign. At most two type sizes inside a block.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.hm {
+  --hm-gap: var(--space-12);
+  --hm-up: #9be6bb; /* on the sea: 10:1 */
+  --hm-down: #ffb4c9; /* on the sea: 9:1 */
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-24);
+}
+@media (min-width: 1024px) {
+  .hm {
+    --hm-gap: var(--space-16);
+    padding-top: var(--space-12);
+  }
+}
+/* The blocks reused from other screens bring their own page column and rules: here the home's grid is the column. */
+.hm .u-page {
+  max-width: none;
+  padding-inline: 0;
+}
+
+/* ── Top: the sentence, and the money beside it (under it on a phone) ── */
+.hm-top {
+  display: grid;
+  gap: var(--space-8);
+  align-items: center;
+}
+@media (min-width: 1024px) {
+  .hm-top {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 25rem);
+    gap: var(--space-16);
+  }
+}
+
+.hm-today {
+  min-width: 0;
+}
+.hm-today-day {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
+  min-height: 1.5rem;
+  font-size: var(--text-ui);
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.hm-today-name {
+  font-weight: 600;
+  color: var(--ink);
+}
+.hm-today-market {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.hm-today-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  border: 2px solid var(--rule-ui);
+}
+.hm-today-market[data-open="true"] .hm-today-dot {
+  border-color: var(--gain);
+  background: var(--gain);
+}
+.hm-today-head {
+  margin-top: var(--space-4);
+  max-width: 16ch;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.5rem, 1.4rem + 3.4vw, 4.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  -webkit-text-stroke: 0.012em currentColor;
+  color: var(--ink);
+  outline: none;
+}
+.hm-today-detail {
+  margin-top: var(--space-4);
+  max-width: 46ch;
+  font-size: var(--text-lead);
+  line-height: var(--text-lead--line-height);
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+/* The morning brief: one quiet press under the sentence. */
+.hm-brief {
+  margin-top: var(--space-3);
+}
+.hm-brief-toggle {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-ui);
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-ui);
+  text-underline-offset: 4px;
+  transition: text-decoration-color var(--dur-quick) var(--ease-ink);
+}
+.hm-brief-toggle:hover {
+  text-decoration-color: var(--ink);
+}
+.hm-brief-toggle:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+.hm-brief-chevron {
+  width: 0.625rem;
+  height: 0.625rem;
+  transition: transform var(--dur-quick) var(--ease-out-expo);
+}
+.hm-brief-toggle[aria-expanded="true"] .hm-brief-chevron {
+  transform: rotate(90deg);
+}
+.hm-brief-time {
+  display: inline-block;
+  font-weight: 400;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+.hm-brief-panel {
+  margin-top: var(--space-2);
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--ink);
+  max-width: 62ch;
+  animation: hm-rise var(--dur-base) var(--ease-out-expo) both;
+}
+
+/* ── The money: the one ink-sea surface on the home, the boat on today ── */
+.hm-money {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  background-color: var(--sea);
+  /* engraved water: fine strokes, so the sea reads as printed, not a flat fill */
+  background-image: repeating-linear-gradient(180deg, transparent 0 7px, rgb(255 255 255 / 0.045) 7px 8px);
+  color: var(--on-sea);
+  box-shadow: var(--shadow-ink, none);
+  transition: transform var(--dur-quick) var(--ease-out-expo);
+}
+.hm-money--ghost {
+  min-height: 15rem;
+  opacity: 0.35;
+}
+.hm-money-label {
+  font-size: var(--text-ui);
+  font-weight: 500;
+  color: var(--on-sea-soft);
+}
+.hm-money-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  font-size: 2.5rem;
+  color: var(--on-sea);
+}
+.hm-money-minor {
+  font-size: 0.55em;
+  color: var(--on-sea-soft);
+}
+.hm-money-lira {
+  margin-left: 0.3rem;
+}
+.hm-money-day {
+  font-size: var(--text-ui);
+  font-weight: 600;
+  color: var(--on-sea);
+  font-variant-numeric: tabular-nums;
+}
+.hm-money-day[data-mood="up"] {
+  color: var(--hm-up);
+}
+.hm-money-day[data-mood="down"] {
+  color: var(--hm-down);
+}
+.hm-money-pct {
+  font-weight: 500;
+}
+.hm-spark {
+  position: relative;
+  height: 4.5rem;
+  margin-top: var(--space-3);
+  margin-right: var(--space-2);
+}
+.hm-spark-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.hm-spark-water {
+  stroke: var(--sea-rule);
+  stroke-width: 1.5;
+}
+.hm-spark-line {
+  fill: none;
+  stroke: var(--on-sea);
+  stroke-width: 2.25;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+/* The keel (90% of the drawing) stands on today's point. */
+.hm-spark-at {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.hm-spark-boat {
+  position: absolute;
+  left: -1.4rem;
+  top: calc(-2.1rem * 0.9);
+  width: 2.8rem;
+  height: 2.1rem;
+  --boat-fill: var(--paper);
+  color: var(--ink);
+}
+.hm-money-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-4);
+  margin-top: var(--space-2);
+  font-size: var(--text-ui);
+}
+.hm-money-age {
+  color: var(--on-sea-soft);
+}
+.hm-money .pa {
+  color: var(--on-sea-soft);
+  font-size: var(--text-ui);
+}
+.hm-money-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: var(--space-1_5);
+  font-weight: 600;
+  color: var(--on-sea);
+}
+/* The whole card opens Param; the link names it. */
+.hm-money-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+.hm-money-link:focus-visible {
+  outline: none;
+}
+.hm-money:has(.hm-money-link:focus-visible) {
+  outline: 3px solid var(--brand);
+  outline-offset: 3px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .hm-money:has(.hm-money-link:hover) {
+    transform: translateY(-2px);
+  }
+  .hm-money:has(.hm-money-link:hover) .hm-money-link {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+}
+.hm-money:has(.hm-money-link:active) {
+  transform: scale(0.99);
+}
+/* Prices are focusable for their exact time: keep them above the card's link layer. */
+.hm-money .pa--timed {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Below: decisions and my news on the left, the day's highlights and the links on the right ── */
+.hm-grid {
+  display: grid;
+  gap: var(--hm-gap);
+  margin-top: var(--hm-gap);
+}
+@media (min-width: 1024px) {
+  .hm-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 25rem);
+    gap: var(--space-16);
+    align-items: start;
+  }
+}
+.hm-main,
+.hm-side {
+  display: grid;
+  gap: var(--hm-gap);
+  min-width: 0;
+  align-content: start;
+}
+.hm-main > :empty {
+  display: none;
+}
+/* The decisions sit on paper here: no sea band, the card itself is the action. */
+.hm .oneri-section {
+  margin: 0;
+}
+
+/* My companies' news: no frame of its own; hairlines between rows, quiet triage. */
+.hm .sg-strip {
+  padding: 0;
+  border: 0;
+  gap: var(--space-2);
+}
+.hm .sg-row {
+  padding-inline: 0;
+  padding-block: var(--space-4);
+}
+.hm .sg-tri {
+  min-height: 2.5rem;
+  border-width: 1px;
+  border-color: var(--hairline);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color var(--dur-quick) var(--ease-ink), transform var(--dur-instant) var(--ease-ink);
+}
+.hm .sg-tri:active {
+  transform: scale(0.97);
+}
+.hm .sg-tri[aria-pressed="true"] {
+  font-weight: 600;
+}
+
+/* The day's highlights: the same rows, a calmer frame. */
+.hm .dg-card {
+  border-top: 0;
+  padding: 0;
+  gap: var(--space-2);
+}
+.hm .dg-item {
+  grid-template-columns: 3rem 1fr;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-4) 0;
+  border-bottom: 0;
+  border-top: 1px solid var(--hairline);
+}
+
+/* WhyQuiet takes the decisions' place on a quiet day. */
+.hm [data-testid="neden-oneri-yok"] {
+  margin-top: 0;
+}
+
+/* ── The quiet links ── */
+.hm-links ul {
+  display: grid;
+  border-top: 1px solid var(--hairline);
+}
+.hm-link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-height: 3rem;
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--ink);
+}
+.hm-link-label {
+  font-size: var(--text-ui);
+  font-weight: 600;
+}
+.hm-link-what {
+  font-size: var(--text-dense);
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hm-link-go {
+  transition: transform var(--dur-quick) var(--ease-out-expo);
+}
+.hm-link:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .hm-link:hover .hm-link-go {
+    transform: translateX(3px);
+  }
+  .hm-link:hover .hm-link-label {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+}
+
+/* ── Arrival: the top settles in once; nothing moves after that ── */
+.hm-top > * {
+  animation: hm-rise var(--dur-base) var(--ease-out-expo) both;
+}
+.hm-top > :nth-child(2) {
+  animation-delay: 60ms;
+}
+@keyframes hm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hm-top > *,
+  .hm-brief-panel {
+    animation: hm-fade var(--dur-quick) linear both;
+  }
+  .hm-money,
+  .hm-link-go,
+  .hm-brief-chevron,
+  .hm .sg-tri {
+    transition: none;
+  }
+  .hm-money:has(.hm-money-link:hover) {
+    transform: none;
+  }
+}
+@keyframes hm-fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (forced-colors: active) {
+  .hm-money {
+    border: 2px solid CanvasText;
+  }
+  .hm-spark-boat {
+    forced-color-adjust: none;
+  }
+}
+
+/* ── The money, research pass: a delta chip, a status line, a baseline chart, range pills, three figures ── */
+.hm-money-wrap {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.hm-chip {
+  justify-self: start;
+  padding: var(--space-0_5) var(--space-2);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.08);
+}
+.hm-chip[data-mood="up"] {
+  background: rgb(155 230 187 / 0.14);
+}
+.hm-chip[data-mood="down"] {
+  background: rgb(255 180 201 / 0.14);
+}
+.hm-money-status {
+  font-size: var(--text-ui);
+  color: var(--on-sea-soft);
+}
+.hm-spark-fill {
+  stroke: none;
+}
+.hm-spark-fill--up {
+  fill: var(--hm-up);
+  opacity: 0.18;
+}
+.hm-spark-fill--down {
+  fill: var(--hm-down);
+  opacity: 0.22;
+}
+.hm-pills {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  justify-self: start;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+.hm-pill {
+  min-width: 3rem;
+  min-height: 2.25rem;
+  padding-inline: var(--space-3);
+  border-radius: 999px;
+  font-size: var(--text-dense);
+  font-weight: 500;
+  color: var(--on-sea-soft);
+  font-variant-numeric: tabular-nums;
+  transition: background-color var(--dur-quick) var(--ease-ink), color var(--dur-quick) var(--ease-ink);
+}
+.hm-pill[aria-pressed="true"] {
+  background: var(--on-sea);
+  color: var(--sea);
+  font-weight: 600;
+}
+.hm-pill:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.hm-pill:focus-visible {
+  outline: 3px solid var(--on-sea);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .hm-pill:hover:not(:disabled):not([aria-pressed="true"]) {
+    background: rgb(255 255 255 / 0.1);
+  }
+}
+.hm-figs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+@media (max-width: 479px) {
+  .hm-figs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.hm-figs dt {
+  font-size: var(--text-dense);
+  color: var(--ink-soft);
+}
+.hm-figs dd {
+  margin-top: var(--space-0_5);
+  font-size: var(--text-ui);
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hm-figs dd[data-mood="up"] {
+  color: var(--gain);
+}
+.hm-figs dd[data-mood="down"] {
+  color: var(--loss);
+}
+.hm-figs-pct {
+  font-weight: 400;
+  color: var(--ink-soft);
+}

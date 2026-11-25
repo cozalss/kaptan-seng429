@@ -468,3 +468,11 @@
 .pm-voyage-from {
   text-align: right;
 }
+
+/* Moved from the home: the money's line on its sea, full bleed, and the map, the log and the watchlist. */
+.pm-horizon {
+  margin-top: var(--space-8);
+}
+.pm-from-home {
+  margin-top: var(--space-section);
+}

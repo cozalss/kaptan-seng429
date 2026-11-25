@@ -1,43 +1,47 @@
 "use client";
 
-import { useMemo } from "react";
+import "@/components/home/home.css";
+
+import { useCallback, useMemo, useState } from "react";
 import { useApiQuery } from "@/lib/api/react";
 import { useNow } from "@/lib/clock";
 import { istanbulDay } from "@/lib/session-day";
 import { homeSeries } from "@/lib/solo/flows";
-import { recentActivity } from "@/lib/solo/activity";
 import { useHolds } from "@/lib/solo/holds";
 import { titleTr } from "@/lib/solo/words";
+import { stripItems } from "@/lib/signal/signal";
 import { useEventStream } from "@/lib/sse/use-event-stream";
 import { realName, useSession } from "@/lib/auth/session-context";
 import { ErrorState, Skeleton } from "@/components/ui/primitives";
 import { useDecisions } from "@/components/proposal/use-decisions";
 import { splitDecisions } from "@/components/proposal/decide-logic";
-import { Activity } from "./activity";
 import { CorporatePrompt } from "./corporate-prompt";
-import { AllocationPanel } from "./allocation";
-import { BenchmarkLine } from "./benchmark-line";
 import { FirstRun } from "./first-run";
-import { MoneyHero } from "./money-hero";
 import { MorningBrief } from "./morning-brief";
 import { PauseNotice } from "./pause-notice";
 import { Suggestions, type OrderFigures } from "./suggestions";
 import { WhyQuiet } from "./why-quiet";
-import { WatchStrip } from "@/components/watchlist/watch-strip";
-import { MarketStrip } from "@/components/agenda/market-strip";
-import { UpcomingCard } from "@/components/agenda/upcoming-card";
 import { DigestCard } from "@/components/digest/digest-card";
 import { SignalStrip } from "@/components/signal/signal-strip";
+import { HomeLinks } from "@/components/home/home-links";
+import { MoneyCard } from "@/components/home/money-card";
+import { TodayHeader } from "@/components/home/today-header";
+import { todayWords } from "@/components/home/today-words";
+
+/** On the home, at most this many of each list; the rest are one link away. */
+const HOME_LIST_MAX = 3;
 
 /**
- * The home, one calm scene for one person, in reading order on every screen: the money and how it
- * moved (the horizon), what to decide (laid over its sea), where the money sits, what happened
- * lately.
+ * The home answers three questions, in this order, and nothing else: is anything happening with my
+ * stocks and must I decide (the header's sentence, then the decisions and my companies' news), how is
+ * my money (the card on the ink sea), what else is notable (the day's highlights). Everything else
+ * (the money's whole line, where it sits, the log, the calendar, the market, the watchlist) lives on
+ * its own page, one quiet link away.
  */
 export function SoloHome() {
   const q = useApiQuery(async (api) => {
     // Today's reading counts only colour the empty state: when they fail, the home still opens.
-    const [overview, risk, approvals, positions, counters, book] = await Promise.all([
+    const [overview, risk, approvals, positions, counters, book, signals] = await Promise.all([
       api.overview(),
       api.riskStatus(),
       api.listApprovals("all"),
@@ -45,8 +49,12 @@ export function SoloHome() {
       api.counters().catch(() => null),
       // The movements only shape the line (a deposit is not a gain): without them it is drawn as before.
       api.money().catch(() => null),
+      // Only the header's count: the strip asks again and keeps it live.
+      Promise.resolve()
+        .then(() => api.signals())
+        .catch(() => null),
     ]);
-    return { overview, risk, approvals, positions, counters, movements: book?.movements ?? null };
+    return { overview, risk, approvals, positions, counters, movements: book?.movements ?? null, mineAtLoad: signals ? stripItems(signals).length : null };
   });
   const session = useSession();
   const { holds, addHold } = useHolds();
@@ -84,7 +92,8 @@ export function SoloHome() {
     if (!o || o.needs_setup) return o;
     return { ...o, equity_series: homeSeries(o.equity_series, data.movements, today, o.equity_now, o.capital_start) };
   }, [data, today]);
-  const activity = useMemo(() => (data ? recentActivity(data.approvals, data.positions, holds) : []), [data, holds]);
+  const [mineLive, setMineLive] = useState<number | null>(null);
+  const onMine = useCallback((n: number) => setMineLive(n), []);
 
   if (q.loading && !data) return <HomeSkeleton />;
   if (!data || !overview) return <ErrorState message={q.error ?? "Bilgiler alınamadı."} onRetry={() => void q.refetch()} />;
@@ -93,45 +102,41 @@ export function SoloHome() {
   // Buy and sell proposals still open now (a "tut" is a question about a holding, not a proposal): the morning
   // brief's count is a picture of 08:45, this is the live one under it.
   const { front, queue } = splitDecisions(suggestions, decisions.state);
-  const proposalsNow = [front, ...queue].filter((s) => s !== null && s.action !== "tut").length;
+  const open = [front, ...queue].filter((x) => x !== null);
+  const proposalsNow = open.filter((x) => x.action !== "tut").length;
+  const steps = decisions.steps.filter((t) => t.entry.status === "awaiting").length;
+  const started = overview.equity_series.length >= 2 || overview.allocations.length > 0;
+  const words = todayWords({ started, decisions: open.length, holds: open.length - proposalsNow, steps, mine: mineLive ?? data.mineAtLoad });
 
   return (
     <>
-      {q.error ? (
-        <div className="u-page mb-4 space-y-3">
-          <ErrorState message={q.error} onRetry={() => void q.refetch()} />
-        </div>
-      ) : null}
-      <SignalStrip />
-      <DigestCard />
-      <div className="u-page empty:hidden">
-        <MarketStrip />
-      </div>
       <PauseNotice />
-      <MoneyHero overview={overview} todayPct={data.risk.daily_pnl_pct} positions={data.positions} name={realName(session.name)} />
-      <div className="pb-12 empty:hidden">
-        <MorningBrief proposalsNow={proposalsNow} />
-        <BenchmarkLine className="u-page pt-4" />
-      </div>
-      <div className="home-sheet u-page">
-        <Suggestions
-          suggestions={suggestions}
-          names={names}
-          figures={figures}
-          held={held}
-          today={data.counters ? { read: data.counters.total, toCrew: data.counters.processed } : null}
-          decisions={decisions}
-        />
-        {suggestions.length === 0 ? <WhyQuiet /> : null}
-        <CorporatePrompt onChanged={() => void q.refetch()} />
-      </div>
-      <div className="home-band u-page">
-        <AllocationPanel allocations={data.overview.allocations} cash={data.overview.cash} total={data.overview.equity_now} />
-      </div>
-      <div className="home-band u-page !pt-0">
-        <UpcomingCard />
-        <WatchStrip />
-        <Activity items={activity} />
+      <div className="hm u-page">
+        {q.error ? <ErrorState message={q.error} onRetry={() => void q.refetch()} /> : null}
+        <div className="hm-top">
+          <TodayHeader name={realName(session.name)} words={words} brief={<MorningBrief proposalsNow={proposalsNow} collapsible />} />
+          <MoneyCard overview={overview} todayPct={data.risk.daily_pnl_pct} />
+        </div>
+        <div className="hm-grid">
+          <div className="hm-main">
+            <Suggestions
+              suggestions={suggestions}
+              names={names}
+              figures={figures}
+              held={held}
+              today={data.counters ? { read: data.counters.total, toCrew: data.counters.processed } : null}
+              decisions={decisions}
+              headless
+              empty={<WhyQuiet />}
+            />
+            <CorporatePrompt onChanged={() => void q.refetch()} />
+            <SignalStrip limit={HOME_LIST_MAX} compact onMine={onMine} />
+          </div>
+          <div className="hm-side">
+            <DigestCard limit={HOME_LIST_MAX} title="Günün öne çıkanları" />
+            <HomeLinks />
+          </div>
+        </div>
       </div>
     </>
   );
@@ -139,14 +144,15 @@ export function SoloHome() {
 
 function HomeSkeleton() {
   return (
-    <div role="status" aria-label="Yükleniyor">
-      <div className="hz-head u-page">
-        <Skeleton className="h-6 w-64" />
-        <Skeleton className="u-sentence u-sentence--hero mt-5 h-[1.96em] w-4/5" />
-        <Skeleton className="mt-6 h-[78px] w-[28rem] max-w-full" />
+    <div role="status" aria-label="Yükleniyor" className="hm u-page">
+      <div className="hm-top">
+        <div className="hm-today">
+          <Skeleton className="h-5 w-64" />
+          <Skeleton className="mt-6 h-12 w-4/5" />
+          <Skeleton className="mt-4 h-5 w-3/5" />
+        </div>
+        <div aria-hidden className="hm-money hm-money--ghost" />
       </div>
-      <div className="hz-plot" />
-      <div aria-hidden className="u-sea h-64" />
     </div>
   );
 }

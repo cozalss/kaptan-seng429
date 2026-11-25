@@ -43,20 +43,26 @@ afterEach(() => {
 });
 
 describe("Ana sayfa", () => {
-  it("shows the money, the chart, where it sits and the suggestions in plain words", async () => {
+  it("answers today first, shows the money, and the decisions in plain words", async () => {
     renderSolo();
-    expect(await screen.findByRole("heading", { level: 1, name: /Paran bugün .*arttı\./ })).toBeInTheDocument();
-    expect(screen.getByText("Paran şu an")).toBeInTheDocument();
+    // The header's sentence answers "is there something to decide?"; the split is the quieter line under it.
+    expect(await screen.findByRole("heading", { level: 1, name: "Bugün 6 kararın var." })).toBeInTheDocument();
+    expect(screen.getByText(/^\d+ öneri, \d+ “tut” sorusu\./)).toBeInTheDocument();
+    // The money: the total, today's move, three figures and the way to Param.
+    expect(screen.getByRole("heading", { level: 2, name: "Paran şu an" })).toBeInTheDocument();
     expect(plain(screen.getByTestId("toplam-para"))).toBe("1.018.615,00₺");
     expect(screen.getByText("Başladığından beri")).toBeInTheDocument();
-    expect(screen.getByText("Kullanılabilir nakit")).toBeInTheDocument();
-    expect(screen.getByRole("slider", { name: "Paranın gün gün değeri" })).toBeInTheDocument();
+    expect(screen.getByText("Nakit")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Son 3 ay: henüz/ })).toBeDisabled();
-    const where = screen.getByRole("region", { name: "Param nerede?" });
-    expect(within(where).getByText("Nakit")).toBeInTheDocument();
-    expect(within(where).getByRole("link", { name: /Farazi Enerji Dağıtım A\.Ş\./ })).toHaveAttribute("href", "/portfoy");
+    expect(screen.getByRole("link", { name: /Param’da gör/ })).toHaveAttribute("href", "/portfoy");
+    // Moved to their own pages: one quiet link each.
+    expect(screen.queryByRole("region", { name: "Param nerede?" })).toBeNull();
+    expect(screen.queryByTestId("son-islemler")).toBeNull();
+    const more = screen.getByRole("navigation", { name: "Daha fazlası" });
+    for (const [name, href] of [["Takvim", "/takvim"], ["Param", "/portfoy"], ["Okunanlar", "/bildirimler"], ["Geçmiş", "/gecmis"]]) {
+      expect(within(more).getByRole("link", { name: new RegExp(`^${name}`) })).toHaveAttribute("href", href);
+    }
     const list = screen.getByRole("region", { name: "Öneriler" });
-    expect(within(list).getByRole("heading", { level: 2, name: /^Bugün 6 kararın var(\.|: \d+ öneri, \d+ “tut” sorusu\.)$/ })).toBeInTheDocument();
     // One first decision, with how much, how sure and by when; the rest wait in order.
     const first = within(list).getByRole("article", { name: /^AL Koru Çelik hissesi/ });
     expect(plain(first)).toMatch(/\d adet, tanesi en fazla [\d.,]+ ₺/);
@@ -95,17 +101,16 @@ describe("Ana sayfa", () => {
     expect(within(slip).getByRole("button", { name: "Giremedim" })).toBeEnabled();
     // Focus moved with it, the next decision is ready, a screen reader was told.
     await waitFor(() => expect(within(slip).getByRole("heading", { name: "Onayladın. İşlem henüz yapılmadı." })).toHaveFocus());
-    expect(screen.getByRole("heading", { level: 2, name: "Önce bu işlemi bankana gir, sonra 5 kararın var." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Önce bu işlemi bankana gir, sonra 5 kararın var." })).toBeInTheDocument();
     expect(screen.getByRole("article", { name: /^AL Misal Çimento hissesi/ })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Bilgileri bankana sen gireceksin.");
-    expect(plain(screen.getByTestId("son-islemler"))).toContain("KRGCL alımını onayladın");
 
     // Copy, then Girdim with what was seen; the step closes and says so.
     await u.click(within(slip).getByRole("button", { name: "Girdim" }));
     await u.click(within(slip).getByRole("button", { name: "Girdiğimi kaydet" }));
     expect(await within(slip).findByRole("heading", { name: "Girdin. Param’a yazıldı." })).toBeInTheDocument();
     expect(within(slip).getByRole("link", { name: "Param’da gör →" })).toHaveAttribute("href", "/portfoy");
-    expect(screen.getByRole("heading", { level: 2, name: /^Bugün 5 kararın var(\.|: \d+ öneri, \d+ “tut” sorusu\.)$/ })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Bugün 5 kararın var." })).toBeInTheDocument();
   });
 
   it("keeps a waiting order findable on the next visit", async () => {
@@ -162,7 +167,6 @@ describe("Ana sayfa", () => {
     // Gone in the same frame: the next one is up before the server has answered.
     expect(screen.queryByRole("button", { name: "Geç: AL ORNCM" })).not.toBeInTheDocument();
     await waitFor(() => expect(sel.approvalCards(db.snapshot).find((c) => c.ticker === "ORNCM")?.status).toBe("rejected"));
-    await waitFor(() => expect(plain(screen.getByTestId("son-islemler"))).toContain("ORNCM önerisini geçtin"));
     expect(screen.queryByRole("group", { name: /^Bankana gireceğin işlem/ })).not.toBeInTheDocument();
     // A TUT is just a line: nothing to enter at any bank.
     await u.click(screen.getByRole("button", { name: "Öne al: TUT FRZEN" }));
@@ -171,7 +175,6 @@ describe("Ana sayfa", () => {
     expect(screen.getByText("Yapman gereken bir şey yok.")).toBeInTheDocument();
     expect(screen.queryByRole("group", { name: /^Bankana gireceğin işlem/ })).not.toBeInTheDocument();
     expect(db.snapshot.auditAppends.at(-1)).toMatchObject({ action: "suggestion.held", entity_id: "tut-FRZEN", payload: { ticker: "FRZEN" } });
-    await waitFor(() => expect(plain(screen.getByTestId("son-islemler"))).toContain("FRZEN elinde kalıyor"));
     expect(window.localStorage.getItem(HOLDS_KEY)).toContain("tut-FRZEN");
   });
 

@@ -24,6 +24,7 @@ import { Holdings } from "./holdings";
 import { BookTools } from "./book-tools";
 import { ParamInsights } from "@/components/insights/param-insights";
 import { MoneySection } from "./money-section";
+import { ParamFromHome, ParamHorizon } from "./param-from-home";
 import { placesSentence, todayLira } from "./param-words";
 import { istanbulDate } from "./risk-math";
 import { Skyline } from "./skyline";
@@ -75,6 +76,8 @@ export function PortfolioScreen() {
 
       <BenchmarkLine className="mt-3" />
 
+      {money.data && positions ? <ParamHorizon overview={money.data} movements={book.data?.movements ?? null} todayPct={risk?.daily_pnl_pct ?? null} positions={positions} /> : null}
+
       {waiting.length ? (
         <Band aria-labelledby="fisler" className="pm-slips">
           <h2 id="fisler" className="u-chapter text-ink">
@@ -101,6 +104,8 @@ export function PortfolioScreen() {
           Birazdan her şirketin bugün ne ettiğini göreceksin.
         </ScreenState>
       ) : null}
+
+      {money.data && positions ? <ParamFromHome overview={money.data} positions={positions} /> : null}
 
       <MoneySection book={book.data ?? null} onChanged={reload} />
 

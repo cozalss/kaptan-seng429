@@ -38,6 +38,10 @@ export interface SuggestionsProps {
   /** Today's reading, for the empty state: how many notices were read and looked at closely. */
   today?: { read: number; toCrew: number } | null;
   decisions: Decisions;
+  /** The home: its header already says the section's sentence, so no heading here. */
+  headless?: boolean;
+  /** With `headless`: what an empty day shows instead of the big empty picture. */
+  empty?: ReactNode;
 }
 
 /**
@@ -45,7 +49,7 @@ export interface SuggestionsProps {
  * the rest visibly queued and one press away. Everything is a plain list to a screen reader, and a
  * button to a keyboard; on a phone a swipe also shows the next one.
  */
-export function Suggestions({ suggestions, names, figures, held, today = null, decisions }: SuggestionsProps) {
+export function Suggestions({ suggestions, names, figures, held, today = null, decisions, headless = false, empty = null }: SuggestionsProps) {
   const { state, steps, onAnswer, onPick } = decisions;
   const { front, queue } = splitDecisions(orderSuggestions(suggestions), state);
   const open = [front, ...queue].filter((s): s is Suggestion => s !== null);
@@ -85,14 +89,14 @@ export function Suggestions({ suggestions, names, figures, held, today = null, d
       </p>
       {open.length === 0 && answered.length === 0 ? (
         <div className="oneri-stack-wrap">
-          <EmptySuggestions today={today} />
+          {headless ? empty : <EmptySuggestions today={today} />}
           {leaving.map((f) => (
             <LeavingSheet key={f.id} flight={f} />
           ))}
         </div>
       ) : (
         <>
-          <h2 className="u-chapter oneri-section-head">{sectionSentence({ decisions: open.length, steps: waitingAtBank, holds: open.filter((s) => s.action === "tut").length })}</h2>
+          {headless ? null : <h2 className="u-chapter oneri-section-head">{sectionSentence({ decisions: open.length, steps: waitingAtBank, holds: open.filter((s) => s.action === "tut").length })}</h2>}
           {answered.length ? (
             <div className="oneri-steps">
               {answered.map((id) => (
@@ -236,6 +240,7 @@ function Queue({ queue, facts, errors, onPick }: { queue: readonly Suggestion[];
                 <span className="oneri-queue-who">
                   {f.name ? shortName(f.name) : s.symbol}
                   {errors[s.id] ? <span className="oneri-queue-error"> · olmadı, tekrar bak</span> : null}
+                  {s.reason_short ? <span className="oneri-queue-why">{s.reason_short}</span> : null}
                 </span>
                 {amount !== null ? <span className="oneri-queue-amount">{fmtLira(amount)}</span> : null}
                 <span aria-hidden className="oneri-queue-go">

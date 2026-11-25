@@ -8,7 +8,7 @@ test.describe("Önemli duyurular", () => {
     await seedMock(page, {});
     await loginApi(page);
     await page.goto("/benim");
-    await expect(page.getByRole("heading", { name: "Bugün önemli duyurular" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Günün öne çıkanları" })).toBeVisible();
     await page.locator(".dg-card").getByRole("link", { name: /Hepsini gör|Önemli duyurulara git/ }).click();
     await expect(page).toHaveURL(/\/onemli$/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Önemli duyurular");
