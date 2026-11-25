@@ -4,7 +4,6 @@ import type { KaptanApi } from "@/lib/api/types";
 import { BenchmarkLine } from "./benchmark-line";
 import { MorningBrief, sinceMorningSentence } from "./morning-brief";
 import { mockApi, renderWithApi } from "./money.test-utils";
-import { WhyQuiet } from "./why-quiet";
 
 vi.mock("next/navigation", async () => (await import("../nav.test-utils")).mockNavigation());
 
@@ -25,12 +24,6 @@ describe("home notes", () => {
     renderWithApi(<MorningBrief />, quiet({ briefToday: () => Promise.reject(new Error("x")) }));
     await new Promise((r) => setTimeout(r, 20));
     expect(screen.queryByTestId("bu-sabah")).toBeNull();
-  });
-
-  it("says why there is no suggestion, with a way to the read disclosures", async () => {
-    renderWithApi(<WhyQuiet />, mockApi({ fresh: false }));
-    expect(await screen.findByTestId("neden-oneri-yok")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Okunanlara bak/ })).toHaveAttribute("href", "/bildirimler");
   });
 
   it("shows the benchmark sentence, and nothing without an honest comparison", async () => {

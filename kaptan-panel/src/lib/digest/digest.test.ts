@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Digest, DigestItem } from "@/lib/domain/digest";
-import { digestSentence, groupByKind, mineOf, quietLine } from "./digest";
+import { digestSentence, groupByKind, mineOf } from "./digest";
 
 const item = (n: number, kind: DigestItem["kind"], why: DigestItem["why"] = null): DigestItem => ({
   disclosure_index: n,
@@ -48,11 +48,5 @@ describe("digest words", () => {
     expect(digestSentence(digest(0), "2026-11-23")).toBe("Bu gün dikkat çeken duyuru yok.");
     expect(digestSentence(digest(7), "2026-11-20")).toBe("Bugün 7 önemli duyuru var.");
     expect(digestSentence(digest(7), "2026-11-23")).toBe("Bu gün 7 önemli duyuru vardı.");
-  });
-
-  it("puts the market-closed note first on a quiet card", () => {
-    expect(quietLine(digest(3, { note: "Borsa kapalı; son işlem gününün duyuruları." }))).toBe("Borsa kapalı; son işlem gününün duyuruları.");
-    expect(quietLine(digest(0))).toBe("Bugün dikkat çeken duyuru yok.");
-    expect(quietLine(digest(2))).toBe("");
   });
 });

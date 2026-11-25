@@ -168,69 +168,6 @@
   margin-top: var(--space-1);
 }
 
-/* ── The day's few big things. ── */
-.ok-worth {
-  margin-top: clamp(3rem, var(--space-8) + 4vw, var(--space-24));
-}
-.ok-worth-head {
-  padding-bottom: var(--space-3);
-  border-bottom: 2px solid var(--ink);
-  font-size: 0.9375rem;
-  color: var(--ink);
-}
-.ok-worth-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: clamp(2rem, var(--space-4) + 4vw, var(--space-20));
-}
-.ok-worth-row {
-  padding-block: clamp(1.25rem, var(--space-4) + 1vw, var(--space-8));
-  border-bottom: 1px solid var(--hairline);
-}
-.ok-worth-ticker {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-}
-.ok-worth-name {
-  margin-top: var(--space-0_5);
-  font-family: var(--font-display);
-  font-weight: 600;
-  -webkit-text-stroke: 0.25px currentColor;
-  font-size: clamp(2rem, 1.75rem + 1vw, 2.75rem);
-  line-height: 1.08;
-  letter-spacing: -0.012em;
-  color: var(--ink);
-}
-.ok-worth-said {
-  margin-top: var(--space-2_5);
-  font-size: 1.0625rem;
-  line-height: 1.5;
-  color: var(--ink);
-}
-.ok-worth-did {
-  margin-top: var(--space-1);
-  font-size: 1rem;
-  line-height: 1.5;
-  font-weight: 600;
-  color: var(--ink);
-}
-.ok-worth-links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0 var(--space-6);
-  margin-top: var(--space-1_5);
-}
-@media (max-width: 859px) {
-  .ok-worth-list {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 .ok-go,
 .ok-kap {
   display: inline-flex;

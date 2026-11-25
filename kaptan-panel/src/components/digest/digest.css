@@ -34,7 +34,3 @@
   .dg-days { width: 100%; justify-content: space-between; }
   .dg-day { min-width: 0; }
 }
-/* A phone shows the first three on the home; the rest are one tap away on /onemli. */
-@media (max-width: 639px) {
-  .dg-card .dg-list > li:nth-child(n + 4) { display: none; }
-}

@@ -247,10 +247,6 @@
   padding-bottom: var(--hz-band);
   pointer-events: none;
 }
-.hz-head h1,
-.hz-head p {
-  pointer-events: auto;
-}
 .hz-plot {
   position: relative;
   height: 100%;

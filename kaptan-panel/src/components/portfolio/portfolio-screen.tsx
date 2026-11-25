@@ -76,7 +76,7 @@ export function PortfolioScreen() {
 
       <BenchmarkLine className="mt-3" />
 
-      {money.data && positions ? <ParamHorizon overview={money.data} movements={book.data?.movements ?? null} todayPct={risk?.daily_pnl_pct ?? null} positions={positions} /> : null}
+      {money.data && positions ? <ParamHorizon overview={money.data} movements={book.data?.movements ?? null} positions={positions} /> : null}
 
       {waiting.length ? (
         <Band aria-labelledby="fisler" className="pm-slips">

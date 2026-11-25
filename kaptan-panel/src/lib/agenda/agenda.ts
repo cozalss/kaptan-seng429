@@ -1,4 +1,4 @@
-import type { Calendar, CalendarEvent, EventKind } from "@/lib/domain/agenda";
+import type { CalendarEvent, EventKind } from "@/lib/domain/agenda";
 
 /** The small words the calendar screens use. Pure, so they can be tested. */
 export const KIND_LABEL: Readonly<Record<EventKind, string>> = {
@@ -52,9 +52,4 @@ export function groupByDay(events: readonly CalendarEvent[]): DayGroup[] {
     else out.push({ day: e.day, events: [e] });
   }
   return out;
-}
-
-/** The next events for the home card: the first `n` within `days` days of today. */
-export function soon(cal: Calendar, today: string, days: number, n: number): CalendarEvent[] {
-  return cal.events.filter((e) => daysBetween(today, e.day) <= days).slice(0, n);
 }

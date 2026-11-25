@@ -2,19 +2,14 @@
 
 import { useMemo, useState } from "react";
 import type { Position } from "@/lib/domain";
-import { fmtFigurePct, fmtInt, fmtSignedFigurePct, NBSP } from "@/lib/format";
-import { useNow } from "@/lib/clock";
-import { dayLabel as longDay, istanbulDay } from "@/lib/session-day";
-import { greeting, marketOpen } from "@/lib/solo/greeting";
+import { fmtFigurePct, fmtSignedFigurePct } from "@/lib/format";
 import type { EquityPoint, Overview } from "@/lib/solo/overview";
 import { filterPeriod, PERIOD_LABEL, PERIODS, periodIsDistinct, type Period } from "@/lib/solo/period";
-import { dayLabel, fmtLira, liraParts } from "@/lib/solo/words";
-import { isTradingDay } from "@/lib/time";
+import { dayLabel, fmtLira } from "@/lib/solo/words";
 import { cn } from "@/lib/utils";
 import { Figure } from "@/components/ui/figure";
 import { HeroPlot } from "./hero-plot";
-import { PriceAge } from "./price-age";
-import { daySentence, differenceWords, moneyMarks, type DaySentence } from "./horizon";
+import { differenceWords, moneyMarks } from "./horizon";
 
 /** Few days, or the money has not moved yet: a short plot and a promise instead of a flat box. */
 export function isFlat(points: readonly EquityPoint[]): boolean {
@@ -24,27 +19,18 @@ export function isFlat(points: readonly EquityPoint[]): boolean {
 /** The switch's words: what the person reads; the API's period names stay in lib/solo/period. */
 const PERIOD_WORD: Readonly<Record<Period, string>> = { "1A": "1 ay", "3A": "3 ay", Tümü: "Tümü" };
 
-const MOOD_INK: Readonly<Record<DaySentence["mood"], string>> = { up: "text-gain", down: "text-loss", flat: "", closed: "", unknown: "", new: "" };
-
 /**
- * The thesis of /benim, full bleed, no card: one sentence about today, the total under it, and
- * the money's line as a horizon where the starting amount is the waterline and the boat sits on
- * today. The line rises in the sky beside the words. `bare` (Param): no greeting, sentence or total (the
- * page has its own), only a small heading over the line. The sea below carries the plain facts a
- * person checks next, and the decisions overlap it.
+ * The money's line on Param, full bleed, no card: a small heading over the line drawn as a horizon where the
+ * starting amount is the waterline and the boat sits on today. The sea below carries the plain facts a person
+ * checks next.
  */
-export function MoneyHero({ overview, todayPct, positions, name, bare = false }: { overview: Overview; todayPct: number | null; positions: readonly Position[]; name: string | null; bare?: boolean }) {
+export function MoneyHero({ overview, positions }: { overview: Overview; positions: readonly Position[] }) {
   const series = overview.equity_series;
   const [period, setPeriod] = useState<Period>("Tümü");
   const [tableOpen, setTableOpen] = useState(false);
   const points = useMemo(() => filterPeriod(series, period), [series, period]);
   const marks = useMemo(() => moneyMarks(points, positions), [points, positions]);
-  const now = useNow(60_000);
-  const { whole, cents } = liraParts(overview.equity_now);
   const invested = overview.allocations.reduce((s, a) => s + a.amount, 0);
-  const started = series.length >= 2 || overview.allocations.length > 0;
-  const tradingDay = now === null || isTradingDay(istanbulDay(now));
-  const sentence = daySentence({ equityNow: overview.equity_now, todayPct, tradingDay, started });
 
   return (
     <section aria-labelledby="paran-baslik" className="relative isolate">
@@ -52,42 +38,9 @@ export function MoneyHero({ overview, todayPct, positions, name, bare = false }:
         <div className={cn("hz-top", isFlat(points) && "hz-top--short")}>
           <HeroPlot key={period} points={points} capitalStart={overview.capital_start} marks={marks} flat={isFlat(points)} />
           <div className="hz-head u-page">
-            {bare ? (
-              <h2 id="paran-baslik" data-hz-words className="u-caption w-fit pt-2">
-                Paran gün gün
-              </h2>
-            ) : (
-            <div className="w-fit max-w-full">
-              <DayLine name={name} now={now} />
-              <h1 id="paran-baslik" data-hz-words tabIndex={-1} data-route-focus="" className="u-sentence u-sentence--hero mt-3 text-ink outline-none sm:mt-4">
-                <span className="u-sentence__line">{sentence.first}</span>{" "}
-                <span className={cn("u-sentence__line u-sentence__line--indent", MOOD_INK[sentence.mood])}>
-                  {sentence.second.amount !== null ? (
-                    <>
-                      {fmtInt(sentence.second.amount)}
-                      {NBSP}
-                      <span className="u-lira">₺</span>{" "}
-                    </>
-                  ) : null}
-                  {sentence.second.rest}
-                </span>
-              </h1>
-              <div data-hz-words className="mt-3 w-fit sm:mt-5">
-                <p className="text-ui font-medium text-ink-soft">Paran şu an</p>
-                <p className="mt-0.5 flex flex-wrap items-baseline text-ink" data-testid="toplam-para">
-                  <Figure value={Number(whole.replace(/\D/g, ""))} kind="int" className="solo-figure text-[40px] min-[400px]:text-[46px] sm:text-[56px]" />
-                  <span className="solo-figure text-[20px] text-ink-soft sm:text-[26px]">,{cents}</span>
-                  <span className="solo-figure ml-1.5 text-[24px] text-ink-soft sm:text-[32px]">₺</span>
-                </p>
-                <PriceAge asOf={overview.prices_as_of} className="mt-1" />
-                {overview.allocations.length === 0 ? (
-                  <p className="mt-2 max-w-[44ch] text-ui text-ink-soft" data-testid="bos-not">
-                    Elinde hisse yok; paranın hepsi nakit. KAPtan KAP duyurularını okuyor, söyleyecek bir şeyi olunca burada konuşur.
-                  </p>
-                ) : null}
-              </div>
-            </div>
-            )}
+            <h2 id="paran-baslik" data-hz-words className="u-caption w-fit pt-2">
+              Paran gün gün
+            </h2>
           </div>
         </div>
         <div className="hz-sea">
@@ -128,34 +81,6 @@ export function MoneyHero({ overview, todayPct, positions, name, bare = false }:
         </div>
       </div>
     </section>
-  );
-}
-
-/** "İyi günler." (with the name, if there is a real one) · "11 Ocak Pazartesi · Borsa açık" on the server's clock (empty until known). */
-function DayLine({ name, now }: { name: string | null; now: number | null }) {
-  const open = now !== null && marketOpen(now);
-  return (
-    <p className="flex min-h-6 flex-wrap items-center gap-x-3 gap-y-0.5 text-ui text-ink-soft">
-      {now === null ? null : (
-        <>
-          <span>
-            {greeting(now)}
-            {name ? (
-              <>
-                , <span className="font-semibold text-ink">{name}</span>
-              </>
-            ) : null}
-            .
-          </span>
-          <span aria-hidden className="h-4 w-0.5 bg-rule-soft max-[420px]:hidden" />
-          <span className="inline-flex items-center gap-2 tabular-nums">
-            {longDay(istanbulDay(now))}
-            <span aria-hidden className={cn("size-2 rounded-full", open ? "bg-gain" : "border-2 border-rule-ui")} />
-            {open ? "Borsa açık" : "Borsa kapalı"}
-          </span>
-        </>
-      )}
-    </p>
   );
 }
 

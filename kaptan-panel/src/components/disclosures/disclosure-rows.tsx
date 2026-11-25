@@ -7,49 +7,13 @@ import { TickerLink } from "@/components/company/ticker-link";
 import { NewMark, SaveStar } from "@/components/reading/save-star";
 import { ToneChip } from "@/components/signal/signal-bits";
 import type { SignalItem } from "@/lib/domain/signal";
-import { plainEvent, shortName } from "@/components/story/plain";
+import { shortName } from "@/components/story/plain";
 import { titleTr } from "@/components/story/turkish";
 import { fateOf, groupByHour, tickerOf } from "./disclosure-logic";
 import { KapLink } from "./kap-link";
 import { plainSaid, whatKaptanDid } from "./reading-words";
 
 type Cards = ReadonlyMap<number, ApprovalCard>;
-
-/**
- * What might matter to you today, each as a large object: the company, what it said, what KAPtan
- * suggests about it and the way to the suggestion. Not a table: the day's few big things.
- */
-export function Worthwhile({ rows, cardOf, isToday }: { rows: readonly DisclosureListItem[]; cardOf: Cards; isToday: boolean }) {
-  return (
-    <section aria-labelledby="yarayabilir" className="ok-worth">
-      <h2 id="yarayabilir" className="u-caption ok-worth-head">
-        {isToday ? "Bugün işine yarayabilecekler" : "O gün işine yarayabilecekler"}
-      </h2>
-      <ol className="ok-worth-list">
-        {rows.map((d) => {
-          const card = cardOf.get(d.disclosure_index);
-          if (!card) return null;
-          return (
-            <li key={d.disclosure_index} className="ok-worth-row">
-              <p className="ok-worth-ticker">
-                {tickerOf(d) ? <TickerLink ticker={tickerOf(d) ?? ""} /> : null} · <time dateTime={d.published_at}>{fmtTime(d.published_at)}</time>
-              </p>
-              <h3 className="ok-worth-name">{titleTr(shortName(d.company_name))}</h3>
-              <p className="ok-worth-said">{plainEvent(card)}</p>
-              <p className="ok-worth-did">{whatKaptanDid(d, card)}</p>
-              <p className="ok-worth-links">
-                <Link href={href.proposal(card.proposal_id)} className="ok-go">
-                  Neden öneriyorum? →
-                </Link>
-                <KapLink d={d} />
-              </p>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
-  );
-}
 
 /** Everything read, cut by the hour: a hairline band per hour over that hour's duyuru. */
 export function DisclosureHours({ rows, label, cardOf, signalOf, onOpen }: { rows: readonly DisclosureListItem[]; label: string; cardOf: Cards; signalOf?: ReadonlyMap<number, SignalItem>; onOpen?: (index: number) => void }) {

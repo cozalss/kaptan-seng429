@@ -16,13 +16,13 @@ import { MoneyHero } from "@/components/solo/money-hero";
 import { WatchStrip } from "@/components/watchlist/watch-strip";
 
 /** The money's whole line on its sea (moved here from the home): full bleed under Param's figures. */
-export function ParamHorizon({ overview, movements, todayPct, positions }: { overview: Overview; movements: readonly MoneyMovement[] | null; todayPct: number | null; positions: readonly Position[] }) {
+export function ParamHorizon({ overview, movements, positions }: { overview: Overview; movements: readonly MoneyMovement[] | null; positions: readonly Position[] }) {
   const now = useNow(60_000);
   const today = now === null ? null : istanbulDay(now);
   const o = useMemo(() => ({ ...overview, equity_series: homeSeries(overview.equity_series, movements, today, overview.equity_now, overview.capital_start) }), [overview, movements, today]);
   return (
     <div className="u-bleed pm-horizon">
-      <MoneyHero overview={o} todayPct={todayPct} positions={positions} name={null} bare />
+      <MoneyHero overview={o} positions={positions} />
     </div>
   );
 }

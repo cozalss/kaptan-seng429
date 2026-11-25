@@ -38,8 +38,3 @@ export function digestSentence(d: Digest | null, today: string | null): string {
   const n = d.total;
   return isToday ? `Bugün ${n} önemli duyuru var.` : `Bu gün ${n} önemli duyuru vardı.`;
 }
-
-/** What the home card says when there is nothing: the market note first (weekend), else the plain line. */
-export function quietLine(d: Digest): string {
-  return d.note ?? (d.total === 0 ? "Bugün dikkat çeken duyuru yok." : "");
-}

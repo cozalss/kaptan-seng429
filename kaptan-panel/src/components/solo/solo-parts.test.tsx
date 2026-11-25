@@ -82,19 +82,19 @@ describe("the money hero", () => {
     ...over,
   });
 
-  const hero = (o: Overview, todayPct: number | null, positions: readonly Position[] = []) => <MoneyHero overview={o} todayPct={todayPct} positions={positions} name="Deniz" />;
+  const hero = (o: Overview, positions: readonly Position[] = []) => <MoneyHero overview={o} positions={positions} />;
 
-  it("opens with today's sentence and the total, and the plain facts with their meaning", () => {
-    render(hero(overview(), 0.002));
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Paran bugün .*2\.115.*arttı\./);
-    expect(plain(screen.getByTestId("toplam-para").textContent)).toBe("1.059.500,00₺");
+  it("puts a small heading over the line, and the plain facts with their meaning", () => {
+    render(hero(overview()));
+    expect(screen.getByRole("heading", { level: 2, name: "Paran gün gün" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
     expect(screen.getByText("Yatırımda")).toBeInTheDocument();
     expect(screen.getByText("Şu an hisse senetlerinde duran para.")).toBeInTheDocument();
   });
 
   it("the boat sails to a scrubbed day: keyboard and pointer, and the reading says it in words", async () => {
     const u = user();
-    render(hero(overview(), 0.002, [{ ticker: "FRZEN", qty: 10, avg_cost: 100, opened_at: `${series[100]?.date}T07:00:00Z` } as Position]));
+    render(hero(overview(), [{ ticker: "FRZEN", qty: 10, avg_cost: 100, opened_at: `${series[100]?.date}T07:00:00Z` } as Position]));
     const readout = screen.getByTestId("grafik-okuma");
     expect(plain(readout.textContent)).toContain("Bugün: 1.059.500 ₺");
     await u.click(screen.getByRole("button", { name: "Son 1 ay" }));
@@ -108,8 +108,6 @@ describe("the money hero", () => {
     expect(slider).toHaveAttribute("aria-valuenow", "1");
     await u.keyboard("x");
     expect(slider).toHaveAttribute("aria-valuenow", "1");
-    // The total stays today's: a scrub reads a day, it does not change what you have.
-    expect(plain(screen.getByTestId("toplam-para").textContent)).toBe("1.059.500,00₺");
     slider.getBoundingClientRect = () => ({ left: 0, width: 300, top: 0, height: 100, right: 300, bottom: 100, x: 0, y: 0, toJSON: () => ({}) });
     fireEvent.pointerMove(slider, { clientX: 0 });
     expect(slider).toHaveAttribute("aria-valuenow", "0");
@@ -122,7 +120,7 @@ describe("the money hero", () => {
   it("a day money moved says so on the slider and in the table", async () => {
     const u = user();
     const buy = { ticker: "FRZEN", qty: 10, avg_cost: 100, opened_at: `${series[119]?.date}T07:00:00Z` } as Position;
-    render(hero(overview(), 0.002, [buy]));
+    render(hero(overview(), [buy]));
     const slider = screen.getByRole("slider", { name: "Paranın gün gün değeri" });
     slider.focus();
     await u.keyboard("{End}");
@@ -132,25 +130,17 @@ describe("the money hero", () => {
   });
 
   it("closes a period that would show the same as everything, without striking it out", () => {
-    render(hero(overview({ equity_series: series.slice(0, 20) }), null));
+    render(hero(overview({ equity_series: series.slice(0, 20) })));
     const three = screen.getByRole("button", { name: /Son 3 ay: henüz/ });
     expect(three).toBeDisabled();
     expect(three.className).not.toContain("line-through");
   });
 
   it("says so when there is not enough history, and when nothing has moved yet", () => {
-    render(hero(overview({ equity_series: [{ date: "2027-01-11", equity: 1_000_000 }], allocations: [], pnl_abs: 0, pnl_pct: 0 }), 0));
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Paran hazır, KAPtan okuyor.");
+    render(hero(overview({ equity_series: [{ date: "2027-01-11", equity: 1_000_000 }], allocations: [], pnl_abs: 0, pnl_pct: 0 })));
     expect(screen.getByText("Grafik, ikinci günden sonra burada başlar.")).toBeInTheDocument();
     expect(screen.getByText("Henüz değişim yok")).toBeInTheDocument();
     expect(screen.queryByRole("slider")).not.toBeInTheDocument();
-  });
-
-  it("says a flat day and a down day in words", () => {
-    const { rerender } = render(hero(overview(), 0));
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Paran bugün yerinde duruyor.");
-    rerender(hero(overview(), -0.01));
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/azaldı\./);
   });
 
   it("knows a flat line", () => {

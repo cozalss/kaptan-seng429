@@ -1,5 +1,4 @@
-/* Upcoming events (home card, /takvim) and the market strip. Colours come from the shared tokens. */
-.ag-card { display: grid; gap: var(--space-3); border-top: 1px solid var(--hairline); padding: var(--space-5) 0; }
+/* Upcoming events (/takvim) and the market strip. Colours come from the shared tokens. */
 .ag-list { display: grid; gap: 0; }
 .ag-item { display: grid; grid-template-columns: 8.5rem 1fr; gap: var(--space-1) var(--space-5); align-items: baseline; padding: var(--space-3) 0; border-bottom: 1px solid var(--hairline); }
 .ag-when { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
