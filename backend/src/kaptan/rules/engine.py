@@ -145,7 +145,13 @@ def _common_checks(x: RuleInput, p: RuleParams) -> tuple[list[Check], list[str],
     checks: list[Check] = []
     codes: list[str] = []
     m_leak = Decimal(1)
-    leak = x.leakage_5d or 0.0
+    if x.leakage_5d is None:  # no prices: unknown is never 0 %, and never a "no" on a guess: half size
+        detail = "Son 5 borsa gününün fiyatı yok; önceden fiyatlanma ölçülemedi: boyut yarıya."
+        checks.append(Check("LEAK.ret5d", False, "bilinmiyor", f"< {fmt_pct(p.leak_ret5d_max, 0)}", detail))
+        codes.append("LEAKAGE_HALF")
+        m_leak = p.leakage_half_multiplier
+        return _edge_and_evidence(x, p, checks, codes, m_leak)
+    leak = x.leakage_5d
     leak_ok = leak <= p.leak_ret5d_max
     halves = x.event_type in ("E1", "E2")
     leak_detail = (
@@ -165,6 +171,12 @@ def _common_checks(x: RuleInput, p: RuleParams) -> tuple[list[Check], list[str],
             return checks, ["LEAKAGE_SKIP"], m_leak
         codes.append("LEAKAGE_HALF")
         m_leak = p.leakage_half_multiplier
+    return _edge_and_evidence(x, p, checks, codes, m_leak)
+
+
+def _edge_and_evidence(
+    x: RuleInput, p: RuleParams, checks: list[Check], codes: list[str], m_leak: Decimal
+) -> tuple[list[Check], list[str], Decimal]:
     if x.edge_unknown is not None:  # unknown is not "below cost": the row says what is missing
         code, detail = EDGE_UNKNOWN_TR.get(x.edge_unknown, EDGE_UNKNOWN_OTHER)
         threshold = f"≥ {fmt_ratio_x(p.min_edge_cost_ratio)}"

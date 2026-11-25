@@ -188,6 +188,17 @@ def test_leakage_skips_e3_and_halves_e2() -> None:
     assert half.reason_codes == ("LEAKAGE_HALF", "E2_RULE_MET")
 
 
+def test_unknown_leakage_says_bilinmiyor_and_halves_never_counts_as_zero() -> None:
+    result = decide(replace(E3_DEMO, leakage_5d=None))
+    row = next(c for c in result.trace if c.rule == "LEAK.ret5d")
+    assert row.observed == "bilinmiyor"
+    assert not row.passed
+    assert "%0" not in row.observed
+    assert result.outcome == "PROPOSE"  # unknown is never a "no" on a guess, only a smaller size
+    assert result.leakage_multiplier == Decimal("0.5")
+    assert "LEAKAGE_HALF" in result.reason_codes
+
+
 def test_edge_and_evidence_floors() -> None:
     edge = decide(replace(E3_DEMO, expected_edge_bps=50))
     assert edge.outcome == "NO_TRADE"

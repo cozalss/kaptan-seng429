@@ -148,13 +148,10 @@ def test_mavi_with_rules_met_but_no_similar_past_events_holds_and_says_why() -> 
     state = _state(MAVI_ANSWERED)
     result = decide(rule_input(state, _ctx(MAVI_ANSWERED), None, "no_evidence"))  # type: ignore[arg-type]
     assert result.outcome == "HOLD"
-    assert result.reason_codes == ("NO_EVIDENCE", "EDGE_UNKNOWN")
-    assert [c.rule for c in result.trace if c.passed] == [
-        "E1.capital_10d",
-        "E1.execution",
-        "E1.no_recent_sale",
-        "LEAK.ret5d",
-    ]
+    assert set(result.reason_codes) == {"NO_EVIDENCE", "EDGE_UNKNOWN", "LEAKAGE_HALF"}
+    assert [c.rule for c in result.trace if c.passed] == ["E1.capital_10d", "E1.execution", "E1.no_recent_sale"]
+    leak = next(c for c in result.trace if c.rule == "LEAK.ret5d")
+    assert leak.observed == "bilinmiyor"  # no prices in this run: never shown as %0
     edge = result.trace[-1]
     assert edge.rule == "EDGE.edge_cost" and edge.observed == "bilinmiyor"
     assert "benzer geçmiş olay yok" in edge.detail_tr and "karşılamıyor" not in edge.detail_tr
