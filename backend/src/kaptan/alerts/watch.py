@@ -46,6 +46,9 @@ WATCH_GAP: Final = timedelta(minutes=5)
 MAX_EVENT_AGE: Final = timedelta(minutes=30)
 CHECK_EVERY_S: Final = 60.0
 ERROR_WAIT_S: Final = 5.0
+#: A disclosure of mine that is not important yet (an insider form whose buy/sell is read a little later) is
+#: looked at again this often until it becomes important or MAX_EVENT_AGE passes.
+RECHECK_EVERY: Final = timedelta(seconds=30)
 
 Clock = Callable[[], datetime]
 Entry = tuple[str, Mapping[str, str]]
@@ -152,6 +155,8 @@ class AlertWatch:
         self.cursor: str | None = None
         self.feed_cursor: str | None = None
         self.last_hits: list[Signal] = []
+        self.pending: dict[int, datetime] = {}  # disclosure index -> when the feed first told it
+        self.next_recheck: datetime | None = None
 
     async def _start_cursor(self) -> str:
         stored = await self.redis.get(CURSOR_KEY)
@@ -174,18 +179,41 @@ class AlertWatch:
 
     async def mine_hits(self, entries: list[Entry], muted: frozenset[str], now: datetime) -> list[Signal]:
         """The important disclosures of the feed that are mine: a held stock counts even when it is not on the
-        watchlist, and held wins over watched (`Signal.mine`). Noise and archive-only never are important."""
+        watchlist, and held wins over watched (`Signal.mine`). Noise and archive-only never are important.
+
+        One of mine that is not important yet is kept in `pending` and looked at again (`recheck`): an insider
+        form becomes important only once its direction is read, after the feed event."""
         indexes = feed_indexes(entries, now)
+        return await self._describe_hits(indexes, muted, now, first_seen={i: now for i in indexes})
+
+    async def _describe_hits(
+        self, indexes: list[int], muted: frozenset[str], now: datetime, *, first_seen: dict[int, datetime]
+    ) -> list[Signal]:
         if not indexes:
             return []
         hits: list[Signal] = []
         async with self.pool.connection() as conn:
             for index in indexes:
                 signal = await describe(conn, index, now)
-                if signal and signal.important and signal.mine and signal.ticker not in muted:
+                self.pending.pop(index, None)
+                if signal is None or not signal.mine or signal.ticker in muted:
+                    continue
+                if signal.important:
                     hits.append(signal)
+                elif signal.kind is None:
+                    self.pending[index] = first_seen.get(index, now)
             await conn.rollback()
         return hits
+
+    async def recheck(self, muted: frozenset[str], now: datetime) -> list[Signal]:
+        """The pending disclosures of mine that became important since the feed told them (at most every
+        RECHECK_EVERY; a pending one older than MAX_EVENT_AGE is dropped)."""
+        if not self.pending or (self.next_recheck is not None and now < self.next_recheck):
+            return []
+        self.next_recheck = now + RECHECK_EVERY
+        first_seen = {i: at for i, at in self.pending.items() if now - at <= MAX_EVENT_AGE}
+        self.pending = {}
+        return await self._describe_hits(sorted(first_seen), muted, now, first_seen=first_seen)
 
     async def read_feed(self) -> bool:
         """The disclosure feed since the last look; True when an important disclosure of mine was announced.
@@ -201,14 +229,18 @@ class AlertWatch:
             )
         reply: Any = await self.redis.xread({stream: self.feed_cursor}, count=bus.READ_COUNT)
         entries: list[Entry] = [(str(i), f or {}) for _key, batch in reply or [] for i, f in batch]
-        if not entries:
-            return False
         now = self.clock()
+        if not entries and (not self.pending or (self.next_recheck is not None and now < self.next_recheck)):
+            return False
         muted = frozenset((await read_prefs(self.pool))["muted"])
-        self.last_hits = await self.mine_hits(entries, muted, now)
-        told = bool(self.last_hits) and await announce(self.pool, self.redis, self.cfg, "watch", now=now) == "sent"
-        self.feed_cursor = entries[-1][0]
-        await self.redis.set(FEED_CURSOR_KEY, self.feed_cursor)
+        hits = await self.recheck(muted, now)
+        if entries:
+            hits = [*hits, *await self.mine_hits(entries, muted, now)]
+        self.last_hits = hits
+        told = bool(hits) and await announce(self.pool, self.redis, self.cfg, "watch", now=now) == "sent"
+        if entries:
+            self.feed_cursor = entries[-1][0]
+            await self.redis.set(FEED_CURSOR_KEY, self.feed_cursor)
         return told
 
     async def _down_state(self) -> DownState:

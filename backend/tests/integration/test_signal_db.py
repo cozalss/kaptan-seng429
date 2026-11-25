@@ -131,6 +131,28 @@ async def test_a_held_stock_that_is_not_watched_gets_an_alert(owner_pg: DictConn
     assert await watch.mine_hits([entry(BASE + 4), entry(BASE + 5), entry(BASE + 3)], frozenset(), NOW) == []
     assert await watch.mine_hits([entry(BASE + 1)], frozenset({HELD}), NOW) == []
 
+    # an insider form of a held stock whose buy/sell is read after the feed event: announced on the re-check
+    await owner_pg.execute(INSERT, doc(6, HELD, "Pay Alım Satım Bildirimi", "E2"))
+    await owner_pg.commit()  # the watch rolls back its own reads
+    assert await watch.mine_hits([entry(BASE + 6)], frozenset(), NOW) == []
+    assert BASE + 6 in watch.pending
+    later = NOW + timedelta(minutes=2)
+    assert await watch.recheck(frozenset(), later) == []  # still unknown: stays pending
+    await owner_pg.execute(
+        "UPDATE core.disclosures SET parsed = %s WHERE disclosure_index = %s",
+        (Jsonb({"status": "ok", "direction": "sell"}), BASE + 6),
+    )
+    await owner_pg.commit()
+    assert await watch.recheck(frozenset(), later + timedelta(seconds=10)) == []  # not before RECHECK_EVERY
+    hits = await watch.recheck(frozenset(), later + timedelta(minutes=1))
+    assert [(s.disclosure_index, s.tone) for s in hits] == [(BASE + 6, "olumsuz")]
+    assert BASE + 6 not in watch.pending
+    # one that never becomes important is dropped after MAX_EVENT_AGE
+    await owner_pg.execute(INSERT, doc(7, HELD, "Pay Alım Satım Bildirimi", "E2"))
+    await owner_pg.commit()
+    await watch.mine_hits([entry(BASE + 7)], frozenset(), NOW)
+    assert await watch.recheck(frozenset(), NOW + timedelta(hours=1)) == [] and watch.pending == {}
+
 
 async def test_unread_counts_only_important_of_mine_and_triage_is_one_concept(owner_pg: DictConn, data: None) -> None:
     state = await reading_state(owner_pg, NOW)
