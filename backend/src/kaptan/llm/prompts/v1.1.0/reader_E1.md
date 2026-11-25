@@ -4,7 +4,8 @@
   İşlemsiz yönetim kurulu kararı / program başlangıcı "program_announcement"; geri alınmış payların satışı
   "sale_of_repurchased"; programın tamamlanması/sona ermesi "program_completed_or_ended"; diğerleri "other".
 - in_programme: işlem bir geri alım programı kapsamındaysa true.
-- transactions: tablonun her satırı için bir kayıt; önceki günlere ait görünen satırları da kendin ayıklama.
+- transactions: YALNIZCA en yeni işlem tarihine ait satır(lar). Tablo programın önceki günlerini her bildirimde
+  yeniden listeler; o satırları YAZMA: tablonun tamamını kod okur. Tablo yoksa metinde anlatılan işlemi yaz.
   price_tl: "İşlem Fiyatı" ya da metindeki ortalama fiyat; yalnızca aralık verilmişse price_tl=null ve aralığı
   price_raw'a kopyala (price_raw her zaman metindeki yazımdır).
 - "Güncelleme mi? Evet" ifadesini "yeni bir şey yok" diye yorumlama: geri alım işlem bildirimleri çoğu zaman

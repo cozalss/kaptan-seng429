@@ -157,10 +157,16 @@ def _one_table(body: str, heading: str) -> bool:
     return len(re.findall(label_pattern(heading), body)) == 1
 
 
-def _buyback_table(body: str, ticker: str) -> _Table:
+def buyback_rows(text: str, ticker: str) -> list[dict[str, Any]]:
+    """The E1 form's own transaction rows for `ticker`, read by code (none when the form's table is not there once)."""
+    body = _body(text)
     if not _one_table(body, _E1_TABLE):
-        return _Table()
-    rows = [t for t in buyback.parse(body)["transactions"] if t["ticker"] == ticker and t["nominal_try"]]
+        return []
+    return [t for t in buyback.parse(body)["transactions"] if t["ticker"] == ticker and t["nominal_try"]]
+
+
+def _buyback_table(body: str, ticker: str) -> _Table:
+    rows = buyback_rows(body, ticker)
     if not rows:
         return _Table()
     cells = tuple(t["nominal_try"] for t in rows)
@@ -263,4 +269,12 @@ def read_source(
     return SourceAmounts(written, derived, _unique(a for a in (*table.prices, *table.other) if a not in amounts))
 
 
-__all__ = ["AMOUNT_TOLERANCE", "SourceAmounts", "amount_basis", "read_source", "regex_amounts", "text_amounts"]
+__all__ = [
+    "AMOUNT_TOLERANCE",
+    "SourceAmounts",
+    "amount_basis",
+    "buyback_rows",
+    "read_source",
+    "regex_amounts",
+    "text_amounts",
+]

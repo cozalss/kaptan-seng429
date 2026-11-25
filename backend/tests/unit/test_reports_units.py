@@ -113,7 +113,10 @@ def test_the_reason_of_a_run() -> None:
     gate = {"checks": [{"outcome": "reject", "rule_code": "R02"}], "compliance": None, "rule_decision": None}
     assert "günlük zarar sınırı" in reason_of(gate)
     # No rule code: never the circular "kurallar geçmedi"; an IGNORE reading says what it really was.
-    assert reason_of({"checks": None, "compliance": None, "rule_decision": None}) == "olay KAPtan'ın öneri ölçülerine uymadı"
+    assert (
+        reason_of({"checks": None, "compliance": None, "rule_decision": None})
+        == "olay KAPtan'ın öneri ölçülerine uymadı"
+    )
     ignored = {"event_type": "IGNORE", "checks": None, "compliance": None, "rule_decision": None}
     assert reason_of(ignored) == "duyuru KAPtan'ın öneri verdiği olay türlerinden değildi"
     assert "kurallar" not in sentence(373, 7, 0, [(reason_of(ignored), 3)], None)

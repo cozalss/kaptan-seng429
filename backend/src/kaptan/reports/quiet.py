@@ -28,6 +28,7 @@ SELECT r.kind, r.event_type, r.explain->'risk_checks' AS checks, r.explain->'com
 RULE_TR: Final = {
     "E_RULE_NOT_MET": "olay KAPtan'ın aradığı ölçülere uymadı",
     "EDGE_BELOW_COST": "beklenen kazanç işlem masrafını karşılamıyordu",
+    "EDGE_UNKNOWN": "kazanç ve masraf hesaplanamadığı için KAPtan bekledi",
     "SKEPTIC_VETO": "ikinci kontrol uygun bulmadı",
     "NO_EVIDENCE": "benzer geçmiş olaylardan yeterli kanıt yoktu",
     "AVOID_LIST": "hisse engel listendeydi",

@@ -22,6 +22,8 @@ class RuleInput:
     ticker: str
     # agent health (05 §2.5)
     agent_status: tuple[tuple[str, str], ...] = ()
+    #: (agent, the agent's own reason) for an abstaining agent: the HOLD row says why, not only who
+    abstain_details: tuple[tuple[str, str], ...] = ()
     classifier_confidence: float | None = None
     reader_confidence: float | None = None
     materiality_confidence: float | None = None
@@ -58,6 +60,8 @@ class RuleInput:
     leakage_5d: float | None = None
     expected_edge_bps: float | None = None
     est_cost_bps: float | None = None
+    #: Live: the sizer could not price edge/cost; its reason (`kaptan.sizing.plan.Unknown`). None: priced, or replay.
+    edge_unknown: str | None = None
     evidence_n: int | None = None
     evidence_card_id: str | None = None
 

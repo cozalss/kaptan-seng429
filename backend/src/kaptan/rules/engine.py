@@ -30,10 +30,24 @@ REASON_ORDER: Final = (
     "INJECTION_REVIEW",
     "E_RULE_NOT_MET",
     "EDGE_BELOW_COST",
+    "EDGE_UNKNOWN",
     "LEAKAGE_HALF",
     "LEAKAGE_SKIP",
     "E_RULE_MET",
 )
+AGENT_TR: Final = {"classifier": "Sınıflandırıcı", "reader": "Okuyucu", "materiality": "Önemlilik", "evidence": "Kanıt"}
+#: Why the live sizer could not price edge/cost (`kaptan.sizing.plan.Unknown.reason`) → (reason code, trace line).
+EDGE_UNKNOWN_TR: Final = {
+    "no_evidence": ("NO_EVIDENCE", "Kazanç tahmini yapılamadı: fiyatı ölçülebilen benzer geçmiş olay yok."),
+    "missed": ("EDGE_UNKNOWN", "Bu haber için alım zamanı geçti: plan kurulamadı."),
+    "no_price": ("EDGE_UNKNOWN", "Kazanç tahmini yapılamadı: güncel fiyat yok."),
+    "no_atr": ("EDGE_UNKNOWN", "Kazanç tahmini yapılamadı: yeterli günlük fiyat geçmişi yok."),
+    "no_volatility": ("EDGE_UNKNOWN", "Kazanç tahmini yapılamadı: yeterli günlük fiyat geçmişi yok."),
+    "no_spread": ("EDGE_UNKNOWN", "Masraf hesaplanamadı: yeterli günlük fiyat geçmişi yok."),
+    "no_adv": ("EDGE_UNKNOWN", "Masraf hesaplanamadı: işlem hacmi ya da para bilgisi yok."),
+    "too_small": ("EDGE_UNKNOWN", "Alım tutarı bir paya bile yetmiyor."),
+}
+EDGE_UNKNOWN_OTHER: Final = ("EDGE_UNKNOWN", "Kazanç ve masraf hesaplanamadı.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,18 +92,28 @@ def _sort_codes(codes: list[str]) -> tuple[str, ...]:
     return tuple(dict.fromkeys(sorted(codes, key=key)))
 
 
+def _who(agents: list[str]) -> str:
+    return ", ".join(AGENT_TR.get(a, a) for a in agents)
+
+
+def _abstain_detail(x: RuleInput, agents: list[str]) -> str:
+    reasons = dict(x.abstain_details)
+    said = [f"{AGENT_TR.get(a, a)}: {reasons[a].strip().rstrip('.')}" for a in agents if reasons.get(a, "").strip()]
+    if not said:
+        return f"{_who(agents)} çekimser kaldı: HOLD."
+    return f"{_who(agents)} çekimser kaldı ({'; '.join(said)}): HOLD."
+
+
 def _hold_check(x: RuleInput, p: RuleParams) -> tuple[str, Check] | None:
     statuses = dict(x.agent_status)
-    if any(s == "failed" for s in statuses.values()):
-        bad = ", ".join(k for k, s in statuses.items() if s == "failed")
-        return "HOLD_AGENT_FAILED", Check(
-            "HOLD.agent_failed", False, bad, "tüm ajanlar ok", "Bir ajan çalışmadı: HOLD."
-        )
-    if any(s == "abstain" for s in statuses.values()):
-        bad = ", ".join(k for k, s in statuses.items() if s == "abstain")
-        return "HOLD_AGENT_ABSTAIN", Check(
-            "HOLD.agent_abstain", False, bad, "tüm ajanlar ok", "Bir ajan çekimser: HOLD."
-        )
+    failed = [k for k, s in statuses.items() if s == "failed"]
+    if failed:
+        detail = f"{_who(failed)} çalışmadı (modelden geçerli bir yanıt alınamadı): HOLD."
+        return "HOLD_AGENT_FAILED", Check("HOLD.agent_failed", False, ", ".join(failed), "tüm ajanlar ok", detail)
+    abstained = [k for k, s in statuses.items() if s == "abstain"]
+    if abstained:
+        detail = _abstain_detail(x, abstained)
+        return "HOLD_AGENT_ABSTAIN", Check("HOLD.agent_abstain", False, ", ".join(abstained), "tüm ajanlar ok", detail)
     floors = (
         (x.classifier_confidence, p.min_classifier_confidence, "Sınıflandırıcı"),
         (x.reader_confidence, p.min_reader_confidence, "Okuyucu"),
@@ -141,6 +165,11 @@ def _common_checks(x: RuleInput, p: RuleParams) -> tuple[list[Check], list[str],
             return checks, ["LEAKAGE_SKIP"], m_leak
         codes.append("LEAKAGE_HALF")
         m_leak = p.leakage_half_multiplier
+    if x.edge_unknown is not None:  # unknown is not "below cost": the row says what is missing
+        code, detail = EDGE_UNKNOWN_TR.get(x.edge_unknown, EDGE_UNKNOWN_OTHER)
+        threshold = f"≥ {fmt_ratio_x(p.min_edge_cost_ratio)}"
+        checks.append(Check("EDGE.edge_cost", False, "bilinmiyor", threshold, detail))
+        return checks, [*codes, code, "EDGE_UNKNOWN"], m_leak
     edge, cost = x.expected_edge_bps or 0.0, x.est_cost_bps or 0.0
     ratio = edge / cost if cost > 0 else 0.0
     edge_ok = cost > 0 and ratio >= p.min_edge_cost_ratio
@@ -196,12 +225,16 @@ def decide(x: RuleInput, params: RuleParams = DEFAULT_PARAMS) -> RuleResult:
 
     if x.any_injection_flag:
         codes.append("INJECTION_REVIEW")
-    blocking = {"SKEPTIC_VETO", "AVOID_LIST", "NO_EVIDENCE", "LEAKAGE_SKIP", "EDGE_BELOW_COST"}
+    blocking = {"SKEPTIC_VETO", "AVOID_LIST", "NO_EVIDENCE", "LEAKAGE_SKIP", "EDGE_BELOW_COST", "EDGE_UNKNOWN"}
     proposes = met and not blocking.intersection(codes)
     if proposes:
         codes.append(f"{x.event_type}_RULE_MET")
+    # every rule passed but edge/cost could not be priced: unknown waits (HOLD), it is never a "no" on a guess
+    final = {"SKEPTIC_VETO", "AVOID_LIST", "LEAKAGE_SKIP"}
+    unknown = "EDGE_UNKNOWN" in codes and not final.intersection(codes)
+    outcome: Outcome = "PROPOSE" if proposes else ("HOLD" if unknown else "NO_TRADE")
     return RuleResult(
-        "PROPOSE" if proposes else "NO_TRADE",
+        outcome,
         _sort_codes(codes),
         tuple(trace),
         params.rules_hash,

@@ -27,7 +27,7 @@ from kaptan.risk.gate import GateContext, GateOrder, evaluate, evaluate_at_send
 from kaptan.risk.watch import OUTSIDE_LIST_NOTE
 from kaptan.rules import RuleInput, SizingInput, decide, size
 from kaptan.rules.calendar import approval_expiry
-from kaptan.sizing.plan import at_limit
+from kaptan.sizing.plan import Unknown, at_limit
 
 EXIT_RULES: Final = ["X1 zaman çıkışı", "X2 kapanış bazlı ATR stop", "X6 stop yalnızca yukarı"]
 NO_SKEPTIC_NOTE: Final = "Şüpheci ek bir risk bulmadı."
@@ -41,7 +41,33 @@ def _num(x: Decimal) -> int | float:
     return int(x) if x == x.to_integral_value() else float(x)
 
 
-def rule_input(state: KaptanState, ctx: RunContext, sizing: dict[str, Any] | None) -> RuleInput:
+def abstain_details(state: KaptanState) -> tuple[tuple[str, str], ...]:
+    """(agent, its own Turkish reason) for each agent that abstained, for the HOLD row."""
+    docs = {
+        "classifier": state.get("classifier"),
+        "reader": state.get("reader"),
+        "materiality": state.get("materiality"),
+    }
+    out = []
+    for agent, doc in docs.items():
+        reason = ((doc or {}).get("abstain") or {}).get("detail_tr")
+        if (doc or {}).get("status") == "abstain" and isinstance(reason, str) and reason.strip():
+            out.append((agent, reason.strip()))
+    return tuple(out)
+
+
+def edge_unknown(ctx: RunContext, sizing: Mapping[str, Any] | None) -> str | None:
+    """Live: why the sizer could not price edge/cost (None when it did, and always in replay)."""
+    live = live_tools(ctx.tools)
+    if sizing is not None or live is None:
+        return None
+    plan = live.sizing_plan
+    return plan.reason if isinstance(plan, Unknown) else "error"
+
+
+def rule_input(
+    state: KaptanState, ctx: RunContext, sizing: dict[str, Any] | None, unknown: str | None = None
+) -> RuleInput:
     m = state.get("merged") or {}
     reader = state.get("reader") or {}
     sk = state.get("skeptic")
@@ -52,6 +78,7 @@ def rule_input(state: KaptanState, ctx: RunContext, sizing: dict[str, Any] | Non
         event_type=str(state.get("event_type")),
         ticker=ctx.disclosure.ticker,
         agent_status=tuple(sorted((m.get("agent_status") or {}).items())),
+        abstain_details=abstain_details(state),
         classifier_confidence=(state.get("classifier") or {}).get("confidence"),
         reader_confidence=reader.get("confidence"),
         materiality_confidence=(state.get("materiality") or {}).get("confidence"),
@@ -81,6 +108,7 @@ def rule_input(state: KaptanState, ctx: RunContext, sizing: dict[str, Any] | Non
         leakage_5d=m.get("leakage_5d_mkt_adj"),
         expected_edge_bps=(sizing or {}).get("expected_edge_bps"),
         est_cost_bps=(sizing or {}).get("est_cost_bps"),
+        edge_unknown=unknown,
         evidence_n=m.get("evidence_n"),
         evidence_card_id=m.get("evidence_card_id"),
     )
@@ -172,12 +200,11 @@ async def rule_engine(state: KaptanState, runtime: Runtime[RunContext]) -> dict[
     ctx = runtime.context
     await prepare_live_sizing(state, ctx)
     sizing = ctx.tools.sizing(ctx.disclosure.fingerprint)
-    result = decide(rule_input(state, ctx, dict(sizing) if sizing else None), ctx.params)
+    doc = dict(sizing) if sizing else None
+    # live, no sizer answer: the engine says HOLD with the missing piece, never a NO_TRADE verdict on a guess
+    result = decide(rule_input(state, ctx, doc, edge_unknown(ctx, doc)), ctx.params)
     rules = {**result.as_document(), "leakage_multiplier": str(result.leakage_multiplier)}
     update: dict[str, Any] = {"rules": rules, "steps": [step(ctx, "rule_engine")]}
-    if sizing is None and live_tools(ctx.tools) is not None and "EDGE_BELOW_COST" in result.reason_codes:
-        # live: the sizer could not price edge/cost (no data) → unknown, never a NO_TRADE verdict on a guess
-        return update | {"proposal": None, "status": "completed", "outcome": "HOLD"}
     if result.outcome != "PROPOSE":
         return update | {"proposal": None, "status": "completed", "outcome": result.outcome}
     if sizing is None:  # no sizer answer: never guess a size

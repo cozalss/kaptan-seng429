@@ -16,6 +16,7 @@ from typing import Any, Final
 from langgraph.runtime import Runtime
 from pydantic import BaseModel
 
+from kaptan.agents.buyback_facts import TABLE_STEP_NOTE, ground_buyback
 from kaptan.agents.context import RunContext
 from kaptan.agents.nodes._common import FANOUT_GROUP, ask_or_fail, step
 from kaptan.agents.reader_facts import THRESHOLD_STEP_NOTE, ground_insider, unreadable_answer
@@ -96,6 +97,10 @@ async def reader(state: KaptanState, runtime: Runtime[RunContext]) -> dict[str, 
         row = step(ctx, "reader", status="skipped", note=facts.reason or "Ek okunamadı", group=FANOUT_GROUP)
         return {"reader": unreadable_answer(facts), "steps": [row], "llm_calls": 0}
     out, row = await ask_or_fail(ctx, "reader", READER_SCHEMAS[event_type], group=FANOUT_GROUP, state=state)
+    if out is not None and event_type == "E1":  # the form's table, read by code, not copied by the model
+        out, from_form = ground_buyback(out, ctx.disclosure.text_tr, ctx.disclosure.ticker)
+        if from_form:
+            row = {**row, "note_tr": TABLE_STEP_NOTE}
     if out is not None and facts is not None:
         out = ground_insider(out, facts, ctx.disclosure.text_tr)
         if out.get("holder_threshold_notice"):  # the trace says it where it was read, not only at the rule

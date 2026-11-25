@@ -13,6 +13,7 @@ from kaptan.agents.state import Step
 from kaptan.llm.budget import BudgetExceededError
 from kaptan.llm.provider import LLMRequest, LLMUsage, ProviderError, agent_inputs, prompt_version
 from kaptan.llm.task_context import task_context
+from kaptan.llm.transport import InvalidOutputError
 
 FANOUT_GROUP = "fanout-1"
 log = logging.getLogger("kaptan.agents")
@@ -86,8 +87,12 @@ async def ask(
 
 
 def failure_note(exc: ProviderError) -> str:
-    """The trace's honest reason: the day's model quota or cost cap ran out, or a model did not answer."""
-    return "Günlük model kotası doldu: HOLD" if isinstance(exc, BudgetExceededError) else "Model yanıt vermedi: HOLD"
+    """The trace's honest reason: the day's quota or cost cap ran out, an answer was cut off/invalid, or none came."""
+    if isinstance(exc, BudgetExceededError):
+        return "Günlük model kotası doldu: HOLD"
+    if isinstance(exc, InvalidOutputError):
+        return "Modelin yanıtı eksik ya da bozuk geldi: HOLD"
+    return "Model yanıt vermedi: HOLD"
 
 
 async def ask_or_fail(
