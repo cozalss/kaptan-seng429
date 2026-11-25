@@ -1,13 +1,14 @@
 "use client";
 
+import { smoothArea, smoothPath } from "@/components/ui/curve";
 import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 import { useNow } from "@/lib/clock";
-import { fmtFigurePct, fmtInt, fmtSignedFigurePct, NBSP } from "@/lib/format";
+import { fmtFigurePct, fmtSignedFigurePct } from "@/lib/format";
 import { ROUTES } from "@/lib/nav";
 import { istanbulDay } from "@/lib/session-day";
 import type { EquityPoint, Overview } from "@/lib/solo/overview";
-import { fmtLira, fmtSignedLira, liraParts } from "@/lib/solo/words";
+import { liraParts } from "@/lib/solo/words";
 import { filterPeriod, PERIOD_LABEL, PERIODS, periodIsDistinct, type Period } from "@/lib/solo/period";
 import { isTradingDay } from "@/lib/time";
 import { Boat } from "@/components/ufuk/boat";
@@ -42,10 +43,11 @@ export function sparkGeometry(points: readonly EquityPoint[], capitalStart: numb
   const span = hi - lo || 1;
   const y = (v: number) => PAD_Y + (1 - (v - lo) / span) * (H - 2 * PAD_Y);
   const x = (i: number) => (i / (points.length - 1)) * W * LINE_END;
-  const line = values.map((v, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
+  const pts = values.map((v, i) => [x(i), y(v)] as const);
+  const line = smoothPath(pts);
   const last = values[values.length - 1] ?? capitalStart;
   const waterY = y(capitalStart);
-  const area = `${line} L${x(values.length - 1).toFixed(1)} ${waterY.toFixed(1)} L0 ${waterY.toFixed(1)} Z`;
+  const area = smoothArea(pts, waterY);
   return { line, area, waterY, end: { x: LINE_END, y: y(last) / H } };
 }
 
@@ -61,8 +63,7 @@ function DayChange({ equityNow, todayPct, started }: { equityNow: number; todayP
       <p className="hm-money-day hm-chip" data-mood={s.mood}>
         <span aria-hidden>{MOOD_MARK[s.mood]} </span>
         <span className="sr-only">{s.mood === "up" ? "Bugün arttı: " : "Bugün azaldı: "}</span>
-        {fmtInt(Math.abs(Math.round(todayAmount(equityNow, todayPct))))}
-        {NBSP}₺ <span className="hm-money-pct">{fmtSignedFigurePct(todayPct)}</span>
+        <Figure value={Math.abs(todayAmount(equityNow, todayPct))} kind="lira" />{" "}<span className="hm-money-pct">{fmtSignedFigurePct(todayPct)}</span>
         <span aria-hidden> bugün</span>
       </p>
     );
@@ -160,16 +161,18 @@ export function MoneyCard({ overview, todayPct }: { overview: Overview; todayPct
       <dl className="hm-figs">
         <div>
           <dt>Başladığından beri</dt>
-          <dd data-mood={Math.round(overview.pnl_abs) > 0 ? "up" : Math.round(overview.pnl_abs) < 0 ? "down" : undefined}>{Math.round(overview.pnl_abs) === 0 ? "Değişim yok" : fmtSignedLira(overview.pnl_abs)}</dd>
+          <dd data-mood={Math.round(overview.pnl_abs) > 0 ? "up" : Math.round(overview.pnl_abs) < 0 ? "down" : undefined}>{Math.round(overview.pnl_abs) === 0 ? "Değişim yok" : <Figure value={overview.pnl_abs} kind="signedLira" />}</dd>
         </div>
         <div>
           <dt>Nakit</dt>
-          <dd>{fmtLira(overview.cash)}</dd>
+          <dd>
+            <Figure value={overview.cash} kind="lira" />
+          </dd>
         </div>
         <div>
           <dt>Yatırımda</dt>
           <dd>
-            {fmtLira(invested)}
+            <Figure value={invested} kind="lira" />
             {overview.equity_now > 0 ? <span className="hm-figs-pct"> {fmtFigurePct(invested / overview.equity_now)}</span> : null}
           </dd>
         </div>

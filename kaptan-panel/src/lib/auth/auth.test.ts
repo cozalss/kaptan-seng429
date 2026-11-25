@@ -50,7 +50,7 @@ describe("navigation", () => {
   });
   it("redirects every older path to the closest screen", () => {
     const dest = new Map(LEGACY_REDIRECTS.map((r) => [r.source, r.destination]));
-    for (const gone of ["/bugun", "/kopru", "/oneriler", "/akis", "/karne", "/ozet", "/kosular/:id", "/tayfa/:agent", "/styleguide", "/runs/:id"]) {
+    for (const gone of ["/bugun", "/kopru", "/akis", "/karne", "/ozet", "/kosular/:id", "/tayfa/:agent", "/styleguide", "/runs/:id"]) {
       expect(dest.get(gone)).toBe(ROUTES.benim);
     }
     expect(dest.get("/denetim")).toBe(ROUTES.gecmis);

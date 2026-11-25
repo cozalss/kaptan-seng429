@@ -23,10 +23,9 @@ import { Suggestions, type OrderFigures } from "./suggestions";
 import { SignalStrip } from "@/components/signal/signal-strip";
 import { BlockHead } from "@/components/home/block-head";
 import { DayLearned } from "@/components/home/day-learned";
-import { GettingStarted } from "@/components/home/getting-started";
 import { HomeHighlights } from "@/components/home/home-highlights";
 import { HomeLinks } from "@/components/home/home-links";
-import { HomeTrack } from "@/components/home/home-track";
+import { HomeSuggested } from "@/components/home/home-suggested";
 import { MoneyCard } from "@/components/home/money-card";
 import { TodayHeader } from "@/components/home/today-header";
 import { todayWords } from "@/components/home/today-words";
@@ -112,7 +111,6 @@ export function SoloHome() {
   const words = todayWords({ started, decisions: open.length, holds: open.length - proposalsNow, steps, mine: mineLive ?? data.mineAtLoad });
 
   const hasDecisions = open.length > 0 || decisions.steps.length > 0 || decisions.state.flights.length > 0;
-  const hasHoldings = overview.allocations.length > 0;
   const mine = mineLive ?? data.mineAtLoad;
 
   return (
@@ -131,7 +129,6 @@ export function SoloHome() {
             </div>
           </div>
           <div className="hm-main">
-            <GettingStarted hasHoldings={hasHoldings} />
             {hasDecisions ? (
               <div className="hm-block">
                 <BlockHead id="kararlarin" label="Kararların" about="KAPtan’ın önerileri; sen onaylamadıkça hiçbir şey olmaz." />
@@ -146,10 +143,10 @@ export function SoloHome() {
                 />
               </div>
             ) : null}
+            <HomeSuggested />
             <CorporatePrompt onChanged={() => void q.refetch()} />
             <SignalStrip limit={HOME_LIST_MAX} compact onMine={onMine} />
             <DayLearned mine={mine} />
-            <HomeTrack />
             <HomeHighlights />
             <div className="hm-links-narrow">
               <HomeLinks />

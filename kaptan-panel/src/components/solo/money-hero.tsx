@@ -8,7 +8,7 @@ import { dayLabel as longDay, istanbulDay } from "@/lib/session-day";
 import { greeting, marketOpen } from "@/lib/solo/greeting";
 import type { EquityPoint, Overview } from "@/lib/solo/overview";
 import { filterPeriod, PERIOD_LABEL, PERIODS, periodIsDistinct, type Period } from "@/lib/solo/period";
-import { dayLabel, fmtLira, fmtSignedLira, liraParts } from "@/lib/solo/words";
+import { dayLabel, fmtLira, liraParts } from "@/lib/solo/words";
 import { isTradingDay } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { Figure } from "@/components/ui/figure";
@@ -113,15 +113,15 @@ export function MoneyHero({ overview, todayPct, positions, name, bare = false }:
                   <span>Henüz değişim yok</span>
                 ) : (
                   <>
-                    {fmtSignedLira(overview.pnl_abs)} <span className="text-[17px] font-medium text-on-sea-soft">{fmtSignedFigurePct(overview.pnl_pct)}</span>
+                    <Figure value={overview.pnl_abs} kind="signedLira" /> <span className="text-[17px] font-medium text-on-sea-soft">{fmtSignedFigurePct(overview.pnl_pct)}</span>
                   </>
                 )}
               </Fact>
               <Fact label="Kullanılabilir nakit" meaning="Hazırda bekleyen, kullanıma hazır para.">
-                {fmtLira(overview.cash)}
+                <Figure value={overview.cash} kind="lira" />
               </Fact>
               <Fact label="Yatırımda" meaning="Şu an hisse senetlerinde duran para.">
-                {fmtLira(invested)} {overview.equity_now > 0 ? <span className="text-[17px] font-medium text-on-sea-soft">{fmtFigurePct(invested / overview.equity_now)}</span> : null}
+                <Figure value={invested} kind="lira" /> {overview.equity_now > 0 ? <span className="text-[17px] font-medium text-on-sea-soft">{fmtFigurePct(invested / overview.equity_now)}</span> : null}
               </Fact>
             </dl>
           </div>

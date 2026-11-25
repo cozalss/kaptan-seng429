@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { fmtInt } from "@/lib/format";
 import type { Suggestion, SuggestionAction } from "@/lib/solo/overview";
-import { ACTION_WORD, fmtLira } from "@/lib/solo/words";
+import { ACTION_WORD } from "@/lib/solo/words";
 import { prefersReducedMotion } from "@/lib/utils";
 import { Boat } from "@/components/ufuk/boat";
 import { Button } from "@/components/ui/button";
+import { Figure } from "@/components/ui/figure";
 import { OrderSlip } from "@/components/proposal/order-slip";
 import { LEAVE_MS, sectionSentence, splitDecisions, stepFor, type Flight } from "@/components/proposal/decide-logic";
 import { InkSeal, useLanded } from "@/components/proposal/seal";
@@ -242,7 +243,9 @@ function Queue({ queue, facts, errors, onPick }: { queue: readonly Suggestion[];
                   {errors[s.id] ? <span className="oneri-queue-error"> · olmadı, tekrar bak</span> : null}
                   {s.reason_short ? <span className="oneri-queue-why">{s.reason_short}</span> : null}
                 </span>
-                {amount !== null ? <span className="oneri-queue-amount">{fmtLira(amount)}</span> : null}
+                {amount !== null ? <span className="oneri-queue-amount">
+                    <Figure value={amount} kind="lira" />
+                  </span> : null}
                 <span aria-hidden className="oneri-queue-go">
                   →
                 </span>

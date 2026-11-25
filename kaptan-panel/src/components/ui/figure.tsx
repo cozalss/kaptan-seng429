@@ -4,14 +4,17 @@ import type NumberFlowType from "@number-flow/react";
 import type { Format } from "@number-flow/react";
 import { createElement, useSyncExternalStore } from "react";
 import { fmtInt, fmtSignedPct, fmtPct, fmtTry, NBSP } from "@/lib/format";
+import { fmtLira, fmtSignedLira } from "@/lib/solo/words";
 import { cn } from "@/lib/utils";
 
-export type FigureKind = "try" | "int" | "pct" | "signedPct";
+export type FigureKind = "try" | "int" | "pct" | "signedPct" | "lira" | "signedLira";
 
 /** The words a figure reads as: exactly what lib/format prints, so copy and tests stay one. */
 export function figureText(value: number, kind: FigureKind, digits = 1): string {
   if (kind === "try") return fmtTry(value);
   if (kind === "int") return fmtInt(value);
+  if (kind === "lira") return fmtLira(value);
+  if (kind === "signedLira") return fmtSignedLira(value);
   if (kind === "pct") return fmtPct(value, digits);
   return fmtSignedPct(value, digits);
 }
@@ -20,6 +23,11 @@ export function figureText(value: number, kind: FigureKind, digits = 1): string 
 function parts(value: number, kind: FigureKind, digits: number): { prefix: string; n: number; suffix: string; format: Format } {
   if (kind === "try") return { prefix: "", n: Math.round(value), suffix: `${NBSP}TL`, format: { maximumFractionDigits: 0 } };
   if (kind === "int") return { prefix: "", n: value, suffix: "", format: { maximumFractionDigits: 0 } };
+  if (kind === "lira" || kind === "signedLira") {
+    const r = Math.round(value);
+    const sign = r < 0 ? "−" : kind === "signedLira" && r > 0 ? "+" : "";
+    return { prefix: sign, n: Math.abs(r), suffix: `${NBSP}₺`, format: { maximumFractionDigits: 0 } };
+  }
   const text = figureText(value, kind, digits);
   const sign = text.startsWith("+") ? "+" : text.startsWith("−") ? "−" : "";
   const n = Math.abs(value * 100);

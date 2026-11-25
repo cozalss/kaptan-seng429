@@ -8,6 +8,7 @@
 export const ROUTES = {
   benim: "/benim",
   oneri: "/oneri",
+  oneriler: "/oneriler",
   portfoy: "/portfoy",
   bildirimler: "/bildirimler",
   gecmis: "/gecmis",
@@ -54,7 +55,7 @@ export function isPublicPath(pathname: string): boolean {
 
 /** Every older path → the closest screen (permanent: false while the IA settles). */
 export const LEGACY_REDIRECTS: ReadonlyArray<{ source: string; destination: string }> = [
-  ...["/bugun", "/kopru", "/oneriler", "/akis", "/karne", "/ozet", "/kosular", "/kosular/:id", "/tayfa", "/tayfa/:agent", "/styleguide", "/inbox", "/approvals", "/runs", "/runs/:id", "/brief", "/eval", "/yetkisiz"].map((source) => ({
+  ...["/bugun", "/kopru", "/akis", "/karne", "/ozet", "/kosular", "/kosular/:id", "/tayfa", "/tayfa/:agent", "/styleguide", "/inbox", "/approvals", "/runs", "/runs/:id", "/brief", "/eval", "/yetkisiz"].map((source) => ({
     source,
     destination: ROUTES.benim,
   })),
@@ -70,7 +71,7 @@ export const LEGACY_REDIRECTS: ReadonlyArray<{ source: string; destination: stri
 /** Which nav item is current for a path (an Öneri belongs to Ana sayfa); null outside the nav (Ayarlar). */
 export function activeNavHref(pathname: string): string | null {
   if (pathname === ROUTES.benim || pathname.startsWith(`${ROUTES.oneri}/`)) return ROUTES.benim;
-  if (pathname === ROUTES.takvim) return ROUTES.benim;
+  if (pathname === ROUTES.takvim || pathname === ROUTES.oneriler) return ROUTES.benim;
   if (pathname === ROUTES.onemli) return ROUTES.bildirimler;
   if (pathname.startsWith(`${ROUTES.gecmis}/`)) return ROUTES.gecmis;
   return NAV_ITEMS.find((i) => i.href === pathname)?.href ?? null;

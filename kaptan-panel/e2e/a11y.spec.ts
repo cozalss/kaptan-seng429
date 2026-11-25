@@ -67,6 +67,7 @@ const STATES: ReadonlyArray<{ name: string; path: string; seed: MockSeed; ready:
   { name: "Param, money in", path: "/portfoy", seed: {}, ready: openDeposit },
   { name: "Param, a sale with errors", path: "/portfoy", seed: {}, ready: openSaleWithError },
   { name: "Önemli duyurular, the day", path: "/onemli", seed: {}, ready: (p) => expect(p.getByRole("heading", { level: 1 })).toContainText("Önemli duyurular") },
+  { name: "Öneriye düşenler, every suggestion", path: "/oneriler", seed: {}, ready: (p) => expect(p.getByRole("heading", { level: 1 })).toContainText("Öneriye düşenler") },
   { name: "Takvim, the dates ahead", path: "/takvim", seed: {}, ready: (p) => expect(p.getByRole("heading", { level: 1 })).toContainText("Takvim") },
   { name: "Karne, the month", path: "/gecmis/karne", seed: {}, ready: (p) => expect(p.getByTestId("track-summary")).toBeVisible() },
   { name: "Karne, the year", path: "/gecmis/karne", seed: {}, ready: karneYear },

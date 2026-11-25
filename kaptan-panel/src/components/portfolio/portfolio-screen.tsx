@@ -8,7 +8,7 @@ import { useApiQuery } from "@/lib/api/react";
 import { MSG_UNREACHABLE } from "@/lib/api/types";
 import { useNow } from "@/lib/clock";
 import { useEventStream } from "@/lib/sse/use-event-stream";
-import { fmtLira, fmtSignedLira } from "@/lib/solo/words";
+import { Figure } from "@/components/ui/figure";
 import { Band, PageHeader, ScreenState } from "@/components/shell/page-frame";
 import { useDesk } from "@/components/shell/desk-state";
 import { BenchmarkLine } from "@/components/solo/benchmark-line";
@@ -144,19 +144,21 @@ function Figures({ equity, today, todayPct, since, sincePct }: { equity: number;
     <dl className="pm-figures" aria-label="Paranın özeti">
       <div className="pm-figure-main">
         <dt className="u-caption">Hepsi birlikte</dt>
-        <dd className="pm-total">{fmtLira(equity)}</dd>
+        <dd className="pm-total">
+          <Figure value={equity} kind="lira" />
+        </dd>
       </div>
       <div>
         <dt className="u-caption">Bugün</dt>
         <dd className={cn("pm-figure", signTone(today))}>
-          {fmtSignedLira(today)} <span className="pm-figure-pct">{fmtSignedFigurePct(todayPct)}</span>
+          <Figure value={today} kind="signedLira" /> <span className="pm-figure-pct">{fmtSignedFigurePct(todayPct)}</span>
         </dd>
       </div>
       {since !== null && sincePct !== null ? (
         <div>
           <dt className="u-caption">Başladığından beri</dt>
           <dd className={cn("pm-figure", signTone(since))}>
-            {fmtSignedLira(since)} <span className="pm-figure-pct">{fmtSignedFigurePct(sincePct)}</span>
+            <Figure value={since} kind="signedLira" /> <span className="pm-figure-pct">{fmtSignedFigurePct(sincePct)}</span>
           </dd>
         </div>
       ) : null}

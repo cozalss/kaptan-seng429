@@ -1,5 +1,6 @@
 import { useId } from "react";
 import { cn } from "@/lib/utils";
+import { smoothArea, smoothPath } from "./curve";
 
 const W = 120;
 const H = 32;
@@ -13,8 +14,7 @@ export function sparkPath(values: readonly number[]): { line: string; area: stri
   if (hi === lo) return null;
   const span = hi - lo;
   const pts = values.map((v, i) => [(i / (values.length - 1)) * W, 2 + (1 - (v - lo) / span) * (H - 4)] as const);
-  const line = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
-  return { line, area: `${line} L${W} ${H} L0 ${H} Z` };
+  return { line: smoothPath(pts), area: smoothArea(pts, H) };
 }
 
 /**

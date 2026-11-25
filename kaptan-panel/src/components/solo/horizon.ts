@@ -1,3 +1,4 @@
+import { smoothPath } from "@/components/ui/curve";
 import type { Position } from "@/lib/domain";
 import type { EquityPoint } from "@/lib/solo/overview";
 import { dayLabel, fmtLira } from "@/lib/solo/words";
@@ -119,7 +120,7 @@ export function plotGeometry(points: readonly EquityPoint[], capitalStart: numbe
   const tall = Math.max(MIN_LINE_HEIGHT, Math.min(...limits));
   const yOf = (v: number) => base - lift(v) * tall;
   const xy = points.map((p, i) => ({ x: xs[i] ?? 0, y: yOf(p.equity) }));
-  const line = xy.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join("");
+  const line = smoothPath(xy.map((p) => [p.x, p.y] as const));
   return { xy, line, waterY: yOf(capitalStart) };
 }
 
