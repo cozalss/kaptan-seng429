@@ -37,7 +37,7 @@ test.describe("first run: the one question", () => {
 
     await startWith(page, "25000");
     await page.getByRole("button", { name: "Hayır, ana sayfaya geç" }).click();
-    await expect(page.getByRole("heading", { level: 1, name: /Paran hazır/ })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /^Paran hazır|^Senin hisselerinde bugün/ })).toBeVisible();
     await expect(page.getByTestId("toplam-para")).toContainText("25.000");
     expect(errors).toEqual([]);
   });

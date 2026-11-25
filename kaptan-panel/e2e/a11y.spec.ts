@@ -102,7 +102,7 @@ async function firstRunHolding(p: Page) {
 async function setUpNothingOwned(p: Page) {
   await startMoney(p);
   await p.getByRole("button", { name: "Hayır, ana sayfaya geç" }).click();
-  await expect(p.getByRole("heading", { level: 1, name: /Paran hazır/ })).toBeVisible();
+  await expect(p.getByRole("heading", { level: 1, name: /^Paran hazır|^Senin hisselerinde bugün/ })).toBeVisible();
 }
 async function openDeposit(p: Page) {
   await p.getByRole("button", { name: "Para ekle", exact: true }).click();

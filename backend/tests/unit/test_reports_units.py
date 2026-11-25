@@ -98,7 +98,7 @@ def test_words() -> None:
 def test_the_quiet_sentence_follows_the_numbers() -> None:
     assert sentence(0, 0, 0, [], None) == "Bugün KAP'tan henüz yeni bildirim gelmedi."
     assert sentence(312, 9, 0, [("olay KAPtan'ın aradığı ölçülere uymadı", 7)], None).startswith(
-        "Bugün 312 bildirim okundu; 9 tanesi ilgiliydi, hiçbiri kurallardan geçmedi. En sık neden:"
+        "Bugün 312 bildirim okundu; 9 tanesine yakından bakıldı, hiçbiri öneriye dönüşmedi. En sık neden:"
     )
     assert sentence(40, 0, 0, [], None) == "Bugün 40 bildirim okundu; hiçbiri senin için ilgili değildi."
     assert sentence(40, 3, 1, [], None) == "Bugün 40 bildirim okundu; 1 öneri çıktı."
@@ -112,7 +112,11 @@ def test_the_reason_of_a_run() -> None:
     assert reason_of(row) == "olay KAPtan'ın aradığı ölçülere uymadı"
     gate = {"checks": [{"outcome": "reject", "rule_code": "R02"}], "compliance": None, "rule_decision": None}
     assert "günlük zarar sınırı" in reason_of(gate)
-    assert reason_of({"checks": None, "compliance": None, "rule_decision": None}) == "kurallar geçmedi"
+    # No rule code: never the circular "kurallar geçmedi"; an IGNORE reading says what it really was.
+    assert reason_of({"checks": None, "compliance": None, "rule_decision": None}) == "olay KAPtan'ın öneri ölçülerine uymadı"
+    ignored = {"event_type": "IGNORE", "checks": None, "compliance": None, "rule_decision": None}
+    assert reason_of(ignored) == "duyuru KAPtan'ın öneri verdiği olay türlerinden değildi"
+    assert "kurallar" not in sentence(373, 7, 0, [(reason_of(ignored), 3)], None)
 
 
 def ledger_row(kind: str, day: int, **kw: object) -> dict[str, object]:

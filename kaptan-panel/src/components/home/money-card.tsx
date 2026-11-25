@@ -13,6 +13,7 @@ import { isTradingDay } from "@/lib/time";
 import { Boat } from "@/components/ufuk/boat";
 import { Figure } from "@/components/ui/figure";
 import { PriceAge } from "@/components/solo/price-age";
+import { isFlat } from "@/components/solo/money-hero";
 import { daySentence, differenceWords, todayAmount, type DayMood } from "@/components/solo/horizon";
 
 /** The line's box in viewBox units; the boat sits at the right end, so the line stops short of the edge. */
@@ -92,20 +93,30 @@ export function MoneyCard({ overview, todayPct }: { overview: Overview; todayPct
   const spark = useMemo(() => sparkGeometry(points, overview.capital_start), [points, overview.capital_start]);
   const started = overview.equity_series.length >= 2 || overview.allocations.length > 0;
   const invested = overview.allocations.reduce((sum, a) => sum + a.amount, 0);
+  const noShares = overview.allocations.length === 0;
+  // A line only says something once the money has moved: a flat or one-day line and its range pills stay hidden.
+  const moved = !isFlat(overview.equity_series);
   return (
     <section aria-labelledby="paran-su-an" className="hm-money-wrap">
       <div className="hm-money">
         <h2 id="paran-su-an" className="hm-money-label">
-          Paran şu an
+          Paran
         </h2>
+        <p className="hm-money-about">Kasandaki ve hisselerdeki toplam</p>
         <p className="hm-money-total" data-testid="toplam-para">
           <Figure value={Number(whole.replace(/\D/g, ""))} kind="int" className="solo-figure" />
           <span className="solo-figure hm-money-minor">,{cents}</span>
           <span className="solo-figure hm-money-minor hm-money-lira">₺</span>
         </p>
-        <DayChange equityNow={overview.equity_now} todayPct={todayPct} started={started} />
-        {started ? <p className="hm-money-status">{differenceWords(overview.equity_now, overview.capital_start)}</p> : null}
-        {spark ? (
+        {noShares ? (
+          <p className="hm-money-status hm-money-status--new">Henüz hisse yok, paranın tamamı nakitte. Öneri gelince burada değişimi görürsün.</p>
+        ) : (
+          <>
+            <DayChange equityNow={overview.equity_now} todayPct={todayPct} started={started} />
+            <p className="hm-money-status">{differenceWords(overview.equity_now, overview.capital_start)}</p>
+          </>
+        )}
+        {spark && moved ? (
           <div className="hm-spark" aria-hidden>
             <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="hm-spark-svg" focusable="false">
               <defs>
@@ -126,7 +137,7 @@ export function MoneyCard({ overview, todayPct }: { overview: Overview; todayPct
             </span>
           </div>
         ) : null}
-        {overview.equity_series.length >= 2 ? (
+        {moved ? (
           <div role="group" aria-label="Dönem" className="hm-pills">
             {PERIODS.map((p) => {
               const distinct = periodIsDistinct(overview.equity_series, p);
@@ -145,6 +156,7 @@ export function MoneyCard({ overview, todayPct }: { overview: Overview; todayPct
           </Link>
         </div>
       </div>
+      {noShares ? null : (
       <dl className="hm-figs">
         <div>
           <dt>Başladığından beri</dt>
@@ -162,6 +174,7 @@ export function MoneyCard({ overview, todayPct }: { overview: Overview; todayPct
           </dd>
         </div>
       </dl>
+      )}
     </section>
   );
 }

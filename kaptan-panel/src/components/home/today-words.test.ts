@@ -23,5 +23,7 @@ describe("todayWords", () => {
 
   it("greets a new install without claiming anything", () => {
     expect(todayWords({ ...base, started: false }).headline).toBe("Paran hazır, KAPtan okuyor.");
+    // Watched companies still count before the first share.
+    expect(todayWords({ ...base, started: false, mine: 2 })).toEqual({ headline: "Senin hisselerinde bugün 2 önemli duyuru var.", detail: "Elinde hisse yok; izlediğin şirketlerde haber var." });
   });
 });

@@ -67,6 +67,7 @@ function StripBody({ limit, compact, onMine }: { limit: number; compact: boolean
         </h2>
         <ListenButton lines={lines} />
       </div>
+      {compact ? <p className="hm-about">Elindeki ve izlediğin şirketlerin önemli duyuruları.</p> : null}
       {shown.length === 0 ? (
         <p className="sg-quiet" role="status">
           {NOTHING_MINE}

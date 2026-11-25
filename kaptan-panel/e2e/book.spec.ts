@@ -10,7 +10,7 @@ async function startedWith(page: Page, amount: string) {
   await page.getByRole("textbox", { name: "Başlangıç paran" }).fill(amount);
   await page.getByRole("button", { name: "Bu parayla başla" }).click();
   await page.getByRole("button", { name: "Hayır, ana sayfaya geç" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: /Paran hazır/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /^Paran hazır|^Senin hisselerinde bugün/ })).toBeVisible();
   await go(page, "Param", /\/portfoy$/);
 }
 

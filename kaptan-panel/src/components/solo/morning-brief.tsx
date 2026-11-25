@@ -40,8 +40,8 @@ export function MorningBrief({ proposalsNow, collapsible = false }: { proposalsN
           <svg aria-hidden viewBox="0 0 10 10" className="hm-brief-chevron" fill="currentColor">
             <path d="M3 1.5 7.5 5 3 8.5Z" />
           </svg>
-          {open ? "Sabah özetini kapat" : "Sabah özetini aç"}
-          <span className="hm-brief-time">saat {fmtTime(brief.generated_at)}</span>
+          {open ? "Bugünün sabah özetini kapat" : "Bugünün sabah özetini aç"}
+          <span className="hm-brief-time">· saat {fmtTime(brief.generated_at)}</span>
         </button>
         <div id={panel} hidden={!open}>
           {open ? <BriefBody brief={brief} proposalsNow={proposalsNow} inline /> : null}

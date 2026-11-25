@@ -49,7 +49,7 @@ describe("Ana sayfa", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Bugün 6 kararın var." })).toBeInTheDocument();
     expect(screen.getByText(/^\d+ öneri, \d+ “tut” sorusu\./)).toBeInTheDocument();
     // The money: the total, today's move, three figures and the way to Param.
-    expect(screen.getByRole("heading", { level: 2, name: "Paran şu an" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Paran" })).toBeInTheDocument();
     expect(plain(screen.getByTestId("toplam-para"))).toBe("1.018.615,00₺");
     expect(screen.getByText("Başladığından beri")).toBeInTheDocument();
     expect(screen.getByText("Nakit")).toBeInTheDocument();
@@ -58,7 +58,8 @@ describe("Ana sayfa", () => {
     // Moved to their own pages: one quiet link each.
     expect(screen.queryByRole("region", { name: "Param nerede?" })).toBeNull();
     expect(screen.queryByTestId("son-islemler")).toBeNull();
-    const more = screen.getByRole("navigation", { name: "Daha fazlası" });
+    // Two rows exist (beside the money on a desktop, at the end on a phone); CSS shows one. jsdom has no CSS.
+    const more = screen.getAllByRole("navigation", { name: "Daha fazlası" })[0] as HTMLElement;
     for (const [name, href] of [["Takvim", "/takvim"], ["Param", "/portfoy"], ["Okunanlar", "/bildirimler"], ["Geçmiş", "/gecmis"]]) {
       expect(within(more).getByRole("link", { name: new RegExp(`^${name}`) })).toHaveAttribute("href", href);
     }

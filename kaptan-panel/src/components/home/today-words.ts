@@ -35,6 +35,8 @@ export function todayWords({ started, decisions, holds, steps, mine }: TodayInpu
     const detail = [split, mineWords(mine, true)].filter(Boolean).join(" ");
     return { headline, detail: detail || null };
   }
+  // The person's own companies first, even before they own a share: watched ones count too.
+  if (mine !== null && mine > 0) return { headline: `Senin hisselerinde bugün ${fmtInt(mine)} önemli duyuru var.`, detail: started ? "Senden bekleyen bir karar yok." : "Elinde hisse yok; izlediğin şirketlerde haber var." };
   if (!started) return { headline: "Paran hazır, KAPtan okuyor.", detail: "Elinde hisse yok; paranın hepsi nakit. Söyleyecek bir şey olunca burada konuşur." };
   if (mine === null) return { headline: "Bugün karar vermen gereken bir şey yok.", detail: null };
   if (mine > 0) return { headline: `Senin hisselerinde bugün ${fmtInt(mine)} önemli duyuru var.`, detail: "Senden bekleyen bir karar yok." };

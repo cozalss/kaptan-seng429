@@ -9,7 +9,7 @@ test.describe("Önemli duyurular", () => {
     await loginApi(page);
     await page.goto("/benim");
     await expect(page.getByRole("heading", { name: "Günün öne çıkanları" })).toBeVisible();
-    await page.locator(".dg-card").getByRole("link", { name: /Hepsini gör|Önemli duyurulara git/ }).click();
+    await page.locator(".dg-card").getByRole("link", { name: /^Hepsi \(\d+\)|Önemli duyurulara git/ }).click();
     await expect(page).toHaveURL(/\/onemli$/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Önemli duyurular");
     await expect(page.getByRole("link", { name: /KAP’ta aç/ }).first()).toBeVisible();

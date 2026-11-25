@@ -229,7 +229,7 @@ export function createReports(ctx: MockCtx): Reports {
       const reason = "olay KAPtan'ın aradığı ölçülere uymadı";
       let sentence = `${head}; ${fmtInt(c.proposals)} öneri çıktı.`;
       if (c.proposals === 0) {
-        sentence = relevant === 0 ? `${head}; hiçbiri senin için ilgili değildi.` : `${head}; ${fmtInt(relevant)} tanesi ilgiliydi, hiçbiri kurallardan geçmedi. En sık neden: ${reason}.`;
+        sentence = relevant === 0 ? `${head}; hiçbiri senin için ilgili değildi.` : `${head}; ${fmtInt(relevant)} tanesine yakından bakıldı, hiçbiri öneriye dönüşmedi. En sık neden: ${reason}.`;
       }
       const reasons = c.proposals === 0 && relevant > 0 ? [{ reason_tr: reason, n: relevant }] : [];
       return ok<QuietDay>({ day: istDay(now()), read: c.total, relevant, proposals: c.proposals, sentence_tr: sentence, reasons }, 80);

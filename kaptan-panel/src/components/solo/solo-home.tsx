@@ -20,10 +20,13 @@ import { FirstRun } from "./first-run";
 import { MorningBrief } from "./morning-brief";
 import { PauseNotice } from "./pause-notice";
 import { Suggestions, type OrderFigures } from "./suggestions";
-import { WhyQuiet } from "./why-quiet";
-import { DigestCard } from "@/components/digest/digest-card";
 import { SignalStrip } from "@/components/signal/signal-strip";
+import { BlockHead } from "@/components/home/block-head";
+import { DayLearned } from "@/components/home/day-learned";
+import { GettingStarted } from "@/components/home/getting-started";
+import { HomeHighlights } from "@/components/home/home-highlights";
 import { HomeLinks } from "@/components/home/home-links";
+import { HomeTrack } from "@/components/home/home-track";
 import { MoneyCard } from "@/components/home/money-card";
 import { TodayHeader } from "@/components/home/today-header";
 import { todayWords } from "@/components/home/today-words";
@@ -108,33 +111,49 @@ export function SoloHome() {
   const started = overview.equity_series.length >= 2 || overview.allocations.length > 0;
   const words = todayWords({ started, decisions: open.length, holds: open.length - proposalsNow, steps, mine: mineLive ?? data.mineAtLoad });
 
+  const hasDecisions = open.length > 0 || decisions.steps.length > 0 || decisions.state.flights.length > 0;
+  const hasHoldings = overview.allocations.length > 0;
+  const mine = mineLive ?? data.mineAtLoad;
+
   return (
     <>
       <PauseNotice />
       <div className="hm u-page">
         {q.error ? <ErrorState message={q.error} onRetry={() => void q.refetch()} /> : null}
-        <div className="hm-top">
-          <TodayHeader name={realName(session.name)} words={words} brief={<MorningBrief proposalsNow={proposalsNow} collapsible />} />
-          <MoneyCard overview={overview} todayPct={data.risk.daily_pnl_pct} />
-        </div>
-        <div className="hm-grid">
-          <div className="hm-main">
-            <Suggestions
-              suggestions={suggestions}
-              names={names}
-              figures={figures}
-              held={held}
-              today={data.counters ? { read: data.counters.total, toCrew: data.counters.processed } : null}
-              decisions={decisions}
-              headless
-              empty={<WhyQuiet />}
-            />
-            <CorporatePrompt onChanged={() => void q.refetch()} />
-            <SignalStrip limit={HOME_LIST_MAX} compact onMine={onMine} />
+        <div className="hm-layout">
+          <div className="hm-lead">
+            <TodayHeader name={realName(session.name)} words={words} brief={<MorningBrief proposalsNow={proposalsNow} collapsible />} />
           </div>
           <div className="hm-side">
-            <DigestCard limit={HOME_LIST_MAX} title="Günün öne çıkanları" />
-            <HomeLinks />
+            <MoneyCard overview={overview} todayPct={data.risk.daily_pnl_pct} />
+            <div className="hm-links-wide">
+              <HomeLinks />
+            </div>
+          </div>
+          <div className="hm-main">
+            <GettingStarted hasHoldings={hasHoldings} />
+            {hasDecisions ? (
+              <div className="hm-block">
+                <BlockHead id="kararlarin" label="Kararların" about="KAPtan’ın önerileri; sen onaylamadıkça hiçbir şey olmaz." />
+                <Suggestions
+                  suggestions={suggestions}
+                  names={names}
+                  figures={figures}
+                  held={held}
+                  today={data.counters ? { read: data.counters.total, toCrew: data.counters.processed } : null}
+                  decisions={decisions}
+                  headless
+                />
+              </div>
+            ) : null}
+            <CorporatePrompt onChanged={() => void q.refetch()} />
+            <SignalStrip limit={HOME_LIST_MAX} compact onMine={onMine} />
+            <DayLearned mine={mine} />
+            <HomeTrack />
+            <HomeHighlights />
+            <div className="hm-links-narrow">
+              <HomeLinks />
+            </div>
           </div>
         </div>
       </div>
@@ -145,13 +164,15 @@ export function SoloHome() {
 function HomeSkeleton() {
   return (
     <div role="status" aria-label="Yükleniyor" className="hm u-page">
-      <div className="hm-top">
-        <div className="hm-today">
+      <div className="hm-layout">
+        <div className="hm-lead">
           <Skeleton className="h-5 w-64" />
           <Skeleton className="mt-6 h-12 w-4/5" />
           <Skeleton className="mt-4 h-5 w-3/5" />
         </div>
-        <div aria-hidden className="hm-money hm-money--ghost" />
+        <div className="hm-side">
+          <div aria-hidden className="hm-money hm-money--ghost" />
+        </div>
       </div>
     </div>
   );

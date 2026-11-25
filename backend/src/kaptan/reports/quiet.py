@@ -19,7 +19,7 @@ from kaptan.prices.calendar import IST
 from kaptan.rules.format import fmt_int
 
 RUNS_SQL: Final = """
-SELECT r.kind, r.explain->'risk_checks' AS checks, r.explain->'compliance' AS compliance,
+SELECT r.kind, r.event_type, r.explain->'risk_checks' AS checks, r.explain->'compliance' AS compliance,
        r.explain->'rule_decision' AS rule_decision
   FROM trading.agent_runs r
  WHERE r.visible AND r.run_id NOT LIKE 'run-hist%%' AND r.kind NOT IN ('archived', 'pregate_veto')
@@ -47,7 +47,8 @@ GATE_TR: Final = {
     "R04": "hisse işlem kısıtı altındaydı",
     "R13": "hisse engel listendeydi",
 }
-OTHER: Final = "kurallar geçmedi"
+IGNORED: Final = "duyuru KAPtan'ın öneri verdiği olay türlerinden değildi"
+OTHER: Final = "olay KAPtan'ın öneri ölçülerine uymadı"
 
 
 def reason_of(row: dict[str, Any]) -> str:
@@ -60,6 +61,8 @@ def reason_of(row: dict[str, Any]) -> str:
             return RULE_TR[code]
         if str(code).endswith("_RULE_NOT_MET"):
             return RULE_TR["E_RULE_NOT_MET"]
+    if row.get("event_type") == "IGNORE":
+        return IGNORED
     return OTHER
 
 
@@ -74,7 +77,7 @@ def sentence(read: int, relevant: int, proposals: int, reasons: list[tuple[str, 
         said = waiting.rstrip(".") if waiting else None
         tail = said[:1].lower() + said[1:] if said else "hiçbiri senin için ilgili değildi"
         return f"{head}; {tail}."
-    tail = f"{fmt_int(relevant)} tanesi ilgiliydi, hiçbiri kurallardan geçmedi"
+    tail = f"{fmt_int(relevant)} tanesine yakından bakıldı, hiçbiri öneriye dönüşmedi"
     top = f" En sık neden: {reasons[0][0]}." if reasons else ""
     return f"{head}; {tail}.{top}"
 
