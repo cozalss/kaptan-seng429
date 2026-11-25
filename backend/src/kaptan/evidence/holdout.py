@@ -13,6 +13,10 @@ applied here: most need the Reader's answer, which history does not have. The ev
 
 Sealed: 2025-01-01 → 2026-10-31 (Istanbul) stays out of live evidence and out of `core.event_returns` until the one
 run (`kaptan.evalreports.holdout`) has finished; a decision older than that run still does not see it.
+
+Where the evidence comes from: the archive before the seal (`kaptan.live.archive`, 2018-01-01 → 2024-12-31; the
+live install has 2022 → 2024) and live events from 2026-11-01 on. An empty `core.holdout_runs` is the correct state
+until the one run: only `kaptan.evalreports.holdout run` writes its row, never a script that wants more evidence.
 """
 
 from __future__ import annotations

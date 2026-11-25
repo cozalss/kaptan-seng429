@@ -41,7 +41,7 @@ from kaptan.evidence.holdout import E_CODES
 from kaptan.ingest import repo as kap_repo
 from kaptan.ingest.detail_fetcher import reason_from
 from kaptan.ingest.kap_backfill import BackfillReport, backfill, daterange, refresh_members
-from kaptan.ingest.kap_client import KapBlockedError, KapError
+from kaptan.ingest.kap_client import KapBlockedError, KapError, KapNotFoundError
 from kaptan.ingest.kap_detail import DetailText, fetch_detail
 from kaptan.ingest.parsers import parse_detail
 from kaptan.live.archive_classify import ClassifyBudget, ClassifyResult, run_classify
@@ -67,6 +67,8 @@ PRICES_JOB: Final = "archive_prices"
 TEXT_JOB: Final = "archive_text"
 XU100: Final = "XU100"
 TICK_EVERY_S: Final = 60.0
+#: This many KAP failures in a row is a refusal: wait like after a WAF signal instead of asking on.
+FAILED_STREAK: Final = 5
 
 TICKERS_SQL: Final = """
 SELECT DISTINCT d.primary_ticker AS ticker FROM core.disclosures d
@@ -84,6 +86,14 @@ SELECT d.disclosure_index, d.subject FROM core.disclosures d
      SELECT 1 FROM core.disclosure_texts t WHERE t.disclosure_index = d.disclosure_index AND t.lang = 'tr'
    )
  ORDER BY d.published_at, d.disclosure_index
+"""
+#: A price history is "done" for the span it was asked for: key `CODE` = since CANONICAL_START (the default run),
+#: `CODE@YYYY-MM-DD` = since that day. A later run that starts earlier asks again instead of skipping the code.
+PRICES_COVERED_SQL: Final = """
+SELECT 1 FROM ops.ingestion_runs
+ WHERE job = %(job)s AND status = 'done'
+   AND (key = %(code)s OR (key LIKE %(code)s || '@%%' AND split_part(key, '@', 2)::date <= %(start)s))
+ LIMIT 1
 """
 CLEAR_SETTLED_SQL: Final = "UPDATE core.events SET returns_settled_at = NULL WHERE returns_settled_at IS NOT NULL"
 GAP_NAMES_SQL: Final = """
@@ -191,7 +201,10 @@ async def step_disclosures(pool: Any, kap: Any, plan: Plan, today: date, result:
     async def go() -> BackfillReport:
         done["n"] = 0
         companies = await refresh_members(pool, kap, today)
-        return await backfill(pool, kap, plan.start, plan.end, companies=companies, raw_dir=plan.raw_dir, on_day=on_day)
+        return await backfill(
+            pool, kap, plan.start, plan.end, companies=companies, raw_dir=plan.raw_dir, on_day=on_day,
+            max_failed_streak=FAILED_STREAK,
+        )  # fmt: skip
 
     result.disclosures = await _patient(go, plan, sleep)
     report = result.disclosures
@@ -229,7 +242,8 @@ async def step_prices(pool: Any, fetch: FetchPrices, plan: Plan, now: datetime, 
         await conn.commit()
         meter = Meter("price histories", len(codes))
         for i, code in enumerate(codes, 1):
-            if await kap_repo.run_status(conn, PRICES_JOB, code) == "done":
+            key = price_key(code, plan.start)
+            if await fetch_all(conn, PRICES_COVERED_SQL, {"job": PRICES_JOB, "code": code, "start": plan.start}):
                 result.prices_skipped += 1
                 await conn.commit()
                 continue
@@ -242,15 +256,13 @@ async def step_prices(pool: Any, fetch: FetchPrices, plan: Plan, now: datetime, 
                 report = await store_fetched(conn, keep, now)
             except SourceError as exc:
                 log.warning("prices %s: %s", code, exc)
-                await kap_repo.mark_run(conn, PRICES_JOB, code, "failed", error=str(exc))
+                await kap_repo.mark_run(conn, PRICES_JOB, key, "failed", error=str(exc))
                 await conn.commit()
                 result.prices_failed.append(code)
                 continue
             n = report.raw_rows + report.adjusted_rows
             status = "done" if n else "partial"
-            await kap_repo.mark_run(
-                conn, PRICES_JOB, code, status, rows=n, error=None if n else "no bars at any source"
-            )
+            await kap_repo.mark_run(conn, PRICES_JOB, key, status, rows=n, error=None if n else "no bars at any source")
             await conn.commit()
             (result.prices_fetched if n else result.prices_empty).append(code)
             meter.tick(i, f"{code}: {n} bars · {len(result.prices_empty)} without any")
@@ -266,6 +278,7 @@ async def step_texts(
             todo = await fetch_all(conn, TEXTS_TODO_SQL, _bounds(plan))
             await conn.commit()
             meter = Meter("E1/E2 texts", len(todo))
+            streak = 0
             for i, row in enumerate(todo, 1):
                 idx, subject = int(row["disclosure_index"]), str(row["subject"])
                 try:
@@ -277,7 +290,11 @@ async def step_texts(
                     async with conn.transaction():
                         await kap_repo.mark_run(conn, TEXT_JOB, str(idx), "failed", error=str(exc))
                     result.texts_failed.append(idx)
+                    streak = 0 if isinstance(exc, KapNotFoundError) else streak + 1
+                    if streak >= FAILED_STREAK:
+                        raise KapBlockedError(f"{streak} texts in a row failed, last: {exc}") from exc
                     continue
+                streak = 0
                 parsed = parse_detail(subject, detail.tr)
                 async with conn.transaction():
                     await kap_repo.store_detail(conn, detail, parsed, reason_from(parsed))
@@ -326,6 +343,11 @@ async def _classify_step(
 def prev_or_same(day: date) -> date:
     """The job day of the returns step: `run_event_returns` wants a day; a holiday reads the session before."""
     return prev_session(day + timedelta(days=1))
+
+
+def price_key(code: str, start: date) -> str:
+    """The checkpoint key of one price history: the bare code for the canonical span, `CODE@start` otherwise."""
+    return code if start <= CANONICAL_START else f"{code}@{start.isoformat()}"
 
 
 async def run_archive(

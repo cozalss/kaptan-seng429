@@ -25,7 +25,7 @@ from kaptan.evidence.holdout import EVENT_ROW_SQL, HOLDOUT_END, HOLDOUT_START, u
 from kaptan.ingest.normalize import from_by_criteria
 from kaptan.ingest.parsers import parse_detail
 from kaptan.ingest.repo import CompanyIndex
-from kaptan.live.archive import Meter, human_span, parse_args, prev_or_same
+from kaptan.live.archive import Meter, human_span, parse_args, prev_or_same, price_key
 from kaptan.sizing.costs import HLC
 from kaptan.sizing.params import DEFAULT_SIZING
 
@@ -126,6 +126,11 @@ def test_progress_reads_like_a_sentence() -> None:
 def test_returns_step_reads_the_session_of_a_holiday() -> None:
     assert prev_or_same(date(2026, 11, 2)) == date(2026, 11, 2)  # a Monday
     assert prev_or_same(date(2026, 11, 1)) == date(2026, 10, 30)  # a Sunday → Friday
+
+
+def test_a_price_checkpoint_names_its_span() -> None:
+    assert price_key("MAVI", date(2018, 1, 1)) == "MAVI"  # the canonical run keeps the old key
+    assert price_key("MAVI", date(2021, 1, 1)) == "MAVI@2021-01-01"
 
 
 # ── the pass/fail arithmetic ──────────────────────────────────────────────────────────────────────

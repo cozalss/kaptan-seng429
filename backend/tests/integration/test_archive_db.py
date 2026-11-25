@@ -17,8 +17,9 @@ from psycopg_pool import AsyncConnectionPool
 
 from kaptan.agents.feed import scope_reason
 from kaptan.db import DictConn, create_pool
-from kaptan.ingest.kap_client import KapBlockedError, KapNotFoundError
+from kaptan.ingest.kap_client import KapBlockedError, KapError, KapNotFoundError
 from kaptan.ingest.kap_detail import DetailText
+from kaptan.live import archive
 from kaptan.live.archive import PRICES_JOB, Plan, run_archive
 from kaptan.live.archive_classify import ClassifyBudget, dearest_price, worst_call_usd
 from kaptan.live.archive_report import format_report
@@ -28,8 +29,10 @@ from kaptan.prices.calendar import IST, is_trading_day
 from kaptan.prices.http import SourceError
 from kaptan.prices.ingest import Fetched
 from kaptan.prices.models import DailyBar
+from kaptan.reading.marks import unread_signals
 from kaptan.reference.ticker_history import add_rename
 from kaptan.settings import Settings
+from kaptan.signal.store import signals_between, thin_mine_ids
 from tests.harness.seed import SeedResult
 
 pytestmark = pytest.mark.integration
@@ -148,6 +151,29 @@ async def test_disclosures_keep_point_in_time_and_stay_out_of_today(apool: Async
     assert queued["n"] == 0  # never in the live worker's queue
 
 
+async def test_history_is_never_news(apool: AsyncConnectionPool[DictConn]) -> None:
+    """Archive rows start no run, alert, Telegram message, signal line or unread count, however wide the window."""
+    steps = ("disclosures", "texts")
+    await run_archive(apool, Kap(), Prices(), Plan(D0, D0, steps=steps), now=NOW, fetch_text=_fetch_text)
+    ids = {int(r["disclosureIndex"]) for r in DAYS[D0.isoformat()]}
+    ancient = datetime(2000, 1, 1, tzinfo=IST)
+    async with apool.connection() as conn:
+        wide = await signals_between(conn, ancient, NOW, only_important=False, now=NOW)
+        unread = await unread_signals(conn, ancient, NOW)
+        thin = await thin_mine_ids(conn, ancient, NOW)
+        that_day = await signals_between(
+            conn, datetime.combine(D0, datetime.min.time(), IST), NOW, only_important=False,
+            now=datetime.combine(D0 + timedelta(days=1), datetime.min.time(), IST),
+        )  # fmt: skip
+        await conn.commit()
+    assert not ids & {s.disclosure_index for s in wide} and not ids & {s.disclosure_index for s in unread}
+    assert not ids & set(thin)
+    assert ids & {s.disclosure_index for s in that_day}  # browsing that day of the archive still shows it
+    for table in ("ops.agent_feed", "ops.telegram_queue", "core.signal_line", "ops.detail_fetch_queue"):
+        row = await _one(apool, f"SELECT count(*) AS n FROM {table} WHERE disclosure_index = ANY(%s)", sorted(ids))  # noqa: S608
+        assert row["n"] == 0, table
+
+
 async def test_a_second_run_repeats_nothing(apool: AsyncConnectionPool[DictConn]) -> None:
     kap, prices = Kap(), Prices()
     steps = ("disclosures", "prices", "texts")
@@ -186,13 +212,49 @@ async def test_a_waf_signal_waits_then_resumes_by_itself(apool: AsyncConnectionP
     assert waits == [1800.0] and kap.calls == [D0]
 
 
+async def test_a_failure_streak_is_a_refusal_and_waits_instead_of_asking_on(
+    apool: AsyncConnectionPool[DictConn],
+) -> None:
+    class Refusing(Kap):
+        async def by_criteria(self, day_from: date, day_to: date, disclosure_class: str = "") -> list[dict[str, Any]]:
+            self.calls.append(day_from)
+            raise KapError("RemoteProtocolError")
+
+    kap = Refusing()
+    plan = Plan(D0, D0 + timedelta(days=30), steps=("disclosures",), block_wait_s=0.0, block_retries=0)
+    with pytest.raises(KapBlockedError):
+        await run_archive(apool, kap, Prices(), plan, now=NOW)
+    assert len(kap.calls) == 5  # not 31 days of asking a server that refuses
+
+
+async def test_a_text_failure_streak_is_a_refusal_too(
+    apool: AsyncConnectionPool[DictConn], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(archive, "FAILED_STREAK", 2)  # the recorded days hold only a few E1/E2 notices
+    first, last = date(2018, 3, 14), date(2021, 11, 10)
+    for day in (first, D0, last):
+        await run_archive(apool, Kap(), Prices(), Plan(day, day, steps=("disclosures",)), now=NOW)
+    asked: list[int] = []
+
+    async def refusing(_kap: Any, idx: int) -> DetailText:
+        asked.append(idx)
+        raise KapError("RemoteProtocolError")
+
+    plan = Plan(first, last, steps=("texts",), block_wait_s=0.0, block_retries=0)
+    with pytest.raises(KapBlockedError):
+        await run_archive(apool, Kap(), Prices(), plan, now=NOW, fetch_text=refusing)
+    assert len(asked) == 2
+
+
 async def test_prices_are_honest_about_gaps_and_find_renamed_codes(apool: AsyncConnectionPool[DictConn]) -> None:
     kap, prices = Kap(), Prices()
     prices.empty, prices.fail = {"MEPET"}, {"TAVHL"}
     plan = Plan(D0, D0, steps=("disclosures", "prices"))
     result = await run_archive(apool, kap, prices, plan, now=NOW)
     assert "MEPET" in result.prices_empty and result.prices_failed == ["TAVHL"] and result.failed
-    status = await _one(apool, "SELECT status FROM ops.ingestion_runs WHERE job = %s AND key = 'MEPET'", PRICES_JOB)
+    status = await _one(
+        apool, "SELECT status FROM ops.ingestion_runs WHERE job = %s AND key = 'MEPET@2020-05-13'", PRICES_JOB
+    )
     assert status["status"] == "partial"  # asked again next time
 
     async with apool.connection() as conn:
@@ -202,6 +264,22 @@ async def test_prices_are_honest_about_gaps_and_find_renamed_codes(apool: AsyncC
     prices.fail = set()
     await run_archive(apool, kap, prices, Plan(D0, D0, steps=("prices",)), now=NOW)
     assert "TSTNW" in prices.calls and "TAVHL" not in prices.calls  # the new code answers for the old one
+
+
+async def test_a_price_history_is_done_only_for_the_span_it_was_asked_for(
+    apool: AsyncConnectionPool[DictConn],
+) -> None:
+    kap, prices = Kap(), Prices()
+    await run_archive(apool, kap, prices, Plan(D0, D0, steps=("disclosures",)), now=NOW)
+    await run_archive(apool, kap, prices, Plan(D0 - timedelta(days=365), D0, steps=("prices",)), now=NOW)
+    first = sorted(prices.calls)
+    assert first
+    prices.calls.clear()
+    skipped = await run_archive(apool, kap, prices, Plan(D0, D0, steps=("prices",)), now=NOW)
+    assert prices.calls == [] and skipped.prices_skipped == len(first)  # a later start is inside what we have
+    earlier = Plan(D0 - timedelta(days=730), D0, steps=("prices",))
+    await run_archive(apool, kap, prices, earlier, now=NOW)
+    assert sorted(prices.calls) == first  # an earlier start asks every code again instead of skipping it
 
 
 async def test_only_the_index_keeps_yahoos_adjusted_rows(apool: AsyncConnectionPool[DictConn]) -> None:

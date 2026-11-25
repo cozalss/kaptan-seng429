@@ -9,7 +9,7 @@ hand-entered holding) before watched. The line comes from the rules; for a thin 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Final, Literal
 
 from kaptan.digest.kinds import classify
@@ -20,6 +20,10 @@ from kaptan.text.turkish import IST
 
 Mine = Literal["held", "watched"] | None
 MAX_ROWS: Final = 1000
+#: Backfilled rows (`ingest_source = 'backfill'`: the warm-up's last days and the evidence archive, 2022 → 2024) are
+#: history, never news: older than this before `now` they never reach a window (unread, Telegram, morning message,
+#: digest, brief, the model's signal lines), however wide the window is. Above the warm-up's 30-day maximum.
+BACKFILL_NEWS_HORIZON: Final = timedelta(days=31)
 
 COLUMNS: Final = """
 d.disclosure_index, d.primary_ticker, d.stock_codes, d.company_name, d.subject, d.summary, d.subject_route,
@@ -33,6 +37,7 @@ ONE_SQL: Final = f"SELECT {COLUMNS} FROM core.disclosures d WHERE d.disclosure_i
 RANGE_SQL: Final = f"""
 SELECT {COLUMNS} FROM core.disclosures d
  WHERE d.published_at >= %(since)s AND d.published_at < %(until)s
+   AND (d.ingest_source <> 'backfill' OR d.published_at >= %(backfill_from)s)
    AND (NOT %(only)s OR (d.origin = 'kap' AND d.reason = 'NEW' AND NOT d.is_noise AND d.subject_route <> 'noise'))
  ORDER BY d.published_at DESC, d.disclosure_index DESC LIMIT {MAX_ROWS}
 """  # noqa: S608
@@ -185,17 +190,22 @@ async def describe(conn: Any, disclosure_index: int, now: datetime | None = None
     return (await assemble(conn, [dict(rows[0])], now or datetime.now(IST)))[0][0]
 
 
+def _range(since: datetime, until: datetime, now: datetime, *, only: bool) -> dict[str, Any]:
+    return {"since": since, "until": until, "only": only, "backfill_from": now - BACKFILL_NEWS_HORIZON}
+
+
 async def signals_between(
     conn: Any, since: datetime, until: datetime, *, only_important: bool = True, only_mine: bool = False,
     now: datetime | None = None,
 ) -> list[Signal]:  # fmt: skip
     """Signals published in [since, until), newest first. Mine first is the caller's choice (see `mine`)."""
-    rows = [dict(r) for r in await fetch_all(conn, RANGE_SQL, {"since": since, "until": until, "only": only_important})]
+    params = _range(since, until, now or until, only=only_important)
+    rows = [dict(r) for r in await fetch_all(conn, RANGE_SQL, params)]
     pairs = await assemble(conn, rows, now or until)
     return [s for s, _ in pairs if (s.important or not only_important) and (s.mine is not None or not only_mine)]
 
 
 async def thin_mine_ids(conn: Any, since: datetime, until: datetime) -> list[int]:
     """Important, mine, and the rules said little: the disclosures worth one model call (newest first)."""
-    rows = [dict(r) for r in await fetch_all(conn, RANGE_SQL, {"since": since, "until": until, "only": True})]
+    rows = [dict(r) for r in await fetch_all(conn, RANGE_SQL, _range(since, until, until, only=True))]
     return [s.disclosure_index for s, r in await assemble(conn, rows, until) if s.important and s.mine and r.thin]

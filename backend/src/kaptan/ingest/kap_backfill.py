@@ -126,11 +126,16 @@ async def backfill(
     queue_details: bool = False,
     force: bool = False,
     on_day: Callable[[date, int], None] | None = None,
+    max_failed_streak: int | None = None,
 ) -> BackfillReport:
-    """`on_day(day, rows stored)` after every day, done earlier (0 rows) or fetched now (progress of a long run)."""
+    """`on_day(day, rows stored)` after every day, done earlier (0 rows) or fetched now (progress of a long run).
+
+    `max_failed_streak`: that many days failing in a row is KAP refusing us, not a bad day: it raises
+    `KapBlockedError` (the caller backs off) instead of asking for every remaining day."""
     if end < start:
         raise ValueError("--to is before --from")
     report = BackfillReport()
+    streak = 0
     index = companies or repo.CompanyIndex()
     for day in daterange(start, end):
         key = day.isoformat()
@@ -157,7 +162,11 @@ async def backfill(
                     await repo.mark_run(conn, JOB, key, "failed", error=str(exc))
                 report.failed_days.append(key)
                 log.warning("backfill %s failed: %s", key, exc)
+                streak += 1
+                if max_failed_streak is not None and streak >= max_failed_streak:
+                    raise KapBlockedError(f"{streak} days in a row failed, last: {exc}") from exc
                 continue
+            streak = 0
             if raw_dir is not None:
                 write_raw(raw_dir, day, rows)
             stored = await store_day(conn, day, rows, index, queue_details=queue_details, report=report)

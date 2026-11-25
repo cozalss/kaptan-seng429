@@ -317,6 +317,27 @@ yedek, bildirim kanalları, sorun listesi. `message` kişiye gösterilecek tek c
 gitmez. `agent_worker` ilk ısınma bitene kadar bekler (öncesinde evren boştur). Bekleyen bir servis `durdur`'a
 hemen yanıt verir **[denendi]**.
 
+**Geçmiş olaylar (arşiv):** KAPtan bir öneri yapmadan önce aynı türden geçmiş bildirimlerin sonrasında hissenin
+ne yaptığına bakar. Bu geçmiş, KAP'ın ve İş Yatırım'ın herkese açık sayfalarından bir kez indirilir:
+2022-01-01 → 2024-12-31 arasının bildirimleri, bu şirketlerin 2021'den bugüne günlük fiyatları ve XU100.
+Komut kaldığı yerden devam eder, ikinci kez çalışınca yalnız eksiği ister. Önce yedek al, sonra:
+
+```
+docker compose exec -T backup sh /ops/backup-once.sh
+docker compose run -d --rm --no-deps --name kaptan-history --entrypoint python api -m kaptan.live.archive --from 2022-01-01 --to 2024-12-31 --steps disclosures
+docker compose run -d --rm --no-deps --name kaptan-history --entrypoint python api -m kaptan.live.archive --from 2021-01-01 --steps prices
+docker compose run -d --rm --no-deps --name kaptan-history --entrypoint python api -m kaptan.live.archive --from 2024-01-01 --to 2024-12-31 --steps texts,returns
+```
+
+Son satırı 2023 ve 2022 için de çalıştır, en sonda `--steps returns,report`. Hiçbir yapay zekâ çağrılmaz.
+KAP üst üste 5 kez yanıt vermezse komut kendini 30 dakika bekletir, sonra kaldığı yerden sürer. Arşivden gelen
+bildirimler haber sayılmaz: öneri çalıştırmaz, bildirim ve Telegram mesajı göndermez, okunmamışlara girmez.
+
+**Kilitli dönem:** 2025-01-01 → 2026-10-31 arası "KAPtan gerçekten işe yarıyor mu?" sınavına ayrılmıştır. Bu
+dönemin olayları kanıt olarak kullanılmaz ve getirileri hesaplanmaz. Sınav bir kez yapılır
+(`python -m kaptan.evalreports.holdout run`). O zamana kadar `core.holdout_runs` tablosunun boş olması doğrudur.
+Kanıt için bu tabloya elle satır ekleme.
+
 **Harcama sınırı ve kayıt zinciri:** ayrıntı için `live.env` ve `backend/README.md`. Panelde Geçmiş →
 "Kayıtlar sağlam mı?" zinciri doğrular; zincir her gece 23:30'da da doğrulanır. Zincir kırıksa o andan sonra karar
 verme, son sağlam yedeği `-Kontrol` ile sına.
