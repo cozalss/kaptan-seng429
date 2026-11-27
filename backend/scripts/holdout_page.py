@@ -7,12 +7,13 @@
 The input is one `core.holdout_runs` row as JSON (its `report` is what `kaptan.evalreports.holdout` stored).
 Nothing is computed here except formatting: every number on the page is a number of the stored report.
 `--sample` puts a "these numbers are invented" band on the page, for previews.
-Colours, fonts and marks follow kaptan-panel/src/app/globals.css (paper, ink, sea, flag, hatch, hard ink shadow).
+Colours, fonts and marks follow kaptan-panel/src/app/globals.css; the sheet lies on a desk photo (holdout_desk.jpg).
 """
 
 from __future__ import annotations
 
 import argparse
+import base64
 import html
 import json
 import math
@@ -27,6 +28,9 @@ TYPE_NAMES = {
     "E4": ("Bilanço", "Şirket dönem sonuçlarını açıkladı."),
 }
 
+#: A photo of a desk, generated once with no text on it; the sheet lies on its leather pad.
+DESK = Path(__file__).with_name("holdout_desk.jpg")
+
 FONTS = (
     '<link rel="preconnect" href="https://fonts.googleapis.com">'
     '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
@@ -38,25 +42,30 @@ CSS = """
 :root{--paper:#f3eee3;--panel:#fffdf8;--sunk:#e9e2d3;--ink:#121318;--ink-soft:#23242a;--muted:#45433e;
 --gold:#8f6b1e;--gold-line:#b8954a;--gold-soft:#d9bf7a;
 --brand:#0c2f63;--wash:#2a4c8c;--north:#b3261e;--gain:#0a5530;--loss:#8c1038;--ochre:#d9961a;
---ochre-tint:rgb(217 150 26/.22);--line:rgb(12 47 99/.16);--sea:#12224f;--sea-deep:#0a1433;--on-sea:#f4f6fb;
---on-sea-soft:#d3dbed;--sea-rule:rgb(244 246 251/.42);--flag:#c62a20;--up:#2a4c8c;--down:#8c1038;
---hairline:rgb(18 19 24/.3)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#0b0f1d;--panel:#151b2f;--sunk:#20283f;
---ink:#eef1f7;--ink-soft:#dbe0ea;--muted:#b7bfd1;--brand:#a9c1f5;--wash:#a9bff0;--north:#ff8f80;--gain:#72d69e;
---loss:#ff9dbb;--line:rgb(238 241 247/.14);--sea:#1a2a5e;--sea-deep:#131f49;--flag:#ee4b3e;--up:#a9bff0;
---down:#ff9dbb;--hairline:rgb(238 241 247/.3);--gold:#e3c77f;--gold-line:#b8954a;--gold-soft:#8f6b1e}}
-:root[data-theme="dark"]{--paper:#0b0f1d;--panel:#151b2f;--sunk:#20283f;--ink:#eef1f7;--ink-soft:#dbe0ea;
---muted:#b7bfd1;--brand:#a9c1f5;--wash:#a9bff0;--north:#ff8f80;--gain:#72d69e;--loss:#ff9dbb;
---line:rgb(238 241 247/.14);--sea:#1a2a5e;--sea-deep:#131f49;--flag:#ee4b3e;--up:#a9bff0;--down:#ff9dbb;
---hairline:rgb(238 241 247/.3);--gold:#e3c77f;--gold-line:#b8954a;--gold-soft:#8f6b1e}
+--ochre-tint:rgb(217 150 26/.22);--line:rgb(12 47 99/.16);--sea:#12224f;--flag:#c62a20;--up:#2a4c8c;--down:#8c1038;
+--hairline:rgb(18 19 24/.3);--wood:#3a2618;--desk-dim:0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--desk-dim:.35}}
+:root[data-theme="dark"]{--desk-dim:.35}
+:root{--grunge:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='60'%3E%3Cfilter \
+id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3' seed='4'/%3E%3CfeColorMatrix \
+values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.5 1.4'/%3E%3C/filter%3E%3Crect width='160' height='60' \
+filter='url(%23g)'/%3E%3C/svg%3E")}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 Inter,system-ui,sans-serif;
-font-feature-settings:"tnum" 1;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' \
+body{margin:0;background:var(--wood);color:var(--ink);font:16px/1.6 Inter,system-ui,sans-serif;
+font-feature-settings:"tnum" 1;overflow-x:hidden}
+.desk{position:fixed;inset:0;z-index:-2;background:var(--wood) var(--desk-img,none) center/cover no-repeat}
+.desk::after{content:"";position:absolute;inset:0;background:rgb(0 0 0/var(--desk-dim))}
+.sheet{position:relative;isolation:isolate;max-width:1040px;margin:7vh auto 9vh;padding:56px 60px 40px;
+transform:rotate(-.35deg)}
+.sheet::before{content:"";position:absolute;inset:0;z-index:-1;background-color:#f6f1e6;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' \
 width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' \
-stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .07 0 0 0 0 .08 0 0 0 0 .14 0 0 0 .55 -.2'/%3E%3C/filter%3E\
-%3Crect width='220' height='220' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E")}
-.wrap{max-width:1040px;margin:0 auto;padding:28px 16px 72px}
+stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .15 0 0 0 0 .08 0 0 0 .5 -.2'/%3E%3C/filter%3E\
+%3Crect width='220' height='220' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E"),
+radial-gradient(120% 90% at 50% 40%,transparent 60%,rgb(120 90 50/.13));
+filter:url(#deckle) drop-shadow(0 2px 2px rgb(0 0 0/.35)) drop-shadow(0 22px 34px rgb(0 0 0/.45))}
+.paper-svg{position:absolute;width:0;height:0}
 .display{font-family:"Bodoni Moda",Didot,Georgia,serif;font-optical-sizing:auto;letter-spacing:-.01em}
 .mast{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:14px;
 border-bottom:2px solid var(--ink)}
@@ -64,17 +73,19 @@ border-bottom:2px solid var(--ink)}
 .mark svg{width:34px;height:34px}
 .mast .doc{font-size:.85rem;color:var(--muted);text-align:right}
 .mast .doc b{display:block;color:var(--ink);font-size:.95rem}
-.warn{display:flex;gap:10px;align-items:flex-start;margin:14px 0 0;font-size:.92rem;color:var(--ink-soft)}
+.notes{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 0}
+.warn{flex:1 1 260px;display:flex;gap:10px;align-items:flex-start;margin:0;padding:8px 12px;font-size:.88rem;
+color:var(--ink-soft);border:1px solid rgb(18 19 24/.4);background:rgb(255 253 248/.55)}
 .warn svg{flex:0 0 20px;height:18px;margin-top:2px}
-.warn.sample{background:var(--ochre-tint);padding:8px 12px}
+.warn.sample{background:var(--ochre-tint)}
 .hero{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:36px;align-items:center;margin-top:28px;
 padding-bottom:28px;border-bottom:1px solid var(--hairline)}
 .hero .main{text-align:center;position:relative;padding-top:64px}
-.hero h1{color:var(--gold);font-size:clamp(2.4rem,6vw,4rem)}
+.hero h1{color:var(--brand);font-size:clamp(2.4rem,6vw,4rem)}
 .hero .lede{margin:0 auto;max-width:46ch;font-size:1.05rem}
 .hero .kicker{justify-content:center}
+.summary{border:1.5px solid var(--gold-line);padding:20px 22px;position:relative;background:rgb(255 253 248/.5)}
 .rosette{position:absolute;top:-22px;right:4%;width:104px;height:124px}
-.summary{border:1.5px solid var(--gold-line);padding:20px 22px}
 .summary h2{font-size:clamp(1.6rem,3vw,2.1rem);margin:0 0 10px;font-weight:600}
 .summary p{margin:0;color:var(--ink-soft);font-size:.98rem}
 .summary .after{margin-top:12px;padding-top:12px;border-top:1px solid var(--gold-soft);font-size:.9rem}
@@ -98,9 +109,15 @@ font-size:.95rem;line-height:1.5}
 .items b{display:block;color:var(--ink);font-weight:600;margin-bottom:2px}
 @media (max-width:760px){.info{grid-template-columns:1fr;gap:40px}.items li{padding-left:0}}
 .h3s{margin:0 0 16px;color:var(--muted);font-size:.95rem}
-.types{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:18px}
-.type{background:var(--panel);border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink);padding:16px 16px 14px;
-display:flex;flex-direction:column}
+.types{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,196px),1fr));gap:18px}
+.type{--r:0deg;background:var(--panel);border:1px solid rgb(18 19 24/.35);padding:18px 16px 16px;
+display:flex;flex-direction:column;transform:rotate(var(--r));
+box-shadow:0 1px 1px rgb(60 40 20/.25),0 10px 18px -8px rgb(60 40 20/.45)}
+.type:nth-child(1){--r:-.9deg}.type:nth-child(2){--r:.6deg}.type:nth-child(3){--r:-.4deg}
+.type:nth-child(4){--r:.9deg}
+.type::before{content:"";position:absolute;top:-11px;left:calc(50% - 38px);width:76px;height:22px;
+background:rgb(236 224 196/.78);border-left:1px dashed rgb(150 120 70/.35);
+border-right:1px dashed rgb(150 120 70/.35);transform:rotate(-3deg);box-shadow:0 1px 2px rgb(60 40 20/.18)}
 .type .code{font-size:.78rem;color:var(--muted);letter-spacing:.06em}
 .type h4{font-size:1.55rem;line-height:1.1;margin:2px 0 4px;font-weight:600}
 .type .what{font-size:.88rem;color:var(--muted);margin:0 0 10px;min-height:2.8em}
@@ -112,13 +129,15 @@ display:flex;flex-direction:column}
 .checks li{display:flex;gap:8px;align-items:baseline;margin:3px 0}
 .checks b{flex:0 0 1.1em;text-align:center}
 .checks .y b{color:var(--gain)}.checks .n b{color:var(--north)}
-.type{position:relative;padding-bottom:0;margin-top:22px}
+.type{position:relative;margin-top:26px}
 .type .boat{position:absolute;top:-30px;right:14px;width:40px;height:34px}
-.stamp{margin:14px -16px 0;padding:12px 16px;text-align:center;font-weight:700;font-size:1.05rem;
-letter-spacing:.14em;color:#fff;border-top:2px solid var(--ink)}
-.stamp.y{background:#0a5530}.stamp.n{background:#8c1038}
+.stamp{align-self:center;margin:16px 0 2px;padding:3px 16px 1px;font:800 1.55rem/1.15 Inter,sans-serif;
+letter-spacing:.1em;border:3.5px solid currentColor;border-radius:7px;transform:rotate(-7deg);
+mix-blend-mode:multiply;-webkit-mask:var(--grunge) 0 0/160px 60px;mask:var(--grunge) 0 0/160px 60px}
+.stamp.y{color:var(--gain)}.stamp.n{color:var(--loss)}
 .type{transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s cubic-bezier(.2,.8,.2,1)}
-@media (hover:hover){.type:hover{transform:translate(-3px,-3px);box-shadow:6px 6px 0 var(--ink)}}
+@media (hover:hover){.type:hover{transform:translateY(-4px) rotate(0deg);
+box-shadow:0 2px 2px rgb(60 40 20/.2),0 18px 26px -10px rgb(60 40 20/.5)}}
 .wave{animation:drift 3.2s linear infinite}
 @keyframes drift{to{transform:translateX(40px)}}
 .boat{transform-origin:50% 90%;animation:bob 3.6s ease-in-out infinite}
@@ -126,27 +145,35 @@ letter-spacing:.14em;color:#fff;border-top:2px solid var(--ink)}
 .type:nth-child(4) .boat{animation-delay:-2.7s}
 @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-3px) rotate(3deg)}}
 .bar{transform-box:fill-box}.bar.up{transform-origin:50% 100%}.bar.down{transform-origin:50% 0}
-.js .type{opacity:0;transform:translateY(24px)}
+.js .type{opacity:0;transform:translateY(28px) rotate(var(--r))}
 .js .type .bar{transform:scaleY(0)}
 .js .type .checks li{opacity:0;transform:translateX(-8px)}
-.js .type .stamp{clip-path:inset(0 100% 0 0)}
-.js .type.in{opacity:1;transform:none;transition:opacity .5s ease-out var(--d),
+.js .type .stamp{opacity:0;transform:scale(1.9) rotate(-14deg)}
+.js .type.in{opacity:1;transform:rotate(var(--r));transition:opacity .5s ease-out var(--d),
 transform .6s cubic-bezier(.2,.8,.2,1) var(--d),box-shadow .25s}
 .js .type.in .bar{transform:scaleY(1);transition:transform .9s cubic-bezier(.3,1.4,.5,1) calc(var(--d) + .35s)}
 .js .type.in .checks li{opacity:1;transform:none;transition:opacity .3s,transform .3s cubic-bezier(.2,.8,.2,1)}
 .js .type.in .checks li:nth-child(1){transition-delay:calc(var(--d) + 1s)}
 .js .type.in .checks li:nth-child(2){transition-delay:calc(var(--d) + 1.15s)}
 .js .type.in .checks li:nth-child(3){transition-delay:calc(var(--d) + 1.3s)}
-.js .type.in .stamp{clip-path:inset(0 0 0 0);transition:clip-path .5s cubic-bezier(.6,0,.2,1) calc(var(--d) + 1.55s)}
-@media (hover:hover){.js .type.in:hover{transform:translate(-3px,-3px);transition:transform .25s,box-shadow .25s}}
+.js .type.in .stamp{opacity:1;transform:rotate(-7deg);transition:opacity .12s calc(var(--d) + 1.55s),
+transform .32s cubic-bezier(.3,1.5,.55,1) calc(var(--d) + 1.55s)}
+@media (hover:hover){.js .type.in:hover{transform:translateY(-4px) rotate(0deg);
+transition:transform .25s,box-shadow .25s}}
+.js .rosette{animation:pin .6s cubic-bezier(.3,1.5,.55,1) .4s both}
+@keyframes pin{from{opacity:0;transform:translateY(-14px) rotate(-8deg)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.wave,.boat{animation:none}
-.js .type,.js .type .bar,.js .type .checks li,.js .type .stamp{opacity:1;transform:none;clip-path:none;transition:none}}
-.notes{margin-top:44px}
+.js .type,.js .type .bar,.js .type .checks li{opacity:1;transform:none;transition:none}
+.js .type{transform:rotate(var(--r))}.js .type .stamp{opacity:1;transform:rotate(-7deg);transition:none}
+.js .rosette{animation:none}}
 .meta{margin-top:56px;padding-top:14px;border-top:2px solid var(--ink);font-size:.82rem;color:var(--muted);
 display:flex;flex-wrap:wrap;gap:6px 22px}
+.meta .pg{margin-left:auto;font-family:"Bodoni Moda",Georgia,serif;font-size:.95rem}
 code{font-size:.9em;background:var(--sunk);padding:1px 5px}
-@media (max-width:760px){.hero{grid-template-columns:1fr;gap:28px}.mast .doc{display:none}
-.rosette{width:80px;height:96px;top:-10px;right:0}.hero .main{padding-top:84px}}
+@media (max-width:760px){.hero{grid-template-columns:1fr;gap:40px}.mast .doc{display:none}
+.sheet{margin:16px 8px 32px;padding:32px 18px 28px;transform:none}
+.rosette{width:80px;height:96px;top:-10px;right:0}.hero .main{padding-top:84px}
+.type{--r:0deg!important}}
 """
 
 COMPASS = (
@@ -197,6 +224,15 @@ MOTION_JS = """<script>
   cards.forEach(function(c){ io.observe(c); });
 })();
 </script>"""
+
+
+#: Torn paper: the sheet's background layer (not its text) is displaced by noise along its edges.
+DECKLE = (
+    '<svg class="paper-svg" aria-hidden="true"><filter id="deckle" x="-2%" y="-2%" width="104%" height="104%">'
+    '<feTurbulence type="fractalNoise" baseFrequency=".045" numOctaves="4" seed="7" result="n"/>'
+    '<feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G"/>'
+    "</filter></svg>"
+)
 
 
 def _leaves(side: int) -> str:
@@ -314,7 +350,8 @@ def type_card(code: str, t: dict[str, Any], crit: dict[str, Any], scale: float) 
     )
 
 
-def render(row: dict[str, Any], sample: bool) -> str:
+def render(row: dict[str, Any], sample: bool, desk: str | None = None) -> str:
+    desk_style = f' style="--desk-img:url({desk})"' if desk else ""
     r = row["report"]
     types: dict[str, dict[str, Any]] = r["types"]
     passed: list[str] = r["passed_types"]
@@ -418,10 +455,10 @@ def render(row: dict[str, Any], sample: bool) -> str:
     return f"""<!doctype html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>KAPtan Sınav Sonucu</title>{FONTS}<style>{CSS}</style></head>
-<body><div class="wrap">
+<body>{DECKLE}<div class="desk"{desk_style}></div><main class="sheet">
 <header class="mast"><div class="mark">{COMPASS}<span class="display">KAPtan</span></div>
 <div class="doc"><b>Sınav sonucu</b>{day(lo)} – {day(hi)}</div></header>
-{"".join(notes)}
+<div class="notes">{"".join(notes)}</div>
 
 <section class="hero">
 <div class="main">{ROSETTE if passed else ""}
@@ -449,8 +486,8 @@ Su çizgisinin üstü kazanç, altı kayıp.</p>
 <footer class="meta"><span>Karar veren: {esc(row.get("actor") or "—")}</span>
 <span>Kod: {esc((row.get("git_sha") or "—")[:10])}</span>
 <span>Kural özeti: {esc((row.get("rules_hash") or "—")[:12])}</span>
-<span>Ön kayıt: {esc(row.get("prereg_ref") or "yok")}</span></footer>
-</div>{MOTION_JS}</body></html>
+<span>Ön kayıt: {esc(row.get("prereg_ref") or "yok")}</span><span class="pg">Sayfa 1 / 1</span></footer>
+</main>{MOTION_JS}</body></html>
 """
 
 
@@ -459,12 +496,16 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("row", type=Path, help="one core.holdout_runs row as JSON")
     p.add_argument("out", type=Path, help="HTML file to write")
     p.add_argument("--sample", action="store_true", help="mark the page as an invented preview")
+    p.add_argument("--desk", type=Path, default=DESK, help="desk photo under the sheet (embedded); 'none': wood")
     args = p.parse_args(argv)
     text = args.row.read_text(encoding="utf-8").strip()
     if not text:
         print("the holdout has not run: the input is empty", file=sys.stderr)
         return 1
-    args.out.write_text(render(json.loads(text), args.sample), encoding="utf-8")
+    desk = None
+    if str(args.desk) != "none" and args.desk.is_file():
+        desk = "data:image/jpeg;base64," + base64.b64encode(args.desk.read_bytes()).decode()
+    args.out.write_text(render(json.loads(text), args.sample, desk), encoding="utf-8")
     print(f"written: {args.out}")
     return 0
 
