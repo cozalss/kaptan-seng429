@@ -7,6 +7,7 @@ import { initialAlertsMore, type MockAlertsMore } from "./alerts-more";
 import { initialComfort, type MockComfort } from "./comfort";
 import type { MockReading } from "./reading";
 import type { MockTelegram } from "./telegram";
+import type { MockLearning } from "./learning";
 import { initialStatus, type MockStatus } from "./status";
 
 /** Live strategy's P&L at 13:40 on the fixture day. */
@@ -66,6 +67,8 @@ export interface MockState {
   reading?: MockReading;
   /** Telegram pairing and level (telegram.ts); absent in states saved before it existed. */
   telegram?: MockTelegram;
+  /** "Ne öğrendim": the switch and which changes were undone (learning.ts); absent in older saved states. */
+  learning?: MockLearning;
 }
 
 /** `fresh`: a new install with no starting money yet (the home asks for it); default is the seeded book. */

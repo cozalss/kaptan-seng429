@@ -69,6 +69,8 @@ const STATES: ReadonlyArray<{ name: string; path: string; seed: MockSeed; ready:
   { name: "Önemli duyurular, the day", path: "/onemli", seed: {}, ready: (p) => expect(p.getByRole("heading", { level: 1 })).toContainText("Önemli duyurular") },
   { name: "Öneriye düşenler, every suggestion", path: "/oneriler", seed: {}, ready: (p) => expect(p.getByRole("heading", { level: 1 })).toContainText("Öneriye düşenler") },
   { name: "Takvim, the dates ahead", path: "/takvim", seed: {}, ready: (p) => expect(p.getByRole("heading", { level: 1 })).toContainText("Takvim") },
+  { name: "Ne öğrendim, the weekly report", path: "/ogrendiklerim", seed: {}, ready: (p) => expect(p.getByTestId("degisiklik-2")).toBeVisible() },
+  { name: "Ayarlar, self-learning with a change to undo", path: "/ayarlar", seed: {}, ready: (p) => expect(p.getByRole("switch", { name: "Kendi kendine öğrenme" })).toBeEnabled() },
   { name: "Karne, the month", path: "/gecmis/karne", seed: {}, ready: (p) => expect(p.getByTestId("track-summary")).toBeVisible() },
   { name: "Karne, the year", path: "/gecmis/karne", seed: {}, ready: karneYear },
   { name: "the bank step with the commission field", path: "/benim", seed: {}, ready: openBankStep },

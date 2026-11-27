@@ -13,6 +13,7 @@ import { Allocation, ClosedTrades, DividendIncome, HoldingNotes, ReturnStats, Ve
 import { AlertHistoryItem, PriceAlert } from "@/lib/domain/price-alerts";
 import { ImportPreview, ImportResult, ImportSources, ImportTable } from "@/lib/domain/imports";
 import { BackupList } from "@/lib/domain/restore";
+import { LearningReport } from "@/lib/domain/learning";
 import { WeeklySummary } from "@/lib/domain/weekly";
 import { BackupStatus, PasswordChanged, Preferences } from "@/lib/domain/preferences";
 import { BookResetOut, BrokerFee, MoneyBook, PreviousBook } from "@/lib/solo/money";
@@ -235,6 +236,9 @@ export function createHttpApi(): KaptanApi {
     pairTelegram: () => request(TelegramPair, "/me/telegram/pair", post()),
     unlinkTelegram: () => request(TelegramStatus, "/me/telegram", { method: "DELETE" }),
     sendTelegramSample: () => request(TelegramStatus, "/me/telegram/sample", post()),
+    getLearning: () => request(LearningReport, "/me/learning"),
+    setLearningSettings: (input) => request(LearningReport, "/me/learning/settings", { method: "PUT", body: JSON.stringify(input) }),
+    revertLearningChange: (version) => request(LearningReport, `/me/learning/changes/${encodeURIComponent(String(version))}/revert`, post()),
     preferences: () => request(Preferences, "/me/preferences"),
     saveAlertPrefs: (prefs) => request(Preferences, "/me/alerts/preferences", { method: "PUT", body: JSON.stringify(prefs) }),
     startPause: (input) => request(Preferences, "/me/pause", post(input)),

@@ -18,6 +18,7 @@ import { AlertHistorySection } from "./alert-history-section";
 import { AlertsSection } from "./alerts-section";
 import { BackupSection } from "./backup-section";
 import { FeeSection } from "./fee-section";
+import { LearningSection } from "./learning-section";
 import { LimitsSection } from "./limits-section";
 import { LookSection } from "./look-section";
 import { MutedSection } from "./muted-section";
@@ -137,6 +138,7 @@ function Groups({ open, toggle, onReset }: { open: Partial<Record<GroupId, boole
       <SettingsGroup {...GROUP.money} summary={moneySummary(count)} open={open.money ?? false} onOpenChange={toggle("money")}>
         <LimitsSection view={limits.data ?? null} error={limits.error} onRetry={limits.refetch} onChanged={() => void limits.refetch()} />
         <FeeSection />
+        <LearningSection />
       </SettingsGroup>
 
       <SettingsGroup {...GROUP.look} summary={lookSummary(look)} open={open.look ?? false} onOpenChange={toggle("look")}>

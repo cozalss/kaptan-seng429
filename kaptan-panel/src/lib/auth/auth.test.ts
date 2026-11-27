@@ -39,6 +39,7 @@ describe("navigation", () => {
   it("lights Ana sayfa for a proposal and nothing for unknown paths or Ayarlar", () => {
     expect(activeNavHref("/benim")).toBe(ROUTES.benim);
     expect(activeNavHref("/oneri/p-1")).toBe(ROUTES.benim);
+    expect(activeNavHref("/ogrendiklerim")).toBe(ROUTES.benim);
     expect(activeNavHref("/portfoy")).toBe(ROUTES.portfoy);
     expect(activeNavHref("/gecmis")).toBe(ROUTES.gecmis);
     expect(activeNavHref("/bildirimler")).toBe(ROUTES.bildirimler);

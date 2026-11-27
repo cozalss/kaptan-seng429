@@ -16,6 +16,7 @@ export const ROUTES = {
   hafta: "/gecmis/hafta",
   takvim: "/takvim",
   onemli: "/onemli",
+  ogrendiklerim: "/ogrendiklerim",
   ayarlar: "/ayarlar",
   yardim: "/yardim",
   login: "/login",
@@ -71,7 +72,7 @@ export const LEGACY_REDIRECTS: ReadonlyArray<{ source: string; destination: stri
 /** Which nav item is current for a path (an Öneri belongs to Ana sayfa); null outside the nav (Ayarlar). */
 export function activeNavHref(pathname: string): string | null {
   if (pathname === ROUTES.benim || pathname.startsWith(`${ROUTES.oneri}/`)) return ROUTES.benim;
-  if (pathname === ROUTES.takvim || pathname === ROUTES.oneriler) return ROUTES.benim;
+  if (pathname === ROUTES.takvim || pathname === ROUTES.oneriler || pathname === ROUTES.ogrendiklerim) return ROUTES.benim;
   if (pathname === ROUTES.onemli) return ROUTES.bildirimler;
   if (pathname.startsWith(`${ROUTES.gecmis}/`)) return ROUTES.gecmis;
   return NAV_ITEMS.find((i) => i.href === pathname)?.href ?? null;

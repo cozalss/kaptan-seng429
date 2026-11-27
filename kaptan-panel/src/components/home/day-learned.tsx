@@ -27,7 +27,10 @@ const TONE_WORD: Readonly<Record<SignalTone, string>> = { olumlu: "olumlu", olum
 export function DayLearned({ mine }: { mine: number | null }) {
   const quiet = useApiQuery((api) => api.quietDay(), []);
   const digest = useApiQuery((api) => api.digest(), []);
-  if (!quiet.data && !digest.data) return null;
+  // The week's learning: its latest takeaway and the way to the full report. A failed read only hides the line.
+  const learning = useApiQuery((api) => api.getLearning(), []);
+  const lesson = learning.data?.takeaway_tr ?? null;
+  if (!quiet.data && !digest.data && !learning.data) return null;
   const steps = quiet.data ? funnelSteps(quiet.data) : [];
   const bars = digest.data ? kindBars(digest.data.items) : [];
   const lines = takeaways(digest.data ?? null, mine);
@@ -45,9 +48,19 @@ export function DayLearned({ mine }: { mine: number | null }) {
           ))}
         </ul>
       ) : null}
-      <Link href={ROUTES.onemli} className="hm-more">
-        Hepsini gör <span aria-hidden>→</span>
-      </Link>
+      {lesson ? (
+        <p className="hm-lesson" data-testid="ders">
+          <span className="hm-mini-label">Bu hafta öğrendiğim</span> {lesson}
+        </p>
+      ) : null}
+      <div className="hm-learned-links">
+        <Link href={ROUTES.onemli} className="hm-more">
+          Hepsini gör <span aria-hidden>→</span>
+        </Link>
+        <Link href={ROUTES.ogrendiklerim} className="hm-more">
+          Ne öğrendim <span aria-hidden>→</span>
+        </Link>
+      </div>
     </section>
   );
 }

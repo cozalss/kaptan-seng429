@@ -39,6 +39,21 @@ describe("KAPtan bugün ne öğrendi and Günün öne çıkanları", () => {
     expect(within(block).getByRole("link", { name: /Hepsini gör/ })).toHaveAttribute("href", "/onemli");
   });
 
+  it("shows the week's lesson and links to Ne öğrendim; a failed read only hides the lesson", async () => {
+    renderWithApi(<DayLearned mine={0} />, mockApi({ fresh: false }));
+    const block = await screen.findByRole("region", { name: "KAPtan bugün ne öğrendi" });
+    expect(await within(block).findByTestId("ders")).toHaveTextContent("geri alım eşiğini");
+    expect(within(block).getByRole("link", { name: /Ne öğrendim/ })).toHaveAttribute("href", "/ogrendiklerim");
+  });
+
+  it("keeps the block when the learning report cannot be read", async () => {
+    const base = mockApi({ fresh: false });
+    renderWithApi(<DayLearned mine={0} />, { ...base, getLearning: () => Promise.reject(new Error("down")) });
+    const block = await screen.findByRole("region", { name: "KAPtan bugün ne öğrendi" });
+    await waitFor(() => expect(within(block).getByText("duyuru okundu", { exact: false })).toBeInTheDocument());
+    expect(within(block).queryByTestId("ders")).toBeNull();
+  });
+
   it("shows compact rows in title case that open in place", async () => {
     const u = userEvent.setup({ delay: null });
     renderWithApi(<HomeHighlights />, mockApi({ fresh: false }));

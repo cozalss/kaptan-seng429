@@ -1175,3 +1175,20 @@
     transition: none;
   }
 }
+/* "KAPtan bugün ne öğrendi": the week's lesson (/ogrendiklerim) and the two links under it. */
+.hm-lesson {
+  padding: var(--space-4) 0 0;
+  border-top: 1px solid var(--hairline);
+  font-size: var(--text-body);
+  color: var(--ink);
+  max-width: 70ch;
+}
+.hm-lesson .hm-mini-label {
+  display: block;
+  margin-bottom: var(--space-1);
+}
+.hm-learned-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-6);
+}

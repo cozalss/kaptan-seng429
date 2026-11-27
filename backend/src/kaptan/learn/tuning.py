@@ -143,7 +143,7 @@ def judge(t: Tunable, current: float, cand: float, samples: Sequence[Sample]) ->
 
     if n < MIN_N:
         return reject(
-            f"Yeterli örnek yok: {value_text(t, cand)} ile geçmişte yalnızca {n} olay var; en az {MIN_N} gerekir."
+            f"Yeterli olay yok: {value_text(t, cand)} ile geçmişte yalnızca {n} olay var; en az {MIN_N} gerekir."
         )
     prefs = [p for f in fs if (p := _train_prefers(f, t, current, cand)) is not None]
     if not prefs:
@@ -165,7 +165,7 @@ def judge(t: Tunable, current: float, cand: float, samples: Sequence[Sample]) ->
     if lo <= 0:
         why = (
             f"{value_text(t, cand)} ile net getiri {points(gain)} puan arttı ama bu şans eseri olabilir: "
-            f"tekrarlı denemede {points(lo)} ile {points(hi)} puan arasında çıktı."
+            f"geçmişi binlerce kez karıştırıp baktığımda {points(lo)} ile {points(hi)} puan arasında çıktı."
         )
         return Verdict(t, current, cand, False, why, gain, (lo, hi), n)
     return Verdict(t, current, cand, True, "", gain, (lo, hi), n)

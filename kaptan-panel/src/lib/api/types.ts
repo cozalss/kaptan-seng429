@@ -35,6 +35,7 @@ import type { BonusInput, CorporateBook, DividendInput, NoticeAnswer, RightsInpu
 import type { ImportApplyRequest, ImportPreview, ImportRequest, ImportResult, ImportSources, ImportTable } from "@/lib/domain/imports";
 import type { AlertHistoryItem, PriceAlert, PriceAlertInput } from "@/lib/domain/price-alerts";
 import type { BackupList } from "@/lib/domain/restore";
+import type { LearningReport, LearningSettingsInput } from "@/lib/domain/learning";
 import type { WeeklySummary } from "@/lib/domain/weekly";
 import type { AlertPrefs, BackupStatus, PasswordChanged, PauseInput, Preferences } from "@/lib/domain/preferences";
 import type { Company, DisclosureReading, Period, SearchResult, WatchItem } from "@/lib/company/company";
@@ -238,6 +239,14 @@ export interface KaptanApi {
   unlinkTelegram(): Promise<TelegramStatus>;
   /** POST /me/telegram/sample: one clearly marked example message to the phone (one a minute). */
   sendTelegramSample(): Promise<TelegramStatus>;
+
+  // "Ne öğrendim" (kaptan.learn)
+  /** GET /me/learning: what KAPtan learned from past disclosures and its own decisions, the changes it made and why. */
+  getLearning(): Promise<LearningReport>;
+  /** PUT /me/learning/settings: "Kendi kendine öğrenme" on (apply a change that passes every check) or off (only propose). */
+  setLearningSettings(input: LearningSettingsInput): Promise<LearningReport>;
+  /** POST /me/learning/changes/{version}/revert: "Geri al" an applied change (409 when it can no longer be undone). */
+  revertLearningChange(version: number): Promise<LearningReport>;
 
   // personal settings
   /** GET /me/preferences: Tatil modu and which alert goes where, with the quiet hours. */

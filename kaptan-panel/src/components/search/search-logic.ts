@@ -23,6 +23,7 @@ const PAGES: readonly { to: string; title: string; sub: string; words: string }[
   { to: ROUTES.gecmis, title: "Geçmiş", sub: "Verdiğin kararlar", words: "geçmiş karar onay geç kayıt" },
   { to: ROUTES.karne, title: "Aylık karne", sub: "Ayın parası ve kararları", words: "karne aylık ay sonuç" },
   { to: ROUTES.hafta, title: "Haftalık özet", sub: "Bu haftanın parası", words: "haftalık hafta özet" },
+  { to: ROUTES.ogrendiklerim, title: "Ne öğrendim", sub: "KAPtan’ın bu hafta öğrendikleri ve kural değişiklikleri", words: "öğrendim öğrenme öğrendiklerim kural eşik değişiklik" },
   { to: ROUTES.ayarlar, title: "Ayarlar", sub: "Sınırlar, bildirimler, görünüm", words: "ayarlar sınır limit bildirim sustur görünüm tema" },
   { to: ROUTES.yardim, title: "Yardım", sub: "Sözlük, sık sorulanlar, kısayollar", words: "yardım sözlük soru kısayol nasıl" },
 ];

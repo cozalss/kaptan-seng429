@@ -14,6 +14,7 @@ describe("page results in the search", () => {
   it("finds help and the calendar by a word of what they hold", () => {
     expect(pageRows("sözlük").map((r) => r.to)).toEqual(["/yardim"]);
     expect(pageRows("bilanço").map((r) => r.to)).toEqual(["/takvim"]);
+    expect(pageRows("öğrendim").map((r) => r.to)).toEqual(["/ogrendiklerim"]);
   });
 
   it("marks page rows as pages and needs two letters", () => {

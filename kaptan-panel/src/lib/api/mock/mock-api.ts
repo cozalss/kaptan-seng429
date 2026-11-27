@@ -13,6 +13,7 @@ import { createCtx, parse, userActor } from "./guard";
 import { commissionFor } from "./ledger";
 import { createCorporate } from "./corporate";
 import { createInsights } from "./insights";
+import { createLearning } from "./learning";
 import { createImports } from "./imports";
 import { createMoney } from "./money";
 import { createReports } from "./reports";
@@ -51,6 +52,7 @@ export function createMockApi(opts: MockApiOptions = {}): KaptanApi {
     ...createInsights(ctx),
     ...createStatus(ctx),
     ...createTelegram(ctx),
+    ...createLearning(ctx),
     ...createComfort(ctx),
     ...createAlertsMore(ctx),
     ...createReports(ctx),

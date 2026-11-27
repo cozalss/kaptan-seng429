@@ -1,0 +1,65 @@
+/* "Ne öğrendim" (/ogrendiklerim) and the Ayarlar section. Hairlines and tabular rhythm, no cards; tokens only. */
+.ln-when { margin-top: var(--space-4); font-size: 0.9375rem; color: var(--ink-soft); max-width: 70ch; }
+.ln-section { margin-top: var(--space-12); }
+.ln-note { margin-top: var(--space-2); max-width: 64ch; font-size: 0.9375rem; color: var(--ink-soft); }
+.ln-empty { margin-top: var(--space-4); color: var(--ink-soft); }
+.ln-error { margin-top: var(--space-3); color: var(--north); font-weight: 600; }
+.ln-mini { display: block; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); }
+
+/* Kinds: one band per kind; the figures sit on one tabular line under a hairline. */
+.ln-kinds { margin-top: var(--space-5); display: grid; gap: 0; border-top: 1.5px solid var(--ink); }
+.ln-kind { display: grid; grid-template-columns: minmax(11rem, 1fr) 2fr; gap: var(--space-3) var(--space-8); padding: var(--space-5) 0; border-bottom: 1px solid var(--hairline); }
+.ln-kind-name { font-size: 1.25rem; font-weight: 700; color: var(--ink); }
+.ln-kind-sub { margin-top: var(--space-1); font-size: 0.875rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.ln-figs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3) var(--space-6); }
+.ln-figs dt { font-size: 0.8125rem; color: var(--ink-soft); }
+.ln-figs dd { margin-top: var(--space-0_5); font-size: 1.75rem; font-weight: 600; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ln-figs dd[data-tone="gain"] { color: var(--gain); }
+.ln-figs dd[data-tone="loss"] { color: var(--loss); }
+.ln-calib { grid-column: 2; font-size: 0.9375rem; color: var(--ink); max-width: 62ch; }
+
+/* Changes and rejected thresholds. */
+.ln-list { margin-top: var(--space-4); display: grid; border-top: 1.5px solid var(--ink); }
+.ln-item { padding: var(--space-4) 0; border-bottom: 1px solid var(--hairline); }
+.ln-item-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-2) var(--space-4); }
+.ln-item-name { font-weight: 700; color: var(--ink); }
+.ln-step { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--brand); }
+.ln-item-why { margin-top: var(--space-1_5); color: var(--ink); max-width: 68ch; }
+.ln-item-proof { margin-top: var(--space-1_5); font-size: 0.875rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.ln-badge { display: inline-flex; align-items: center; padding: 0 var(--space-2); border: 1.5px solid var(--ink); font-size: 0.8125rem; font-weight: 600; color: var(--paper); background: var(--ink); }
+.ln-badge[data-status="proposed"] { background: transparent; color: var(--ink); border-style: dashed; }
+.ln-badge[data-status="reverted"] { background: transparent; color: var(--ink-soft); border-color: var(--rule-soft); }
+.ln-item[data-status="reverted"] .ln-step { text-decoration: line-through; text-decoration-thickness: 1.5px; }
+
+/* How it was measured: a quiet ledger. */
+.ln-folds { margin-top: var(--space-4); display: grid; gap: var(--space-2); font-size: 0.9375rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ln-fold-kind { display: inline-block; min-width: 9.5rem; font-weight: 600; }
+
+/* Ayarlar · Kendi kendine öğrenme. */
+.ln-switch { display: inline-flex; align-items: center; gap: var(--space-3); min-height: 44px; padding: 0; background: transparent; color: var(--ink); font-weight: 600; cursor: pointer; }
+.ln-switch-track { position: relative; width: 3rem; height: 1.625rem; border: 1.5px solid var(--ink); background: var(--sunk); transition: background-color var(--dur-quick) var(--ease-ink); }
+.ln-switch-thumb { position: absolute; top: 2px; left: 2px; width: 1.25rem; height: 1.25rem; background: var(--ink); transition: transform var(--dur-quick) var(--ease-ink); }
+.ln-switch[aria-checked="true"] .ln-switch-track { background: var(--brand); border-color: var(--brand); }
+.ln-switch[aria-checked="true"] .ln-switch-thumb { transform: translateX(1.375rem); background: var(--paper); }
+.ln-switch:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+.ln-switch:disabled { cursor: progress; opacity: 0.7; }
+.ln-link { display: inline-flex; align-items: center; gap: var(--space-1_5); min-height: 44px; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--rule-soft); }
+.ln-link:hover { text-decoration-color: var(--ink); }
+.ln-link:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ln-switch-track, .ln-switch-thumb { transition: none; }
+}
+
+@media (max-width: 720px) {
+  .ln-kind { grid-template-columns: 1fr; }
+  .ln-calib { grid-column: 1; }
+  .ln-figs dd { font-size: 1.375rem; }
+  .ln-fold-kind { display: block; min-width: 0; }
+}
+@media (max-width: 400px) {
+  .ln-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.ln-fold { margin-top: var(--space-5); }
+.ln-fold-head { font-weight: 700; color: var(--ink); padding-bottom: var(--space-1_5); border-bottom: 1px solid var(--hairline); }
+.ln-fold .ln-folds { margin-top: var(--space-2); }
