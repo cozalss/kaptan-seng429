@@ -99,6 +99,14 @@ def test_classification_of_synthetic_actions() -> None:
     assert implied_from_isyatirim([_bar(1, "10", "0", None), _bar(2, "10", "5", None)]) == []
 
 
+def test_a_reverse_split_is_a_split_with_its_capital_ratio() -> None:
+    # TSPOR 2025-06-19: capital 2.15 → 1 (sermaye azaltımı); every earlier price × 2.15 in the adjusted series
+    bars = [_bar(1, "10", "10", "215"), _bar(2, "21.5", "10", "100")]
+    [action] = implied_from_isyatirim(bars)
+    assert (action.kind, action.factor, action.note) == ("split", D("2.15"), "reverse split")
+    assert action.factor > D("1.5")  # above the old core.corporate_actions bound (migration 0040 widens it)
+
+
 def test_reconcile_and_yahoo_only_actions() -> None:
     split_day = date(2026, 9, 3)
     series = YahooSeries("TEST1", (), (YahooSplit(split_day, D(2), D(1)),), ())

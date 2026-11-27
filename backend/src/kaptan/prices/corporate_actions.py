@@ -8,7 +8,8 @@ actions and jumps on an ex-date, so factor(e) = ratio(day before e) / ratio(e). 
 comes from the paid-in capital (`SERMAYE`) on the same two days:
 - capital up and factor ≈ old/new capital → bedelsiz (bonus; the exact capital ratio is stored),
 - capital up otherwise → bedelli (rights issue; TERP effect, the implied factor is stored),
-- capital unchanged → temettu (cash dividend), capital down → other.
+- capital down and factor ≈ old/new capital → split (a reverse split, factor > 1), else other;
+- capital unchanged → temettu (cash dividend).
 Yahoo's split/dividend events cross-check that and are the only source for tickers İş Yatırım lacks.
 Movements under `MIN_EFFECT` (0.1 %) are rounding noise of the 4-decimal `HGDG_KAPANIS` and ignored.
 """
@@ -69,6 +70,9 @@ def _classify(prev: DailyBar, cur: DailyBar, factor: Decimal) -> CorporateAction
             return replace(base, kind="bedelsiz", factor=_q(cap_ratio), bonus_capital_pct=pct)
         return replace(base, kind="bedelli", rights_pct=pct)
     if old and new and new < old:
+        cap_ratio = old / new  # > 1: fewer, dearer shares
+        if abs(factor / cap_ratio - ONE) < BONUS_MATCH:  # reverse split (TSPOR 2025-06-19: 2.15)
+            return replace(base, kind="split", factor=_q(cap_ratio), note="reverse split")
         return replace(base, note="capital decrease")
     if factor < ONE:
         cash = (prev.close * (ONE - factor)).quantize(Decimal("0.0001"))

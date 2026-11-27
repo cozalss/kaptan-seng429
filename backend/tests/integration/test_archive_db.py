@@ -88,8 +88,8 @@ class Prices:
         )
         if t == "XU100":
             return Fetched(t, (), adjusted, (), 0, None)
-        if t in self.refused_by_db:  # a reverse split: the factor is above what core.corporate_actions accepts
-            odd = CorporateAction(t, date(2020, 6, 1), "other", Decimal("2.15"), "isyatirim", note="factor > 1")
+        if t in self.refused_by_db:  # a factor no real action has: above core.corporate_actions' bound (100, 0040)
+            odd = CorporateAction(t, date(2020, 6, 1), "other", Decimal("150"), "isyatirim", note="factor > 1")
             return Fetched(t, tuple(bars), adjusted, (odd,), 0, None)
         return Fetched(t, tuple(bars), adjusted, (), 0, None)
 

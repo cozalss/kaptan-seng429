@@ -190,3 +190,23 @@ async def test_latest_mark_is_point_in_time(prices: DictConn) -> None:
     mark = await source.latest_mark("THYAO", ist(2026, 9, 30, 18, 31))
     assert mark == after_eod
     assert await source.latest_mark("THYAO", ist(2026, 6, 1, 12, 0)) is None
+
+
+async def test_a_reverse_split_is_stored_and_a_wild_factor_is_still_refused(prices: DictConn) -> None:
+    from kaptan.prices.models import CorporateAction
+    from kaptan.prices.store import upsert_actions
+
+    # TSPOR 2025-06-19: capital 2.15 → 1; the daily price job stopped on this row before migration 0040
+    split = CorporateAction("TSPOR", date(2025, 6, 19), "split", D("2.15"), "isyatirim", note="reverse split")
+    assert await upsert_actions(prices, [split], FETCHED_AT) == 1
+    row = await (
+        await prices.execute("SELECT factor FROM core.corporate_actions WHERE ticker = 'TSPOR' AND kind = 'split'")
+    ).fetchone()
+    assert row is not None and row["factor"] == D("2.15")
+    await prices.rollback()
+    for bad in (D("0"), D("100.5")):
+        with pytest.raises(psycopg.errors.CheckViolation):
+            await upsert_actions(
+                prices, [CorporateAction("TSPOR", date(2025, 6, 20), "other", bad, "isyatirim")], FETCHED_AT
+            )
+        await prices.rollback()
