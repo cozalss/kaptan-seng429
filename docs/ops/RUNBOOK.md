@@ -338,6 +338,19 @@ dönemin olayları kanıt olarak kullanılmaz ve getirileri hesaplanmaz. Sınav 
 (`python -m kaptan.evalreports.holdout run`). O zamana kadar `core.holdout_runs` tablosunun boş olması doğrudur.
 Kanıt için bu tabloya elle satır ekleme.
 
+**Kendi kendine öğrenme:** Her borsa günü olaylardan sonra (`event_returns` → `learn_nightly`) olgunlaşan getiriler
+yazılır ve KAPtan'ın kendi tahminleri gerçekleşenle karşılaştırılır. Cuma 18:15'te `learn_weekly` kural eşiklerini
+geçmişte sınar; bir eşik ancak bütün korkulukları geçerse bir adım oynar (06 §13a). Değişiklikler panelde
+"Ne öğrendim" (`/ogrendiklerim`) sayfasında ve cuma akşamı Telegram'da tek satır olarak görünür; Ayarlar'dan
+"Geri al" ile geri alınır, "Kendi kendine öğrenme" kapatılırsa yalnızca önerilir. Elle bir geçiş:
+
+```
+docker compose exec -T api python -m kaptan.learn report    # yalnızca bakar, kural değiştirmez
+docker compose exec -T api python -m kaptan.learn apply     # korkulukları geçeni uygular (anahtar açıksa)
+```
+
+Öğrenme kilitli dönemi hiç okumaz; sınav sonucu da öğrenmeye geri dönmez.
+
 **Harcama sınırı ve kayıt zinciri:** ayrıntı için `live.env` ve `backend/README.md`. Panelde Geçmiş →
 "Kayıtlar sağlam mı?" zinciri doğrular; zincir her gece 23:30'da da doğrulanır. Zincir kırıksa o andan sonra karar
 verme, son sağlam yedeği `-Kontrol` ile sına.

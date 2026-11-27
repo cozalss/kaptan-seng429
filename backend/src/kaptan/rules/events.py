@@ -10,7 +10,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Final
 
-from kaptan.rules.format import fmt_dec, fmt_pct, fmt_signed_pct, fmt_try
+from kaptan.rules.format import accusative, fmt_dec, fmt_pct, fmt_signed_pct, fmt_try
 from kaptan.rules.params import BINDING_STATUSES, E2_ROLES, RuleParams
 
 
@@ -223,7 +223,8 @@ def e4_cfo_quality(x: RuleInput, p: RuleParams) -> Check:
 def e4_ret10d(x: RuleInput, p: RuleParams) -> Check:
     ret = x.ret_10d or 0.0
     ok = ret < p.e4_ret10d_max
-    detail = "Son 10 borsa gününde aşırı yükseliş yok." if ok else "Son 10 borsa gününde %12'yi aşan yükseliş: atla."
+    over = accusative(fmt_pct(p.e4_ret10d_max, 0))
+    detail = "Son 10 borsa gününde aşırı yükseliş yok." if ok else f"Son 10 borsa gününde {over} aşan yükseliş: atla."
     return Check("E4.ret10d", ok, fmt_signed_pct(ret, 1), f"< {fmt_pct(p.e4_ret10d_max, 0)}", detail)
 
 

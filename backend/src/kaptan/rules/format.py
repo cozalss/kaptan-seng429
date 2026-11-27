@@ -56,3 +56,46 @@ def fmt_try(n: float) -> str:
 def fmt_ratio_x(n: float) -> str:
     """2.1212 → "2,1×"."""
     return f"{fmt_dec(n, 1)}×"
+
+
+#: The word a number is read aloud with last ("8" → "sekiz", "12" → "on iki", "0,25" → "yirmi beş").
+_ONES: Final = ("sıfır", "bir", "iki", "üç", "dört", "beş", "altı", "yedi", "sekiz", "dokuz")
+_TENS: Final = ("", "on", "yirmi", "otuz", "kırk", "elli", "altmış", "yetmiş", "seksen", "doksan")
+_BACK: Final = frozenset("aıou")
+_VOICELESS: Final = frozenset("fsthçşkp")
+
+
+def _last_word(number_text: str) -> str:
+    digits = "".join(ch for ch in number_text.rpartition(",")[2] if ch.isdigit()) or "0"
+    if digits[-1] != "0" or len(digits) == 1:
+        return _ONES[int(digits[-1])]
+    if digits[-2] != "0":
+        return _TENS[int(digits[-2])]
+    return "yüz" if len(digits) == 3 else "bin"
+
+
+def _ending(number_text: str, case: str) -> str:
+    word = _last_word(number_text)
+    vowel = next(ch for ch in reversed(word) if ch in "aeıioöuü")
+    back, ends_vowel = vowel in _BACK, word[-1] in "aeıioöuü"
+    if case == "acc":
+        v = {"a": "ı", "ı": "ı", "o": "u", "u": "u", "e": "i", "i": "i", "ö": "ü", "ü": "ü"}[vowel]
+        return ("y" if ends_vowel else "") + v
+    if case == "dat":
+        return ("y" if ends_vowel else "") + ("a" if back else "e")
+    return ("t" if word[-1] in _VOICELESS else "d") + ("an" if back else "en")  # ablative
+
+
+def accusative(number_text: str) -> str:
+    """ "%8" → "%8'i", "%12" → "%12'yi", "%0,25" → "%0,25'i": the ending follows the last word read aloud."""
+    return f"{number_text}'{_ending(number_text, 'acc')}"
+
+
+def dative(number_text: str) -> str:
+    """ "%0,2" → "%0,2'ye", "%10" → "%10'a"."""
+    return f"{number_text}'{_ending(number_text, 'dat')}"
+
+
+def ablative(number_text: str) -> str:
+    """ "%0,25" → "%0,25'ten", "%8" → "%8'den"."""
+    return f"{number_text}'{_ending(number_text, 'abl')}"

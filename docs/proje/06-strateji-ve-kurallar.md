@@ -993,6 +993,22 @@ event_study:
   bootstrap_reps: 5000
 ```
 
+### 13a. Kendi kendine öğrenme: ayarlanabilir eşikler ve korkuluklar (2026-11-27)
+
+Haftalık öğrenme geçişi (`kaptan.learn`, cuma 18:15) yalnızca aşağıdaki eşikleri, yalnızca bu aralıklarda ve bir seferde tek adım oynatabilir. Her değişiklik yeni bir kural sürümüdür (`learn.rule_versions`, yeni `rules_hash`) ve `learn.rule_changed` denetim kaydı yazar; panelde "Geri al" (`learn.rule_reverted`) aynı biçimde yeni bir sürümdür.
+
+| Eşik (`RuleParams`) | Tür | Şimdiki | Aralık | Adım | Geçmişte ölçülebilir mi |
+|---|---|---|---|---|---|
+| `e1_capital_10d_min` | E1 | 0,0025 | 0,0010–0,0050 | 0,0005 | Evet (ayrıştırılmış geri alım tablosu ÷ ödenmiş sermaye) |
+| `e2_min_value_try` | E2 | 1.000.000 | 500.000–3.000.000 | 250.000 | Evet (net nominal × fiyat aralığının ortası) |
+| `e3_revenue_materiality_min` | E3 | 0,10 | 0,05–0,20 | 0,025 | Hayır: arşivde sözleşme tutarı yok, denenmez |
+| `e4_ret10d_max` | E4 | 0,12 | 0,08–0,20 | 0,02 | Evet (piyasaya göre 10 günlük getiri) |
+| `leak_ret5d_max` | E3, E4 | 0,08 | 0,04–0,12 | 0,01 | Evet (piyasaya göre 5 günlük getiri; E1/E2'de yalnızca boyutu yarıladığı için ayarlanmaz) |
+
+Bir adım ancak hepsi birden sağlanırsa uygulanır: (1) ileriye yürüyen sınamada (2023'ü 2022'den, 2024'ü 2022–23'ten, canlıyı arşivden) maliyet sonrası karar başına getiri en az 0,05 puan artar ve hafta blok bootstrap %95 aralığı sıfırı içermez; (2) eğitim yılları da her katmanda aynı yönü gösterir; (3) aday eşikte en az 50 sınama olayı vardır; (4) aynı kural son 7 günde değişmemiştir; (5) kişi bu adımı daha önce geri almamıştır. "Kendi kendine öğrenme" kapalıysa adım yalnızca önerilir. Mühürlü dönem (2025-01-01 → 2026-10-31) hiçbir öğrenme sorgusunda okunmaz (`tests/integration/test_learn_db.py`).
+
+Beklenen getiri (§8.2) 2026-11-27'den beri ortalama yerine **ortanca** ile hesaplanır: 2022 → 2023 katmanında en düşük örnek dışı hatayı verdi, 2022–23 → 2024'te ortalamayı yine geçti (`kaptan.learn.estimators`). Kararların tahmini avantajı `learn.predictions`'a yazılır; tür başına 30 karar olgunlaşınca gerçekleşen/tahmin eğimi [0,5; 1,5] aralığında bir düzeltme çarpanı olarak sonraki tahminlere uygulanır.
+
 ---
 
 ## 14. Açık doğrulama listesi

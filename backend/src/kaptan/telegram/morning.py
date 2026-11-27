@@ -100,7 +100,9 @@ async def build_morning(
     return "\n".join(rows), held_ids
 
 
-async def build_weekend(conn: DictConn, now: datetime, muted: frozenset[str]) -> tuple[str, list[int]]:
+async def build_weekend(
+    conn: DictConn, now: datetime, muted: frozenset[str], learning: str | None = None
+) -> tuple[str, list[int]]:
     day = now.astimezone(IST).date()
     since = datetime.combine(day, time(8, 45), IST)
     fresh = [s for s in await source.signals_between(conn, since, now, only_important=True) if s.ticker not in muted]
@@ -108,6 +110,8 @@ async def build_weekend(conn: DictConn, now: datetime, muted: frozenset[str]) ->
     mine = _merge([s for s in fresh if s.mine], [s for s in held if s.mine and s.ticker not in muted])
     rows = ["İyi akşamlar. Borsa yarın kapalı."]
     rows += _section("Bugün senin hisselerinde:", mine, MAX_MINE) if mine else [NOTHING_MINE]
+    if learning:  # "KAPtan bu hafta ... eşiğini ... indirdi; ..." (kaptan.learn.weekly; never money)
+        rows += ["", learning]
     rows.append("Bir sonraki iş günü sabahı yine yazarım.")
     return "\n".join(rows), held_ids
 
@@ -145,14 +149,33 @@ async def send_morning(
     return ok
 
 
+def weekend_due(state: dict[str, Any], now: datetime) -> bool:
+    """A paired chat, and the borsa is closed tomorrow (the weekend message's day)."""
+    return state.get("chat_id") is not None and not is_trading_day(now.astimezone(IST).date() + timedelta(days=1))
+
+
 async def send_weekend(
-    conn: DictConn, api: BotApi, state: dict[str, Any], muted: frozenset[str], now: datetime
+    conn: DictConn,
+    api: BotApi,
+    state: dict[str, Any],
+    muted: frozenset[str],
+    now: datetime,
+    learning: str | None = None,
 ) -> bool:
-    day = now.astimezone(IST).date()
-    if state.get("chat_id") is None or is_trading_day(day + timedelta(days=1)):
+    if not weekend_due(state, now):
         return False
-    text, ids = await build_weekend(conn, now, muted)
+    text, ids = await build_weekend(conn, now, muted, learning)
     ok = await _send(conn, api, int(state["chat_id"]), text, "weekend", ids, now)
+    await conn.commit()
+    return ok
+
+
+async def send_learning(conn: DictConn, api: BotApi, state: dict[str, Any], line: str, now: datetime) -> bool:
+    """The learning line alone (the cloud watcher sends the weekend message; this line needs the PC, like a
+    suggestion): one message, no company, no money."""
+    if not weekend_due(state, now):
+        return False
+    ok = await _send(conn, api, int(state["chat_id"]), line, "learning", [], now)
     await conn.commit()
     return ok
 

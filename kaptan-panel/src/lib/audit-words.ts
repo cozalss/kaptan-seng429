@@ -201,6 +201,10 @@ const PHRASES: Readonly<Record<string, Phrase>> = {
   "limits.approved": () => "Sınır değişikliğini onayladın.",
   "limits.rejected": () => "Sınır değişikliğinden vazgeçtin.",
   "note.added": () => "Not ekledin.",
+  "learn.rule_changed": (e) =>
+    e.payload["applied"] ? "KAPtan geçmişten öğrenip bir kural eşiğini değiştirdi." : "KAPtan bir kural eşiğini değiştirmeyi önerdi.",
+  "learn.rule_reverted": () => "KAPtan'ın değiştirdiği bir eşiği geri aldın.",
+  "learn.settings_changed": (e) => (e.payload["auto_apply"] ? "Kendi kendine öğrenmeyi açtın." : "Kendi kendine öğrenmeyi kapattın."),
   "audit.verified": (e) => (isPerson(e.actor) ? "Kayıtların sağlam olup olmadığına baktın." : "KAPtan gece kayıtları baştan sona kontrol etti."),
   "audit.verify_failed": () => "KAPtan kayıtlarda bir bozulma buldu.",
   "brief.generated": () => "KAPtan sabah özetini hazırladı.",

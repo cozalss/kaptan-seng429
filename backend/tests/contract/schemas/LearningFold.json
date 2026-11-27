@@ -1,0 +1,42 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "kind": {
+   "type": "string",
+   "enum": [
+    "E1",
+    "E2",
+    "E3",
+    "E4"
+   ]
+  },
+  "fold": {
+   "type": "string"
+  },
+  "n_train": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "n_val": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 9007199254740991
+  },
+  "error_ratio": {
+   "type": [
+    "number",
+    "null"
+   ]
+  }
+ },
+ "required": [
+  "kind",
+  "fold",
+  "n_train",
+  "n_val",
+  "error_ratio"
+ ],
+ "additionalProperties": false
+}

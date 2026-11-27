@@ -125,7 +125,9 @@ async def test_the_personal_stage_reads_no_return_of_the_period(pg: DictConn) ->
 
 async def test_the_run_measures_the_period_then_refuses_a_second(pg: DictConn) -> None:
     await _world(pg)
-    report = await _run(pg, git_sha="abc", prereg_ref="tag")
+    frozen = {"rules_hash": "r" * 8, "threshold_overrides": {}, "edge_location": "median"}
+    report = await _run(pg, git_sha="abc", prereg_ref="tag", strategy=frozen)
+    assert report["strategy"] == frozen  # the strategy as it was at the run, net of both cost scenarios
     e3 = report["types"]["E3"]
     assert e3["horizon"] == 5 and e3["n"] == len(SEALED_DAYS) + 1
     assert e3["base"]["mean_car"] == pytest.approx(AR_SEALED, abs=2e-3)
@@ -254,6 +256,25 @@ async def test_settled_events_are_not_retried_every_night(pg: DictConn) -> None:
     assert first.new_events == 1 and first.pending == 1 and first.no_prices == 1 and first.rows == 0
     again = await run_event_returns(pg, date(2024, 12, 3))
     assert again.pending == 0
+
+
+async def test_a_late_price_is_still_waited_for_two_weeks_after_the_last_window(pg: DictConn) -> None:
+    from kaptan.reference.event_returns import SETTLE_GRACE
+
+    await pg.execute(
+        "INSERT INTO core.disclosures (disclosure_index, primary_ticker, company_name, disclosure_class,"
+        " disclosure_type, subject, summary, reason, subject_route, subject_map_version, published_at,"
+        " available_at, ingest_source, origin, visible)"
+        " VALUES (993100002, 'NOPRD', 'X', 'ODA', 'ODA', 'Yeni İş İlişkisi', '', 'NEW', 'E3', 'test', %s, %s,"
+        " 'backfill', 'kap', false)",
+        (at(date(2024, 3, 4), 11), at(date(2024, 3, 4), 11) + timedelta(seconds=60)),
+    )
+    t0 = date(2024, 3, 5)
+    just_closed = add_sessions(t0, 60)  # the 60-session window closed the evening before
+    assert (await run_event_returns(pg, just_closed)).pending == 1
+    assert (await run_event_returns(pg, add_sessions(just_closed, 1))).pending == 1  # a late price may still come
+    assert (await run_event_returns(pg, add_sessions(just_closed, SETTLE_GRACE))).pending == 1
+    assert (await run_event_returns(pg, add_sessions(just_closed, SETTLE_GRACE + 1))).pending == 0  # given up
 
 
 async def _erase_world(conn: DictConn) -> None:

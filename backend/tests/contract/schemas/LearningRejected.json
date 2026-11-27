@@ -1,0 +1,40 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "rule": {
+   "type": "string"
+  },
+  "label_tr": {
+   "type": "string"
+  },
+  "unit": {
+   "type": "string",
+   "enum": [
+    "pct",
+    "try"
+   ]
+  },
+  "current": {
+   "type": "number"
+  },
+  "candidate": {
+   "type": [
+    "number",
+    "null"
+   ]
+  },
+  "reason_tr": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "rule",
+  "label_tr",
+  "unit",
+  "current",
+  "candidate",
+  "reason_tr"
+ ],
+ "additionalProperties": false
+}

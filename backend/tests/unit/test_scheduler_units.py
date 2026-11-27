@@ -167,3 +167,45 @@ async def test_regime_job_without_a_result_writes_and_commits_nothing(monkeypatc
     ctx = s.Ctx(settings=get_settings(), pool=None, redis=None, http=lambda: None)
     assert await s.job_regime(conn, ctx, date(2026, 9, 16), datetime(2026, 9, 16, 16, 0, tzinfo=UTC)) is None
     assert conn.calls == []
+
+
+def test_the_learning_jobs_run_after_the_returns_and_after_the_friday_close() -> None:
+    returns, nightly, weekly = s.BY_NAME["event_returns"], s.BY_NAME["learn_nightly"], s.BY_NAME["learn_weekly"]
+    assert returns.after == "eod_prices" and nightly.after == "event_returns"  # the day's closes, then the returns
+    tuesday = ist(2026, 11, 24, 20, 5)
+    assert s.slot_of(nightly, tuesday) == "2026-11-24"
+    assert s.slot_of(nightly, ist(2026, 11, 24, 19, 59)) is None
+    assert s.slot_of(nightly, ist(2026, 10, 29, 21, 0)) is None  # holiday: no new closes
+    done = {("eod_prices", "2026-11-24")}
+    assert [j.name for j, _ in s.due(tuesday, done, set()) if j.name in ("event_returns", "learn_nightly")] == [
+        "event_returns"
+    ]
+    done |= {("event_returns", "2026-11-24")}
+    assert "learn_nightly" in [j.name for j, _ in s.due(tuesday, done, set())]
+    assert s.slot_of(weekly, ist(2026, 11, 27, 18, 14)) is None  # Friday, before 18:15
+    assert s.slot_of(weekly, ist(2026, 11, 27, 18, 15)) == "2026-11-27"
+    assert s.slot_of(weekly, ist(2026, 11, 26, 18, 30)) is None  # Thursday
+    assert s.trigger_for(weekly, "2026-11-27", ist(2026, 11, 27, 18, 16)) == "schedule"
+    assert s.trigger_for(weekly, "2026-11-27", ist(2026, 11, 27, 22, 0)) == "catchup"  # the PC was off at 18:15
+
+
+async def test_the_learning_job_bodies(monkeypatch: pytest.MonkeyPatch) -> None:
+    from kaptan.learn import calibration, weekly
+
+    calls: list[tuple[str, object]] = []
+
+    async def mature(conn: object, now: datetime) -> dict[str, int]:
+        calls.append(("mature", now))
+        return {"filled": 0}
+
+    async def run_pass(conn: object, now: datetime, *, mode: str) -> dict[str, object]:
+        calls.append((mode, now))
+        return {"applied": [], "rejected": [1, 2], "pool_n": 7}
+
+    monkeypatch.setattr(calibration, "mature", mature)
+    monkeypatch.setattr(weekly, "run_pass", run_pass)
+    friday = ist(2026, 11, 27, 18, 15)
+    ctx = s.Ctx(settings=None, pool=None, redis=None, http=lambda: None)  # type: ignore[arg-type]
+    assert await s.job_learn_nightly(None, ctx, friday.date(), friday) == {"filled": 0}
+    assert await s.job_learn_weekly(None, ctx, friday.date(), friday) == {"applied": [], "rejected": 2, "pool": 7}
+    assert calls == [("mature", friday), ("apply", friday)]  # the scheduled pass may apply (the switch decides)

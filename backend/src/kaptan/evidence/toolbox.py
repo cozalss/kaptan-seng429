@@ -28,6 +28,7 @@ from kaptan.evidence.market import MaterialityInputs, PriceContext
 from kaptan.evidence.params import DEFAULT_HORIZONS
 from kaptan.evidence.repo import Conn
 from kaptan.evidence.service import ScopedStudy, load_price_context, scoped_study
+from kaptan.learn.calibration import correction_for
 from kaptan.market.features import MergeInputs, load_merge_inputs
 from kaptan.sizing.load import load_sizing_inputs
 from kaptan.sizing.plan import SizingPlan, Unknown, plan_sizing
@@ -48,6 +49,8 @@ class LiveToolbox:
         self.event_type: str | None = None
         self.merge_inputs: MergeInputs | None = None
         self.sizing_plan: SizingPlan | Unknown | None = None
+        #: The type's calibration factor the sizer used (kaptan.learn.calibration; 1 until 30 decisions matured).
+        self.correction = Decimal(1)
         self._sizing_tried = False
 
     @property
@@ -127,8 +130,13 @@ class LiveToolbox:
                         t_dec=t_dec,
                         self_index=d.disclosure_index,
                     )
+                    self.correction = await correction_for(self.conn, event_type)
                 self.sizing_plan = plan_sizing(
-                    inputs, equity_try=equity_try, upper_limit=upper_limit, personal=personal
+                    inputs,
+                    equity_try=equity_try,
+                    upper_limit=upper_limit,
+                    personal=personal,
+                    correction=self.correction,
                 )
             except Exception:
                 log.exception("live sizing failed for %s", d.run_id)

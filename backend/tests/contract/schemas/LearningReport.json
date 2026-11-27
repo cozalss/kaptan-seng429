@@ -1,0 +1,316 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "type": "object",
+ "properties": {
+  "generated_at": {
+   "anyOf": [
+    {
+     "type": "string",
+     "format": "date-time",
+     "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    {
+     "type": "null"
+    }
+   ]
+  },
+  "auto_apply": {
+   "type": "boolean"
+  },
+  "takeaway_tr": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "estimator_tr": {
+   "type": "string"
+  },
+  "kinds": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "kind": {
+      "type": "string",
+      "enum": [
+       "E1",
+       "E2",
+       "E3",
+       "E4"
+      ]
+     },
+     "label_tr": {
+      "type": "string"
+     },
+     "n": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "hit_rate": {
+      "anyOf": [
+       {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "mean_net": {
+      "type": [
+       "number",
+       "null"
+      ]
+     },
+     "median_net": {
+      "type": [
+       "number",
+       "null"
+      ]
+     },
+     "horizon_days": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+     },
+     "calibration": {
+      "type": "object",
+      "properties": {
+       "n_matured": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+       },
+       "needed": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991
+       },
+       "slope": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "bias_bps": {
+        "type": [
+         "number",
+         "null"
+        ]
+       },
+       "factor": {
+        "type": "number"
+       },
+       "active": {
+        "type": "boolean"
+       }
+      },
+      "required": [
+       "n_matured",
+       "needed",
+       "slope",
+       "bias_bps",
+       "factor",
+       "active"
+      ],
+      "additionalProperties": false
+     }
+    },
+    "required": [
+     "kind",
+     "label_tr",
+     "n",
+     "hit_rate",
+     "mean_net",
+     "median_net",
+     "horizon_days",
+     "calibration"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "changes": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+     },
+     "rule": {
+      "type": "string"
+     },
+     "label_tr": {
+      "type": "string"
+     },
+     "unit": {
+      "type": "string",
+      "enum": [
+       "pct",
+       "try"
+      ]
+     },
+     "from_value": {
+      "type": "number"
+     },
+     "to_value": {
+      "type": "number"
+     },
+     "at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "applied",
+       "proposed",
+       "reverted"
+      ]
+     },
+     "reason_tr": {
+      "type": "string"
+     },
+     "gain_bps": {
+      "type": "number"
+     },
+     "ci_low_bps": {
+      "type": "number"
+     },
+     "ci_high_bps": {
+      "type": "number"
+     },
+     "n": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "can_revert": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "version",
+     "rule",
+     "label_tr",
+     "unit",
+     "from_value",
+     "to_value",
+     "at",
+     "status",
+     "reason_tr",
+     "gain_bps",
+     "ci_low_bps",
+     "ci_high_bps",
+     "n",
+     "can_revert"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "rejected": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "rule": {
+      "type": "string"
+     },
+     "label_tr": {
+      "type": "string"
+     },
+     "unit": {
+      "type": "string",
+      "enum": [
+       "pct",
+       "try"
+      ]
+     },
+     "current": {
+      "type": "number"
+     },
+     "candidate": {
+      "type": [
+       "number",
+       "null"
+      ]
+     },
+     "reason_tr": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "rule",
+     "label_tr",
+     "unit",
+     "current",
+     "candidate",
+     "reason_tr"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "folds": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "kind": {
+      "type": "string",
+      "enum": [
+       "E1",
+       "E2",
+       "E3",
+       "E4"
+      ]
+     },
+     "fold": {
+      "type": "string"
+     },
+     "n_train": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "n_val": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     },
+     "error_ratio": {
+      "type": [
+       "number",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "kind",
+     "fold",
+     "n_train",
+     "n_val",
+     "error_ratio"
+    ],
+    "additionalProperties": false
+   }
+  }
+ },
+ "required": [
+  "generated_at",
+  "auto_apply",
+  "takeaway_tr",
+  "estimator_tr",
+  "kinds",
+  "changes",
+  "rejected",
+  "folds"
+ ],
+ "additionalProperties": false
+}

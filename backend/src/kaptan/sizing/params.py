@@ -55,6 +55,8 @@ class SizingParams:
     # §8.2 expected edge
     shrink_k: int = 20
     haircut: Decimal = Decimal("0.5")
+    #: "median" (outlier-robust, chosen by walk-forward, kaptan.learn.estimators) or "mean" (06 §8.2 as written)
+    edge_location: str = "median"
     horizon: dict[str, int] = field(default_factory=lambda: {"E1": 20, "E2": 20, "E3": 5, "E4": 5})
     # §3.1–§3.4 holding periods [min, max] (sessions)
     holding: dict[str, tuple[int, int]] = field(

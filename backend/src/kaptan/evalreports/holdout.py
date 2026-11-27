@@ -398,6 +398,7 @@ async def run_holdout(
     git_sha: str | None = None,
     prereg_ref: str | None = None,
     check_ready: bool = True,
+    strategy: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Refuses when it already ran or the archive is not ready; else one transaction: the row and its audit record."""
     main = await run_of(conn, MAIN)
@@ -414,6 +415,8 @@ async def run_holdout(
     if problems:
         raise HoldoutRefusedError("; ".join(problems))
     report = await compute(conn, kind, now, main["as_of"] if main is not None else None)
+    if strategy is not None:  # the strategy as frozen at this moment: thresholds, edge estimator (kaptan.learn)
+        report = {**report, "strategy": dict(strategy)}
     finished = datetime.now(UTC) if now.tzinfo is None else max(now, datetime.now(UTC))
     digest = hashlib.sha256(json.dumps(report, sort_keys=True, default=str).encode()).hexdigest()
     draft = AuditDraft(
@@ -479,7 +482,7 @@ def _print_report(report: Mapping[str, Any]) -> None:
 
 async def _main(args: argparse.Namespace, url: str) -> int:  # pragma: no cover - thin wiring
     from kaptan.db import connect
-    from kaptan.rules.params import DEFAULT_PARAMS
+    from kaptan.learn.rules_store import active_overrides, params_from
 
     conn = await connect(url)
     try:
@@ -494,12 +497,21 @@ async def _main(args: argparse.Namespace, url: str) -> int:  # pragma: no cover 
         if tag is None and not args.without_prereg_tag:
             print(f"refused: git tag {PREREG_TAG} does not exist (06 §12.6); see --without-prereg-tag", file=sys.stderr)
             return 2
+        overrides = await active_overrides(conn)  # the thresholds the learning loop left active, frozen now
+        rules_hash = params_from(overrides).rules_hash
+        strategy: dict[str, Any] = {
+            "rules_hash": rules_hash,
+            "threshold_overrides": overrides,
+            "edge_location": DEFAULT_SIZING.edge_location,
+            "costs": "base c_broker 0.0005/side + sensitivity 0.0020/side, round trip floored at 0.003 (06 §8.1)",
+        }
         report = await run_holdout(
             conn,
             kind=args.kind,
             now=now,
             actor=args.actor,
-            rules_hash=DEFAULT_PARAMS.rules_hash,
+            rules_hash=rules_hash,
+            strategy=strategy,
             git_sha=_git("rev-parse", "HEAD"),
             prereg_ref=tag,
         )

@@ -15,8 +15,10 @@
    holdout-hiding view `core.event_returns_dev` (07 P7).
 4. The holdout window stays unmaterialised until its one run finished (12 §1): no reader can see what is not stored.
 
-Idempotent: stored (event, horizon, model) rows are never recomputed; an event whose every window closed is settled
-(`returns_settled_at`) and not retried, so events without prices do not cost every night's job a pass.
+Idempotent: stored (event, horizon, model) rows are never recomputed; an event is settled (`returns_settled_at`) and
+not retried once every horizon is stored or its 60-session window closed `SETTLE_GRACE` sessions ago, so a late price
+is still picked up while events without prices do not cost every night's job a pass. The scheduler runs it after
+`eod_prices` (the day's closes first), and `learn_nightly` after it (kaptan.learn.calibration).
 `run_archive_returns` is the same work per company, committed per company, for the whole archive.
 """
 
@@ -51,6 +53,8 @@ HORIZONS: Final = (1, 5, 20, 60)
 JOB_TIME: Final = time(20, 0)
 MAX_EVENTS_PER_RUN: Final = 5000
 ARCHIVE_EVENTS_PER_TICKER: Final = 20_000
+#: Sessions after the 60-session window closed during which a missing horizon is still retried every night.
+SETTLE_GRACE: Final = 10
 
 NEW_EVENTS_SQL: Final = f"""
 SELECT d.disclosure_index, d.primary_ticker AS ticker, d.published_at, d.available_at, d.subject_map_version,
@@ -181,9 +185,19 @@ def _ready(pending: Sequence[dict[str, Any]], as_of: datetime) -> list[Work]:
     return work
 
 
-def _settled(work: Sequence[Work], as_of: datetime) -> list[int]:
-    """Events whose longest window closed: tried now, not retried until an archive run clears the mark."""
-    return [ev["event_id"] for ev, _, _ in work if window_closed(ev["t0_session"], HORIZONS[-1], as_of)]
+def _settled(work: Sequence[Work], as_of: datetime, stored: dict[int, set[int]]) -> list[int]:
+    """Events done for good: every horizon stored, or the longest window closed `SETTLE_GRACE` sessions ago.
+
+    A price that arrives a few days late (a missed EOD run, a re-fetched day) is still picked up: an event is only
+    given up once its last window has been closed for two weeks."""
+    out = []
+    for ev, _ready, _ in work:
+        t0, have = ev["t0_session"], set(ev["done"]) | stored.get(ev["event_id"], set())
+        if not window_closed(t0, HORIZONS[-1], as_of):
+            continue
+        if have >= set(HORIZONS) or window_closed(t0, HORIZONS[-1] + SETTLE_GRACE, as_of):
+            out.append(ev["event_id"])
+    return out
 
 
 async def _materialise(
@@ -206,9 +220,12 @@ async def _materialise(
         got = returns_of(ev, ready, stock, market, model, written_at)
         no_prices += not got
         rows.extend(got)
+    stored: dict[int, set[int]] = {}
+    for r in rows:
+        stored.setdefault(int(r[0]), set()).add(int(r[1]))
     async with conn.transaction():
         n = await execute_many(conn, INSERT_RETURN_SQL, rows)
-        await execute(conn, SETTLE_SQL, (written_at, _settled(work, as_of)))
+        await execute(conn, SETTLE_SQL, (written_at, _settled(work, as_of, stored)))
     return n, no_prices
 
 

@@ -10,6 +10,7 @@ from typing import Any
 
 import httpx
 import pytest
+import respx
 from pydantic import SecretStr
 
 from kaptan.alerts import announce as announce_mod
@@ -19,11 +20,12 @@ from kaptan.alerts.telegram import TelegramTarget
 from kaptan.api.errors import ApiError
 from kaptan.cloud import actions as cloud_actions
 from kaptan.cloud import sync as cloud_sync
+from kaptan.learn import weekly as learn_weekly
 from kaptan.settings import Settings, cloud_watcher_on
 from kaptan.telegram import dispatch, link, morning, runner, store
 from kaptan.workers import scheduler
 from tests.unit.telegram_memory import FakePool, Mem, install
-from tests.unit.telegram_support import TOKEN
+from tests.unit.telegram_support import TOKEN, FakeTelegram
 
 NOW = datetime(2026, 11, 23, 9, 0, tzinfo=UTC)
 URL = "https://kaptan-bulut.example.workers.dev"
@@ -329,12 +331,49 @@ async def test_with_the_cloud_the_morning_and_weekend_jobs_send_nothing(
     async def boom(*a: Any, **k: Any) -> bool:
         raise AssertionError("the Worker sends this message, not the PC")
 
+    async def nothing_learned(*a: Any) -> None:
+        return None
+
     monkeypatch.setattr(morning, "send_morning", boom)
     monkeypatch.setattr(morning, "send_weekend", boom)
+    monkeypatch.setattr(learn_weekly, "telegram_line", nothing_learned)
     ctx = scheduler.Ctx(settings=_settings(), pool=FakePool(), redis=FakeRedis(), http=lambda: None)
     for fn in (scheduler.job_telegram_morning, scheduler.job_telegram_weekend):
         out = await fn(FakePool().conn, ctx, NOW.date(), NOW)
         assert out["sent"] is False and "cloud" in out["reason"]
+
+
+async def test_with_the_cloud_the_pc_still_sends_the_learning_line_alone(
+    mem: Mem, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def boom(*a: Any, **k: Any) -> bool:
+        raise AssertionError("the Worker sends the weekend summary, not the PC")
+
+    mem.state.update(chat_id=4242)
+    tg = FakeTelegram()
+
+    told: list[int] = []
+    line = (
+        "KAPtan bu hafta geri alım eşiğini %0,25'ten %0,2'ye indirdi; geçmiş testte karar başına net getiri "
+        "+0,4 puan arttı."
+    )
+
+    async def learned(*a: Any) -> tuple[int, str]:
+        return 7, line
+
+    async def mark(_conn: Any, report_id: int, _now: datetime) -> None:
+        told.append(report_id)
+
+    monkeypatch.setattr(morning, "send_weekend", boom)
+    monkeypatch.setattr(learn_weekly, "telegram_line", learned)
+    monkeypatch.setattr(learn_weekly, "mark_told", mark)
+    friday = datetime(2026, 11, 27, 15, 30, tzinfo=UTC)
+    ctx = scheduler.Ctx(settings=_settings(), pool=FakePool(), redis=FakeRedis(), http=lambda: None)
+    with respx.mock(assert_all_called=False) as mock:
+        tg.install(mock)
+        out = await scheduler.job_telegram_weekend(FakePool().conn, ctx, friday.date(), friday)
+    assert out == {"sent": True, "learning": True} and told == [7]
+    assert tg.texts() == [line]  # one line: no company, no money
 
 
 def test_the_sync_job_runs_every_ten_minutes() -> None:

@@ -16,6 +16,7 @@ from kaptan.domain.schemas.crew import *  # noqa: F403
 from kaptan.domain.schemas.disclosure import *  # noqa: F403
 from kaptan.domain.schemas.events import *  # noqa: F403
 from kaptan.domain.schemas.governance import *  # noqa: F403
+from kaptan.domain.schemas.learning import *  # noqa: F403
 from kaptan.domain.schemas.personal import *  # noqa: F403
 from kaptan.domain.schemas.preferences import *  # noqa: F403
 from kaptan.domain.schemas.price_alerts import *  # noqa: F403

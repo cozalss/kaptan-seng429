@@ -111,3 +111,10 @@ async def with_active_limits(conn: Any, ctx: RunContext) -> RunContext:
 
     active = await active_limits(conn)
     return replace(ctx, limits=active.limits, limits_version=active.version)
+
+
+async def with_active_rules(conn: Any, ctx: RunContext) -> RunContext:
+    """`ctx` with the rule thresholds active now (kaptan.learn.rules_store; canonical when none changed)."""
+    from kaptan.learn.rules_store import active_rule_params
+
+    return replace(ctx, params=await active_rule_params(conn))

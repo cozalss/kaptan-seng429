@@ -331,6 +331,15 @@ PHRASES: Final[dict[str, Phrase]] = {
     "limits.approved": lambda _e, _x: "Sınır değişikliğini onayladın.",
     "limits.rejected": lambda _e, _x: "Sınır değişikliğinden vazgeçtin.",
     "note.added": lambda _e, _x: "Not ekledin.",
+    "learn.rule_changed": lambda e, _x: (
+        "KAPtan geçmişten öğrenip bir kural eşiğini değiştirdi."
+        if e["payload"].get("applied")
+        else "KAPtan bir kural eşiğini değiştirmeyi önerdi."
+    ),
+    "learn.rule_reverted": lambda _e, _x: "KAPtan'ın değiştirdiği bir eşiği geri aldın.",
+    "learn.settings_changed": lambda e, _x: (
+        "Kendi kendine öğrenmeyi açtın." if e["payload"].get("auto_apply") else "Kendi kendine öğrenmeyi kapattın."
+    ),
     "audit.verified": _verified,
     "audit.verify_failed": lambda _e, _x: "KAPtan kayıtlarda bir bozulma buldu.",
     "brief.generated": lambda _e, _x: "KAPtan sabah özetini hazırladı.",

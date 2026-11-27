@@ -13,7 +13,7 @@ from decimal import Decimal
 from typing import Final, Literal
 
 from kaptan.rules.events import EVENT_RULES, Check, RuleInput
-from kaptan.rules.format import fmt_dec, fmt_pct, fmt_ratio_x, fmt_signed_pct
+from kaptan.rules.format import accusative, fmt_dec, fmt_pct, fmt_ratio_x, fmt_signed_pct
 from kaptan.rules.params import DEFAULT_PARAMS, RuleParams
 
 Outcome = Literal["PROPOSE", "NO_TRADE", "HOLD"]
@@ -158,9 +158,9 @@ def _common_checks(x: RuleInput, p: RuleParams) -> tuple[list[Check], list[str],
         "Son 5 borsa gününde önceden fiyatlanma eşiği aşılmadı."
         if leak_ok
         else (
-            "Son 5 borsa gününde %8'i aşan yükseliş: boyut yarıya."
+            f"Son 5 borsa gününde {accusative(fmt_pct(p.leak_ret5d_max, 0))} aşan yükseliş: boyut yarıya."
             if halves
-            else "Son 5 borsa gününde %8'i aşan yükseliş: atla."
+            else f"Son 5 borsa gününde {accusative(fmt_pct(p.leak_ret5d_max, 0))} aşan yükseliş: atla."
         )
     )
     checks.append(

@@ -6,7 +6,7 @@
     requested        = min(equity × 0.5 % / stop_pct, equity × 10 %, 1 % × ADV20)   (TL, floor)   §7.1
     m_evidence       = {E1 1, E2 1, E3 0.5, E4 0.7}; E3 with < 5 own precedents × 0.5            §7.1, §3.3
     est_cost_bps     = ⌈round_trip_used × 10⁴⌉                                                     §8.1
-    expected_edge    = ⌊edge_adj × 10⁴⌋                                                             §8.2
+    expected_edge    = ⌊edge_adj × 10⁴⌋  (median-based, × the type's calibration factor)          §8.2
 The skeptic / leakage / regime multipliers are applied later by `kaptan.rules.size` (decide), the gate
 (R06/R07) re-checks edge ≥ 2 × cost and the size. Anything the data cannot give → `Unknown` (HOLD).
 
@@ -132,6 +132,7 @@ def plan_sizing(
     upper_limit: Decimal | None,
     personal: bool = False,
     p: SizingParams = DEFAULT_SIZING,
+    correction: Decimal = Decimal(1),
 ) -> SizingPlan | Unknown:
     if x.event_type not in p.stops:
         return Unknown("not_an_event")
@@ -155,7 +156,7 @@ def plan_sizing(
         return Unknown("no_spread")
     if x.adv20_try is None or x.adv20_try <= 0 or equity_try <= 0:
         return Unknown("no_adv")
-    edge = shrunk_edge(x.event_type, x.type_study, x.firm_study, p)
+    edge = shrunk_edge(x.event_type, x.type_study, x.firm_study, p, correction)
     if edge is None:
         return Unknown("no_evidence")
     stop = stop_pct(x.event_type, atr_try, x.ref_price, p).quantize(STOP_DIGITS, rounding=ROUND_HALF_UP)

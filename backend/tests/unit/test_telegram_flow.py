@@ -306,6 +306,17 @@ async def test_the_weekend_summary_replaces_silence_and_there_is_no_monday_doubl
     assert "Cuma haberi." not in text and "Senin hisselerinde önemli bir şey yok." in text
 
 
+async def test_the_weekend_summary_carries_this_weeks_learning_line(mem: Mem, tg: FakeTelegram) -> None:
+    friday = datetime(2026, 11, 27, 15, 30, tzinfo=UTC)
+    line = (
+        "KAPtan bu hafta geri alım eşiğini %0,25'ten %0,2'ye indirdi; geçmiş testte karar başına net getiri "
+        "+0,4 puan arttı."
+    )
+    assert await morning.send_weekend(CONN, BotApi(TOKEN), dict(mem.state), frozenset(), friday, line)
+    text = tg.texts()[0]
+    assert line in text and text.index(line) < text.index("Bir sonraki iş günü")
+
+
 async def test_no_weekend_summary_before_a_trading_day(mem: Mem, tg: FakeTelegram) -> None:
     assert not await morning.send_weekend(
         CONN, BotApi(TOKEN), dict(mem.state), frozenset(), datetime(2026, 11, 24, 15, 30, tzinfo=UTC)

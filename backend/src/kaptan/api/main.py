@@ -33,6 +33,7 @@ from kaptan.api.routers import (
     eval,
     imports,
     insights,
+    learning,
     limits,
     personal,
     portfolio,
@@ -87,6 +88,7 @@ ROUTERS: Final = (
     corporate.router,  # /me/corporate: dividends, bonus and rights issues, KAP notices (wave 4 CORP)
     imports.router,  # /me/import: statement upload, preview, apply (wave 5 IMPORT)
     signals.router,  # /me/signals, /me/triage: one meaning of important (wave 6 SIGNAL)
+    learning.router,  # /me/learning: Ne öğrendim, self-learning switch, Geri al (agent LEARN)
 )
 
 

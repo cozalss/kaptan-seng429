@@ -28,7 +28,14 @@ from psycopg import AsyncConnection
 from psycopg.types.json import Jsonb
 
 from kaptan.agents import db as q
-from kaptan.agents.context import DeskState, DisclosureInput, Restriction, RunContext, with_active_limits
+from kaptan.agents.context import (
+    DeskState,
+    DisclosureInput,
+    Restriction,
+    RunContext,
+    with_active_limits,
+    with_active_rules,
+)
 from kaptan.agents.explain import assemble
 from kaptan.agents.graph import compile_graph
 from kaptan.agents.reader_facts import attachment_facts
@@ -45,10 +52,12 @@ from kaptan.eval.manifest import graph_version
 from kaptan.events.publish import publish
 from kaptan.evidence.toolbox import live_tools
 from kaptan.ingest.attachments import StoredAttachment, with_attachment_text
+from kaptan.learn.calibration import record_prediction
 from kaptan.llm.provider import LLMProvider
 from kaptan.llm.usage import sync_usage
 from kaptan.risk.cooldown import cooldown_active
 from kaptan.risk.watch import is_watched
+from kaptan.sizing.plan import SizingPlan
 
 log = logging.getLogger("kaptan.agents.feed_run")
 
@@ -227,6 +236,7 @@ async def build_live_context(
         decided_after=now,
     )
     ctx = await with_active_limits(conn, ctx)  # FR-33: the limit version active now
+    ctx = await with_active_rules(conn, ctx)  # the thresholds the learning loop left active (kaptan.learn)
     if live:  # "benzer geçmiş bildirimler" (kaptan.rag)
         from kaptan.rag.agent_context import attach_similar
 
@@ -347,12 +357,32 @@ async def run_disclosure(conn: AsyncConnection[Any], index: int, now: datetime, 
     feed_status = await persist_live(
         conn, explain, now, limits_version=ctx.limits_version, manifest_hash=ctx.prompt_manifest_hash
     )
+    await record_learning(conn, ctx, explain, now)
     await sync_usage(conn, deps.provider)
     if deps.redis is not None:
         await announce(deps.redis, conn, explain, now)
         await conn.commit()
     run = explain["run"]
     return LiveResult(run["run_id"], feed_status, run["outcome"], int(run["llm_calls"]), explain)
+
+
+async def record_learning(conn: AsyncConnection[Any], ctx: RunContext, explain: dict[str, Any], now: datetime) -> None:
+    """The sizer's predicted edge of this decision, for calibration (kaptan.learn.calibration). Never fails the run."""
+    live = live_tools(ctx.tools)
+    plan = None if live is None else live.sizing_plan
+    if not isinstance(plan, SizingPlan) or live is None:
+        return
+    run, d = explain["run"], ctx.disclosure
+    try:
+        async with conn.transaction():
+            await record_prediction(
+                conn, run_id=run["run_id"], disclosure_index=d.disclosure_index, ticker=d.ticker,
+                event_type=plan.event_type, decided_at=now, published_at=d.published_at,
+                expected_edge_bps=plan.expected_edge_bps, correction=live.correction, est_cost_bps=plan.est_cost_bps,
+                outcome=str(run["outcome"]), rules_hash=ctx.params.rules_hash,
+            )  # fmt: skip
+    except Exception:  # the decision is already stored; a missing prediction only delays calibration
+        log.exception("prediction not recorded for %s", run["run_id"])
 
 
 def decision_for(row: dict[str, Any], now: datetime) -> dict[str, Any] | None:

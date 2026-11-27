@@ -26,3 +26,4 @@ export * from "./reading";
 export * from "./signal";
 export * from "./imports";
 export * from "./telegram";
+export * from "./learning";

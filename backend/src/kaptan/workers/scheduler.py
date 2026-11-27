@@ -247,16 +247,29 @@ async def job_telegram_morning(conn: Any, ctx: Ctx, day: date, now: datetime) ->
 
 
 async def job_telegram_weekend(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
-    """18:30 on the last trading day before a closed day: a short summary instead of silence over the weekend."""
-    if cloud_watcher_on(ctx.settings):
-        return {"sent": False, "reason": "the cloud watcher sends it"}
-    from kaptan.telegram.morning import send_weekend
+    """18:30 on the last trading day before a closed day: a short summary instead of silence over the weekend, with
+    this week's learning line (kaptan.learn). With the cloud watcher on the Worker sends the summary and this PC sends
+    only the learning line (it needs the PC, like a suggestion; single-sender rule, kaptan.telegram.runner)."""
+    from kaptan.learn.weekly import mark_told, telegram_line
+    from kaptan.telegram.morning import send_learning, send_weekend
 
+    learned = await telegram_line(conn, now)
+    line = None if learned is None else learned[1]
+    cloud = cloud_watcher_on(ctx.settings)
+    if cloud and line is None:
+        return {"sent": False, "reason": "the cloud watcher sends it"}
     parts = await _telegram_parts(conn, ctx)
     if parts is None:
         return {"sent": False, "reason": "not paired"}
     api, state, muted = parts
-    return {"sent": await send_weekend(conn, api, state, muted, now)}
+    if cloud and line is not None:
+        sent = await send_learning(conn, api, state, line, now)
+    else:
+        sent = await send_weekend(conn, api, state, muted, now, line)
+    if sent and learned is not None:
+        await mark_told(conn, learned[0], now)
+        await conn.commit()
+    return {"sent": sent, "learning": sent and line is not None}
 
 
 async def job_fx_rates(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
@@ -348,6 +361,21 @@ async def job_event_returns(conn: Any, ctx: Ctx, day: date, now: datetime) -> An
     return await run_event_returns(conn, day, now=now)
 
 
+async def job_learn_nightly(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
+    """After `event_returns`: the decisions whose window closed get their real return; calibration is refit."""
+    from kaptan.learn.calibration import mature
+
+    return await mature(conn, now)
+
+
+async def job_learn_weekly(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
+    """Friday after the close: the "Ne öğrendim" pass (one step per rule at most, every guard, the switch)."""
+    from kaptan.learn.weekly import run_pass
+
+    doc = await run_pass(conn, now, mode="apply")
+    return {"applied": doc["applied"], "rejected": len(doc["rejected"]), "pool": doc["pool_n"]}
+
+
 async def job_shadow_returns(conn: Any, ctx: Ctx, day: date, now: datetime) -> Any:
     from kaptan.portfolio.shadow import run_shadow_returns
 
@@ -393,6 +421,7 @@ JOBS: Final[tuple[Job, ...]] = (
     Job("quotes", job_quotes, every_min=4, in_session=True, timeout_s=3 * 60),
     Job("price_alerts", job_price_alerts, every_min=4, in_session=True, after="quotes", timeout_s=3 * 60, own_tx=True),
     Job("weekly_summary", job_weekly_summary, at=time(18, 0), days="friday", timeout_s=5 * 60),
+    Job("learn_weekly", job_learn_weekly, at=time(18, 15), days="friday", timeout_s=20 * 60),
     Job("telegram_weekend", job_telegram_weekend, at=time(18, 30), days="trading", timeout_s=120),
     Job("fx_rates", job_fx_rates, at=time(17, 0), days="trading", timeout_s=5 * 60),
     Job("eod_prices", job_eod_prices, at=time(18, 30), days="trading", timeout_s=60 * 60),
@@ -400,7 +429,8 @@ JOBS: Final[tuple[Job, ...]] = (
     Job("pnl_eod", job_pnl_eod, at=time(18, 45), days="trading", after="exits", timeout_s=10 * 60),
     Job("regime", job_regime, at=time(18, 45), days="trading", after="pnl_eod", timeout_s=5 * 60, own_tx=True),
     Job("intraday_archive", job_intraday_archive, at=time(19, 0), days="trading", timeout_s=60 * 60),
-    Job("event_returns", job_event_returns, at=time(20, 0), days="trading", timeout_s=30 * 60),
+    Job("event_returns", job_event_returns, at=time(20, 0), days="trading", after="eod_prices", timeout_s=30 * 60),
+    Job("learn_nightly", job_learn_nightly, at=time(20, 0), days="trading", after="event_returns", timeout_s=10 * 60),
     Job("shadow_returns", job_shadow_returns, at=time(20, 15), days="trading", timeout_s=10 * 60),
     Job("fundamentals", job_fundamentals, at=time(20, 30), days="trading", timeout_s=60 * 60),
     Job("dq", job_dq, at=time(21, 0), days="trading", timeout_s=15 * 60),
